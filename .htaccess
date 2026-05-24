@@ -1,0 +1,8 @@
+RewriteEngine On
+
+# Si el archivo o carpeta solicitado existe físicamente, acceder directamente
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Si no existe, redirigir la URL limpia al index.php preservando los parámetros GET ([QSA])
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
