@@ -54,6 +54,6 @@ Este es el proyecto de grado para la universidad. El objetivo actual es refactor
 
 ---
 
-## 🚨 Notas para la IA (AI Instructions)
+## 🚨 Notas para Controllers
 - **NO** crees clases en ningún archivo dentro de la carpeta `app/controllers/`, excepto en `frontController.php`.
 - Mantén la consistencia de las rutas dinámicas implementadas en el sistema.
