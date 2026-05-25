@@ -1,386 +1,458 @@
-// Archivo: usuario.js
-// Manejo de la vista de gestion de usuarios
+document.addEventListener('DOMContentLoaded', function () {
+    var ROL = typeof SESSION_USER_ROL !== 'undefined' ? SESSION_USER_ROL : null;
+    var MI_ID = typeof SESSION_USER_ID !== 'undefined' ? SESSION_USER_ID : null;
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Referencias a elementos del DOM
-    const tablaUsuarios = document.getElementById('cuerpoTablaUsuarios');
-    const btnNuevoUsuario = document.getElementById('btnNuevoUsuario');
-    const modalUsuario = document.getElementById('modalUsuario');
-    const btnCerrarModal = document.getElementById('btnCerrarModalUsuario');
-    const btnCancelar = document.getElementById('btnCancelarUsuario');
-    const formularioUsuario = document.getElementById('formularioUsuario');
-    const tituloModal = document.getElementById('tituloModalUsuario');
-    const usuarioId = document.getElementById('usuarioId');
-    const nombreUsuario = document.getElementById('nombreUsuario');
-    const correoUsuario = document.getElementById('correoUsuario');
-    const claveUsuario = document.getElementById('claveUsuario');
-    const grupoClave = document.getElementById('grupoClave');
-    const grupoCambiarClave = document.getElementById('grupoCambiarClave');
-    const checkCambiarClave = document.getElementById('checkCambiarClave');
-    const nuevaClaveUsuario = document.getElementById('nuevaClaveUsuario');
-    const rolUsuario = document.getElementById('rolUsuario');
-    const estadoUsuario = document.getElementById('estadoUsuario');
-    const mensajeError = document.getElementById('mensajeErrorUsuario');
-    let rolesGlobal = [];
+    var formUsuario = document.getElementById('formularioUsuario');
+    if (!formUsuario) {
+        console.warn('El formulario #formularioUsuario no se encontró en esta página.');
+        return;
+    }
 
-    // Cargar lista de usuarios al iniciar
-    cargarUsuarios();
-    cargarRoles();
-
-    // Evento para abrir modal de nuevo usuario
-    btnNuevoUsuario.addEventListener('click', function() {
-        abrirModalCrear();
-    });
-
-    // Evento para cerrar modal
-    btnCerrarModal.addEventListener('click', cerrarModal);
-    btnCancelar.addEventListener('click', cerrarModal);
-
-    // Evento para mostrar/ocultar campo de nueva clave
-    checkCambiarClave.addEventListener('change', function() {
-        if (this.checked) {
-            nuevaClaveUsuario.style.display = 'block';
-        } else {
-            nuevaClaveUsuario.style.display = 'none';
-            nuevaClaveUsuario.value = '';
+    if (ROL === 1) {
+        if (document.getElementById('areaAdminUsuarios') && document.getElementById('modalUsuario')) {
+            initAdmin();
         }
-    });
-
-    // Evento para enviar formulario
-    formularioUsuario.addEventListener('submit', async function(evento) {
-        evento.preventDefault();
-        await guardarUsuario();
-    });
-
-    // Cierra el modal al hacer clic fuera del contenido
-    modalUsuario.addEventListener('click', function(evento) {
-        if (evento.target === modalUsuario) {
-            cerrarModal();
+    } else if (ROL === 2) {
+        if (document.getElementById('modalUsuario')) {
+            initVendor();
         }
-    });
+    }
 
-    // Funcion para cargar la lista de usuarios desde el servidor
+    formUsuario.addEventListener('submit', procesarFormulario);
+
+    // ---- ADMIN ----
+    function initAdmin() {
+        var btnNuevo = document.getElementById('btnNuevoUsuario');
+        if (btnNuevo) btnNuevo.addEventListener('click', abrirModalCrear);
+
+        var selRol = document.getElementById('rolUsuario');
+        if (selRol) selRol.setAttribute('required', '');
+
+        var selEstado = document.getElementById('estadoUsuario');
+        if (selEstado) selEstado.setAttribute('required', '');
+
+        var btnCancel = document.getElementById('btnCancelarUsuario');
+        if (btnCancel) btnCancel.addEventListener('click', cerrarModal);
+
+        var btnCerrar = document.getElementById('btnCerrarModalUsuario');
+        if (btnCerrar) btnCerrar.addEventListener('click', cerrarModal);
+
+        var modal = document.getElementById('modalUsuario');
+        if (modal) modal.addEventListener('click', function (e) {
+            if (e.target === this) cerrarModal();
+        });
+
+        cargarUsuarios();
+    }
+
+    // ---- VENDEDOR ----
+    function initVendor() {
+        var areaAdmin = document.getElementById('areaAdminUsuarios');
+        if (areaAdmin) areaAdmin.style.setProperty('display', 'none', 'important');
+
+        var btnNuevo = document.getElementById('btnNuevoUsuario');
+        if (btnNuevo && !btnNuevo.closest('#modalUsuario')) btnNuevo.style.setProperty('display', 'none', 'important');
+
+        var modal = document.getElementById('modalUsuario');
+        modal.style.setProperty('position', 'relative', 'important');
+        modal.style.setProperty('display', 'block', 'important');
+        modal.style.setProperty('background', 'none', 'important');
+        modal.style.setProperty('box-shadow', 'none', 'important');
+        modal.style.setProperty('padding', '0', 'important');
+        modal.style.setProperty('top', 'auto', 'important');
+        modal.style.setProperty('left', 'auto', 'important');
+        modal.style.setProperty('width', '100%', 'important');
+        modal.style.setProperty('height', 'auto', 'important');
+        modal.style.setProperty('z-index', 'auto', 'important');
+        modal.style.setProperty('border', 'none', 'important');
+        modal.style.setProperty('border-radius', '0', 'important');
+
+        var titulo = document.getElementById('tituloModalUsuario');
+        if (titulo) titulo.textContent = 'Editar Usuario';
+
+        var btnCerrarX = document.querySelector('.modal-header .cerrar') || document.querySelector('.modal-header span') || document.getElementById('btnCerrarModalUsuario');
+        if (btnCerrarX) btnCerrarX.style.display = 'none';
+
+        var btnCancelar = document.querySelector('.modal-footer .btn-secundario') || document.getElementById('btnCancelarUsuario');
+        if (btnCancelar) btnCancelar.style.display = 'none';
+
+        var txtRol = document.getElementById('rolUsuario');
+        if (txtRol) {
+            txtRol.removeAttribute('required');
+            if (txtRol.closest('.grupo-formulario')) txtRol.closest('.grupo-formulario').style.display = 'none';
+            else if (txtRol.parentElement) txtRol.parentElement.style.display = 'none';
+        }
+
+        var txtEstado = document.getElementById('estadoUsuario');
+        if (txtEstado) {
+            txtEstado.removeAttribute('required');
+            if (txtEstado.closest('.grupo-formulario')) txtEstado.closest('.grupo-formulario').style.display = 'none';
+            else if (txtEstado.parentElement) txtEstado.parentElement.style.display = 'none';
+        }
+
+        var grupoCambiarClave = document.getElementById('grupoCambiarClave');
+        if (grupoCambiarClave) grupoCambiarClave.style.display = 'none';
+
+        var grupoClave = document.getElementById('grupoClave');
+        if (grupoClave) grupoClave.style.display = 'block';
+
+        var claveInput = document.getElementById('claveUsuario');
+        if (claveInput) {
+            claveInput.disabled = true;
+            claveInput.required = false;
+            claveInput.placeholder = 'Ingrese su nueva contraseña';
+        }
+
+        var correoInput = document.getElementById('correoUsuario');
+        var correoGroup = correoInput ? correoInput.closest('.grupo-formulario') : null;
+        var btnHabPass = document.createElement('button');
+        btnHabPass.id = 'btnHabilitarPassword';
+        btnHabPass.type = 'button';
+        btnHabPass.className = 'btn-link-password';
+        btnHabPass.textContent = 'Cambiar Contraseña';
+        if (correoGroup && correoGroup.parentNode) {
+            correoGroup.parentNode.insertBefore(btnHabPass, correoGroup.nextSibling);
+        }
+
+        btnHabPass.addEventListener('click', function () {
+            if (claveInput.disabled) {
+                claveInput.disabled = false;
+                claveInput.focus();
+                this.textContent = 'Cancelar cambio';
+            } else {
+                claveInput.disabled = true;
+                claveInput.value = '';
+                this.textContent = 'Cambiar Contraseña';
+            }
+        });
+
+        var btnGuardar = document.getElementById('btnGuardarUsuario');
+        if (btnGuardar) btnGuardar.style.width = '100%';
+
+        cargarPerfilVendedor();
+    }
+
+    // ---- Cargar datos propios del vendedor ----
+    async function cargarPerfilVendedor() {
+        console.log('Intentando cargar perfil para ID:', SESSION_USER_ID);
+        try {
+            var res = await fetch('/SP%20Perfect%20Color/usuario/obtener?id=' + SESSION_USER_ID);
+            if (!res.ok) throw new Error('Error en la respuesta del servidor');
+            var data = await res.json();
+            console.log('Datos recibidos:', data);
+
+            if (data.estado === 'exito' && data.datos) {
+                document.getElementById('usuarioId').value = data.datos.id;
+                document.getElementById('nombreUsuario').value = data.datos.nombre || '';
+                document.getElementById('correoUsuario').value = data.datos.correo || '';
+                console.log('Inputs rellenados correctamente');
+            } else {
+                console.warn('El servidor respondio pero sin datos validos:', data);
+            }
+        } catch (error) {
+            console.error('Fallo al cargar perfil:', error);
+        }
+    }
+
+    // ---- Llenar select de roles ----
+    function llenarSelectRoles(roles) {
+        var select = document.getElementById('rolUsuario');
+        if (!select) return;
+        select.innerHTML = '<option value="">Seleccione un rol</option>';
+        roles.forEach(function (r) {
+            var op = document.createElement('option');
+            op.value = r.id;
+            op.textContent = r.nombre;
+            select.appendChild(op);
+        });
+    }
+
+    // ---- Cargar lista de usuarios (Admin) ----
     async function cargarUsuarios() {
         try {
-            const respuesta = await fetch('usuario/listarAjax');
-            const resultado = await respuesta.json();
-
-            if (resultado.estado === 'exito') {
-                mostrarUsuarios(resultado.datos.usuarios);
+            var res = await fetch('usuario/listarAjax');
+            var json = await res.json();
+            if (json.estado !== 'exito') {
+                console.error('Error al listar usuarios:', json.mensaje);
+                return;
             }
+
+            if (json.datos.roles) llenarSelectRoles(json.datos.roles);
+
+            var tbody = document.getElementById('cuerpoTablaUsuarios');
+            var usuarios = json.datos.usuarios || [];
+            tbody.innerHTML = '';
+
+            if (usuarios.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay usuarios registrados</td></tr>';
+                return;
+            }
+
+            usuarios.forEach(function (u) {
+                var tr = document.createElement('tr');
+
+                var td1 = document.createElement('td');
+                td1.textContent = u.nombre;
+                tr.appendChild(td1);
+
+                var td2 = document.createElement('td');
+                td2.textContent = u.correo;
+                tr.appendChild(td2);
+
+                var td3 = document.createElement('td');
+                td3.textContent = u.rol_nombre;
+                tr.appendChild(td3);
+
+                var td4 = document.createElement('td');
+                var badge = document.createElement('span');
+                badge.className = u.activo == 1 ? 'estado-activo' : 'estado-inactivo';
+                badge.textContent = u.activo == 1 ? 'Activo' : 'Inactivo';
+                td4.appendChild(badge);
+                tr.appendChild(td4);
+
+                var td5 = document.createElement('td');
+                td5.className = 'acciones';
+
+                var btnEditar = document.createElement('button');
+                btnEditar.className = 'btn-primario';
+                btnEditar.textContent = 'Editar';
+                btnEditar.addEventListener('click', function () { abrirModalEditar(u.id); });
+                td5.appendChild(btnEditar);
+
+                if (u.id != MI_ID) {
+                    var btnEliminar = document.createElement('button');
+                    btnEliminar.className = 'btn-peligro';
+                    btnEliminar.textContent = 'Eliminar';
+                    btnEliminar.addEventListener('click', function () { eliminarUsuario(u.id, u.nombre); });
+                    td5.appendChild(btnEliminar);
+                }
+
+                tr.appendChild(td5);
+                tbody.appendChild(tr);
+            });
+
         } catch (error) {
             console.error('Error al cargar usuarios:', error);
         }
     }
 
-    // Funcion para cargar los roles en el select
-    async function cargarRoles() {
-        try {
-            const respuesta = await fetch('usuario/listarAjax');
-            const resultado = await respuesta.json();
-
-            if (resultado.estado === 'exito' && resultado.datos.roles) {
-                rolesGlobal = resultado.datos.roles;
-                llenarSelectRoles();
-            }
-        } catch (error) {
-            console.error('Error al cargar roles:', error);
-        }
-    }
-
-    // Llena el select de roles con las opciones disponibles
-    function llenarSelectRoles() {
-        rolUsuario.innerHTML = '<option value="">Seleccione un rol</option>';
-        rolesGlobal.forEach(function(rol) {
-            const opcion = document.createElement('option');
-            opcion.value = rol.id;
-            opcion.textContent = rol.nombre;
-            rolUsuario.appendChild(opcion);
-        });
-    }
-
-    // Muestra los usuarios en la tabla
-    function mostrarUsuarios(usuarios) {
-        tablaUsuarios.innerHTML = '';
-
-        if (usuarios.length === 0) {
-            tablaUsuarios.innerHTML = '<tr><td colspan="5" style="text-align: center;">No hay usuarios registrados</td></tr>';
-            return;
-        }
-
-        usuarios.forEach(function(usuario) {
-            const fila = document.createElement('tr');
-            
-            // Nombre
-            const celdaNombre = document.createElement('td');
-            celdaNombre.textContent = usuario.nombre;
-            fila.appendChild(celdaNombre);
-            
-            // Correo
-            const celdaCorreo = document.createElement('td');
-            celdaCorreo.textContent = usuario.correo;
-            fila.appendChild(celdaCorreo);
-            
-            // Rol
-            const celdaRol = document.createElement('td');
-            celdaRol.textContent = usuario.rol_nombre;
-            fila.appendChild(celdaRol);
-            
-            // Estado
-            const celdaEstado = document.createElement('td');
-            const spanEstado = document.createElement('span');
-            if (usuario.activo == 1) {
-                spanEstado.className = 'estado-activo';
-                spanEstado.textContent = 'Activo';
-            } else {
-                spanEstado.className = 'estado-inactivo';
-                spanEstado.textContent = 'Inactivo';
-            }
-            celdaEstado.appendChild(spanEstado);
-            fila.appendChild(celdaEstado);
-            
-            // Acciones
-            const celdaAcciones = document.createElement('td');
-            celdaAcciones.className = 'acciones';
-            
-            // Boton editar
-            const btnEditar = document.createElement('button');
-            btnEditar.className = 'btn-primario';
-            btnEditar.textContent = 'Editar';
-            btnEditar.addEventListener('click', function() {
-                abrirModalEditar(usuario.id);
-            });
-            celdaAcciones.appendChild(btnEditar);
-            
-            // Boton activar/desactivar
-            if (usuario.activo == 1) {
-                const btnDesactivar = document.createElement('button');
-                btnDesactivar.className = 'btn-secundario';
-                btnDesactivar.textContent = 'Desactivar';
-                btnDesactivar.addEventListener('click', function() {
-                    cambiarEstadoUsuario(usuario.id, 0);
-                });
-                celdaAcciones.appendChild(btnDesactivar);
-            } else {
-                const btnActivar = document.createElement('button');
-                btnActivar.className = 'btn-exito';
-                btnActivar.textContent = 'Activar';
-                btnActivar.addEventListener('click', function() {
-                    cambiarEstadoUsuario(usuario.id, 1);
-                });
-                celdaAcciones.appendChild(btnActivar);
-            }
-            
-            // Boton eliminar
-            const btnEliminar = document.createElement('button');
-            btnEliminar.className = 'btn-peligro';
-            btnEliminar.textContent = 'Eliminar';
-            btnEliminar.addEventListener('click', function() {
-                eliminarUsuario(usuario.id, usuario.nombre);
-            });
-            celdaAcciones.appendChild(btnEliminar);
-            
-            fila.appendChild(celdaAcciones);
-            
-            tablaUsuarios.appendChild(fila);
-        });
-    }
-
-    // Abre el modal en modo creacion
+    // ---- Abrir modal para nuevo usuario ----
     function abrirModalCrear() {
-        tituloModal.textContent = 'Nuevo Usuario';
-        usuarioId.value = '';
-        nombreUsuario.value = '';
-        correoUsuario.value = '';
-        claveUsuario.value = '';
-        claveUsuario.required = true;
-        grupoClave.style.display = 'block';
-        grupoCambiarClave.style.display = 'none';
-        checkCambiarClave.checked = false;
-        nuevaClaveUsuario.style.display = 'none';
-        nuevaClaveUsuario.value = '';
-        rolUsuario.value = '';
-        estadoUsuario.value = '1';
-        estadoUsuario.parentElement.style.display = 'none';
-        mensajeError.style.display = 'none';
-        
-        modalUsuario.style.display = 'flex';
+        document.getElementById('formularioUsuario').reset();
+        document.getElementById('usuarioId').value = '';
+        document.getElementById('mensajeErrorUsuario').style.display = 'none';
+        document.getElementById('tituloModalUsuario').textContent = 'Nuevo Usuario';
+
+        document.getElementById('grupoClave').style.display = 'block';
+        document.getElementById('claveUsuario').required = true;
+
+        document.getElementById('grupoCambiarClave').style.display = 'none';
+        document.getElementById('checkCambiarClave').checked = false;
+        document.getElementById('nuevaClaveUsuario').style.display = 'none';
+        document.getElementById('nuevaClaveUsuario').value = '';
+
+        document.getElementById('contenedorRol').style.display = 'block';
+        document.getElementById('contenedorEstado').style.display = 'block';
+        document.getElementById('rolUsuario').required = true;
+
+        document.getElementById('modalUsuario').style.display = 'flex';
     }
 
-    // Abre el modal en modo edicion
+    // ---- Abrir modal para editar usuario ----
     async function abrirModalEditar(id) {
         try {
-            const respuesta = await fetch('usuario/obtener?id=' + id);
-            const resultado = await respuesta.json();
-
-            if (resultado.estado === 'exito') {
-                const usuario = resultado.datos;
-                
-                tituloModal.textContent = 'Editar Usuario';
-                usuarioId.value = usuario.id;
-                nombreUsuario.value = usuario.nombre;
-                correoUsuario.value = usuario.correo;
-                claveUsuario.value = '';
-                claveUsuario.required = false;
-                grupoClave.style.display = 'none';
-                grupoCambiarClave.style.display = 'block';
-                checkCambiarClave.checked = false;
-                nuevaClaveUsuario.style.display = 'none';
-                nuevaClaveUsuario.value = '';
-                rolUsuario.value = usuario.rol_id;
-                estadoUsuario.value = usuario.activo;
-                estadoUsuario.parentElement.style.display = 'block';
-                mensajeError.style.display = 'none';
-                
-                modalUsuario.style.display = 'flex';
-            } else {
-                mostrarNotificacion(resultado.mensaje, 'error');
+            var res = await fetch('usuario/obtener?id=' + id);
+            var json = await res.json();
+            if (json.estado !== 'exito') {
+                if (typeof mostrarNotificacion === 'function') {
+                    mostrarNotificacion(json.mensaje, 'error');
+                } else {
+                    alert(json.mensaje);
+                }
+                return;
             }
+
+            var u = json.datos;
+            document.getElementById('formularioUsuario').reset();
+            document.getElementById('mensajeErrorUsuario').style.display = 'none';
+            document.getElementById('usuarioId').value = u.id;
+            document.getElementById('nombreUsuario').value = u.nombre;
+            document.getElementById('correoUsuario').value = u.correo;
+
+            document.getElementById('grupoClave').style.display = 'none';
+            document.getElementById('claveUsuario').required = false;
+
+            document.getElementById('grupoCambiarClave').style.display = 'block';
+            document.getElementById('checkCambiarClave').checked = false;
+            document.getElementById('nuevaClaveUsuario').style.display = 'none';
+            document.getElementById('nuevaClaveUsuario').value = '';
+
+            document.getElementById('tituloModalUsuario').textContent = 'Editar Usuario';
+            document.getElementById('contenedorRol').style.display = 'block';
+            document.getElementById('contenedorEstado').style.display = 'block';
+            document.getElementById('rolUsuario').value = u.rol_id;
+            document.getElementById('estadoUsuario').value = u.activo;
+            document.getElementById('rolUsuario').required = true;
+
+            document.getElementById('modalUsuario').style.display = 'flex';
+
         } catch (error) {
             console.error('Error al obtener usuario:', error);
-            mostrarNotificacion('Error al cargar los datos del usuario', 'error');
-        }
-    }
-
-    // Cierra el modal
-    function cerrarModal() {
-        modalUsuario.style.display = 'none';
-        formularioUsuario.reset();
-        mensajeError.style.display = 'none';
-    }
-
-    // Guarda o actualiza un usuario
-    async function guardarUsuario() {
-        const id = usuarioId.value;
-        const esEdicion = id !== '';
-        
-        // Validar campos basicos
-        if (!nombreUsuario.value.trim()) {
-            mostrarError('El nombre es obligatorio');
-            return;
-        }
-        
-        if (!correoUsuario.value.trim()) {
-            mostrarError('El correo electronico es obligatorio');
-            return;
-        }
-        
-        if (!esEdicion && !claveUsuario.value.trim()) {
-            mostrarError('La clave es obligatoria');
-            return;
-        }
-        
-        if (!esEdicion && claveUsuario.value.trim().length < 6) {
-            mostrarError('La clave debe tener al menos 6 caracteres');
-            return;
-        }
-        
-        if (esEdicion && checkCambiarClave.checked && nuevaClaveUsuario.value.trim().length < 6) {
-            mostrarError('La nueva clave debe tener al menos 6 caracteres');
-            return;
-        }
-        
-        if (!rolUsuario.value) {
-            mostrarError('Debe seleccionar un rol');
-            return;
-        }
-        
-        // Determinar a que URL enviar
-        const url = esEdicion ? 'usuario/actualizar' : 'usuario/guardar';
-        
-        // Preparar datos del formulario
-        const formData = new FormData(formularioUsuario);
-        
-        // Si es edicion y no se cambio clave, forzar el campo
-        if (esEdicion && !checkCambiarClave.checked) {
-            formData.delete('nueva_clave');
-        }
-        
-        try {
-            const respuesta = await fetch(url, {
-                method: 'POST',
-                body: formData
-            });
-            
-            const resultado = await respuesta.json();
-            
-            if (resultado.estado === 'exito') {
-                cerrarModal();
-                cargarUsuarios();
-                mostrarNotificacion(resultado.mensaje, 'exito');
-            } else {
-                mostrarError(resultado.mensaje);
+            if (typeof mostrarNotificacion === 'function') {
+                mostrarNotificacion('Error al cargar los datos del usuario', 'error');
             }
+        }
+    }
+
+    // ---- Checkbox cambio de clave ----
+    document.getElementById('checkCambiarClave').addEventListener('change', function () {
+        var input = document.getElementById('nuevaClaveUsuario');
+        if (this.checked) {
+            input.style.display = 'block';
+            input.required = true;
+        } else {
+            input.style.display = 'none';
+            input.required = false;
+            input.value = '';
+        }
+    });
+
+    // ---- Procesar formulario ----
+    async function procesarFormulario(e) {
+        e.preventDefault();
+
+        var id = document.getElementById('usuarioId').value;
+        var esEdicion = id !== '';
+        var url = esEdicion ? 'usuario/actualizar' : 'usuario/guardar';
+        var errorDiv = document.getElementById('mensajeErrorUsuario');
+        errorDiv.style.display = 'none';
+
+        var nombre = document.getElementById('nombreUsuario').value.trim();
+        var correo = document.getElementById('correoUsuario').value.trim();
+
+        if (!nombre) { mostrarError('El nombre es obligatorio'); return; }
+        if (!correo) { mostrarError('El correo electronico es obligatorio'); return; }
+
+        if (!esEdicion) {
+            var clave = document.getElementById('claveUsuario').value.trim();
+            if (!clave) { mostrarError('La clave es obligatoria'); return; }
+            if (clave.length < 6) { mostrarError('La clave debe tener al menos 6 caracteres'); return; }
+        }
+
+        var formData = new FormData(document.getElementById('formularioUsuario'));
+
+        if (esEdicion && ROL === 1) {
+            var checkClave = document.getElementById('checkCambiarClave');
+            if (checkClave.checked) {
+                var nuevaClave = document.getElementById('nuevaClaveUsuario').value.trim();
+                if (nuevaClave.length < 6) { mostrarError('La nueva clave debe tener al menos 6 caracteres'); return; }
+            }
+            if (!checkClave.checked) {
+                formData.delete('nueva_clave');
+            }
+        }
+
+        if (esEdicion && ROL === 2) {
+            var claveInput = document.getElementById('claveUsuario');
+            if (!claveInput.disabled) {
+                var claveValor = claveInput.value.trim();
+                if (claveValor !== '' && claveValor.length < 6) {
+                    mostrarError('La nueva clave debe tener al menos 6 caracteres');
+                    return;
+                }
+                if (claveValor !== '') {
+                    formData.set('cambiar_clave', '1');
+                    formData.set('nueva_clave', claveValor);
+                }
+            }
+            formData.delete('clave');
+        }
+
+        try {
+            var res = await fetch(url, { method: 'POST', body: formData });
+            var json = await res.json();
+
+            if (json.estado === 'exito') {
+                if (ROL === 1) {
+                    cerrarModal();
+                    cargarUsuarios();
+                } else {
+                    var btnHabPass = document.getElementById('btnHabilitarPassword');
+                    if (btnHabPass) btnHabPass.textContent = 'Cambiar Contraseña';
+                    claveInput.disabled = true;
+                    claveInput.value = '';
+                }
+
+                if (typeof mostrarNotificacion === 'function') {
+                    mostrarNotificacion(json.mensaje, 'exito');
+                } else {
+                    alert(json.mensaje);
+                }
+            } else {
+                mostrarError(json.mensaje);
+            }
+
         } catch (error) {
             console.error('Error al guardar usuario:', error);
             mostrarError('Error de conexion al guardar el usuario');
         }
     }
 
-    // Cambia el estado de un usuario (activar/desactivar)
-    async function cambiarEstadoUsuario(id, nuevoEstado) {
-        const accion = nuevoEstado == 1 ? 'activar' : 'desactivar';
-        
-        if (!confirm('Esta seguro de ' + accion + ' este usuario?')) {
-            return;
-        }
-        
-        const formData = new FormData();
-        formData.append('id', id);
-        formData.append('activo', nuevoEstado);
-        
-        try {
-            const respuesta = await fetch('usuario/cambiarEstado', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const resultado = await respuesta.json();
-            
-            if (resultado.estado === 'exito') {
-                cargarUsuarios();
-                mostrarNotificacion(resultado.mensaje, 'exito');
-            } else {
-                mostrarNotificacion(resultado.mensaje, 'error');
-            }
-        } catch (error) {
-            console.error('Error al cambiar estado:', error);
-            mostrarNotificacion('Error de conexion', 'error');
-        }
+    // ---- Cerrar modal ----
+    function cerrarModal() {
+        if (ROL === 2) return;
+        document.getElementById('modalUsuario').style.display = 'none';
+        document.getElementById('formularioUsuario').reset();
+        document.getElementById('mensajeErrorUsuario').style.display = 'none';
+        document.getElementById('grupoClave').style.display = 'block';
+        document.getElementById('claveUsuario').required = false;
+        document.getElementById('grupoCambiarClave').style.display = 'none';
+        document.getElementById('checkCambiarClave').checked = false;
+        document.getElementById('nuevaClaveUsuario').style.display = 'none';
+        document.getElementById('nuevaClaveUsuario').value = '';
+        document.getElementById('contenedorRol').style.display = 'block';
+        document.getElementById('contenedorEstado').style.display = 'block';
+        document.getElementById('rolUsuario').required = true;
     }
 
-    // Elimina un usuario
+    // ---- Mostrar error ----
+    function mostrarError(msg) {
+        var errorDiv = document.getElementById('mensajeErrorUsuario');
+        errorDiv.textContent = msg;
+        errorDiv.style.display = 'block';
+    }
+
+    // ---- Eliminar usuario ----
     async function eliminarUsuario(id, nombre) {
-        if (!confirm('Esta seguro de eliminar al usuario ' + nombre + '?')) {
-            return;
-        }
-        
-        const formData = new FormData();
-        formData.append('id', id);
-        
+        if (!confirm('¿Esta seguro de eliminar al usuario ' + nombre + '?')) return;
+
+        var fd = new FormData();
+        fd.append('id', id);
+
         try {
-            const respuesta = await fetch('usuario/eliminar', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const resultado = await respuesta.json();
-            
-            if (resultado.estado === 'exito') {
+            var res = await fetch('usuario/eliminar', { method: 'POST', body: fd });
+            var json = await res.json();
+
+            if (json.estado === 'exito') {
                 cargarUsuarios();
-                mostrarNotificacion(resultado.mensaje, 'exito');
+                if (typeof mostrarNotificacion === 'function') {
+                    mostrarNotificacion(json.mensaje, 'exito');
+                } else {
+                    alert(json.mensaje);
+                }
             } else {
-                mostrarNotificacion(resultado.mensaje, 'error');
+                if (typeof mostrarNotificacion === 'function') {
+                    mostrarNotificacion(json.mensaje, 'error');
+                } else {
+                    alert(json.mensaje);
+                }
             }
+
         } catch (error) {
             console.error('Error al eliminar usuario:', error);
-            mostrarNotificacion('Error de conexion', 'error');
+            if (typeof mostrarNotificacion === 'function') {
+                mostrarNotificacion('Error de conexion', 'error');
+            }
         }
-    }
-
-    // Muestra un mensaje de error en el modal
-    function mostrarError(mensaje) {
-        mensajeError.textContent = mensaje;
-        mensajeError.style.display = 'block';
     }
 });
