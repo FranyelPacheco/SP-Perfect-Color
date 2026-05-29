@@ -2,7 +2,9 @@
 // Archivo: UsuarioModel.php
 // Modelo para operaciones con la tabla usuarios
 
-require_once __DIR__ . '/../core/conexionBD.php';
+namespace App\Models;
+
+use App\Core\ConexionBD;
 
 class UsuarioModel
 {

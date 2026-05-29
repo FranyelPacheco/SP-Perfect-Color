@@ -2,8 +2,10 @@
 // Archivo: loginController.php
 // Controlador para autenticacion de usuarios
 
-require_once __DIR__ . '/../models/UsuarioModel.php';
-require_once __DIR__ . '/../helpers/respuestaHelper.php';
+namespace App\Controllers;
+
+use App\Models\UsuarioModel;
+use function App\Helpers\respuestaJson;
 
 $usuarioModel = new UsuarioModel();
 

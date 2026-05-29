@@ -2,10 +2,14 @@
 // Archivo: usuarioController.php
 // Controlador procedimental para la gestion de usuarios
 
-require_once __DIR__ . '/../models/UsuarioModel.php';
-require_once __DIR__ . '/../helpers/respuestaHelper.php';
-require_once __DIR__ . '/../helpers/sesionHelper.php';
-require_once __DIR__ . '/../helpers/validacionHelper.php';
+namespace App\Controllers;
+
+use App\Models\UsuarioModel;
+use function App\Helpers\respuestaJson;
+use function App\Helpers\verificarAutenticacion;
+use function App\Helpers\verificarRolAdmin;
+use function App\Helpers\validarRequerido;
+use function App\Helpers\validarCorreo;
 
 $usuarioModel = new UsuarioModel();
 

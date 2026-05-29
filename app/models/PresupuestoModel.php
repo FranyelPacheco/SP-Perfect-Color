@@ -2,7 +2,9 @@
 // Archivo: PresupuestoModel.php
 // Modelo para operaciones con presupuestos
 
-require_once __DIR__ . '/../core/conexionBD.php';
+namespace App\Models;
+
+use App\Core\ConexionBD;
 
 class PresupuestoModel
 {

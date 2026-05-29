@@ -1,6 +1,8 @@
 <?php
-// Archivo: conexionBD.php
+// Archivo: ConexionBD.php
 // Clase para manejar la conexion a la base de datos con PDO (Singleton)
+
+namespace App\Core;
 
 class ConexionBD
 {

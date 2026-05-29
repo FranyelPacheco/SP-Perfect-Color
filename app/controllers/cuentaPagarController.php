@@ -2,9 +2,12 @@
 // Archivo: cuentaPagarController.php
 // Controlador para cuentas por pagar (Procedimental)
 
-require_once __DIR__ . '/../models/CuentaPagarModel.php';
-require_once __DIR__ . '/../helpers/respuestaHelper.php';
-require_once __DIR__ . '/../helpers/sesionHelper.php';
+namespace App\Controllers;
+
+use App\Models\CuentaPagarModel;
+use function App\Helpers\respuestaJson;
+use function App\Helpers\verificarAutenticacion;
+use function App\Helpers\verificarRolAdmin;
 
 // Instancia limpia del modelo para uso procedimental
 $cuentaPagarModel = new CuentaPagarModel();

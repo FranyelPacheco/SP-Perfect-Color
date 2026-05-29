@@ -2,7 +2,9 @@
 // Archivo: InventarioModel.php
 // Modelo para operaciones con la tabla insumos
 
-require_once __DIR__ . '/../core/conexionBD.php';
+namespace App\Models;
+
+use App\Core\ConexionBD;
 
 class InventarioModel
 {

@@ -2,9 +2,12 @@
 // Archivo: cuentaCobrarController.php
 // Controlador para cuentas por cobrar (Procedimental)
 
-require_once __DIR__ . '/../models/CuentaCobrarModel.php';
-require_once __DIR__ . '/../helpers/respuestaHelper.php';
-require_once __DIR__ . '/../helpers/sesionHelper.php';
+namespace App\Controllers;
+
+use App\Models\CuentaCobrarModel;
+use function App\Helpers\respuestaJson;
+use function App\Helpers\verificarAutenticacion;
+use function App\Helpers\verificarRolVendedor;
 
 // Instancia limpia del modelo para uso procedimental
 $cuentaCobrarModel = new CuentaCobrarModel();

@@ -2,10 +2,16 @@
 // Archivo: proveedorController.php
 // Controlador para la gestion de proveedores
 
-require_once __DIR__ . '/../models/ProveedorModel.php';
-require_once __DIR__ . '/../helpers/respuestaHelper.php';
-require_once __DIR__ . '/../helpers/sesionHelper.php';
-require_once __DIR__ . '/../helpers/validacionHelper.php';
+namespace App\Controllers;
+
+use App\Models\ProveedorModel;
+use function App\Helpers\respuestaJson;
+use function App\Helpers\verificarAutenticacion;
+use function App\Helpers\verificarRolAdmin;
+use function App\Helpers\validarRequerido;
+use function App\Helpers\validarRIF;
+use function App\Helpers\validarTelefono;
+use function App\Helpers\validarCorreo;
 
 $proveedorModel = new ProveedorModel();
 

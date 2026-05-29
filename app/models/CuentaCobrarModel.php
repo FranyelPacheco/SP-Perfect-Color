@@ -2,7 +2,9 @@
 // Archivo: CuentaCobrarModel.php
 // Modelo para operaciones con cuentas por cobrar
 
-require_once __DIR__ . '/../core/conexionBD.php';
+namespace App\Models;
+
+use App\Core\ConexionBD;
 
 class CuentaCobrarModel
 {

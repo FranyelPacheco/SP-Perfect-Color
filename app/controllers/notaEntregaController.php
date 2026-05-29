@@ -2,12 +2,15 @@
 // Archivo: notaEntregaController.php
 // Controlador para la gestion de notas de entrega (Procedimental)
 
-require_once __DIR__ . '/../models/NotaEntregaModel.php';
-require_once __DIR__ . '/../models/PresupuestoModel.php';
-require_once __DIR__ . '/../models/ClienteModel.php';
-require_once __DIR__ . '/../models/InventarioModel.php';
-require_once __DIR__ . '/../helpers/respuestaHelper.php';
-require_once __DIR__ . '/../helpers/sesionHelper.php';
+namespace App\Controllers;
+
+use App\Models\NotaEntregaModel;
+use App\Models\PresupuestoModel;
+use App\Models\ClienteModel;
+use App\Models\InventarioModel;
+use function App\Helpers\respuestaJson;
+use function App\Helpers\verificarAutenticacion;
+use function App\Helpers\verificarRolVendedor;
 
 // Instancias limpias de los modelos para uso procedimental
 $notaEntregaModel = new NotaEntregaModel();

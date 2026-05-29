@@ -1,4 +1,6 @@
 <?php
+namespace App\Controllers;
+
 class frontController
 {
     private $controlador;

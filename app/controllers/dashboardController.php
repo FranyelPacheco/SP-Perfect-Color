@@ -2,7 +2,9 @@
 // Archivo: dashboardController.php
 // Controlador para el panel principal
 
-require_once __DIR__ . '/../helpers/sesionHelper.php';
+namespace App\Controllers;
+
+use function App\Helpers\verificarAutenticacion;
 
 if ($metodo === 'index') {
     // Verificar que el usuario haya iniciado sesion

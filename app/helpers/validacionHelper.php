@@ -2,6 +2,8 @@
 // Archivo: validacionHelper.php
 // Helper con funciones de validacion reutilizables
 
+namespace App\Helpers;
+
 // Verifica que una cedula venezolana tenga formato valido (7 a 8 digitos)
 function validarCedula($cedula)
 {

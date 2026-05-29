@@ -2,6 +2,8 @@
 // Archivo: sesionHelper.php
 // Helper para manejo de sesiones y verificacion de autenticacion
 
+namespace App\Helpers;
+
 // Verifica que el usuario haya iniciado sesion
 function verificarAutenticacion()
 {

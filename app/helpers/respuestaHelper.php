@@ -2,6 +2,8 @@
 // Archivo: respuestaHelper.php
 // Helper para estandarizar las respuestas JSON del servidor
 
+namespace App\Helpers;
+
 function respuestaJson($estado, $mensaje, $datos = null)
 {
     // Establecer el tipo de contenido como JSON

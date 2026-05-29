@@ -2,10 +2,15 @@
 // Archivo: inventarioController.php
 // Controlador para la gestion de inventario (Procedimental)
 
-require_once __DIR__ . '/../models/InventarioModel.php';
-require_once __DIR__ . '/../helpers/respuestaHelper.php';
-require_once __DIR__ . '/../helpers/sesionHelper.php';
-require_once __DIR__ . '/../helpers/validacionHelper.php';
+namespace App\Controllers;
+
+use App\Models\InventarioModel;
+use function App\Helpers\respuestaJson;
+use function App\Helpers\verificarAutenticacion;
+use function App\Helpers\verificarRolAdmin;
+use function App\Helpers\validarRequerido;
+use function App\Helpers\validarDecimalPositivo;
+use function App\Helpers\validarFecha;
 
 // Instancia limpia del modelo para usar de forma procedimental
 $inventarioModel = new InventarioModel();
