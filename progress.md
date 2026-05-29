@@ -15,8 +15,3 @@
     - [ ] Integrar DataTables en `views/` para reemplazar paginación manual.
 - [ ] **Fase 4: Encapsulamiento (POO)**
     - [ ] Refactorizar clases para seguir principios de encapsulamiento.
-
-## Progreso actual
-- [x] Estructura MVC definida.
-- [x] Control de acceso (Roles 1 y 2) en sesión.
-- [x] Configurado `composer.json` con PSR-4.
