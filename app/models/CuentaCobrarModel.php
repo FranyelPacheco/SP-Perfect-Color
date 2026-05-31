@@ -5,6 +5,8 @@
 namespace App\Models;
 
 use App\Core\ConexionBD;
+use \PDO;
+use \PDOException;
 
 class CuentaCobrarModel
 {
@@ -22,10 +24,14 @@ class CuentaCobrarModel
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
                             c.telefono as cliente_telefono,
-                            f.numero_factura
+                            f.numero_factura,
+                            ne.id as nota_id,
+                            ne.fecha as nota_fecha
                      FROM cuentas_cobrar cc 
                      INNER JOIN clientes c ON cc.cliente_id = c.id 
                      LEFT JOIN facturas f ON cc.factura_id = f.id 
+                     LEFT JOIN notas_entrega ne ON cc.nota_entrega_id = ne.id
+                     WHERE cc.activo = 1
                      ORDER BY cc.estado ASC, cc.fecha_vencimiento ASC";
         $stmt = $this->conexion->query($consulta);
         
@@ -38,11 +44,14 @@ class CuentaCobrarModel
         $consulta = "SELECT cc.*, 
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
-                            f.numero_factura
+                            f.numero_factura,
+                            ne.id as nota_id,
+                            ne.fecha as nota_fecha
                      FROM cuentas_cobrar cc 
                      INNER JOIN clientes c ON cc.cliente_id = c.id 
                      LEFT JOIN facturas f ON cc.factura_id = f.id 
-                     WHERE cc.id = :id";
+                     LEFT JOIN notas_entrega ne ON cc.nota_entrega_id = ne.id
+                     WHERE cc.id = :id AND cc.activo = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -62,7 +71,7 @@ class CuentaCobrarModel
     }
 
     // Registra un pago a una cuenta por cobrar
-    public function registrarPago($cuentaId, $monto, $metodoPago)
+    public function registrarPago($cuentaId, $monto, $metodoPago, $fecha = null)
     {
         try {
             $this->conexion->beginTransaction();
@@ -79,11 +88,13 @@ class CuentaCobrarModel
             }
             
             // Registrar el pago
+            $fecha = $fecha ?? date('Y-m-d');
             $consultaPago = "INSERT INTO pagos_recibidos (cuenta_cobrar_id, monto, fecha, metodo_pago) 
-                             VALUES (:cuenta_id, :monto, CURDATE(), :metodo_pago)";
+                             VALUES (:cuenta_id, :monto, :fecha, :metodo_pago)";
             $stmtPago = $this->conexion->prepare($consultaPago);
             $stmtPago->bindParam(':cuenta_id', $cuentaId, PDO::PARAM_INT);
             $stmtPago->bindParam(':monto', $monto);
+            $stmtPago->bindParam(':fecha', $fecha, PDO::PARAM_STR);
             $stmtPago->bindParam(':metodo_pago', $metodoPago, PDO::PARAM_STR);
             $stmtPago->execute();
             
@@ -124,13 +135,16 @@ class CuentaCobrarModel
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
                             c.telefono as cliente_telefono,
-                            f.numero_factura
+                            f.numero_factura,
+                            ne.id as nota_id,
+                            ne.fecha as nota_fecha
                      FROM cuentas_cobrar cc 
                      INNER JOIN clientes c ON cc.cliente_id = c.id 
                      LEFT JOIN facturas f ON cc.factura_id = f.id 
-                     WHERE c.nombres LIKE :termino1 
+                     LEFT JOIN notas_entrega ne ON cc.nota_entrega_id = ne.id
+                     WHERE cc.activo = 1 AND (c.nombres LIKE :termino1 
                         OR c.apellidos LIKE :termino2 
-                        OR c.cedula LIKE :termino3 
+                        OR c.cedula LIKE :termino3) 
                      ORDER BY cc.estado ASC, cc.fecha_vencimiento ASC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':termino1', $terminoLike, PDO::PARAM_STR);

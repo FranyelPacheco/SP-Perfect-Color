@@ -1,9 +1,16 @@
 // Archivo: cliente.js
 // Manejo de la vista de gestion de clientes
 
+const DATATABLES_SPANISH = {
+    "emptyTable": "No hay informacion",
+    "zeroRecords": "No se encontraron registros",
+    "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+    "search": "Buscar:",
+    "paginate": { "first": "Primero", "last": "Ultimo", "next": "Siguiente", "previous": "Anterior" }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Referencias a elementos del DOM
-    const tablaClientes = document.getElementById('cuerpoTablaClientes');
     const busquedaClientes = document.getElementById('busquedaClientes');
     const btnNuevoCliente = document.getElementById('btnNuevoCliente');
     const modalCliente = document.getElementById('modalCliente');
@@ -23,23 +30,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // Cargar lista de clientes al iniciar
     cargarClientes();
 
-    // Evento para buscar clientes mientras se escribe
-    let temporizadorBusqueda;
-    busquedaClientes.addEventListener('keyup', function() {
-        clearTimeout(temporizadorBusqueda);
-        temporizadorBusqueda = setTimeout(function() {
-            buscarClientes(busquedaClientes.value.trim());
-        }, 300);
-    });
-
     // Evento para abrir modal de nuevo cliente
     btnNuevoCliente.addEventListener('click', function() {
-        abrirModalCrear();
+        formularioCliente.reset();
+        clienteId.value = '';
+        mensajeError.classList.add('d-none');
+        tituloModal.textContent = 'Nuevo Cliente';
+        bootstrap.Modal.getOrCreateInstance(modalCliente).show();
     });
 
     // Eventos para cerrar modal
-    btnCerrarModal.addEventListener('click', cerrarModal);
-    btnCancelar.addEventListener('click', cerrarModal);
+    btnCerrarModal.addEventListener('click', function() {
+        bootstrap.Modal.getInstance(modalCliente).hide();
+    });
+    btnCancelar.addEventListener('click', function() {
+        bootstrap.Modal.getInstance(modalCliente).hide();
+    });
 
     // Evento para enviar formulario
     formularioCliente.addEventListener('submit', async function(evento) {
@@ -47,29 +53,27 @@ document.addEventListener('DOMContentLoaded', function() {
         await guardarCliente();
     });
 
-    // Cierra el modal al hacer clic fuera del contenido
-    modalCliente.addEventListener('click', function(evento) {
-        if (evento.target === modalCliente) {
-            cerrarModal();
-        }
+    // Limpiar formulario cuando el modal se cierra
+    modalCliente.addEventListener('hidden.bs.modal', function () {
+        formularioCliente.reset();
+        mensajeError.classList.add('d-none');
     });
 
-    // Permitir solo numeros en el campo de cedula
+    // Permitir solo numeros en cedula
     cedulaCliente.addEventListener('input', function() {
         this.value = this.value.replace(/[^0-9]/g, '');
     });
 
-    // Permitir solo numeros en el campo de telefono
+    // Permitir solo numeros en telefono
     telefonoCliente.addEventListener('input', function() {
         this.value = this.value.replace(/[^0-9]/g, '');
     });
 
-    // Funcion para cargar la lista de clientes
+    // Cargar lista de clientes via API
     async function cargarClientes() {
         try {
             const respuesta = await fetch('cliente/listarAjax');
             const resultado = await respuesta.json();
-
             if (resultado.estado === 'exito') {
                 mostrarClientes(resultado.datos.clientes);
             }
@@ -78,99 +82,52 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Funcion para buscar clientes
-    async function buscarClientes(termino) {
-        try {
-            const respuesta = await fetch('cliente/buscarAjax?termino=' + encodeURIComponent(termino));
-            const resultado = await respuesta.json();
-
-            if (resultado.estado === 'exito') {
-                mostrarClientes(resultado.datos.clientes);
-            }
-        } catch (error) {
-            console.error('Error al buscar clientes:', error);
-        }
-    }
-
-    // Muestra los clientes en la tabla
+    // Renderizar tabla usando API DataTables
     function mostrarClientes(clientes) {
-        tablaClientes.innerHTML = '';
-
-        if (clientes.length === 0) {
-            tablaClientes.innerHTML = '<tr><td colspan="6" style="text-align: center;">No hay clientes registrados</td></tr>';
-            return;
+        if (!$.fn.DataTable.isDataTable('#tablaClientes')) {
+            $('#tablaClientes').DataTable({
+                dom: 'lrtip',
+                language: DATATABLES_SPANISH
+            });
         }
+
+        var table = $('#tablaClientes').DataTable();
+        table.clear();
 
         clientes.forEach(function(cliente) {
-            const fila = document.createElement('tr');
-            
-            // Cedula
-            const celdaCedula = document.createElement('td');
-            celdaCedula.textContent = cliente.cedula;
-            fila.appendChild(celdaCedula);
-            
-            // Nombres
-            const celdaNombres = document.createElement('td');
-            celdaNombres.textContent = cliente.nombres;
-            fila.appendChild(celdaNombres);
-            
-            // Apellidos
-            const celdaApellidos = document.createElement('td');
-            celdaApellidos.textContent = cliente.apellidos;
-            fila.appendChild(celdaApellidos);
-            
-            // Telefono
-            const celdaTelefono = document.createElement('td');
-            celdaTelefono.textContent = cliente.telefono || '-';
-            fila.appendChild(celdaTelefono);
-            
-            // Correo
-            const celdaCorreo = document.createElement('td');
-            celdaCorreo.textContent = cliente.correo || '-';
-            fila.appendChild(celdaCorreo);
-            
-            // Acciones
-            const celdaAcciones = document.createElement('td');
-            celdaAcciones.className = 'acciones';
-            
-            // Boton editar
-            const btnEditar = document.createElement('button');
-            btnEditar.className = 'btn-primario';
-            btnEditar.textContent = 'Editar';
-            btnEditar.addEventListener('click', function() {
-                abrirModalEditar(cliente.id);
-            });
-            celdaAcciones.appendChild(btnEditar);
-            
-            // Boton eliminar
-            const btnEliminar = document.createElement('button');
-            btnEliminar.className = 'btn-peligro';
-            btnEliminar.textContent = 'Eliminar';
-            btnEliminar.addEventListener('click', function() {
-                eliminarCliente(cliente.id, cliente.nombres + ' ' + cliente.apellidos);
-            });
-            celdaAcciones.appendChild(btnEliminar);
-            
-            fila.appendChild(celdaAcciones);
-            
-            tablaClientes.appendChild(fila);
+            var acciones = '<div class="d-flex gap-2">' +
+                '<button class="btn btn-sm btn-warning btn-editar-cliente" data-id="' + cliente.id + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
+                '<button class="btn btn-sm btn-danger btn-eliminar-cliente" data-id="' + cliente.id + '" data-nombre="' + (cliente.nombres + ' ' + cliente.apellidos).replace(/"/g, '&quot;') + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>' +
+                '</div>';
+
+            table.row.add([
+                cliente.cedula,
+                cliente.nombres,
+                cliente.apellidos,
+                cliente.telefono || '-',
+                cliente.correo || '-',
+                acciones
+            ]);
         });
+
+        table.draw();
     }
 
-    // Abre el modal en modo creacion
-    function abrirModalCrear() {
-        tituloModal.textContent = 'Nuevo Cliente';
-        clienteId.value = '';
-        cedulaCliente.value = '';
-        cedulaCliente.disabled = false;
-        nombresCliente.value = '';
-        apellidosCliente.value = '';
-        telefonoCliente.value = '';
-        correoCliente.value = '';
-        direccionCliente.value = '';
-        mensajeError.style.display = 'none';
-        
-        modalCliente.style.display = 'flex';
+    // Delegated events for action buttons
+    document.getElementById('tablaClientes').addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-editar-cliente');
+        if (btn) { abrirModalEditar(parseInt(btn.dataset.id)); return; }
+        btn = e.target.closest('.btn-eliminar-cliente');
+        if (btn) { eliminarCliente(parseInt(btn.dataset.id), btn.dataset.nombre); return; }
+    });
+
+    // Enlazar busqueda manual a DataTables
+    if (busquedaClientes) {
+        busquedaClientes.addEventListener('keyup', function() {
+            if ($.fn.DataTable.isDataTable('#tablaClientes')) {
+                $('#tablaClientes').DataTable().search(this.value).draw();
+            }
+        });
     }
 
     // Abre el modal en modo edicion
@@ -180,91 +137,60 @@ document.addEventListener('DOMContentLoaded', function() {
             const resultado = await respuesta.json();
 
             if (resultado.estado === 'exito') {
-                const cliente = resultado.datos;
-                
+                const c = resultado.datos;
+                formularioCliente.reset();
+                mensajeError.classList.add('d-none');
+                clienteId.value = c.id;
+                cedulaCliente.value = c.cedula;
+                nombresCliente.value = c.nombres;
+                apellidosCliente.value = c.apellidos;
+                telefonoCliente.value = c.telefono || '';
+                correoCliente.value = c.correo || '';
+                direccionCliente.value = c.direccion || '';
                 tituloModal.textContent = 'Editar Cliente';
-                clienteId.value = cliente.id;
-                cedulaCliente.value = cliente.cedula;
-                cedulaCliente.disabled = true;
-                nombresCliente.value = cliente.nombres;
-                apellidosCliente.value = cliente.apellidos;
-                telefonoCliente.value = cliente.telefono || '';
-                correoCliente.value = cliente.correo || '';
-                direccionCliente.value = cliente.direccion || '';
-                mensajeError.style.display = 'none';
-                
-                modalCliente.style.display = 'flex';
-            } else {
-                mostrarNotificacion(resultado.mensaje, 'error');
+                bootstrap.Modal.getOrCreateInstance(modalCliente).show();
             }
         } catch (error) {
             console.error('Error al obtener cliente:', error);
-            mostrarNotificacion('Error al cargar los datos del cliente', 'error');
         }
-    }
-
-    // Cierra el modal
-    function cerrarModal() {
-        modalCliente.style.display = 'none';
-        formularioCliente.reset();
-        mensajeError.style.display = 'none';
     }
 
     // Guarda o actualiza un cliente
     async function guardarCliente() {
         const id = clienteId.value;
         const esEdicion = id !== '';
-        
-        // Validar campos
+
         if (!cedulaCliente.value.trim()) {
             mostrarError('La cedula es obligatoria');
             return;
         }
-        
-        if (cedulaCliente.value.trim().length < 7) {
-            mostrarError('La cedula debe tener entre 7 y 8 digitos');
-            return;
-        }
-        
         if (!nombresCliente.value.trim()) {
             mostrarError('El nombre es obligatorio');
             return;
         }
-        
         if (!apellidosCliente.value.trim()) {
             mostrarError('El apellido es obligatorio');
             return;
         }
-        
-        if (telefonoCliente.value.trim() && telefonoCliente.value.trim().length !== 11) {
-            mostrarError('El telefono debe tener 11 digitos');
-            return;
-        }
-        
-        // Determinar URL
+
         const url = esEdicion ? 'cliente/actualizar' : 'cliente/guardar';
-        
-        // Preparar datos
         const formData = new FormData(formularioCliente);
-        
-        // Si es edicion, agregar el ID y la cedula (aunque este deshabilitada)
         if (esEdicion) {
             formData.set('id', id);
-            formData.set('cedula', cedulaCliente.value);
         }
-        
+
         try {
-            const respuesta = await fetch(url, {
-                method: 'POST',
-                body: formData
-            });
-            
+            const respuesta = await fetch(url, { method: 'POST', body: formData });
             const resultado = await respuesta.json();
-            
+
             if (resultado.estado === 'exito') {
-                cerrarModal();
+                bootstrap.Modal.getInstance(modalCliente).hide();
                 cargarClientes();
-                mostrarNotificacion(resultado.mensaje, 'exito');
+                if (typeof mostrarNotificacion === 'function') {
+                    mostrarNotificacion(resultado.mensaje, 'exito');
+                } else {
+                    alert(resultado.mensaje);
+                }
             } else {
                 mostrarError(resultado.mensaje);
             }
@@ -279,33 +205,39 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!confirm('Esta seguro de eliminar al cliente ' + nombre + '?')) {
             return;
         }
-        
+
         const formData = new FormData();
         formData.append('id', id);
-        
+
         try {
-            const respuesta = await fetch('cliente/eliminar', {
-                method: 'POST',
-                body: formData
-            });
-            
+            const respuesta = await fetch('cliente/eliminar', { method: 'POST', body: formData });
             const resultado = await respuesta.json();
-            
+
             if (resultado.estado === 'exito') {
                 cargarClientes();
-                mostrarNotificacion(resultado.mensaje, 'exito');
+                if (typeof mostrarNotificacion === 'function') {
+                    mostrarNotificacion(resultado.mensaje, 'exito');
+                } else {
+                    alert(resultado.mensaje);
+                }
             } else {
-                mostrarNotificacion(resultado.mensaje, 'error');
+                if (typeof mostrarNotificacion === 'function') {
+                    mostrarNotificacion(resultado.mensaje, 'error');
+                } else {
+                    alert(resultado.mensaje);
+                }
             }
         } catch (error) {
             console.error('Error al eliminar cliente:', error);
-            mostrarNotificacion('Error de conexion', 'error');
+            if (typeof mostrarNotificacion === 'function') {
+                mostrarNotificacion('Error de conexion', 'error');
+            }
         }
     }
 
     // Muestra un mensaje de error en el modal
     function mostrarError(mensaje) {
         mensajeError.textContent = mensaje;
-        mensajeError.style.display = 'block';
+        mensajeError.classList.remove('d-none');
     }
 });

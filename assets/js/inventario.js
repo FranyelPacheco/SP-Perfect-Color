@@ -1,9 +1,16 @@
 // Archivo: inventario.js
 // Manejo de la vista de gestion de inventario
 
+const DATATABLES_SPANISH = {
+    "emptyTable": "No hay informacion",
+    "zeroRecords": "No se encontraron registros",
+    "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+    "search": "Buscar:",
+    "paginate": { "first": "Primero", "last": "Ultimo", "next": "Siguiente", "previous": "Anterior" }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Referencias a elementos del DOM
-    const tablaInsumos = document.getElementById('cuerpoTablaInsumos');
     const busquedaInsumos = document.getElementById('busquedaInsumos');
     const btnNuevoInsumo = document.getElementById('btnNuevoInsumo');
     const modalInsumo = document.getElementById('modalInsumo');
@@ -33,28 +40,36 @@ document.addEventListener('DOMContentLoaded', function() {
     // Cargar lista de insumos al iniciar
     cargarInsumos();
 
-    // Evento para buscar insumos mientras se escribe
-    let temporizadorBusqueda;
-    if (busquedaInsumos) {
-        busquedaInsumos.addEventListener('keyup', function() {
-            clearTimeout(temporizadorBusqueda);
-            temporizadorBusqueda = setTimeout(function() {
-                buscarInsumos(busquedaInsumos.value.trim());
-            }, 300);
-        });
-    }
-
     // Evento para abrir modal de nuevo insumo
     if (btnNuevoInsumo) {
         btnNuevoInsumo.addEventListener('click', function() {
-            abrirModalCrear();
+            tituloModal.textContent = 'Nuevo Insumo';
+            insumoId.value = '';
+            codigoInsumo.value = '';
+            codigoInsumo.disabled = false;
+            nombreInsumo.value = '';
+            marcaInsumo.value = '';
+            categoriaInsumo.value = '';
+            unidadMedidaInsumo.value = '';
+            stockActualInsumo.value = '0';
+            stockMinimoInsumo.value = '5';
+            precioVentaInsumo.value = '0';
+            precioCompraInsumo.value = '0';
+            fechaVencimientoInsumo.value = '';
+            proveedorInsumo.value = '';
+            mensajeError.classList.add('d-none');
+            bootstrap.Modal.getOrCreateInstance(modalInsumo).show();
         });
     }
 
     // Eventos para cerrar modal
     if (btnCerrarModal) {
-        btnCerrarModal.addEventListener('click', cerrarModal);
-        btnCancelar.addEventListener('click', cerrarModal);
+        btnCerrarModal.addEventListener('click', function() {
+            bootstrap.Modal.getInstance(modalInsumo).hide();
+        });
+        btnCancelar.addEventListener('click', function() {
+            bootstrap.Modal.getInstance(modalInsumo).hide();
+        });
     }
 
     // Evento para enviar formulario
@@ -65,12 +80,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Cierra el modal al hacer clic fuera del contenido
+    // Limpiar formulario cuando el modal se cierra
     if (modalInsumo) {
-        modalInsumo.addEventListener('click', function(evento) {
-            if (evento.target === modalInsumo) {
-                cerrarModal();
-            }
+        modalInsumo.addEventListener('hidden.bs.modal', function () {
+            formularioInsumo.reset();
+            mensajeError.classList.add('d-none');
         });
     }
 
@@ -82,14 +96,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (resultado.estado === 'exito') {
                 mostrarInsumos(resultado.datos.insumos);
-                
-                // Guardar proveedores globalmente
+
                 if (resultado.datos.proveedores) {
                     proveedoresGlobal = resultado.datos.proveedores;
                     llenarSelectProveedores();
                 }
-                
-                // Mostrar alertas de stock bajo
+
                 if (resultado.datos.alertas && resultado.datos.alertas.length > 0) {
                     mostrarAlertas(resultado.datos.alertas);
                 }
@@ -99,111 +111,63 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Funcion para buscar insumos
-    async function buscarInsumos(termino) {
-        try {
-            const respuesta = await fetch('inventario/buscarAjax?termino=' + encodeURIComponent(termino));
-            const resultado = await respuesta.json();
-
-            if (resultado.estado === 'exito') {
-                mostrarInsumos(resultado.datos.insumos);
-            }
-        } catch (error) {
-            console.error('Error al buscar insumos:', error);
-        }
-    }
-
-    // Muestra los insumos en la tabla
+    // Muestra los insumos en la tabla usando API DataTables
     function mostrarInsumos(insumos) {
-        tablaInsumos.innerHTML = '';
-
-        if (insumos.length === 0) {
-            const colspan = esAdmin ? 8 : 7;
-            tablaInsumos.innerHTML = '<tr><td colspan="' + colspan + '" style="text-align: center;">No hay insumos registrados</td></tr>';
-            return;
+        if (!$.fn.DataTable.isDataTable('#tablaInsumos')) {
+            $('#tablaInsumos').DataTable({
+                dom: 'lrtip',
+                language: DATATABLES_SPANISH
+            });
         }
+
+        var table = $('#tablaInsumos').DataTable();
+        table.clear();
 
         insumos.forEach(function(insumo) {
-            const fila = document.createElement('tr');
-            
-            // Codigo
-            const celdaCodigo = document.createElement('td');
-            celdaCodigo.textContent = insumo.codigo;
-            fila.appendChild(celdaCodigo);
-            
-            // Nombre
-            const celdaNombre = document.createElement('td');
-            celdaNombre.textContent = insumo.nombre;
-            fila.appendChild(celdaNombre);
-            
-            // Marca
-            const celdaMarca = document.createElement('td');
-            celdaMarca.textContent = insumo.marca || '-';
-            fila.appendChild(celdaMarca);
-            
-            // Categoria
-            const celdaCategoria = document.createElement('td');
-            celdaCategoria.textContent = insumo.categoria || '-';
-            fila.appendChild(celdaCategoria);
-            
-            // Stock
-            const celdaStock = document.createElement('td');
-            const spanStock = document.createElement('span');
-            spanStock.textContent = formatearMoneda(insumo.stock_actual);
-            if (parseFloat(insumo.stock_actual) <= parseFloat(insumo.stock_minimo)) {
-                spanStock.className = 'stock-bajo';
-                spanStock.title = 'Stock bajo - Minimo: ' + insumo.stock_minimo;
-            } else {
-                spanStock.className = 'stock-normal';
-            }
-            celdaStock.appendChild(spanStock);
-            fila.appendChild(celdaStock);
-            
-            // Precio Venta
-            const celdaPrecio = document.createElement('td');
-            celdaPrecio.textContent = formatearMoneda(insumo.precio_venta);
-            fila.appendChild(celdaPrecio);
-            
-            // Proveedor
-            const celdaProveedor = document.createElement('td');
-            celdaProveedor.textContent = insumo.proveedor_nombre || '-';
-            fila.appendChild(celdaProveedor);
-            
-            // Acciones (solo Administrador)
+            var acciones = '';
             if (esAdmin) {
-                const celdaAcciones = document.createElement('td');
-                celdaAcciones.className = 'acciones';
-                
-                // Boton editar
-                const btnEditar = document.createElement('button');
-                btnEditar.className = 'btn-primario';
-                btnEditar.textContent = 'Editar';
-                btnEditar.addEventListener('click', function() {
-                    abrirModalEditar(insumo.id);
-                });
-                celdaAcciones.appendChild(btnEditar);
-                
-                // Boton eliminar
-                const btnEliminar = document.createElement('button');
-                btnEliminar.className = 'btn-peligro';
-                btnEliminar.textContent = 'Eliminar';
-                btnEliminar.addEventListener('click', function() {
-                    eliminarInsumo(insumo.id, insumo.nombre);
-                });
-                celdaAcciones.appendChild(btnEliminar);
-                
-                fila.appendChild(celdaAcciones);
+                acciones = '<div class="d-flex gap-2">' +
+                    '<button class="btn btn-sm btn-warning btn-editar-insumo" data-id="' + insumo.id + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
+                    '<button class="btn btn-sm btn-danger btn-eliminar-insumo" data-id="' + insumo.id + '" data-nombre="' + insumo.nombre.replace(/"/g, '&quot;') + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>' +
+                    '</div>';
             }
-            
-            tablaInsumos.appendChild(fila);
+
+            var stockStyle = parseFloat(insumo.stock_actual) <= parseFloat(insumo.stock_minimo) ? 'stock-bajo' : 'stock-normal';
+            var stockHtml = '<span class="' + stockStyle + '">' + formatearMoneda(insumo.stock_actual) + '</span>';
+
+            var row = [
+                insumo.codigo,
+                insumo.nombre,
+                insumo.marca || '-',
+                insumo.categoria || '-',
+                stockHtml,
+                formatearMoneda(insumo.precio_venta),
+                insumo.proveedor_nombre || '-'
+            ];
+
+            if (esAdmin) {
+                row.push(acciones);
+            }
+
+            table.row.add(row);
         });
+
+        table.draw();
     }
+
+    // Delegated events for action buttons
+    document.getElementById('tablaInsumos').addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-editar-insumo');
+        if (btn) { abrirModalEditar(parseInt(btn.dataset.id)); return; }
+        btn = e.target.closest('.btn-eliminar-insumo');
+        if (btn) { eliminarInsumo(parseInt(btn.dataset.id), btn.dataset.nombre); return; }
+    });
 
     // Muestra las alertas de stock bajo
     function mostrarAlertas(alertas) {
-        alertasStockBajo.style.display = 'block';
+        alertasStockBajo.classList.remove('d-none');
         contenidoAlertas.innerHTML = '';
-        
+
         alertas.forEach(function(alerta) {
             const div = document.createElement('div');
             div.className = 'alerta-item';
@@ -215,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Llena el select de proveedores
     function llenarSelectProveedores() {
         if (!proveedorInsumo) return;
-        
+
         proveedorInsumo.innerHTML = '<option value="">Seleccione un proveedor...</option>';
         proveedoresGlobal.forEach(function(proveedor) {
             const opcion = document.createElement('option');
@@ -223,27 +187,6 @@ document.addEventListener('DOMContentLoaded', function() {
             opcion.textContent = proveedor.rif + ' - ' + proveedor.nombre_empresa;
             proveedorInsumo.appendChild(opcion);
         });
-    }
-
-    // Abre el modal en modo creacion
-    function abrirModalCrear() {
-        tituloModal.textContent = 'Nuevo Insumo';
-        insumoId.value = '';
-        codigoInsumo.value = '';
-        codigoInsumo.disabled = false;
-        nombreInsumo.value = '';
-        marcaInsumo.value = '';
-        categoriaInsumo.value = '';
-        unidadMedidaInsumo.value = '';
-        stockActualInsumo.value = '0';
-        stockMinimoInsumo.value = '5';
-        precioVentaInsumo.value = '0';
-        precioCompraInsumo.value = '0';
-        fechaVencimientoInsumo.value = '';
-        proveedorInsumo.value = '';
-        mensajeError.style.display = 'none';
-        
-        modalInsumo.style.display = 'flex';
     }
 
     // Abre el modal en modo edicion
@@ -254,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (resultado.estado === 'exito') {
                 const insumo = resultado.datos;
-                
+
                 tituloModal.textContent = 'Editar Insumo';
                 insumoId.value = insumo.id;
                 codigoInsumo.value = insumo.codigo;
@@ -269,9 +212,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 precioCompraInsumo.value = insumo.precio_compra;
                 fechaVencimientoInsumo.value = insumo.fecha_vencimiento || '';
                 proveedorInsumo.value = insumo.proveedor_id || '';
-                mensajeError.style.display = 'none';
-                
-                modalInsumo.style.display = 'flex';
+                mensajeError.classList.add('d-none');
+
+                bootstrap.Modal.getOrCreateInstance(modalInsumo).show();
             } else {
                 mostrarNotificacion(resultado.mensaje, 'error');
             }
@@ -281,56 +224,45 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Cierra el modal
-    function cerrarModal() {
-        modalInsumo.style.display = 'none';
-        formularioInsumo.reset();
-        mensajeError.style.display = 'none';
-    }
-
     // Guarda o actualiza un insumo
     async function guardarInsumo() {
         const id = insumoId.value;
         const esEdicion = id !== '';
-        
-        // Validar campos
+
         if (!codigoInsumo.value.trim()) {
             mostrarError('El codigo es obligatorio');
             return;
         }
-        
+
         if (!nombreInsumo.value.trim()) {
             mostrarError('El nombre del insumo es obligatorio');
             return;
         }
-        
+
         const precioVenta = parseFloat(precioVentaInsumo.value);
         if (isNaN(precioVenta) || precioVenta <= 0) {
             mostrarError('El precio de venta debe ser un numero positivo');
             return;
         }
-        
-        // Determinar URL
+
         const url = esEdicion ? 'inventario/actualizar' : 'inventario/guardar';
-        
-        // Preparar datos
         const formData = new FormData(formularioInsumo);
-        
+
         if (esEdicion) {
             formData.set('id', id);
             formData.set('codigo', codigoInsumo.value);
         }
-        
+
         try {
             const respuesta = await fetch(url, {
                 method: 'POST',
                 body: formData
             });
-            
+
             const resultado = await respuesta.json();
-            
+
             if (resultado.estado === 'exito') {
-                cerrarModal();
+                bootstrap.Modal.getInstance(modalInsumo).hide();
                 cargarInsumos();
                 mostrarNotificacion(resultado.mensaje, 'exito');
             } else {
@@ -347,18 +279,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!confirm('Esta seguro de eliminar el insumo ' + nombre + '?')) {
             return;
         }
-        
+
         const formData = new FormData();
         formData.append('id', id);
-        
+
         try {
             const respuesta = await fetch('inventario/eliminar', {
                 method: 'POST',
                 body: formData
             });
-            
+
             const resultado = await respuesta.json();
-            
+
             if (resultado.estado === 'exito') {
                 cargarInsumos();
                 mostrarNotificacion(resultado.mensaje, 'exito');
@@ -371,9 +303,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Enlazar busqueda manual a DataTables
+    if (busquedaInsumos) {
+        busquedaInsumos.addEventListener('keyup', function() {
+            if ($.fn.DataTable.isDataTable('#tablaInsumos')) {
+                $('#tablaInsumos').DataTable().search(this.value).draw();
+            }
+        });
+    }
+
     // Muestra un mensaje de error en el modal
     function mostrarError(mensaje) {
         mensajeError.textContent = mensaje;
-        mensajeError.style.display = 'block';
+        mensajeError.classList.remove('d-none');
     }
 });

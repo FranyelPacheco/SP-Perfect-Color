@@ -5,6 +5,7 @@
 namespace App\Models;
 
 use App\Core\ConexionBD;
+use \PDO;
 
 class ClienteModel
 {
@@ -18,7 +19,7 @@ class ClienteModel
     // Lista todos los clientes
     public function listarTodos()
     {
-        $consulta = "SELECT * FROM clientes ORDER BY apellidos ASC, nombres ASC";
+        $consulta = "SELECT * FROM clientes WHERE activo = 1 ORDER BY apellidos ASC, nombres ASC";
         $stmt = $this->conexion->query($consulta);
         
         return $stmt->fetchAll();
@@ -27,7 +28,7 @@ class ClienteModel
     // Busca un cliente por su cedula
     public function buscarPorCedula($cedula)
     {
-        $consulta = "SELECT * FROM clientes WHERE cedula = :cedula LIMIT 1";
+        $consulta = "SELECT * FROM clientes WHERE cedula = :cedula AND activo = 1 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':cedula', $cedula, PDO::PARAM_STR);
         $stmt->execute();
@@ -38,7 +39,7 @@ class ClienteModel
     // Busca un cliente por su ID
     public function buscarPorId($id)
     {
-        $consulta = "SELECT * FROM clientes WHERE id = :id LIMIT 1";
+        $consulta = "SELECT * FROM clientes WHERE id = :id AND activo = 1 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -96,7 +97,7 @@ class ClienteModel
             return false;
         }
         
-        $consulta = "DELETE FROM clientes WHERE id = :id";
+        $consulta = "UPDATE clientes SET activo = 0 WHERE id = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         
@@ -106,7 +107,7 @@ class ClienteModel
     // Verifica si una cedula ya existe (para otro cliente en edicion)
     public function cedulaExiste($cedula, $idExcluir = null)
     {
-        $consulta = "SELECT COUNT(*) as total FROM clientes WHERE cedula = :cedula";
+        $consulta = "SELECT COUNT(*) as total FROM clientes WHERE cedula = :cedula AND activo = 1";
         
         if ($idExcluir !== null) {
             $consulta .= " AND id != :id";
@@ -129,9 +130,9 @@ class ClienteModel
     {
         $termino = '%' . $termino . '%';
         $consulta = "SELECT * FROM clientes 
-                     WHERE nombres LIKE :termino1 
+                     WHERE activo = 1 AND (nombres LIKE :termino1 
                         OR apellidos LIKE :termino2 
-                        OR cedula LIKE :termino3 
+                        OR cedula LIKE :termino3) 
                      ORDER BY apellidos ASC, nombres ASC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':termino1', $termino, PDO::PARAM_STR);

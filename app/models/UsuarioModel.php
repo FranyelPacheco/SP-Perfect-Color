@@ -5,6 +5,7 @@
 namespace App\Models;
 
 use App\Core\ConexionBD;
+use \PDO;
 
 class UsuarioModel
 {
@@ -18,7 +19,7 @@ class UsuarioModel
     // Busca un usuario por su correo electrónico
     public function buscarPorCorreo($correo)
     {
-        $consulta = "SELECT * FROM usuarios WHERE correo = :correo LIMIT 1";
+        $consulta = "SELECT * FROM usuarios WHERE correo = :correo AND activo = 1 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':correo', $correo, PDO::PARAM_STR);
         $stmt->execute();
@@ -28,7 +29,7 @@ class UsuarioModel
     // Busca un usuario por su ID primario
     public function buscarPorId($id)
     {
-        $consulta = "SELECT * FROM usuarios WHERE id = :id LIMIT 1";
+        $consulta = "SELECT * FROM usuarios WHERE id = :id AND activo = 1 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -41,6 +42,7 @@ class UsuarioModel
         $consulta = "SELECT u.*, r.nombre as rol_nombre
                      FROM usuarios u
                      INNER JOIN roles r ON u.rol_id = r.id
+                     WHERE u.activo = 1
                      ORDER BY u.nombre ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
@@ -108,7 +110,7 @@ class UsuarioModel
             }
         }
 
-        $consulta = "DELETE FROM usuarios WHERE id = :id";
+        $consulta = "UPDATE usuarios SET activo = 0 WHERE id = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         return $stmt->execute();
@@ -117,7 +119,7 @@ class UsuarioModel
     // Verifica si un correo ya existe, con exclusión opcional por ID
     public function correoExiste($correo, $idExcluir = null)
     {
-        $consulta = "SELECT COUNT(*) as total FROM usuarios WHERE correo = :correo";
+        $consulta = "SELECT COUNT(*) as total FROM usuarios WHERE correo = :correo AND activo = 1";
 
         if ($idExcluir !== null) {
             $consulta .= " AND id != :id";

@@ -1,13 +1,13 @@
-<!-- Archivo: notaEntregaDirectaView.php -->
-<!-- Vista para crear nota de entrega directa con Bootstrap 5 -->
+<!-- Archivo: notaEntregaFormView.php -->
+<!-- Vista para crear nota de entrega desde presupuesto aprobado con Bootstrap 5 -->
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-    <h2 class="h4 mb-0">Nueva Nota de Entrega</h2>
+    <h2 class="h4 mb-0">Nueva Nota de Entrega desde Presupuesto #<?php echo $presupuesto['id']; ?></h2>
     <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-secondary">Volver a la lista</a>
 </div>
 
 <form id="formularioNotaEntrega">
-    <input type="hidden" id="presupuestoId" name="presupuesto_id" value="">
+    <input type="hidden" id="presupuestoId" name="presupuesto_id" value="<?php echo $presupuesto['id']; ?>">
 
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white">
@@ -20,16 +20,26 @@
                     <option value="">Cargando clientes...</option>
                 </select>
             </div>
-            <div class="mb-0">
-                <label for="tipoPago" class="form-label">Tipo de Pago</label>
-                <select id="tipoPago" name="tipo_pago" class="form-select" onchange="toggleVencimiento()">
-                    <option value="contado" selected>Contado</option>
-                    <option value="credito">Credito</option>
-                </select>
-            </div>
-            <div class="mb-0" id="contenedorVencimiento" style="display:none">
-                <label for="fechaVencimiento" class="form-label">Fecha de Vencimiento</label>
-                <input type="date" id="fechaVencimiento" name="fecha_vencimiento" class="form-control">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Presupuesto de origen:</small>
+                    <a href="/SP%20Perfect%20Color/presupuesto/ver?id=<?php echo $presupuesto['id']; ?>" class="text-decoration-none">#<?php echo $presupuesto['id']; ?> - <?php echo $presupuesto['cliente_nombre']; ?></a>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Total del presupuesto:</small>
+                    <span class="fw-bold fs-5">Bs. <?php echo number_format($presupuesto['total'], 2, ',', '.'); ?></span>
+                </div>
+                <div class="col-md-4">
+                    <label for="tipoPago" class="form-label">Tipo de Pago</label>
+                    <select id="tipoPago" name="tipo_pago" class="form-select" onchange="toggleVencimiento()">
+                        <option value="contado" selected>Contado</option>
+                        <option value="credito">Credito</option>
+                    </select>
+                </div>
+                <div class="col-md-4" id="contenedorVencimiento" style="display:none">
+                    <label for="fechaVencimiento" class="form-label">Fecha de Vencimiento</label>
+                    <input type="date" id="fechaVencimiento" name="fecha_vencimiento" class="form-control">
+                </div>
             </div>
         </div>
     </div>
@@ -107,6 +117,8 @@ function toggleVencimiento() {
         if (inp) { inp.required = false; inp.value = ''; }
     }
 }
-console.log('[notaEntregaDirectaView] Script inline ejecutado');
+console.log('[notaEntregaFormView] Script inline ejecutado');
+var presupuestoDetalle = <?php echo json_encode($detalle); ?>;
+var presupuestoClienteId = <?php echo (int)$presupuesto['cliente_id']; ?>;
 </script>
 <script src="/SP%20Perfect%20Color/assets/js/notaEntregaForm.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/notaEntregaForm.js'); ?>"></script>

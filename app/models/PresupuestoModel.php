@@ -5,6 +5,8 @@
 namespace App\Models;
 
 use App\Core\ConexionBD;
+use \PDO;
+use \PDOException;
 
 class PresupuestoModel
 {
@@ -25,6 +27,7 @@ class PresupuestoModel
                      FROM presupuestos p 
                      INNER JOIN clientes c ON p.cliente_id = c.id 
                      INNER JOIN usuarios u ON p.usuario_id = u.id 
+                     WHERE p.activo = 1
                      ORDER BY p.fecha DESC, p.id DESC";
         $stmt = $this->conexion->query($consulta);
         
@@ -41,7 +44,7 @@ class PresupuestoModel
                      FROM presupuestos p 
                      INNER JOIN clientes c ON p.cliente_id = c.id 
                      INNER JOIN usuarios u ON p.usuario_id = u.id 
-                     WHERE p.id = :id";
+                     WHERE p.id = :id AND p.activo = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -139,6 +142,8 @@ class PresupuestoModel
             $condiciones[] = "p.estado = :estado";
             $parametros[':estado'] = $estado;
         }
+        
+        $condiciones[] = "p.activo = 1";
         
         $where = '';
         if (!empty($condiciones)) {

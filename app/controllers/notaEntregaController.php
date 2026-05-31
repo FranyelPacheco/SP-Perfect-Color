@@ -11,6 +11,7 @@ use App\Models\InventarioModel;
 use function App\Helpers\respuestaJson;
 use function App\Helpers\verificarAutenticacion;
 use function App\Helpers\verificarRolVendedor;
+use \PDOException;
 
 // Instancias limpias de los modelos para uso procedimental
 $notaEntregaModel = new NotaEntregaModel();
@@ -89,17 +90,30 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
     
+    error_log('DATOS RECIBIDOS: ' . print_r($_POST, true));
+    
     $clienteId = intval($_POST['cliente_id'] ?? 0);
     $presupuestoId = !empty($_POST['presupuesto_id']) ? intval($_POST['presupuesto_id']) : null;
+    $tipoPago = $_POST['tipo_pago'] ?? 'credito';
+    $fechaVencimiento = $_POST['fecha_vencimiento'] ?? '';
     $items = json_decode($_POST['items'] ?? '[]', true);
+    
+    error_log("VALIDACION: cliente_id=$clienteId, tipo_pago=$tipoPago, fecha_vencimiento='$fechaVencimiento', items=" . count($items));
     
     // Validar
     if ($clienteId < 1) {
+        error_log('VALIDACION FALLIDA: cliente_id invalido');
         respuestaJson('error', 'Debe seleccionar un cliente');
     }
     
     if (empty($items)) {
+        error_log('VALIDACION FALLIDA: sin items');
         respuestaJson('error', 'Debe agregar al menos un insumo');
+    }
+    
+    if ($tipoPago === 'credito' && empty($fechaVencimiento)) {
+        error_log("VALIDACION FALLIDA: credito sin fecha_vencimiento (valor='$fechaVencimiento')");
+        respuestaJson('error', 'Debe seleccionar una fecha de vencimiento para pagos a credito');
     }
     
     // Calcular total y preparar detalle
@@ -137,8 +151,12 @@ if ($metodo === 'index') {
         'cliente_id' => $clienteId,
         'usuario_id' => $_SESSION['usuario_id'],
         'total' => $total,
-        'presupuesto_id' => $presupuestoId
+        'presupuesto_id' => $presupuestoId,
+        'tipo_pago' => $tipoPago,
+        'fecha_vencimiento' => $fechaVencimiento
     ];
+    
+    error_log('Tipo de pago recibido: ' . ($datos['tipo_pago'] ?? 'nulo'));
     
     // Crear nota de entrega con transaccion
     try {
@@ -148,8 +166,10 @@ if ($metodo === 'index') {
             'nota_id' => $notaId,
             'total' => $total
         ]);
-    } catch (PDOException $e) {
-        respuestaJson('error', 'Error al crear la nota de entrega: ' . $e->getMessage());
+    } catch (\Throwable $e) {
+        $detalleError = $e->getMessage() . ' (en ' . $e->getFile() . ':' . $e->getLine() . ')';
+        error_log('ERROR CRITICO AL CREAR NOTA: ' . $detalleError);
+        respuestaJson('error', 'Error al crear la nota: ' . $detalleError);
     }
 
 // 7. Muestra el detalle de una nota de entrega

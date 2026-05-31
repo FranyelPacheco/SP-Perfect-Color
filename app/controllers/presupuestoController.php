@@ -11,6 +11,7 @@ use function App\Helpers\respuestaJson;
 use function App\Helpers\verificarAutenticacion;
 use function App\Helpers\verificarRolVendedor;
 use function App\Helpers\validarRequerido;
+use \PDOException;
 
 // Instancias limpias de los modelos para uso procedimental
 $presupuestoModel = new PresupuestoModel();

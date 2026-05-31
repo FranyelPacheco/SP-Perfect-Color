@@ -1,26 +1,28 @@
 <!-- Archivo: presupuestoListView.php -->
-<!-- Vista para la lista de presupuestos -->
+<!-- Vista para la lista de presupuestos con Bootstrap 5 -->
 
-<div class="modulo-presupuesto">
-    <div class="modulo-header">
-        <h2>Gestion de Presupuestos</h2>
-        <div class="modulo-acciones">
-            <input type="text" id="busquedaPresupuestos" placeholder="Buscar por cliente o cedula..." class="input-busqueda">
-            <select id="filtroEstadoPresupuesto" class="filtro-select">
-                <option value="">Todos los estados</option>
-                <option value="pendiente">Pendientes</option>
-                <option value="aprobado">Aprobados</option>
-                <option value="rechazado">Rechazados</option>
-                <option value="convertido">Convertidos</option>
-            </select>
-            <a href="presupuesto/nuevo" class="btn-primario">Nuevo Presupuesto</a>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">Presupuestos</h4>
+            <div class="d-flex gap-2 align-items-center">
+                <input type="text" id="busquedaPresupuestos" class="form-control" style="width: 250px;" placeholder="Buscar por cliente o cedula...">
+                <select id="filtroEstadoPresupuesto" class="form-select" style="width: auto;">
+                    <option value="">Todos los estados</option>
+                    <option value="pendiente">Pendientes</option>
+                    <option value="aprobado">Aprobados</option>
+                    <option value="rechazado">Rechazados</option>
+                    <option value="convertido">Convertidos</option>
+                </select>
+                <button type="button" class="btn btn-success" onclick="location.href='presupuesto/nuevo'">
+                    <i class="bi bi-plus-lg me-2"></i>Nuevo
+                </button>
+            </div>
         </div>
-    </div>
-    
-    <div class="modulo-body">
-        <div class="tabla-contenedor">
-            <table id="tablaPresupuestos" class="tabla-datos">
-                <thead>
+
+        <div class="table-responsive">
+            <table id="tablaPresupuestos" class="table table-hover table-striped mb-0">
+                <thead class="table-dark">
                     <tr>
                         <th>ID</th>
                         <th>Fecha</th>
@@ -32,72 +34,10 @@
                         <th>Acciones</th>
                     </tr>
                 </thead>
-                <tbody id="cuerpoTablaPresupuestos">
-                    <tr><td colspan="8" style="text-align: center;">Cargando presupuestos...</td></tr>
-                </tbody>
+                <tbody id="cuerpoTablaPresupuestos"></tbody>
             </table>
         </div>
     </div>
 </div>
 
-<style>
-.modulo-acciones {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.input-busqueda {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    width: 250px;
-}
-
-.filtro-select {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-}
-
-.estado-pendiente {
-    background: #fff3e0;
-    color: #e65100;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.estado-aprobado {
-    background: #e8f5e9;
-    color: #2e7d32;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.estado-rechazado {
-    background: #ffebee;
-    color: #c62828;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.estado-convertido {
-    background: #e3f2fd;
-    color: #1565c0;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
-}
-</style>
-
-<script src="/SP%20Perfect%20Color/assets/js/presupuesto.js"></script>
+<script src="/SP%20Perfect%20Color/assets/js/presupuesto.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/presupuesto.js'); ?>"></script>

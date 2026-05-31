@@ -1,33 +1,20 @@
 // Archivo: presupuesto.js
-// Manejo de la lista de presupuestos
+// Manejo de la vista de presupuestos
+
+const DATATABLES_SPANISH = {
+    "emptyTable": "No hay informacion",
+    "zeroRecords": "No se encontraron registros",
+    "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+    "search": "Buscar:",
+    "paginate": { "first": "Primero", "last": "Ultimo", "next": "Siguiente", "previous": "Anterior" }
+};
 
 document.addEventListener('DOMContentLoaded', function() {
-    var tablaPresupuestos = document.getElementById('cuerpoTablaPresupuestos');
     var busquedaPresupuestos = document.getElementById('busquedaPresupuestos');
     var filtroEstado = document.getElementById('filtroEstadoPresupuesto');
 
-    // Cargar lista de presupuestos al iniciar
     cargarPresupuestos();
 
-    // Evento para buscar presupuestos
-    var temporizadorBusqueda;
-    if (busquedaPresupuestos) {
-        busquedaPresupuestos.addEventListener('keyup', function() {
-            clearTimeout(temporizadorBusqueda);
-            temporizadorBusqueda = setTimeout(function() {
-                buscarPresupuestos();
-            }, 300);
-        });
-    }
-
-    // Evento para filtrar por estado
-    if (filtroEstado) {
-        filtroEstado.addEventListener('change', function() {
-            buscarPresupuestos();
-        });
-    }
-
-    // Cargar todos los presupuestos
     function cargarPresupuestos() {
         fetch('presupuesto/listarAjax')
             .then(function(respuesta) { return respuesta.json(); })
@@ -41,124 +28,108 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    // Buscar presupuestos por filtros
-    function buscarPresupuestos() {
-        var termino = busquedaPresupuestos ? busquedaPresupuestos.value.trim() : '';
-        var estado = filtroEstado ? filtroEstado.value : '';
-        
-        fetch('presupuesto/buscarAjax?termino=' + encodeURIComponent(termino) + '&estado=' + encodeURIComponent(estado))
-            .then(function(respuesta) { return respuesta.json(); })
-            .then(function(resultado) {
-                if (resultado.estado === 'exito') {
-                    mostrarPresupuestos(resultado.datos.presupuestos);
-                }
-            })
-            .catch(function(error) {
-                console.error('Error al buscar presupuestos:', error);
-            });
-    }
-
-    // Mostrar presupuestos en la tabla
     function mostrarPresupuestos(presupuestos) {
-        tablaPresupuestos.innerHTML = '';
-
-        if (presupuestos.length === 0) {
-            tablaPresupuestos.innerHTML = '<tr><td colspan="8" style="text-align: center;">No hay presupuestos registrados</td></tr>';
-            return;
+        if (!$.fn.DataTable.isDataTable('#tablaPresupuestos')) {
+            $('#tablaPresupuestos').DataTable({
+                dom: 'lrtip',
+                language: DATATABLES_SPANISH,
+                columns: [
+                    {
+                        data: 'id',
+                        render: function(data) {
+                            if (data == null) return '';
+                            return '#' + data;
+                        }
+                    },
+                    { data: 'fecha' },
+                    { data: 'cliente_nombre' },
+                    { data: 'cliente_cedula' },
+                    {
+                        data: 'total',
+                        render: function(data) {
+                            if (data == null) return '';
+                            return 'Bs. ' + formatearMoneda(data);
+                        }
+                    },
+                    {
+                        data: 'estado',
+                        render: function(data) {
+                            if (!data) return '';
+                            var cap = data.charAt(0).toUpperCase() + data.slice(1);
+                            return '<span class="estado-' + data + '">' + cap + '</span>';
+                        }
+                    },
+                    { data: 'usuario_nombre' },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            if (!row) return '';
+                            var html = '<div class="d-flex gap-2">' +
+                                '<a href="presupuesto/ver?id=' + row.id + '" class="btn btn-sm btn-info" title="Ver" data-bs-toggle="tooltip"><i class="bi bi-eye"></i></a>';
+                            if (row.estado === 'pendiente') {
+                                html +=
+                                    '<button class="btn btn-sm btn-success btn-aprobar-presupuesto" data-id="' + row.id + '"><i class="bi bi-check-lg me-1"></i>Aprobar</button>' +
+                                    '<button class="btn btn-sm btn-danger btn-rechazar-presupuesto" data-id="' + row.id + '"><i class="bi bi-x-lg me-1"></i>Rechazar</button>';
+                            }
+                            html += '</div>';
+                            return html;
+                        }
+                    }
+                ]
+            });
         }
 
+        var table = $('#tablaPresupuestos').DataTable();
+        table.clear();
+
         presupuestos.forEach(function(presupuesto) {
-            var fila = document.createElement('tr');
-            
-            // ID
-            var celdaId = document.createElement('td');
-            celdaId.textContent = '#' + presupuesto.id;
-            fila.appendChild(celdaId);
-            
-            // Fecha
-            var celdaFecha = document.createElement('td');
-            celdaFecha.textContent = presupuesto.fecha;
-            fila.appendChild(celdaFecha);
-            
-            // Cliente
-            var celdaCliente = document.createElement('td');
-            celdaCliente.textContent = presupuesto.cliente_nombre;
-            fila.appendChild(celdaCliente);
-            
-            // Cedula
-            var celdaCedula = document.createElement('td');
-            celdaCedula.textContent = presupuesto.cliente_cedula;
-            fila.appendChild(celdaCedula);
-            
-            // Total
-            var celdaTotal = document.createElement('td');
-            celdaTotal.textContent = formatearMoneda(presupuesto.total);
-            celdaTotal.style.fontWeight = '600';
-            fila.appendChild(celdaTotal);
-            
-            // Estado
-            var celdaEstado = document.createElement('td');
-            var spanEstado = document.createElement('span');
-            spanEstado.className = 'estado-' + presupuesto.estado;
-            spanEstado.textContent = presupuesto.estado.charAt(0).toUpperCase() + presupuesto.estado.slice(1);
-            celdaEstado.appendChild(spanEstado);
-            fila.appendChild(celdaEstado);
-            
-            // Vendedor
-            var celdaVendedor = document.createElement('td');
-            celdaVendedor.textContent = presupuesto.usuario_nombre;
-            fila.appendChild(celdaVendedor);
-            
-            // Acciones
-            var celdaAcciones = document.createElement('td');
-            celdaAcciones.className = 'acciones';
-            
-            // Boton ver
-            var btnVer = document.createElement('a');
-            btnVer.href = 'presupuesto/ver?id=' + presupuesto.id;
-            btnVer.className = 'btn-primario';
-            btnVer.textContent = 'Ver';
-            celdaAcciones.appendChild(btnVer);
-            
-            // Boton aprobar si esta pendiente
-            if (presupuesto.estado === 'pendiente') {
-                var btnAprobar = document.createElement('button');
-                btnAprobar.className = 'btn-exito';
-                btnAprobar.textContent = 'Aprobar';
-                btnAprobar.addEventListener('click', function() {
-                    cambiarEstado(presupuesto.id, 'aprobado');
-                });
-                celdaAcciones.appendChild(btnAprobar);
-                
-                var btnRechazar = document.createElement('button');
-                btnRechazar.className = 'btn-peligro';
-                btnRechazar.textContent = 'Rechazar';
-                btnRechazar.addEventListener('click', function() {
-                    cambiarEstado(presupuesto.id, 'rechazado');
-                });
-                celdaAcciones.appendChild(btnRechazar);
+            table.row.add(presupuesto);
+        });
+
+        table.draw();
+    }
+
+    document.getElementById('tablaPresupuestos').addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-aprobar-presupuesto');
+        if (btn) { cambiarEstado(parseInt(btn.dataset.id), 'aprobado'); return; }
+        btn = e.target.closest('.btn-rechazar-presupuesto');
+        if (btn) { cambiarEstado(parseInt(btn.dataset.id), 'rechazado'); return; }
+    });
+
+    if (busquedaPresupuestos) {
+        busquedaPresupuestos.addEventListener('keyup', function() {
+            if ($.fn.DataTable.isDataTable('#tablaPresupuestos')) {
+                $('#tablaPresupuestos').DataTable().search(this.value).draw();
             }
-            
-            fila.appendChild(celdaAcciones);
-            
-            tablaPresupuestos.appendChild(fila);
         });
     }
 
-    // Cambiar estado de un presupuesto
+    if (filtroEstado) {
+        filtroEstado.addEventListener('change', function() {
+            if ($.fn.DataTable.isDataTable('#tablaPresupuestos')) {
+                var table = $('#tablaPresupuestos').DataTable();
+                if (this.value === '') {
+                    table.column(5).search('').draw();
+                } else {
+                    table.column(5).search('^' + this.value + '$', true).draw();
+                }
+            }
+        });
+    }
+
     function cambiarEstado(id, estado) {
-        var mensaje = estado === 'aprobado' 
-            ? 'Esta seguro de aprobar este presupuesto?' 
+        var mensaje = estado === 'aprobado'
+            ? 'Esta seguro de aprobar este presupuesto?'
             : 'Esta seguro de rechazar este presupuesto?';
-        
+
         if (!confirm(mensaje)) {
             return;
         }
-        
+
         var formData = new FormData();
         formData.append('id', id);
         formData.append('estado', estado);
-        
+
         fetch('presupuesto/cambiarEstado', {
             method: 'POST',
             body: formData

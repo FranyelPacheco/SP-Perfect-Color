@@ -1,9 +1,16 @@
 // Archivo: proveedor.js
 // Manejo de la vista de gestion de proveedores
 
+const DATATABLES_SPANISH = {
+    "emptyTable": "No hay informacion",
+    "zeroRecords": "No se encontraron registros",
+    "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+    "search": "Buscar:",
+    "paginate": { "first": "Primero", "last": "Ultimo", "next": "Siguiente", "previous": "Anterior" }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Referencias a elementos del DOM
-    const tablaProveedores = document.getElementById('cuerpoTablaProveedores');
     const busquedaProveedores = document.getElementById('busquedaProveedores');
     const btnNuevoProveedor = document.getElementById('btnNuevoProveedor');
     const modalProveedor = document.getElementById('modalProveedor');
@@ -21,31 +28,37 @@ document.addEventListener('DOMContentLoaded', function() {
     const rubrosProveedor = document.getElementById('rubrosProveedor');
     const mensajeError = document.getElementById('mensajeErrorProveedor');
 
+    var esAdmin = document.getElementById('btnNuevoProveedor') !== null;
+
     // Cargar lista de proveedores al iniciar
     cargarProveedores();
-
-    // Evento para buscar proveedores mientras se escribe
-    let temporizadorBusqueda;
-    if (busquedaProveedores) {
-        busquedaProveedores.addEventListener('keyup', function() {
-            clearTimeout(temporizadorBusqueda);
-            temporizadorBusqueda = setTimeout(function() {
-                buscarProveedores(busquedaProveedores.value.trim());
-            }, 300);
-        });
-    }
 
     // Evento para abrir modal de nuevo proveedor
     if (btnNuevoProveedor) {
         btnNuevoProveedor.addEventListener('click', function() {
-            abrirModalCrear();
+            tituloModal.textContent = 'Nuevo Proveedor';
+            proveedorId.value = '';
+            rifProveedor.value = '';
+            rifProveedor.disabled = false;
+            nombreEmpresaProveedor.value = '';
+            contactoProveedor.value = '';
+            telefonoProveedor.value = '';
+            correoProveedor.value = '';
+            direccionProveedor.value = '';
+            rubrosProveedor.value = '';
+            mensajeError.classList.add('d-none');
+            bootstrap.Modal.getOrCreateInstance(modalProveedor).show();
         });
     }
 
     // Eventos para cerrar modal
     if (btnCerrarModal) {
-        btnCerrarModal.addEventListener('click', cerrarModal);
-        btnCancelar.addEventListener('click', cerrarModal);
+        btnCerrarModal.addEventListener('click', function() {
+            bootstrap.Modal.getInstance(modalProveedor).hide();
+        });
+        btnCancelar.addEventListener('click', function() {
+            bootstrap.Modal.getInstance(modalProveedor).hide();
+        });
     }
 
     // Evento para enviar formulario
@@ -56,12 +69,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Cierra el modal al hacer clic fuera del contenido
+    // Limpiar formulario cuando el modal se cierra
     if (modalProveedor) {
-        modalProveedor.addEventListener('click', function(evento) {
-            if (evento.target === modalProveedor) {
-                cerrarModal();
-            }
+        modalProveedor.addEventListener('hidden.bs.modal', function () {
+            formularioProveedor.reset();
+            mensajeError.classList.add('d-none');
         });
     }
 
@@ -69,7 +81,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (rifProveedor) {
         rifProveedor.addEventListener('input', function() {
             let valor = this.value.toUpperCase();
-            // Permitir formato J-123456789
             if (valor.length === 1 && /^[JGVEP]$/.test(valor)) {
                 valor = valor + '-';
             }
@@ -98,106 +109,53 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Funcion para buscar proveedores
-    async function buscarProveedores(termino) {
-        try {
-            const respuesta = await fetch('proveedor/buscarAjax?termino=' + encodeURIComponent(termino));
-            const resultado = await respuesta.json();
-
-            if (resultado.estado === 'exito') {
-                mostrarProveedores(resultado.datos.proveedores);
-            }
-        } catch (error) {
-            console.error('Error al buscar proveedores:', error);
-        }
-    }
-
-    // Muestra los proveedores en la tabla
+    // Muestra los proveedores en la tabla usando API DataTables
     function mostrarProveedores(proveedores) {
-        tablaProveedores.innerHTML = '';
-
-        if (proveedores.length === 0) {
-            const colspan = document.querySelector('#tablaProveedores thead tr').children.length;
-            tablaProveedores.innerHTML = '<tr><td colspan="' + colspan + '" style="text-align: center;">No hay proveedores registrados</td></tr>';
-            return;
+        if (!$.fn.DataTable.isDataTable('#tablaProveedores')) {
+            $('#tablaProveedores').DataTable({
+                dom: 'lrtip',
+                language: DATATABLES_SPANISH
+            });
         }
 
-        const esAdmin = document.getElementById('btnNuevoProveedor') !== null;
+        var table = $('#tablaProveedores').DataTable();
+        table.clear();
 
         proveedores.forEach(function(proveedor) {
-            const fila = document.createElement('tr');
-            
-            // RIF
-            const celdaRIF = document.createElement('td');
-            celdaRIF.textContent = proveedor.rif;
-            fila.appendChild(celdaRIF);
-            
-            // Empresa
-            const celdaEmpresa = document.createElement('td');
-            celdaEmpresa.textContent = proveedor.nombre_empresa;
-            fila.appendChild(celdaEmpresa);
-            
-            // Contacto
-            const celdaContacto = document.createElement('td');
-            celdaContacto.textContent = proveedor.contacto || '-';
-            fila.appendChild(celdaContacto);
-            
-            // Telefono
-            const celdaTelefono = document.createElement('td');
-            celdaTelefono.textContent = proveedor.telefono || '-';
-            fila.appendChild(celdaTelefono);
-            
-            // Rubros
-            const celdaRubros = document.createElement('td');
-            celdaRubros.textContent = proveedor.rubros || '-';
-            fila.appendChild(celdaRubros);
-            
-            // Acciones (solo Administrador)
+            var acciones = '';
             if (esAdmin) {
-                const celdaAcciones = document.createElement('td');
-                celdaAcciones.className = 'acciones';
-                
-                // Boton editar
-                const btnEditar = document.createElement('button');
-                btnEditar.className = 'btn-primario';
-                btnEditar.textContent = 'Editar';
-                btnEditar.addEventListener('click', function() {
-                    abrirModalEditar(proveedor.id);
-                });
-                celdaAcciones.appendChild(btnEditar);
-                
-                // Boton eliminar
-                const btnEliminar = document.createElement('button');
-                btnEliminar.className = 'btn-peligro';
-                btnEliminar.textContent = 'Eliminar';
-                btnEliminar.addEventListener('click', function() {
-                    eliminarProveedor(proveedor.id, proveedor.nombre_empresa);
-                });
-                celdaAcciones.appendChild(btnEliminar);
-                
-                fila.appendChild(celdaAcciones);
+                acciones = '<div class="d-flex gap-2">' +
+                    '<button class="btn btn-sm btn-warning btn-editar-proveedor" data-id="' + proveedor.id + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
+                    '<button class="btn btn-sm btn-danger btn-eliminar-proveedor" data-id="' + proveedor.id + '" data-nombre="' + proveedor.nombre_empresa.replace(/"/g, '&quot;') + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>' +
+                    '</div>';
             }
-            
-            tablaProveedores.appendChild(fila);
+
+            var row = [
+                proveedor.rif,
+                proveedor.nombre_empresa,
+                proveedor.contacto || '-',
+                proveedor.telefono || '-',
+                proveedor.correo || '-',
+                proveedor.rubros || '-'
+            ];
+
+            if (esAdmin) {
+                row.push(acciones);
+            }
+
+            table.row.add(row);
         });
+
+        table.draw();
     }
 
-    // Abre el modal en modo creacion
-    function abrirModalCrear() {
-        tituloModal.textContent = 'Nuevo Proveedor';
-        proveedorId.value = '';
-        rifProveedor.value = '';
-        rifProveedor.disabled = false;
-        nombreEmpresaProveedor.value = '';
-        contactoProveedor.value = '';
-        telefonoProveedor.value = '';
-        correoProveedor.value = '';
-        direccionProveedor.value = '';
-        rubrosProveedor.value = '';
-        mensajeError.style.display = 'none';
-        
-        modalProveedor.style.display = 'flex';
-    }
+    // Delegated events for action buttons
+    document.getElementById('tablaProveedores').addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-editar-proveedor');
+        if (btn) { abrirModalEditar(parseInt(btn.dataset.id)); return; }
+        btn = e.target.closest('.btn-eliminar-proveedor');
+        if (btn) { eliminarProveedor(parseInt(btn.dataset.id), btn.dataset.nombre); return; }
+    });
 
     // Abre el modal en modo edicion
     async function abrirModalEditar(id) {
@@ -207,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (resultado.estado === 'exito') {
                 const proveedor = resultado.datos;
-                
+
                 tituloModal.textContent = 'Editar Proveedor';
                 proveedorId.value = proveedor.id;
                 rifProveedor.value = proveedor.rif;
@@ -218,9 +176,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 correoProveedor.value = proveedor.correo || '';
                 direccionProveedor.value = proveedor.direccion || '';
                 rubrosProveedor.value = proveedor.rubros || '';
-                mensajeError.style.display = 'none';
-                
-                modalProveedor.style.display = 'flex';
+                mensajeError.classList.add('d-none');
+
+                bootstrap.Modal.getOrCreateInstance(modalProveedor).show();
             } else {
                 mostrarNotificacion(resultado.mensaje, 'error');
             }
@@ -230,62 +188,51 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Cierra el modal
-    function cerrarModal() {
-        modalProveedor.style.display = 'none';
-        formularioProveedor.reset();
-        mensajeError.style.display = 'none';
-    }
-
     // Guarda o actualiza un proveedor
     async function guardarProveedor() {
         const id = proveedorId.value;
         const esEdicion = id !== '';
-        
-        // Validar RIF
+
         const rif = rifProveedor.value.trim().toUpperCase();
         if (!rif) {
             mostrarError('El RIF es obligatorio');
             return;
         }
-        
+
         const formatoRIF = /^[JGVEP]-\d{8,9}$/;
         if (!formatoRIF.test(rif)) {
             mostrarError('El RIF debe tener formato valido (Ej: J-123456789)');
             return;
         }
-        
+
         if (!nombreEmpresaProveedor.value.trim()) {
             mostrarError('El nombre de la empresa es obligatorio');
             return;
         }
-        
+
         if (telefonoProveedor.value.trim() && telefonoProveedor.value.trim().length !== 11) {
             mostrarError('El telefono debe tener 11 digitos');
             return;
         }
-        
-        // Determinar URL
+
         const url = esEdicion ? 'proveedor/actualizar' : 'proveedor/guardar';
-        
-        // Preparar datos
         const formData = new FormData(formularioProveedor);
         formData.set('rif', rif);
-        
+
         if (esEdicion) {
             formData.set('id', id);
         }
-        
+
         try {
             const respuesta = await fetch(url, {
                 method: 'POST',
                 body: formData
             });
-            
+
             const resultado = await respuesta.json();
-            
+
             if (resultado.estado === 'exito') {
-                cerrarModal();
+                bootstrap.Modal.getInstance(modalProveedor).hide();
                 cargarProveedores();
                 mostrarNotificacion(resultado.mensaje, 'exito');
             } else {
@@ -302,18 +249,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!confirm('Esta seguro de eliminar al proveedor ' + nombre + '?')) {
             return;
         }
-        
+
         const formData = new FormData();
         formData.append('id', id);
-        
+
         try {
             const respuesta = await fetch('proveedor/eliminar', {
                 method: 'POST',
                 body: formData
             });
-            
+
             const resultado = await respuesta.json();
-            
+
             if (resultado.estado === 'exito') {
                 cargarProveedores();
                 mostrarNotificacion(resultado.mensaje, 'exito');
@@ -326,9 +273,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Enlazar busqueda manual a DataTables
+    if (busquedaProveedores) {
+        busquedaProveedores.addEventListener('keyup', function() {
+            if ($.fn.DataTable.isDataTable('#tablaProveedores')) {
+                $('#tablaProveedores').DataTable().search(this.value).draw();
+            }
+        });
+    }
+
     // Muestra un mensaje de error en el modal
     function mostrarError(mensaje) {
         mensajeError.textContent = mensaje;
-        mensajeError.style.display = 'block';
+        mensajeError.classList.remove('d-none');
     }
 });

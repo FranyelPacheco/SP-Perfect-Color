@@ -35,9 +35,9 @@ if ($metodo === 'index') {
         verificarRolAdmin();
     }
 
+    echo "<script>var SESSION_USER_ROL = " . $_SESSION['usuario_rol'] . "; var SESSION_USER_ID = " . $_SESSION['usuario_id'] . ";</script>";
     $contenidoVista = __DIR__ . '/../views/usuarioListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
-    echo "<script>const SESSION_USER_ROL = " . $_SESSION['usuario_rol'] . "; const SESSION_USER_ID = " . $_SESSION['usuario_id'] . ";</script>";
     exit;
 
 // 2. Obtener usuarios y roles en JSON (AJAX)
@@ -152,6 +152,11 @@ if ($metodo === 'index') {
     ];
 
     if ($usuarioModel->actualizarUsuario($datos)) {
+        // Refrescar sesion si el usuario edito su propio perfil
+        if ($id == $_SESSION['usuario_id']) {
+            $_SESSION['usuario_nombre'] = $nombre;
+        }
+
         $cambiarClave = isset($_POST['cambiar_clave']) && $_POST['cambiar_clave'] == '1';
         $nuevaClave = $_POST['nueva_clave'] ?? '';
 

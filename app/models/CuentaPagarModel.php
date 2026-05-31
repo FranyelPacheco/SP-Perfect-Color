@@ -5,6 +5,8 @@
 namespace App\Models;
 
 use App\Core\ConexionBD;
+use \PDO;
+use \PDOException;
 
 class CuentaPagarModel
 {
@@ -21,6 +23,7 @@ class CuentaPagarModel
         $consulta = "SELECT cp.*, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif
                      FROM cuentas_pagar cp 
                      INNER JOIN proveedores p ON cp.proveedor_id = p.id 
+                     WHERE cp.activo = 1
                      ORDER BY cp.estado ASC, cp.fecha_vencimiento ASC";
         $stmt = $this->conexion->query($consulta);
         
@@ -34,7 +37,7 @@ class CuentaPagarModel
                             p.telefono as proveedor_telefono
                      FROM cuentas_pagar cp 
                      INNER JOIN proveedores p ON cp.proveedor_id = p.id 
-                     WHERE cp.id = :id";
+                     WHERE cp.id = :id AND cp.activo = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -54,7 +57,7 @@ class CuentaPagarModel
     }
 
     // Registra un pago
-    public function registrarPago($cuentaId, $monto, $metodoPago)
+    public function registrarPago($cuentaId, $monto, $metodoPago, $fecha = null)
     {
         try {
             $this->conexion->beginTransaction();
@@ -70,11 +73,13 @@ class CuentaPagarModel
             }
             
             // Registrar pago
+            $fecha = $fecha ?? date('Y-m-d');
             $consulta = "INSERT INTO pagos_realizados (cuenta_pagar_id, monto, fecha, metodo_pago) 
-                         VALUES (:cuenta_id, :monto, CURDATE(), :metodo_pago)";
+                         VALUES (:cuenta_id, :monto, :fecha, :metodo_pago)";
             $stmt = $this->conexion->prepare($consulta);
             $stmt->bindParam(':cuenta_id', $cuentaId, PDO::PARAM_INT);
             $stmt->bindParam(':monto', $monto);
+            $stmt->bindParam(':fecha', $fecha, PDO::PARAM_STR);
             $stmt->bindParam(':metodo_pago', $metodoPago, PDO::PARAM_STR);
             $stmt->execute();
             
@@ -99,6 +104,21 @@ class CuentaPagarModel
         }
     }
 
+    // Crea una nueva cuenta por pagar manualmente
+    public function crearCuenta($proveedorId, $montoTotal, $fechaVencimiento)
+    {
+        $consulta = "INSERT INTO cuentas_pagar (proveedor_id, monto_total, saldo_pendiente, fecha_vencimiento, estado, activo) 
+                     VALUES (:proveedor_id, :monto_total, :saldo_pendiente, :fecha_vencimiento, 'pendiente', 1)";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':proveedor_id', $proveedorId, PDO::PARAM_INT);
+        $stmt->bindParam(':monto_total', $montoTotal);
+        $stmt->bindParam(':saldo_pendiente', $montoTotal);
+        $stmt->bindParam(':fecha_vencimiento', $fechaVencimiento, PDO::PARAM_STR);
+        $stmt->execute();
+        
+        return $this->conexion->lastInsertId();
+    }
+
     // Busca cuentas por pagar
     public function buscarCuentas($termino)
     {
@@ -106,8 +126,8 @@ class CuentaPagarModel
         $consulta = "SELECT cp.*, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif
                      FROM cuentas_pagar cp 
                      INNER JOIN proveedores p ON cp.proveedor_id = p.id 
-                     WHERE p.nombre_empresa LIKE :termino1 
-                        OR p.rif LIKE :termino2 
+                     WHERE cp.activo = 1 AND (p.nombre_empresa LIKE :termino1 
+                        OR p.rif LIKE :termino2) 
                      ORDER BY cp.estado ASC, cp.fecha_vencimiento ASC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':termino1', $terminoLike, PDO::PARAM_STR);

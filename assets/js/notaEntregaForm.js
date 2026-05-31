@@ -1,7 +1,10 @@
 // Archivo: notaEntregaForm.js
 // Manejo del formulario de creacion de nota de entrega directa
 
+console.log('[notaEntregaForm] Archivo JS cargado por el navegador');
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('[notaEntregaForm] DOMContentLoaded - script iniciado');
     var clienteNota = document.getElementById('clienteNota');
     var busquedaInsumo = document.getElementById('busquedaInsumoNota');
     var listaInsumosDisponibles = document.getElementById('listaInsumosDisponibles');
@@ -11,6 +14,10 @@ document.addEventListener('DOMContentLoaded', function() {
     var mensajeError = document.getElementById('mensajeErrorNota');
     var filaVacia = document.getElementById('filaVacia');
 
+    var contenedorVencimiento = document.getElementById('contenedorVencimiento');
+    var fechaVencimientoInput = document.getElementById('fechaVencimiento');
+    var tipoPagoSelect = document.getElementById('tipoPago');
+
     var itemsNota = [];
     var insumosDisponibles = [];
     var clientesDisponibles = [];
@@ -18,6 +25,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // Cargar datos iniciales
     cargarClientes();
     cargarInsumos();
+
+    // Pre-cargar items desde presupuesto si existe detalle
+    if (typeof presupuestoDetalle !== 'undefined' && presupuestoDetalle.length > 0) {
+        var esperaInsumos = setInterval(function() {
+            if (insumosDisponibles.length > 0) {
+                clearInterval(esperaInsumos);
+                presupuestoDetalle.forEach(function(item) {
+                    var insumo = insumosDisponibles.find(function(i) { return i.id == item.insumo_id; });
+                    if (insumo) {
+                        var nuevoItem = {
+                            insumo_id: insumo.id,
+                            insumo_codigo: insumo.codigo,
+                            insumo_nombre: insumo.nombre,
+                            stock_actual: parseFloat(insumo.stock_actual),
+                            cantidad: parseFloat(item.cantidad),
+                            precio_unitario: parseFloat(item.precio_unitario),
+                            subtotal: parseFloat(item.subtotal)
+                        };
+                        itemsNota.push(nuevoItem);
+                    }
+                });
+                actualizarTablaItems();
+            }
+        }, 100);
+    }
 
     // Evento para buscar insumos
     var temporizadorBusqueda;
@@ -79,6 +111,12 @@ document.addEventListener('DOMContentLoaded', function() {
             opcion.textContent = cliente.cedula + ' - ' + cliente.nombres + ' ' + cliente.apellidos;
             clienteNota.appendChild(opcion);
         });
+
+        // Pre-seleccionar cliente desde presupuesto
+        if (typeof presupuestoClienteId !== 'undefined' && presupuestoClienteId > 0) {
+            clienteNota.value = presupuestoClienteId;
+            clienteNota.disabled = true;
+        }
     }
 
     // Muestra los insumos disponibles
@@ -230,48 +268,84 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Guarda la nota de entrega
     function guardarNotaEntrega() {
-        if (!clienteNota.value) {
-            mostrarError('Debe seleccionar un cliente');
-            return;
-        }
-
-        if (itemsNota.length === 0) {
-            mostrarError('Debe agregar al menos un insumo');
-            return;
-        }
-
-        var formData = new FormData();
-        formData.append('cliente_id', clienteNota.value);
-        formData.append('presupuesto_id', document.getElementById('presupuestoId').value);
-        
-        var itemsSimplificados = itemsNota.map(function(item) {
-            return {
-                insumo_id: item.insumo_id,
-                cantidad: item.cantidad,
-                precio_unitario: item.precio_unitario
-            };
-        });
-        formData.append('items', JSON.stringify(itemsSimplificados));
-
-        fetch('/SP%20Perfect%20Color/notaEntrega/guardar', {
-            method: 'POST',
-            body: formData
-        })
-        .then(function(respuesta) { return respuesta.json(); })
-        .then(function(resultado) {
-            if (resultado.estado === 'exito') {
-                mostrarNotificacion('Nota de entrega #' + resultado.datos.nota_id + ' creada exitosamente', 'exito');
-                setTimeout(function() {
-                    window.location.href = '/SP%20Perfect%20Color/notaEntrega';
-                }, 2000);
-            } else {
-                mostrarError(resultado.mensaje);
+        try {
+            if (!clienteNota) {
+                mostrarError('Error interno: campo cliente no encontrado');
+                return;
             }
-        })
-        .catch(function(error) {
-            console.error('Error al guardar nota:', error);
-            mostrarError('Error de conexion');
-        });
+            if (!clienteNota.value) {
+                mostrarError('Debe seleccionar un cliente');
+                return;
+            }
+
+            if (itemsNota.length === 0) {
+                mostrarError('Debe agregar al menos un insumo');
+                return;
+            }
+
+            var tipoPagoSelect = document.getElementById('tipoPago');
+            var presupuestoInput = document.getElementById('presupuestoId');
+
+            // Si el contenedor de fecha esta oculto, forzar remover required
+            if (contenedorVencimiento && contenedorVencimiento.style.display === 'none') {
+                if (fechaVencimientoInput) fechaVencimientoInput.required = false;
+            }
+
+            var formData = new FormData();
+            formData.append('cliente_id', clienteNota.value);
+            formData.append('presupuesto_id', presupuestoInput ? presupuestoInput.value : '');
+            formData.append('tipo_pago', tipoPagoSelect ? tipoPagoSelect.value : 'credito');
+
+            if (fechaVencimientoInput) {
+                formData.append('fecha_vencimiento', fechaVencimientoInput.value);
+                console.log('fecha_vencimiento adjuntado:', fechaVencimientoInput.value);
+            } else {
+                console.warn('Input fechaVencimiento no encontrado en el DOM');
+            }
+            
+            var itemsSimplificados = itemsNota.map(function(item) {
+                return {
+                    insumo_id: item.insumo_id,
+                    cantidad: item.cantidad,
+                    precio_unitario: item.precio_unitario
+                };
+            });
+            formData.append('items', JSON.stringify(itemsSimplificados));
+
+            if (typeof Object.fromEntries === 'function') {
+                console.log('Final FormData:', Object.fromEntries(formData));
+            }
+            for (var par of formData.entries()) {
+                console.log('  ' + par[0] + ':', par[1]);
+            }
+            console.log('Iniciando fetch a /SP%20Perfect%20Color/notaEntrega/guardar...');
+            fetch('/SP%20Perfect%20Color/notaEntrega/guardar', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(respuesta) {
+                console.log('Respuesta HTTP recibida, status:', respuesta.status);
+                return respuesta.json();
+            })
+            .then(function(resultado) {
+                console.log('Respuesta JSON del servidor:', resultado);
+                if (resultado.estado === 'exito') {
+                    mostrarNotificacion('Nota de entrega #' + resultado.datos.nota_id + ' creada exitosamente', 'exito');
+                    setTimeout(function() {
+                        window.location.href = '/SP%20Perfect%20Color/notaEntrega';
+                    }, 2000);
+                } else {
+                    mostrarError(resultado.mensaje);
+                }
+            })
+            .catch(function(error) {
+                console.error('Error en el fetch:', error);
+                mostrarError('Error de conexion: ' + error.message);
+            });
+        } catch (error) {
+            console.error('Error en guardarNotaEntrega:', error);
+            mostrarError('Error interno: ' + error.message);
+        }
     }
 
     function mostrarError(mensaje) {

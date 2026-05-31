@@ -1,25 +1,19 @@
 // Archivo: notaEntrega.js
-// Manejo de la lista de notas de entrega
+// Manejo de la vista de notas de entrega
+
+const DATATABLES_SPANISH = {
+    "emptyTable": "No hay informacion",
+    "zeroRecords": "No se encontraron registros",
+    "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+    "search": "Buscar:",
+    "paginate": { "first": "Primero", "last": "Ultimo", "next": "Siguiente", "previous": "Anterior" }
+};
 
 document.addEventListener('DOMContentLoaded', function() {
-    var tablaNotas = document.getElementById('cuerpoTablaNotas');
     var busquedaNotas = document.getElementById('busquedaNotas');
 
-    // Cargar lista de notas al iniciar
     cargarNotas();
 
-    // Evento para buscar notas mientras se escribe
-    var temporizadorBusqueda;
-    if (busquedaNotas) {
-        busquedaNotas.addEventListener('keyup', function() {
-            clearTimeout(temporizadorBusqueda);
-            temporizadorBusqueda = setTimeout(function() {
-                buscarNotas(busquedaNotas.value.trim());
-            }, 300);
-        });
-    }
-
-    // Cargar todas las notas de entrega
     function cargarNotas() {
         fetch('/SP%20Perfect%20Color/notaEntrega/listarAjax')
             .then(function(respuesta) { return respuesta.json(); })
@@ -33,69 +27,58 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    // Buscar notas por termino
-    function buscarNotas(termino) {
-        fetch('/SP%20Perfect%20Color/notaEntrega/buscarAjax?termino=' + encodeURIComponent(termino))
-            .then(function(respuesta) { return respuesta.json(); })
-            .then(function(resultado) {
-                if (resultado.estado === 'exito') {
-                    mostrarNotas(resultado.datos.notas);
-                }
-            })
-            .catch(function(error) {
-                console.error('Error al buscar notas:', error);
-            });
-    }
-
-    // Mostrar notas en la tabla
     function mostrarNotas(notas) {
-        tablaNotas.innerHTML = '';
-
-        if (notas.length === 0) {
-            tablaNotas.innerHTML = '<tr><td colspan="7" style="text-align: center;">No hay notas de entrega registradas</td></tr>';
-            return;
+        if (!$.fn.DataTable.isDataTable('#tablaNotas')) {
+            $('#tablaNotas').DataTable({
+                dom: 'lrtip',
+                language: DATATABLES_SPANISH,
+                columns: [
+                    {
+                        data: 'id',
+                        render: function(data) {
+                            if (data == null) return '';
+                            return '#' + data;
+                        }
+                    },
+                    { data: 'fecha' },
+                    { data: 'cliente_nombre' },
+                    { data: 'cliente_cedula' },
+                    {
+                        data: 'total',
+                        render: function(data) {
+                            if (data == null) return '';
+                            return 'Bs. ' + formatearMoneda(data);
+                        }
+                    },
+                    { data: 'usuario_nombre' },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            if (!row) return '';
+                            return '<div class="d-flex gap-2">' +
+                                '<a href="/SP%20Perfect%20Color/notaEntrega/ver?id=' + row.id + '" class="btn btn-sm btn-info" title="Ver" data-bs-toggle="tooltip"><i class="bi bi-eye"></i></a>' +
+                                '</div>';
+                        }
+                    }
+                ]
+            });
         }
 
+        var table = $('#tablaNotas').DataTable();
+        table.clear();
+
         notas.forEach(function(nota) {
-            var fila = document.createElement('tr');
-            
-            var celdaId = document.createElement('td');
-            celdaId.textContent = '#' + nota.id;
-            fila.appendChild(celdaId);
-            
-            var celdaFecha = document.createElement('td');
-            celdaFecha.textContent = nota.fecha;
-            fila.appendChild(celdaFecha);
-            
-            var celdaCliente = document.createElement('td');
-            celdaCliente.textContent = nota.cliente_nombre;
-            fila.appendChild(celdaCliente);
-            
-            var celdaCedula = document.createElement('td');
-            celdaCedula.textContent = nota.cliente_cedula;
-            fila.appendChild(celdaCedula);
-            
-            var celdaTotal = document.createElement('td');
-            celdaTotal.textContent = formatearMoneda(nota.total);
-            celdaTotal.style.fontWeight = '600';
-            fila.appendChild(celdaTotal);
-            
-            var celdaVendedor = document.createElement('td');
-            celdaVendedor.textContent = nota.usuario_nombre;
-            fila.appendChild(celdaVendedor);
-            
-            var celdaAcciones = document.createElement('td');
-            celdaAcciones.className = 'acciones';
-            
-            var btnVer = document.createElement('a');
-            btnVer.href = '/SP%20Perfect%20Color/notaEntrega/ver?id=' + nota.id;
-            btnVer.className = 'btn-primario';
-            btnVer.textContent = 'Ver';
-            celdaAcciones.appendChild(btnVer);
-            
-            fila.appendChild(celdaAcciones);
-            
-            tablaNotas.appendChild(fila);
+            table.row.add(nota);
+        });
+
+        table.draw();
+    }
+
+    if (busquedaNotas) {
+        busquedaNotas.addEventListener('keyup', function() {
+            if ($.fn.DataTable.isDataTable('#tablaNotas')) {
+                $('#tablaNotas').DataTable().search(this.value).draw();
+            }
         });
     }
 });

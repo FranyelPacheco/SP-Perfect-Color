@@ -5,6 +5,7 @@
 namespace App\Models;
 
 use App\Core\ConexionBD;
+use \PDO;
 
 class ProveedorModel
 {
@@ -18,7 +19,7 @@ class ProveedorModel
     // Lista todos los proveedores
     public function listarTodos()
     {
-        $consulta = "SELECT * FROM proveedores ORDER BY nombre_empresa ASC";
+        $consulta = "SELECT * FROM proveedores WHERE activo = 1 ORDER BY nombre_empresa ASC";
         $stmt = $this->conexion->query($consulta);
         
         return $stmt->fetchAll();
@@ -27,7 +28,7 @@ class ProveedorModel
     // Busca un proveedor por su RIF
     public function buscarPorRIF($rif)
     {
-        $consulta = "SELECT * FROM proveedores WHERE rif = :rif LIMIT 1";
+        $consulta = "SELECT * FROM proveedores WHERE rif = :rif AND activo = 1 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':rif', $rif, PDO::PARAM_STR);
         $stmt->execute();
@@ -38,7 +39,7 @@ class ProveedorModel
     // Busca un proveedor por su ID
     public function buscarPorId($id)
     {
-        $consulta = "SELECT * FROM proveedores WHERE id = :id LIMIT 1";
+        $consulta = "SELECT * FROM proveedores WHERE id = :id AND activo = 1 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -109,7 +110,7 @@ class ProveedorModel
             return false;
         }
         
-        $consulta = "DELETE FROM proveedores WHERE id = :id";
+        $consulta = "UPDATE proveedores SET activo = 0 WHERE id = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         
@@ -119,7 +120,7 @@ class ProveedorModel
     // Verifica si un RIF ya existe (para otro proveedor en edicion)
     public function rifExiste($rif, $idExcluir = null)
     {
-        $consulta = "SELECT COUNT(*) as total FROM proveedores WHERE rif = :rif";
+        $consulta = "SELECT COUNT(*) as total FROM proveedores WHERE rif = :rif AND activo = 1";
         
         if ($idExcluir !== null) {
             $consulta .= " AND id != :id";
@@ -142,8 +143,8 @@ class ProveedorModel
     {
         $termino = '%' . $termino . '%';
         $consulta = "SELECT * FROM proveedores 
-                     WHERE nombre_empresa LIKE :termino1 
-                        OR rif LIKE :termino2 
+                     WHERE activo = 1 AND (nombre_empresa LIKE :termino1 
+                        OR rif LIKE :termino2) 
                      ORDER BY nombre_empresa ASC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':termino1', $termino, PDO::PARAM_STR);

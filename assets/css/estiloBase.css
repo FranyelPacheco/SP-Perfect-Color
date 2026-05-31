@@ -1,293 +1,103 @@
 /* Archivo: estiloBase.css */
-/* Estilos base del sistema SP Perfect Color */
-
-/* Reset y configuracion general */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* Estilos minimos complementarios a Bootstrap 5 */
 
 body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    font-size: 14px;
-    color: #333;
-    background-color: #f4f4f4;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
-/* Pagina de login */
-.pagina-login {
-    display: flex;
+/* Sidebar nav links */
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff !important;
+}
+
+/* Card headers con borde sutil */
+.card-header {
+    border-bottom: 1px solid #eee;
+}
+
+/* Tablas: hover mas visible */
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* Badge en tablas */
+.badge {
+    font-weight: 600;
+}
+
+/* Saldos en cuentas por cobrar/pagar */
+.saldo-pendiente-positivo {
+    color: #dc3545;
+    font-weight: 600;
+}
+.saldo-pendiente-cero {
+    color: #198754;
+    font-weight: 600;
+}
+.estado-pendiente {
+    color: #ffc107;
+    font-weight: 600;
+}
+.estado-pagado {
+    color: #198754;
+    font-weight: 600;
+}
+.estado-moroso {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* Perfil de usuario (vendedor) — convierte modal en tarjeta inline */
+#modalUsuario.modo-perfil {
+    display: flex !important;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-}
-
-.contenedor-login {
-    background: #fff;
-    padding: 40px;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    min-height: 75vh;
     width: 100%;
-    max-width: 400px;
+    position: relative !important;
+    background: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    top: auto !important;
+    left: auto !important;
+    height: auto !important;
+    z-index: auto !important;
+    border: none !important;
+    border-radius: 0 !important;
 }
-
-.login-header {
-    text-align: center;
-    margin-bottom: 30px;
+#modalUsuario.modo-perfil .modal-dialog {
+    margin: 0;
 }
-
-.login-header h1 {
-    font-size: 28px;
-    color: #1a1a2e;
-    margin-bottom: 8px;
-}
-
-.login-header p {
-    color: #666;
-    font-size: 14px;
-}
-
-/* Estructura principal del sistema */
-.contenedor-principal {
-    display: flex;
-    min-height: 100vh;
-}
-
-/* Barra lateral */
-.barra-lateral {
-    width: 250px;
-    background: #1a1a2e;
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    padding: 20px 0;
-}
-
-.logo-empresa {
-    padding: 15px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.logo-empresa h1 {
-    font-size: 20px;
-    font-weight: 600;
-}
-
-.menu-navegacion {
-    flex: 1;
-    padding: 20px 0;
-}
-
-.menu-navegacion ul {
-    list-style: none;
-}
-
-.menu-navegacion li a {
-    display: block;
-    color: #ccc;
-    text-decoration: none;
-    padding: 10px 20px;
-    transition: background 0.3s;
-}
-
-.menu-navegacion li a:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-}
-
-.info-usuario {
-    padding: 15px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 12px;
-}
-
-.info-usuario span {
-    display: block;
-    margin-bottom: 8px;
-}
-
-.btn-cerrar-sesion {
-    color: #f44336;
-    text-decoration: none;
-    font-size: 12px;
-}
-
-.btn-cerrar-sesion:hover {
-    text-decoration: underline;
-}
-
-/* Contenido principal */
-.contenido-principal {
-    flex: 1;
-    padding: 30px;
-    background: #f4f4f4;
-}
-
-/* Formularios */
-.grupo-formulario {
-    margin-bottom: 20px;
-}
-
-.grupo-formulario label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 600;
-    color: #333;
-}
-
-.grupo-formulario input,
-.grupo-formulario select,
-.grupo-formulario textarea {
+#modalUsuario.modo-perfil .modal-content {
+    max-width: 480px;
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    font-family: inherit;
-    transition: border-color 0.3s;
-}
-
-.grupo-formulario input:focus,
-.grupo-formulario select:focus,
-.grupo-formulario textarea:focus {
-    border-color: #1a1a2e;
-    outline: none;
-}
-
-/* Botones */
-.btn-primario {
-    display: inline-block;
-    background: #1a1a2e;
-    color: #fff;
-    border: none;
-    padding: 10px 24px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    text-decoration: none;
-    transition: background 0.3s;
-}
-
-.btn-primario:hover {
-    background: #16213e;
-}
-
-.btn-completo {
-    width: 100%;
-}
-
-.btn-secundario {
-    display: inline-block;
-    background: #6c757d;
-    color: #fff;
-    border: none;
-    padding: 10px 24px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.btn-peligro {
-    display: inline-block;
-    background: #f44336;
-    color: #fff;
-    border: none;
-    padding: 10px 24px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.btn-exito {
-    display: inline-block;
-    background: #4caf50;
-    color: #fff;
-    border: none;
-    padding: 10px 24px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-/* Mensajes */
-.mensaje-error {
-    background: #ffebee;
-    color: #c62828;
-    padding: 10px 15px;
-    border-radius: 4px;
-    margin-bottom: 15px;
-    font-size: 13px;
-    display: none;
-}
-
-.mensaje-exito {
-    background: #e8f5e9;
-    color: #2e7d32;
-    padding: 10px 15px;
-    border-radius: 4px;
-    margin-bottom: 15px;
-    font-size: 13px;
-    display: none;
-}
-
-/* Tablas */
-.tabla-contenedor {
-    background: #fff;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
     overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    padding: 0;
 }
-
-.tabla-datos {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.tabla-datos th {
+#modalUsuario.modo-perfil .modal-header {
     background: #1a1a2e;
-    color: #fff;
-    padding: 12px 15px;
-    text-align: left;
-    font-weight: 600;
-    font-size: 13px;
+    margin-bottom: 0;
+    padding: 28px 24px;
+    border-bottom: none;
 }
-
-.tabla-datos td {
-    padding: 10px 15px;
-    border-bottom: 1px solid #eee;
-    font-size: 13px;
+#modalUsuario.modo-perfil .modal-title {
+    font-size: 22px;
 }
-
-.tabla-datos tr:hover {
-    background: #f9f9f9;
+#modalUsuario.modo-perfil .modal-content .mb-3:first-of-type {
+    margin-top: 24px;
 }
-
-.tabla-datos .acciones {
-    white-space: nowrap;
+#modalUsuario.modo-perfil .modal-footer {
+    justify-content: center;
 }
-
-.tabla-datos .acciones button,
-.tabla-datos .acciones a {
-    margin-right: 5px;
-    padding: 4px 10px;
-    font-size: 12px;
+#modalUsuario.modo-perfil .btn-primary {
+    width: 100%;
+    padding: 12px 22px;
+    font-size: 15px;
 }
-
-/* Pagina de error 404 */
-.contenedor-error {
-    text-align: center;
-    padding: 80px 20px;
-}
-
-.contenedor-error h1 {
-    font-size: 72px;
-    color: #1a1a2e;
-    margin-bottom: 20px;
-}
-
-.contenedor-error p {
-    color: #666;
-    margin-bottom: 30px;
+#modalUsuario.modo-perfil .btn-close,
+#modalUsuario.modo-perfil .btn-secondary {
+    display: none !important;
 }

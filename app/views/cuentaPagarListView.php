@@ -1,18 +1,21 @@
 <!-- Archivo: cuentaPagarListView.php -->
-<!-- Vista para la lista de cuentas por pagar -->
+<!-- Vista para la lista de cuentas por pagar con Bootstrap 5 -->
 
-<div class="modulo-cuenta-pagar">
-    <div class="modulo-header">
-        <h2>Cuentas por Pagar</h2>
-        <div class="modulo-acciones">
-            <input type="text" id="busquedaCuentasPagar" placeholder="Buscar por proveedor o RIF..." class="input-busqueda">
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">Cuentas por Pagar</h4>
+            <div class="d-flex gap-2 align-items-center">
+                <input type="text" id="busquedaCuentasPagar" class="form-control" style="width: 250px;" placeholder="Buscar por proveedor o RIF...">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevaCuentaPagar">
+                    <i class="bi bi-plus-lg me-2"></i>Nuevo
+                </button>
+            </div>
         </div>
-    </div>
-    
-    <div class="modulo-body">
-        <div class="tabla-contenedor">
-            <table id="tablaCuentasPagar" class="tabla-datos">
-                <thead>
+
+        <div class="table-responsive">
+            <table id="tablaCuentasPagar" class="table table-hover table-striped mb-0">
+                <thead class="table-dark">
                     <tr>
                         <th>Proveedor</th>
                         <th>RIF</th>
@@ -23,55 +26,45 @@
                         <th>Acciones</th>
                     </tr>
                 </thead>
-                <tbody id="cuerpoTablaCuentasPagar">
-                    <tr><td colspan="7" style="text-align: center;">Cargando cuentas...</td></tr>
-                </tbody>
+                <tbody id="cuerpoTablaCuentasPagar"></tbody>
             </table>
         </div>
     </div>
 </div>
 
-<style>
-.modulo-acciones {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
+<!-- Modal Nueva Cuenta por Pagar -->
+<div class="modal fade" id="modalNuevaCuentaPagar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva Cuenta por Pagar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formularioNuevaCuentaPagar">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="proveedorCxP" class="form-label">Proveedor</label>
+                        <select id="proveedorCxP" class="form-select" required>
+                            <option value="">Cargando proveedores...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="montoTotalCxP" class="form-label">Monto Total (Bs.)</label>
+                        <input type="number" id="montoTotalCxP" class="form-control" step="0.01" min="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fechaVencimientoCxP" class="form-label">Fecha de Vencimiento</label>
+                        <input type="date" id="fechaVencimientoCxP" class="form-control" required>
+                    </div>
+                    <div id="mensajeErrorCxP" class="alert alert-danger d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-lg me-1"></i>Guardar Cuenta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-.input-busqueda {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    width: 280px;
-}
-
-.estado-pendiente {
-    background: #fff3e0;
-    color: #e65100;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.estado-pagado {
-    background: #e8f5e9;
-    color: #2e7d32;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.saldo-pendiente-positivo {
-    color: #c62828;
-    font-weight: 600;
-}
-
-.saldo-pendiente-cero {
-    color: #2e7d32;
-}
-</style>
-
-<script src="/SP%20Perfect%20Color/assets/js/cuentaPagar.js"></script>
+<script src="/SP%20Perfect%20Color/assets/js/cuentaPagar.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/cuentaPagar.js'); ?>"></script>

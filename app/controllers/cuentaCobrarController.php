@@ -8,6 +8,7 @@ use App\Models\CuentaCobrarModel;
 use function App\Helpers\respuestaJson;
 use function App\Helpers\verificarAutenticacion;
 use function App\Helpers\verificarRolVendedor;
+use \PDOException;
 
 // Instancia limpia del modelo para uso procedimental
 $cuentaCobrarModel = new CuentaCobrarModel();
@@ -79,6 +80,7 @@ if ($metodo === 'index') {
     $cuentaId = intval($_POST['cuenta_id'] ?? 0);
     $monto = floatval($_POST['monto'] ?? 0);
     $metodoPago = $_POST['metodo_pago'] ?? 'Efectivo';
+    $fecha = $_POST['fecha'] ?? date('Y-m-d');
     
     if ($cuentaId < 1) {
         respuestaJson('error', 'Cuenta no valida');
@@ -89,7 +91,7 @@ if ($metodo === 'index') {
     }
     
     try {
-        $cuentaCobrarModel->registrarPago($cuentaId, $monto, $metodoPago);
+        $cuentaCobrarModel->registrarPago($cuentaId, $monto, $metodoPago, $fecha);
         respuestaJson('exito', 'Pago registrado exitosamente');
     } catch (PDOException $e) {
         respuestaJson('error', $e->getMessage());

@@ -4,6 +4,8 @@
 
 namespace App\Core;
 
+use \PDO;
+
 class ConexionBD
 {
     private static $instancia = null;

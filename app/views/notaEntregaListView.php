@@ -1,19 +1,21 @@
 <!-- Archivo: notaEntregaListView.php -->
-<!-- Vista para la lista de notas de entrega -->
+<!-- Vista para la lista de notas de entrega con Bootstrap 5 -->
 
-<div class="modulo-nota-entrega">
-    <div class="modulo-header">
-        <h2>Notas de Entrega</h2>
-        <div class="modulo-acciones">
-            <input type="text" id="busquedaNotas" placeholder="Buscar por cliente o cedula..." class="input-busqueda">
-            <a href="/SP%20Perfect%20Color/notaEntrega/nueva" class="btn-primario">Nueva Nota de Entrega</a>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">Notas de Entrega</h4>
+            <div class="d-flex gap-2 align-items-center">
+                <input type="text" id="busquedaNotas" class="form-control" style="width: 250px;" placeholder="Buscar por cliente o cedula...">
+                <button type="button" class="btn btn-success" onclick="location.href='/SP%20Perfect%20Color/notaEntrega/nueva'">
+                    <i class="bi bi-plus-lg me-2"></i>Nuevo
+                </button>
+            </div>
         </div>
-    </div>
-    
-    <div class="modulo-body">
-        <div class="tabla-contenedor">
-            <table id="tablaNotas" class="tabla-datos">
-                <thead>
+
+        <div class="table-responsive">
+            <table id="tablaNotas" class="table table-hover table-striped mb-0">
+                <thead class="table-dark">
                     <tr>
                         <th>ID</th>
                         <th>Fecha</th>
@@ -24,29 +26,10 @@
                         <th>Acciones</th>
                     </tr>
                 </thead>
-                <tbody id="cuerpoTablaNotas">
-                    <tr><td colspan="7" style="text-align: center;">Cargando notas de entrega...</td></tr>
-                </tbody>
+                <tbody id="cuerpoTablaNotas"></tbody>
             </table>
         </div>
     </div>
 </div>
 
-<style>
-.modulo-acciones {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.input-busqueda {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    width: 250px;
-}
-</style>
-
-<script src="/SP%20Perfect%20Color/assets/js/notaEntrega.js"></script>
+<script src="/SP%20Perfect%20Color/assets/js/notaEntrega.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/notaEntrega.js'); ?>"></script>

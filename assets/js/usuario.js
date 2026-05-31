@@ -1,3 +1,11 @@
+const DATATABLES_SPANISH = {
+    "emptyTable": "No hay informacion",
+    "zeroRecords": "No se encontraron registros",
+    "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+    "search": "Buscar:",
+    "paginate": { "first": "Primero", "last": "Ultimo", "next": "Siguiente", "previous": "Anterior" }
+};
+
 document.addEventListener('DOMContentLoaded', function () {
     var ROL = typeof SESSION_USER_ROL !== 'undefined' ? SESSION_USER_ROL : null;
     var MI_ID = typeof SESSION_USER_ID !== 'undefined' ? SESSION_USER_ID : null;
@@ -32,15 +40,31 @@ document.addEventListener('DOMContentLoaded', function () {
         if (selEstado) selEstado.setAttribute('required', '');
 
         var btnCancel = document.getElementById('btnCancelarUsuario');
-        if (btnCancel) btnCancel.addEventListener('click', cerrarModal);
+        if (btnCancel) btnCancel.addEventListener('click', function() {
+            bootstrap.Modal.getInstance(document.getElementById('modalUsuario')).hide();
+        });
 
         var btnCerrar = document.getElementById('btnCerrarModalUsuario');
-        if (btnCerrar) btnCerrar.addEventListener('click', cerrarModal);
+        if (btnCerrar) btnCerrar.addEventListener('click', function() {
+            bootstrap.Modal.getInstance(document.getElementById('modalUsuario')).hide();
+        });
 
         var modal = document.getElementById('modalUsuario');
-        if (modal) modal.addEventListener('click', function (e) {
-            if (e.target === this) cerrarModal();
-        });
+        if (modal) {
+            modal.addEventListener('hidden.bs.modal', function () {
+                document.getElementById('formularioUsuario').reset();
+                document.getElementById('mensajeErrorUsuario').style.display = 'none';
+                document.getElementById('grupoClave').style.display = 'block';
+                document.getElementById('claveUsuario').required = false;
+                document.getElementById('grupoCambiarClave').style.display = 'none';
+                document.getElementById('checkCambiarClave').checked = false;
+                document.getElementById('nuevaClaveUsuario').style.display = 'none';
+                document.getElementById('nuevaClaveUsuario').value = '';
+                document.getElementById('contenedorRol').style.display = 'block';
+                document.getElementById('contenedorEstado').style.display = 'block';
+                document.getElementById('rolUsuario').required = true;
+            });
+        }
 
         cargarUsuarios();
     }
@@ -48,86 +72,48 @@ document.addEventListener('DOMContentLoaded', function () {
     // ---- VENDEDOR ----
     function initVendor() {
         var areaAdmin = document.getElementById('areaAdminUsuarios');
-        if (areaAdmin) areaAdmin.style.setProperty('display', 'none', 'important');
+        if (areaAdmin) areaAdmin.classList.add('d-none');
 
         var btnNuevo = document.getElementById('btnNuevoUsuario');
-        if (btnNuevo && !btnNuevo.closest('#modalUsuario')) btnNuevo.style.setProperty('display', 'none', 'important');
-
-        var modal = document.getElementById('modalUsuario');
-        modal.style.setProperty('position', 'relative', 'important');
-        modal.style.setProperty('display', 'block', 'important');
-        modal.style.setProperty('background', 'none', 'important');
-        modal.style.setProperty('box-shadow', 'none', 'important');
-        modal.style.setProperty('padding', '0', 'important');
-        modal.style.setProperty('top', 'auto', 'important');
-        modal.style.setProperty('left', 'auto', 'important');
-        modal.style.setProperty('width', '100%', 'important');
-        modal.style.setProperty('height', 'auto', 'important');
-        modal.style.setProperty('z-index', 'auto', 'important');
-        modal.style.setProperty('border', 'none', 'important');
-        modal.style.setProperty('border-radius', '0', 'important');
+        if (btnNuevo && !btnNuevo.closest('#modalUsuario')) btnNuevo.classList.add('d-none');
 
         var titulo = document.getElementById('tituloModalUsuario');
         if (titulo) titulo.textContent = 'Editar Usuario';
 
-        var btnCerrarX = document.querySelector('.modal-header .cerrar') || document.querySelector('.modal-header span') || document.getElementById('btnCerrarModalUsuario');
-        if (btnCerrarX) btnCerrarX.style.display = 'none';
-
-        var btnCancelar = document.querySelector('.modal-footer .btn-secundario') || document.getElementById('btnCancelarUsuario');
-        if (btnCancelar) btnCancelar.style.display = 'none';
-
         var txtRol = document.getElementById('rolUsuario');
         if (txtRol) {
             txtRol.removeAttribute('required');
-            if (txtRol.closest('.grupo-formulario')) txtRol.closest('.grupo-formulario').style.display = 'none';
-            else if (txtRol.parentElement) txtRol.parentElement.style.display = 'none';
+            if (txtRol.closest('.grupo-formulario')) txtRol.closest('.grupo-formulario').classList.add('d-none');
+            else if (txtRol.parentElement) txtRol.parentElement.classList.add('d-none');
         }
 
         var txtEstado = document.getElementById('estadoUsuario');
         if (txtEstado) {
             txtEstado.removeAttribute('required');
-            if (txtEstado.closest('.grupo-formulario')) txtEstado.closest('.grupo-formulario').style.display = 'none';
-            else if (txtEstado.parentElement) txtEstado.parentElement.style.display = 'none';
+            if (txtEstado.closest('.grupo-formulario')) txtEstado.closest('.grupo-formulario').classList.add('d-none');
+            else if (txtEstado.parentElement) txtEstado.parentElement.classList.add('d-none');
         }
-
-        var grupoCambiarClave = document.getElementById('grupoCambiarClave');
-        if (grupoCambiarClave) grupoCambiarClave.style.display = 'none';
 
         var grupoClave = document.getElementById('grupoClave');
-        if (grupoClave) grupoClave.style.display = 'block';
+        if (grupoClave) grupoClave.classList.add('d-none');
 
-        var claveInput = document.getElementById('claveUsuario');
-        if (claveInput) {
-            claveInput.disabled = true;
-            claveInput.required = false;
-            claveInput.placeholder = 'Ingrese su nueva contraseña';
+        var btnToggle = document.getElementById('btnToggleClave');
+        if (btnToggle) {
+            btnToggle.classList.remove('d-none');
+            btnToggle.addEventListener('click', function () {
+                this.classList.add('d-none');
+                var grupo = document.getElementById('grupoCambiarClave');
+                var inputNuevaClave = document.getElementById('nuevaClaveUsuario');
+                var checkbox = document.getElementById('checkCambiarClave');
+                if (grupo && inputNuevaClave) {
+                    grupo.classList.remove('d-none');
+                    inputNuevaClave.classList.remove('d-none');
+                }
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
         }
-
-        var correoInput = document.getElementById('correoUsuario');
-        var correoGroup = correoInput ? correoInput.closest('.grupo-formulario') : null;
-        var btnHabPass = document.createElement('button');
-        btnHabPass.id = 'btnHabilitarPassword';
-        btnHabPass.type = 'button';
-        btnHabPass.className = 'btn-link-password';
-        btnHabPass.textContent = 'Cambiar Contraseña';
-        if (correoGroup && correoGroup.parentNode) {
-            correoGroup.parentNode.insertBefore(btnHabPass, correoGroup.nextSibling);
-        }
-
-        btnHabPass.addEventListener('click', function () {
-            if (claveInput.disabled) {
-                claveInput.disabled = false;
-                claveInput.focus();
-                this.textContent = 'Cancelar cambio';
-            } else {
-                claveInput.disabled = true;
-                claveInput.value = '';
-                this.textContent = 'Cambiar Contraseña';
-            }
-        });
-
-        var btnGuardar = document.getElementById('btnGuardarUsuario');
-        if (btnGuardar) btnGuardar.style.width = '100%';
 
         cargarPerfilVendedor();
     }
@@ -177,58 +163,49 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            console.log('Respuesta listarAjax:', json);
+
             if (json.datos.roles) llenarSelectRoles(json.datos.roles);
 
-            var tbody = document.getElementById('cuerpoTablaUsuarios');
             var usuarios = json.datos.usuarios || [];
-            tbody.innerHTML = '';
 
-            if (usuarios.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay usuarios registrados</td></tr>';
-                return;
+            if (!$.fn.DataTable.isDataTable('#tablaUsuarios')) {
+                $('#tablaUsuarios').DataTable({
+                    dom: 'lrtip',
+                    language: DATATABLES_SPANISH
+                });
             }
 
+            var table = $('#tablaUsuarios').DataTable();
+            table.clear();
+
             usuarios.forEach(function (u) {
-                var tr = document.createElement('tr');
-
-                var td1 = document.createElement('td');
-                td1.textContent = u.nombre;
-                tr.appendChild(td1);
-
-                var td2 = document.createElement('td');
-                td2.textContent = u.correo;
-                tr.appendChild(td2);
-
-                var td3 = document.createElement('td');
-                td3.textContent = u.rol_nombre;
-                tr.appendChild(td3);
-
-                var td4 = document.createElement('td');
-                var badge = document.createElement('span');
-                badge.className = u.activo == 1 ? 'estado-activo' : 'estado-inactivo';
-                badge.textContent = u.activo == 1 ? 'Activo' : 'Inactivo';
-                td4.appendChild(badge);
-                tr.appendChild(td4);
-
-                var td5 = document.createElement('td');
-                td5.className = 'acciones';
-
-                var btnEditar = document.createElement('button');
-                btnEditar.className = 'btn-primario';
-                btnEditar.textContent = 'Editar';
-                btnEditar.addEventListener('click', function () { abrirModalEditar(u.id); });
-                td5.appendChild(btnEditar);
-
+                var acciones = '<div class="d-flex gap-2">' +
+                    '<button class="btn btn-sm btn-warning btn-editar-usuario" data-id="' + u.id + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>';
                 if (u.id != MI_ID) {
-                    var btnEliminar = document.createElement('button');
-                    btnEliminar.className = 'btn-peligro';
-                    btnEliminar.textContent = 'Eliminar';
-                    btnEliminar.addEventListener('click', function () { eliminarUsuario(u.id, u.nombre); });
-                    td5.appendChild(btnEliminar);
+                    acciones += '<button class="btn btn-sm btn-danger btn-eliminar-usuario" data-id="' + u.id + '" data-nombre="' + u.nombre.replace(/"/g, '&quot;') + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>';
                 }
+                acciones += '</div>';
 
-                tr.appendChild(td5);
-                tbody.appendChild(tr);
+                var estadoBadge = u.activo == 1 ? 'Activo' : 'Inactivo';
+
+                table.row.add([
+                    u.nombre,
+                    u.correo,
+                    u.rol_nombre,
+                    estadoBadge,
+                    acciones
+                ]);
+            });
+
+            table.draw();
+
+            // Delegated events for action buttons
+            document.getElementById('tablaUsuarios').addEventListener('click', function(e) {
+                var btn = e.target.closest('.btn-editar-usuario');
+                if (btn) { abrirModalEditar(parseInt(btn.dataset.id)); return; }
+                btn = e.target.closest('.btn-eliminar-usuario');
+                if (btn) { eliminarUsuario(parseInt(btn.dataset.id), btn.dataset.nombre); return; }
             });
 
         } catch (error) {
@@ -255,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('contenedorEstado').style.display = 'block';
         document.getElementById('rolUsuario').required = true;
 
-        document.getElementById('modalUsuario').style.display = 'flex';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalUsuario')).show();
     }
 
     // ---- Abrir modal para editar usuario ----
@@ -294,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('estadoUsuario').value = u.activo;
             document.getElementById('rolUsuario').required = true;
 
-            document.getElementById('modalUsuario').style.display = 'flex';
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalUsuario')).show();
 
         } catch (error) {
             console.error('Error al obtener usuario:', error);
@@ -353,17 +330,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (esEdicion && ROL === 2) {
-            var claveInput = document.getElementById('claveUsuario');
-            if (!claveInput.disabled) {
-                var claveValor = claveInput.value.trim();
-                if (claveValor !== '' && claveValor.length < 6) {
+            var checkClave = document.getElementById('checkCambiarClave');
+            if (checkClave && checkClave.checked) {
+                var nuevaClave = document.getElementById('nuevaClaveUsuario').value.trim();
+                if (nuevaClave !== '' && nuevaClave.length < 6) {
                     mostrarError('La nueva clave debe tener al menos 6 caracteres');
                     return;
                 }
-                if (claveValor !== '') {
+                if (nuevaClave !== '') {
                     formData.set('cambiar_clave', '1');
-                    formData.set('nueva_clave', claveValor);
+                    formData.set('nueva_clave', nuevaClave);
                 }
+            }
+            if (!checkClave || !checkClave.checked) {
+                formData.delete('nueva_clave');
             }
             formData.delete('clave');
         }
@@ -374,13 +354,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (json.estado === 'exito') {
                 if (ROL === 1) {
-                    cerrarModal();
+                    bootstrap.Modal.getInstance(document.getElementById('modalUsuario')).hide();
                     cargarUsuarios();
                 } else {
-                    var btnHabPass = document.getElementById('btnHabilitarPassword');
-                    if (btnHabPass) btnHabPass.textContent = 'Cambiar Contraseña';
-                    claveInput.disabled = true;
-                    claveInput.value = '';
+                    var btnToggle = document.getElementById('btnToggleClave');
+                    if (btnToggle) btnToggle.classList.remove('d-none');
+                    var grupoCC = document.getElementById('grupoCambiarClave');
+                    if (grupoCC) grupoCC.style.display = 'none';
+                    document.getElementById('checkCambiarClave').checked = false;
+                    document.getElementById('nuevaClaveUsuario').value = '';
+                    document.getElementById('nuevaClaveUsuario').style.display = 'none';
                 }
 
                 if (typeof mostrarNotificacion === 'function') {
@@ -396,23 +379,6 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Error al guardar usuario:', error);
             mostrarError('Error de conexion al guardar el usuario');
         }
-    }
-
-    // ---- Cerrar modal ----
-    function cerrarModal() {
-        if (ROL === 2) return;
-        document.getElementById('modalUsuario').style.display = 'none';
-        document.getElementById('formularioUsuario').reset();
-        document.getElementById('mensajeErrorUsuario').style.display = 'none';
-        document.getElementById('grupoClave').style.display = 'block';
-        document.getElementById('claveUsuario').required = false;
-        document.getElementById('grupoCambiarClave').style.display = 'none';
-        document.getElementById('checkCambiarClave').checked = false;
-        document.getElementById('nuevaClaveUsuario').style.display = 'none';
-        document.getElementById('nuevaClaveUsuario').value = '';
-        document.getElementById('contenedorRol').style.display = 'block';
-        document.getElementById('contenedorEstado').style.display = 'block';
-        document.getElementById('rolUsuario').required = true;
     }
 
     // ---- Mostrar error ----

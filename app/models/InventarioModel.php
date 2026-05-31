@@ -5,6 +5,7 @@
 namespace App\Models;
 
 use App\Core\ConexionBD;
+use \PDO;
 
 class InventarioModel
 {
@@ -21,6 +22,7 @@ class InventarioModel
         $consulta = "SELECT i.*, p.nombre_empresa as proveedor_nombre 
                      FROM insumos i 
                      LEFT JOIN proveedores p ON i.proveedor_id = p.id 
+                     WHERE i.activo = 1
                      ORDER BY i.nombre ASC";
         $stmt = $this->conexion->query($consulta);
         
@@ -30,7 +32,7 @@ class InventarioModel
     // Lista proveedores para el select del formulario
     public function listarProveedoresActivos()
     {
-        $consulta = "SELECT id, nombre_empresa, rif FROM proveedores ORDER BY nombre_empresa ASC";
+        $consulta = "SELECT id, nombre_empresa, rif FROM proveedores WHERE activo = 1 ORDER BY nombre_empresa ASC";
         $stmt = $this->conexion->query($consulta);
         
         return $stmt->fetchAll();
@@ -42,7 +44,7 @@ class InventarioModel
         $consulta = "SELECT i.*, p.nombre_empresa as proveedor_nombre 
                      FROM insumos i 
                      LEFT JOIN proveedores p ON i.proveedor_id = p.id 
-                     WHERE i.id = :id LIMIT 1";
+                     WHERE i.id = :id AND i.activo = 1 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -53,7 +55,7 @@ class InventarioModel
     // Busca un insumo por su codigo
     public function buscarPorCodigo($codigo)
     {
-        $consulta = "SELECT * FROM insumos WHERE codigo = :codigo LIMIT 1";
+        $consulta = "SELECT * FROM insumos WHERE codigo = :codigo AND activo = 1 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':codigo', $codigo, PDO::PARAM_STR);
         $stmt->execute();
@@ -114,7 +116,7 @@ class InventarioModel
     // Elimina un insumo
     public function eliminarInsumo($id)
     {
-        $consulta = "DELETE FROM insumos WHERE id = :id";
+        $consulta = "UPDATE insumos SET activo = 0 WHERE id = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         
@@ -124,7 +126,7 @@ class InventarioModel
     // Verifica si un codigo ya existe
     public function codigoExiste($codigo, $idExcluir = null)
     {
-        $consulta = "SELECT COUNT(*) as total FROM insumos WHERE codigo = :codigo";
+        $consulta = "SELECT COUNT(*) as total FROM insumos WHERE codigo = :codigo AND activo = 1";
         
         if ($idExcluir !== null) {
             $consulta .= " AND id != :id";
@@ -149,9 +151,9 @@ class InventarioModel
         $consulta = "SELECT i.*, p.nombre_empresa as proveedor_nombre 
                      FROM insumos i 
                      LEFT JOIN proveedores p ON i.proveedor_id = p.id 
-                     WHERE i.nombre LIKE :termino1 
+                     WHERE i.activo = 1 AND (i.nombre LIKE :termino1 
                         OR i.codigo LIKE :termino2 
-                        OR i.categoria LIKE :termino3 
+                        OR i.categoria LIKE :termino3) 
                      ORDER BY i.nombre ASC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':termino1', $termino, PDO::PARAM_STR);
@@ -168,7 +170,7 @@ class InventarioModel
         $consulta = "SELECT i.*, p.nombre_empresa as proveedor_nombre 
                      FROM insumos i 
                      LEFT JOIN proveedores p ON i.proveedor_id = p.id 
-                     WHERE i.stock_actual <= i.stock_minimo 
+                     WHERE i.activo = 1 AND i.stock_actual <= i.stock_minimo 
                      ORDER BY i.stock_actual ASC";
         $stmt = $this->conexion->query($consulta);
         

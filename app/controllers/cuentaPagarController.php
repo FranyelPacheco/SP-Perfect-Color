@@ -5,12 +5,15 @@
 namespace App\Controllers;
 
 use App\Models\CuentaPagarModel;
+use App\Models\ProveedorModel;
 use function App\Helpers\respuestaJson;
 use function App\Helpers\verificarAutenticacion;
 use function App\Helpers\verificarRolAdmin;
+use \PDOException;
 
-// Instancia limpia del modelo para uso procedimental
+// Instancias limpias de los modelos para uso procedimental
 $cuentaPagarModel = new CuentaPagarModel();
+$proveedorModel = new ProveedorModel();
 
 // 1. Muestra la lista de cuentas por pagar
 if ($metodo === 'index') {
@@ -79,6 +82,7 @@ if ($metodo === 'index') {
     $cuentaId = intval($_POST['cuenta_id'] ?? 0);
     $monto = floatval($_POST['monto'] ?? 0);
     $metodoPago = $_POST['metodo_pago'] ?? 'Transferencia';
+    $fecha = $_POST['fecha'] ?? date('Y-m-d');
     
     if ($cuentaId < 1) {
         respuestaJson('error', 'Cuenta no valida');
@@ -89,10 +93,54 @@ if ($metodo === 'index') {
     }
     
     try {
-        $cuentaPagarModel->registrarPago($cuentaId, $monto, $metodoPago);
+        $cuentaPagarModel->registrarPago($cuentaId, $monto, $metodoPago, $fecha);
         respuestaJson('exito', 'Pago registrado exitosamente');
     } catch (PDOException $e) {
         respuestaJson('error', $e->getMessage());
+    }
+
+// 6. Obtiene los proveedores para el formulario
+} elseif ($metodo === 'obtenerProveedoresAjax') {
+    verificarAutenticacion();
+    
+    $proveedores = $proveedorModel->listarTodos();
+    error_log('[CxP] Proveedores encontrados: ' . count($proveedores));
+    
+    respuestaJson('exito', 'Proveedores obtenidos correctamente', [
+        'proveedores' => $proveedores
+    ]);
+
+// 7. Guarda una nueva cuenta por pagar via AJAX
+} elseif ($metodo === 'guardarManual') {
+    verificarRolAdmin();
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        respuestaJson('error', 'Metodo no permitido');
+    }
+    
+    $proveedorId = intval($_POST['proveedor_id'] ?? 0);
+    $montoTotal = floatval($_POST['monto_total'] ?? 0);
+    $fechaVencimiento = $_POST['fecha_vencimiento'] ?? '';
+    
+    if ($proveedorId < 1) {
+        respuestaJson('error', 'Debe seleccionar un proveedor');
+    }
+    
+    if ($montoTotal <= 0) {
+        respuestaJson('error', 'El monto total debe ser mayor a cero');
+    }
+    
+    if (empty($fechaVencimiento)) {
+        respuestaJson('error', 'Debe indicar una fecha de vencimiento');
+    }
+    
+    try {
+        $cuentaId = $cuentaPagarModel->crearCuenta($proveedorId, $montoTotal, $fechaVencimiento);
+        respuestaJson('exito', 'Cuenta por pagar creada exitosamente', [
+            'cuenta_id' => $cuentaId
+        ]);
+    } catch (PDOException $e) {
+        respuestaJson('error', 'Error al crear la cuenta: ' . $e->getMessage());
     }
 
 // Fallback: Metodo desconocido
