@@ -21,18 +21,16 @@ class CuentaCobrarModel
     public function listarTodas()
     {
         $consulta = "SELECT cc.*, 
-                            CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
-                            c.cedula as cliente_cedula,
-                            c.telefono as cliente_telefono,
-                            f.numero_factura,
-                            ne.id as nota_id,
-                            ne.fecha as nota_fecha
-                     FROM cuentas_cobrar cc 
-                     INNER JOIN clientes c ON cc.cliente_id = c.id 
-                     LEFT JOIN facturas f ON cc.factura_id = f.id 
-                     LEFT JOIN notas_entrega ne ON cc.nota_entrega_id = ne.id
-                     WHERE cc.activo = 1
-                     ORDER BY cc.estado ASC, cc.fecha_vencimiento ASC";
+                        CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
+                        c.cedula as cliente_cedula,
+                        c.telefono as cliente_telefono,
+                        ne.id as nota_id,
+                        ne.fecha as nota_fecha
+                FROM cuentas_cobrar cc 
+                INNER JOIN clientes c ON cc.cliente_id = c.id 
+                LEFT JOIN notas_entrega ne ON cc.nota_entrega_id = ne.id
+                WHERE cc.activo = 1
+                ORDER BY cc.estado ASC, cc.fecha_vencimiento ASC";
         $stmt = $this->conexion->query($consulta);
         
         return $stmt->fetchAll();
@@ -42,16 +40,15 @@ class CuentaCobrarModel
     public function buscarPorId($id)
     {
         $consulta = "SELECT cc.*, 
-                            CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
-                            c.cedula as cliente_cedula,
-                            f.numero_factura,
-                            ne.id as nota_id,
-                            ne.fecha as nota_fecha
-                     FROM cuentas_cobrar cc 
-                     INNER JOIN clientes c ON cc.cliente_id = c.id 
-                     LEFT JOIN facturas f ON cc.factura_id = f.id 
-                     LEFT JOIN notas_entrega ne ON cc.nota_entrega_id = ne.id
-                     WHERE cc.id = :id AND cc.activo = 1";
+                        CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
+                        c.cedula as cliente_cedula,
+                        c.telefono as cliente_telefono,
+                        ne.id as nota_id,
+                        ne.fecha as nota_fecha
+                FROM cuentas_cobrar cc 
+                INNER JOIN clientes c ON cc.cliente_id = c.id 
+                LEFT JOIN notas_entrega ne ON cc.nota_entrega_id = ne.id
+                WHERE cc.id = :id AND cc.activo = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -108,15 +105,7 @@ class CuentaCobrarModel
             $stmtActualizar->bindParam(':estado', $nuevoEstado, PDO::PARAM_STR);
             $stmtActualizar->bindParam(':id', $cuentaId, PDO::PARAM_INT);
             $stmtActualizar->execute();
-            
-            // Si la cuenta esta pagada y tiene factura asociada, actualizar la factura
-            if ($nuevoEstado == 'pagado' && !empty($cuenta['factura_id'])) {
-                $consultaFactura = "UPDATE facturas SET estado = 'pagado' WHERE id = :id";
-                $stmtFactura = $this->conexion->prepare($consultaFactura);
-                $stmtFactura->bindParam(':id', $cuenta['factura_id'], PDO::PARAM_INT);
-                $stmtFactura->execute();
-            }
-            
+
             $this->conexion->commit();
             
             return true;
@@ -132,20 +121,18 @@ class CuentaCobrarModel
     {
         $terminoLike = '%' . $termino . '%';
         $consulta = "SELECT cc.*, 
-                            CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
-                            c.cedula as cliente_cedula,
-                            c.telefono as cliente_telefono,
-                            f.numero_factura,
-                            ne.id as nota_id,
-                            ne.fecha as nota_fecha
-                     FROM cuentas_cobrar cc 
-                     INNER JOIN clientes c ON cc.cliente_id = c.id 
-                     LEFT JOIN facturas f ON cc.factura_id = f.id 
-                     LEFT JOIN notas_entrega ne ON cc.nota_entrega_id = ne.id
-                     WHERE cc.activo = 1 AND (c.nombres LIKE :termino1 
-                        OR c.apellidos LIKE :termino2 
-                        OR c.cedula LIKE :termino3) 
-                     ORDER BY cc.estado ASC, cc.fecha_vencimiento ASC";
+                        CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
+                        c.cedula as cliente_cedula,
+                        c.telefono as cliente_telefono,
+                        ne.id as nota_id,
+                        ne.fecha as nota_fecha
+                FROM cuentas_cobrar cc 
+                INNER JOIN clientes c ON cc.cliente_id = c.id 
+                LEFT JOIN notas_entrega ne ON cc.nota_entrega_id = ne.id
+                WHERE cc.activo = 1 AND (c.nombres LIKE :termino1 
+                    OR c.apellidos LIKE :termino2 
+                    OR c.cedula LIKE :termino3) 
+                ORDER BY cc.estado ASC, cc.fecha_vencimiento ASC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':termino1', $terminoLike, PDO::PARAM_STR);
         $stmt->bindParam(':termino2', $terminoLike, PDO::PARAM_STR);

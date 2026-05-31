@@ -25,8 +25,6 @@
                 <span>
                     <?php if (!empty($cuenta['nota_id'])): ?>
                         <a href="/SP%20Perfect%20Color/notaEntrega/ver?id=<?php echo $cuenta['nota_id']; ?>">Nota de Entrega #<?php echo $cuenta['nota_id']; ?></a>
-                    <?php elseif (!empty($cuenta['numero_factura'])): ?>
-                        <?php echo $cuenta['numero_factura']; ?>
                     <?php else: ?>
                         N/A
                     <?php endif; ?>
