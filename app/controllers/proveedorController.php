@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Models\ProveedorModel;
 use function App\Helpers\respuestaJson;
 use function App\Helpers\verificarAutenticacion;
+use function App\Helpers\verificarAcceso;
 use function App\Helpers\verificarRolAdmin;
 use function App\Helpers\validarRequerido;
 use function App\Helpers\validarRIF;
@@ -16,12 +17,12 @@ use function App\Helpers\validarCorreo;
 $proveedorModel = new ProveedorModel();
 
 if ($metodo === 'index') {
-    verificarAutenticacion();
+    verificarAcceso([1]);
 
     $contenidoVista = __DIR__ . '/../views/proveedorListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 } elseif ($metodo === 'listarAjax') {
-    verificarAutenticacion();
+    verificarAcceso([1]);
 
     $proveedores = $proveedorModel->listarTodos();
 
@@ -29,7 +30,7 @@ if ($metodo === 'index') {
         'proveedores' => $proveedores
     ]);
 } elseif ($metodo === 'buscarAjax') {
-    verificarAutenticacion();
+    verificarAcceso([1]);
 
     $termino = trim($_GET['termino'] ?? '');
 

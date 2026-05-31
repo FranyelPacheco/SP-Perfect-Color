@@ -1,20 +1,12 @@
 # 📋 Progreso del Proyecto: SP Perfect Color
 
 ## ✅ Módulos Completados
-* **Módulo de Cuentas por Pagar (CxP):** [x] Finalizado.
-* **Migración de Listados:** [x] Funcionalidad DataTables implementada en CxC, Notas de Entrega y Presupuestos.
+* **Seguridad y Control de Acceso:** [x] Finalizado.
+* **UI/UX:** [x] Estandarización de listados y corrección de tamaño en perfil.
 
-## 🚧 Módulo en Estandarización de Estilos (UI/UX)
-
-Estamos aplicando un diseño unificado a los módulos migrados.
+## 🚧 Módulo en Ajuste Fino
+Corrección de UI en el modal de edición de perfil.
 
 ### Tareas en curso:
-* [ ] **CxC (Cuentas por Cobrar):** Unificación de estilos visuales.
-* [ ] **Notas de Entrega:** Unificación de estilos visuales.
-* [ ] **Presupuestos:** Unificación de estilos visuales.
-
----
-
-### 💡 Estado Actual para la Estandarización:
-* **Objetivo:** Que los 3 módulos migrados (CxC, NE, Presupuestos) luzcan idénticos al módulo de CxP (mismo padding, tipografía, estilo de botones y sombras).
-* **Acción:** Revisar y aplicar clases de Bootstrap y CSS personalizado de forma uniforme.
+* [x] **Corrección de perfil:** Correo electrónico visible.
+* [ ] **Limpieza de UI:** Eliminar redundancia en el modal de edición (botón vs checkbox de contraseña).

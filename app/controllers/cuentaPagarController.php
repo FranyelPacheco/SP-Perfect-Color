@@ -8,6 +8,7 @@ use App\Models\CuentaPagarModel;
 use App\Models\ProveedorModel;
 use function App\Helpers\respuestaJson;
 use function App\Helpers\verificarAutenticacion;
+use function App\Helpers\verificarAcceso;
 use function App\Helpers\verificarRolAdmin;
 use \PDOException;
 
@@ -17,14 +18,14 @@ $proveedorModel = new ProveedorModel();
 
 // 1. Muestra la lista de cuentas por pagar
 if ($metodo === 'index') {
-    verificarAutenticacion();
+    verificarAcceso([1]);
     
     $contenidoVista = __DIR__ . '/../views/cuentaPagarListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
 // 2. Obtiene las cuentas en formato JSON
 } elseif ($metodo === 'listarAjax') {
-    verificarAutenticacion();
+    verificarAcceso([1]);
     
     $cuentas = $cuentaPagarModel->listarTodas();
     
@@ -34,7 +35,7 @@ if ($metodo === 'index') {
 
 // 3. Busca cuentas
 } elseif ($metodo === 'buscarAjax') {
-    verificarAutenticacion();
+    verificarAcceso([1]);
     
     $termino = trim($_GET['termino'] ?? '');
     
@@ -50,7 +51,7 @@ if ($metodo === 'index') {
 
 // 4. Muestra el detalle de una cuenta
 } elseif ($metodo === 'ver') {
-    verificarAutenticacion();
+    verificarAcceso([1]);
     
     $id = intval($_GET['id'] ?? 0);
     
@@ -101,7 +102,7 @@ if ($metodo === 'index') {
 
 // 6. Obtiene los proveedores para el formulario
 } elseif ($metodo === 'obtenerProveedoresAjax') {
-    verificarAutenticacion();
+    verificarAcceso([1]);
     
     $proveedores = $proveedorModel->listarTodos();
     error_log('[CxP] Proveedores encontrados: ' . count($proveedores));

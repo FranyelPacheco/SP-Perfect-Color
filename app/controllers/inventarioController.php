@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Models\InventarioModel;
 use function App\Helpers\respuestaJson;
 use function App\Helpers\verificarAutenticacion;
+use function App\Helpers\verificarAcceso;
 use function App\Helpers\verificarRolAdmin;
 use function App\Helpers\validarRequerido;
 use function App\Helpers\validarDecimalPositivo;
@@ -17,14 +18,14 @@ $inventarioModel = new InventarioModel();
 
 // 1. Muestra la lista de insumos
 if ($metodo === 'index') {
-    verificarAutenticacion();
+    verificarAcceso([1]);
     
     $contenidoVista = __DIR__ . '/../views/inventarioListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
 // 2. Obtiene la lista de insumos en formato JSON
 } elseif ($metodo === 'listarAjax') {
-    verificarAutenticacion();
+    verificarAcceso([1]);
     
     $insumos = $inventarioModel->listarTodos();
     $proveedores = $inventarioModel->listarProveedoresActivos();
@@ -38,7 +39,7 @@ if ($metodo === 'index') {
 
 // 3. Busca insumos por termino
 } elseif ($metodo === 'buscarAjax') {
-    verificarAutenticacion();
+    verificarAcceso([1]);
     
     $termino = trim($_GET['termino'] ?? '');
     

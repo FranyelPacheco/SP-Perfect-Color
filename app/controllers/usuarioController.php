@@ -25,6 +25,14 @@ function verificarPropietario($idSolicitado)
 if ($metodo === 'index') {
     verificarAutenticacion();
 
+    // Asegurar que el correo esté en sesión para mostrarlo en la vista
+    if (!isset($_SESSION['usuario_correo'])) {
+        $usuarioActual = $usuarioModel->buscarPorId($_SESSION['usuario_id']);
+        if ($usuarioActual) {
+            $_SESSION['usuario_correo'] = $usuarioActual['correo'];
+        }
+    }
+
     if ($_SESSION['usuario_rol'] == 1) {
         $usuarios = $usuarioModel->listarTodos();
         $roles = $usuarioModel->listarRoles();
@@ -155,6 +163,7 @@ if ($metodo === 'index') {
         // Refrescar sesion si el usuario edito su propio perfil
         if ($id == $_SESSION['usuario_id']) {
             $_SESSION['usuario_nombre'] = $nombre;
+            $_SESSION['usuario_correo'] = $correo;
         }
 
         $cambiarClave = isset($_POST['cambiar_clave']) && $_POST['cambiar_clave'] == '1';

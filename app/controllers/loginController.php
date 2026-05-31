@@ -52,6 +52,7 @@ if ($metodo === 'index') {
     // Establecer variables de sesion
     $_SESSION['usuario_id'] = $usuario['id'];
     $_SESSION['usuario_nombre'] = $usuario['nombre'];
+    $_SESSION['usuario_correo'] = $usuario['correo'];
     $_SESSION['usuario_rol'] = $usuario['rol_id'];
 
     respuestaJson('exito', 'Inicio de sesion exitoso', [

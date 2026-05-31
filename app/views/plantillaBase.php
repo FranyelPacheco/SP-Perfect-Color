@@ -23,12 +23,16 @@
                     <ul class="nav flex-column">
                         <li class="nav-item"><a href="/SP%20Perfect%20Color/dashboard" class="nav-link text-white-50">Inicio</a></li>
                         <li class="nav-item"><a href="/SP%20Perfect%20Color/cliente" class="nav-link text-white-50">Clientes</a></li>
+                        <?php if ($_SESSION['usuario_rol'] === 1): ?>
                         <li class="nav-item"><a href="/SP%20Perfect%20Color/proveedor" class="nav-link text-white-50">Proveedores</a></li>
                         <li class="nav-item"><a href="/SP%20Perfect%20Color/inventario" class="nav-link text-white-50">Inventario</a></li>
+                        <?php endif; ?>
                         <li class="nav-item"><a href="/SP%20Perfect%20Color/presupuesto" class="nav-link text-white-50">Presupuestos</a></li>
                         <li class="nav-item"><a href="/SP%20Perfect%20Color/notaEntrega" class="nav-link text-white-50">Notas de Entrega</a></li>
                         <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaCobrar" class="nav-link text-white-50">Cuentas por Cobrar</a></li>
+                        <?php if ($_SESSION['usuario_rol'] === 1): ?>
                         <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaPagar" class="nav-link text-white-50">Cuentas por Pagar</a></li>
+                        <?php endif; ?>
                     </ul>
                 </nav>
                 <div class="mt-auto p-3 border-top border-secondary small">
@@ -50,12 +54,16 @@
             <ul class="nav flex-column mt-2">
                 <li class="nav-item"><a href="/SP%20Perfect%20Color/dashboard" class="nav-link text-white-50">Inicio</a></li>
                 <li class="nav-item"><a href="/SP%20Perfect%20Color/cliente" class="nav-link text-white-50">Clientes</a></li>
+                <?php if ($_SESSION['usuario_rol'] === 1): ?>
                 <li class="nav-item"><a href="/SP%20Perfect%20Color/proveedor" class="nav-link text-white-50">Proveedores</a></li>
                 <li class="nav-item"><a href="/SP%20Perfect%20Color/inventario" class="nav-link text-white-50">Inventario</a></li>
+                <?php endif; ?>
                 <li class="nav-item"><a href="/SP%20Perfect%20Color/presupuesto" class="nav-link text-white-50">Presupuestos</a></li>
                 <li class="nav-item"><a href="/SP%20Perfect%20Color/notaEntrega" class="nav-link text-white-50">Notas de Entrega</a></li>
                 <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaCobrar" class="nav-link text-white-50">Cuentas por Cobrar</a></li>
+                <?php if ($_SESSION['usuario_rol'] === 1): ?>
                 <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaPagar" class="nav-link text-white-50">Cuentas por Pagar</a></li>
+                <?php endif; ?>
             </ul>
             <div class="mt-auto p-3 border-top border-secondary small">
                 <?php if (isset($_SESSION['usuario_rol']) && in_array($_SESSION['usuario_rol'], [1, 2])): ?>

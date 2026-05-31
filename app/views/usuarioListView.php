@@ -1,33 +1,71 @@
-<?php if ($_SESSION['usuario_rol'] == 1): ?>
-<div id="areaAdminUsuarios" class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-            <h2 class="h4 mb-0">Gestion de Usuarios</h2>
-            <button id="btnNuevoUsuario" class="btn btn-success"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
-        </div>
+<div class="row justify-content-center">
+    <div class="col-12<?php echo $_SESSION['usuario_rol'] == 1 ? ' col-lg-10' : ' col-md-8 col-lg-6'; ?>">
 
-        <div class="table-responsive">
-            <table id="tablaUsuarios" class="table table-hover table-striped mb-0">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Correo</th>
-                        <th>Rol</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="cuerpoTablaUsuarios"></tbody>
-            </table>
+        <?php if ($_SESSION['usuario_rol'] == 1): ?>
+        <div id="areaAdminUsuarios" class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+                    <h2 class="h4 mb-0">Gestion de Usuarios</h2>
+                    <button id="btnNuevoUsuario" class="btn btn-success"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
+                </div>
+                <div class="table-responsive">
+                    <table id="tablaUsuarios" class="table table-hover table-striped mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Correo</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaUsuarios"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
+        <?php endif; ?>
+
+        <?php if ($_SESSION['usuario_rol'] == 2): ?>
+        <div id="perfilVendedor" class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4 text-center">
+                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                     style="width: 80px; height: 80px; font-size: 2rem; font-weight: 600;">
+                    <?php echo strtoupper(substr($_SESSION['usuario_nombre'] ?? 'U', 0, 1)); ?>
+                </div>
+                <h4 class="mb-1"><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></h4>
+                <p class="text-muted mb-3"><?php echo htmlspecialchars($_SESSION['usuario_correo'] ?? 'Correo no disponible'); ?></p>
+                <span class="badge bg-secondary fs-6 mb-3">Vendedor</span>
+
+                <hr class="my-4">
+
+                <div class="text-start mb-3">
+                    <label class="text-muted small text-uppercase fw-semibold mb-1">Nombre Completo</label>
+                    <p class="fw-medium fs-5 mb-0"><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? ''); ?></p>
+                </div>
+                <div class="text-start mb-3">
+                    <label class="text-muted small text-uppercase fw-semibold mb-1">Correo Electronico</label>
+                    <p class="fw-medium fs-5 mb-0"><?php echo htmlspecialchars($_SESSION['usuario_correo'] ?? 'No disponible'); ?></p>
+                </div>
+                <div class="text-start mb-4">
+                    <label class="text-muted small text-uppercase fw-semibold mb-1">Rol</label>
+                    <p class="fw-medium fs-5 mb-0">Vendedor</p>
+                </div>
+
+                <button id="btnEditarPerfil" class="btn btn-primary w-100 py-2">
+                    <i class="bi bi-pencil-square me-2"></i>Editar Perfil
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
+
     </div>
 </div>
-<?php endif; ?>
 
-<div id="modalUsuario" class="modal d-none<?php echo (isset($_SESSION['usuario_rol']) && $_SESSION['usuario_rol'] == 2) ? ' modo-perfil' : ''; ?>" tabindex="-1">
+<div id="modalUsuario" class="modal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-dark text-white text-center border-bottom-0">
+            <div class="modal-header bg-dark text-white border-bottom-0">
                 <h5 class="modal-title text-white" id="tituloModalUsuario">Nuevo Usuario</h5>
                 <button type="button" id="btnCerrarModalUsuario" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -46,21 +84,18 @@
                         <input type="email" id="correoUsuario" name="correo" class="form-control" placeholder="ejemplo@correo.com" required>
                     </div>
 
-                    <button type="button" id="btnToggleClave" class="btn btn-primary btn-sm mt-2 mb-3 d-none">
-                        <i class="bi bi-key me-1"></i>Cambiar Contraseña
-                    </button>
-
                     <div id="grupoClave" class="mb-3">
                         <label for="claveUsuario" class="form-label">Contrasena</label>
                         <input type="password" id="claveUsuario" name="clave" class="form-control" placeholder="Minimo 6 caracteres">
                     </div>
 
-                    <div id="grupoCambiarClave" class="mb-3" style="display: none;">
-                        <div class="form-check mb-2">
-                            <input type="checkbox" id="checkCambiarClave" name="cambiar_clave" value="1" class="form-check-input">
-                            <label for="checkCambiarClave" class="form-check-label">Desea modificar la contrasena actual?</label>
-                        </div>
-                        <input type="password" id="nuevaClaveUsuario" name="nueva_clave" class="form-control" placeholder="Ingrese la nueva contrasena" style="display: none;">
+                    <button type="button" id="btnToggleClave" class="btn btn-primary btn-sm mt-2 mb-3 d-none">
+                        <i class="bi bi-key me-1"></i>Cambiar Contraseña
+                    </button>
+
+                    <div id="grupoNuevaClave" class="mb-3" style="display: none;">
+                        <label for="nuevaClaveUsuario" class="form-label">Nueva Contrasena</label>
+                        <input type="password" id="nuevaClaveUsuario" name="nueva_clave" class="form-control" placeholder="Minimo 6 caracteres">
                     </div>
 
 <?php if ($_SESSION['usuario_rol'] == 1): ?>
@@ -83,7 +118,7 @@
                     <div id="mensajeErrorUsuario" class="alert alert-danger d-none"></div>
                 </div>
 
-                <div class="modal-footer">
+                <div class="modal-footer border-top-0">
                     <button type="button" id="btnCancelarUsuario" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" id="btnGuardarUsuario" class="btn btn-primary">Guardar</button>
                 </div>
@@ -92,4 +127,4 @@
     </div>
 </div>
 
-<script src="/SP%20Perfect%20Color/assets/js/usuario.js"></script>
+<script src="/SP%20Perfect%20Color/assets/js/usuario.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/usuario.js'); ?>"></script>
