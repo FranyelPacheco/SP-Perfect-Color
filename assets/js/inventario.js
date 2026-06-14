@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 insumo.categoria || '-',
                 stockHtml,
                 formatearMoneda(insumo.precio_venta),
-                insumo.proveedor_nombre || '-'
+                insumo.proveedores_nombre || '-'
             ];
 
             if (esAdmin) {
@@ -210,8 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 stockMinimoInsumo.value = insumo.stock_minimo;
                 precioVentaInsumo.value = insumo.precio_venta;
                 precioCompraInsumo.value = insumo.precio_compra;
-                fechaVencimientoInsumo.value = insumo.fecha_vencimiento || '';
-                proveedorInsumo.value = insumo.proveedor_id || '';
+                proveedorInsumo.value = insumo.proveedores_id || '';
                 mensajeError.classList.add('d-none');
 
                 bootstrap.Modal.getOrCreateInstance(modalInsumo).show();

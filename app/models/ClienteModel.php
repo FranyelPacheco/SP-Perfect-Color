@@ -16,19 +16,28 @@ class ClienteModel
         $this->conexion = ConexionBD::obtenerInstancia()->obtenerConexion();
     }
 
-    // Lista todos los clientes
+    // Lista todos los clientes con sus telefonos
     public function listarTodos()
     {
-        $consulta = "SELECT * FROM clientes WHERE activo = 1 ORDER BY apellidos ASC, nombres ASC";
+        $consulta = "SELECT c.*, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
+                     FROM clientes c
+                     LEFT JOIN telefono_cliente tc ON tc.cliente_id = c.id
+                     WHERE c.activo = 1
+                     GROUP BY c.id
+                     ORDER BY c.apellidos ASC, c.nombres ASC";
         $stmt = $this->conexion->query($consulta);
         
         return $stmt->fetchAll();
     }
 
     // Busca un cliente por su cedula
-    public function buscarPorCedula($cedula)
+    private function buscarPorCedula($cedula)
     {
-        $consulta = "SELECT * FROM clientes WHERE cedula = :cedula AND activo = 1 LIMIT 1";
+        $consulta = "SELECT c.*, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
+                     FROM clientes c
+                     LEFT JOIN telefono_cliente tc ON tc.cliente_id = c.id
+                     WHERE c.cedula = :cedula AND c.activo = 1
+                     GROUP BY c.id LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':cedula', $cedula, PDO::PARAM_STR);
         $stmt->execute();
@@ -39,7 +48,11 @@ class ClienteModel
     // Busca un cliente por su ID
     public function buscarPorId($id)
     {
-        $consulta = "SELECT * FROM clientes WHERE id = :id AND activo = 1 LIMIT 1";
+        $consulta = "SELECT c.*, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
+                     FROM clientes c
+                     LEFT JOIN telefono_cliente tc ON tc.cliente_id = c.id
+                     WHERE c.id = :id AND c.activo = 1
+                     GROUP BY c.id LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -47,20 +60,22 @@ class ClienteModel
         return $stmt->fetch();
     }
 
-    // Inserta un nuevo cliente
+    // Inserta un nuevo cliente y retorna el ID
     public function insertarCliente($datos)
     {
-        $consulta = "INSERT INTO clientes (cedula, nombres, apellidos, telefono, correo, direccion) 
-                     VALUES (:cedula, :nombres, :apellidos, :telefono, :correo, :direccion)";
+        $consulta = "INSERT INTO clientes (cedula, nombres, apellidos, correo, direccion) 
+                     VALUES (:cedula, :nombres, :apellidos, :correo, :direccion)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':cedula', $datos['cedula'], PDO::PARAM_STR);
         $stmt->bindParam(':nombres', $datos['nombres'], PDO::PARAM_STR);
         $stmt->bindParam(':apellidos', $datos['apellidos'], PDO::PARAM_STR);
-        $stmt->bindParam(':telefono', $datos['telefono'], PDO::PARAM_STR);
         $stmt->bindParam(':correo', $datos['correo'], PDO::PARAM_STR);
         $stmt->bindParam(':direccion', $datos['direccion'], PDO::PARAM_STR);
-        
-        return $stmt->execute();
+
+        if ($stmt->execute()) {
+            return $this->conexion->lastInsertId();
+        }
+        return false;
     }
 
     // Actualiza un cliente existente
@@ -68,17 +83,44 @@ class ClienteModel
     {
         $consulta = "UPDATE clientes 
                      SET cedula = :cedula, nombres = :nombres, apellidos = :apellidos, 
-                         telefono = :telefono, correo = :correo, direccion = :direccion 
+                         correo = :correo, direccion = :direccion 
                      WHERE id = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':cedula', $datos['cedula'], PDO::PARAM_STR);
         $stmt->bindParam(':nombres', $datos['nombres'], PDO::PARAM_STR);
         $stmt->bindParam(':apellidos', $datos['apellidos'], PDO::PARAM_STR);
-        $stmt->bindParam(':telefono', $datos['telefono'], PDO::PARAM_STR);
         $stmt->bindParam(':correo', $datos['correo'], PDO::PARAM_STR);
         $stmt->bindParam(':direccion', $datos['direccion'], PDO::PARAM_STR);
         $stmt->bindParam(':id', $datos['id'], PDO::PARAM_INT);
         
+        return $stmt->execute();
+    }
+
+    // Gestion de telefonos del cliente
+    private function obtenerTelefonos($clienteId)
+    {
+        $consulta = "SELECT * FROM telefono_cliente WHERE cliente_id = :cliente_id ORDER BY id ASC";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':cliente_id', $clienteId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    public function insertarTelefono($clienteId, $telefono, $tipo = null)
+    {
+        $consulta = "INSERT INTO telefono_cliente (cliente_id, telefono, tipo) VALUES (:cliente_id, :telefono, :tipo)";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':cliente_id', $clienteId, PDO::PARAM_INT);
+        $stmt->bindParam(':telefono', $telefono, PDO::PARAM_STR);
+        $stmt->bindParam(':tipo', $tipo, PDO::PARAM_STR);
+        return $stmt->execute();
+    }
+
+    public function eliminarTelefonos($clienteId)
+    {
+        $consulta = "DELETE FROM telefono_cliente WHERE cliente_id = :cliente_id";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':cliente_id', $clienteId, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
@@ -129,11 +171,14 @@ class ClienteModel
     public function buscarClientes($termino)
     {
         $termino = '%' . $termino . '%';
-        $consulta = "SELECT * FROM clientes 
-                     WHERE activo = 1 AND (nombres LIKE :termino1 
-                        OR apellidos LIKE :termino2 
-                        OR cedula LIKE :termino3) 
-                     ORDER BY apellidos ASC, nombres ASC";
+        $consulta = "SELECT c.*, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
+                     FROM clientes c
+                     LEFT JOIN telefono_cliente tc ON tc.cliente_id = c.id
+                     WHERE c.activo = 1 AND (c.nombres LIKE :termino1 
+                        OR c.apellidos LIKE :termino2 
+                        OR c.cedula LIKE :termino3) 
+                     GROUP BY c.id
+                     ORDER BY c.apellidos ASC, c.nombres ASC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':termino1', $termino, PDO::PARAM_STR);
         $stmt->bindParam(':termino2', $termino, PDO::PARAM_STR);

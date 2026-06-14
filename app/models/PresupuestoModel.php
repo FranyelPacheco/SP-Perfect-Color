@@ -124,6 +124,15 @@ class PresupuestoModel
         return $stmt->execute();
     }
 
+    // Eliminacion logica de un presupuesto
+    public function eliminarPresupuesto($id)
+    {
+        $consulta = "UPDATE presupuestos SET activo = 0 WHERE id = :id";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
     // Busca presupuestos por cliente o estado
     public function buscarPresupuestos($termino, $estado = '')
     {

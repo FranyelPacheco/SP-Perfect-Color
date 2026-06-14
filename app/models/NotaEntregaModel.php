@@ -41,7 +41,7 @@ class NotaEntregaModel
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
                             c.direccion as cliente_direccion,
-                            c.telefono as cliente_telefono,
+                            (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.cliente_id = c.id) as cliente_telefonos,
                             u.nombre as usuario_nombre
                      FROM notas_entrega ne 
                      INNER JOIN clientes c ON ne.cliente_id = c.id 
@@ -91,12 +91,18 @@ class NotaEntregaModel
             }
             
             // Insertar la nota de entrega
-            $consulta = "INSERT INTO notas_entrega (cliente_id, usuario_id, fecha, total, estado, presupuesto_id) 
-                         VALUES (:cliente_id, :usuario_id, CURDATE(), :total, 'entregado', :presupuesto_id)";
+            $estadoNota = !empty($datos['estado']) ? $datos['estado'] : 'pendiente';
+            $tipoPago = !empty($datos['tipo_pago']) ? $datos['tipo_pago'] : 'contado';
+            $metodoPago = !empty($datos['metodo_pago']) ? $datos['metodo_pago'] : null;
+            $consulta = "INSERT INTO notas_entrega (cliente_id, usuario_id, fecha, total, estado, tipo_pago, metodo_pago, presupuesto_id) 
+                          VALUES (:cliente_id, :usuario_id, CURDATE(), :total, :estado, :tipo_pago, :metodo_pago, :presupuesto_id)";
             $stmt = $this->conexion->prepare($consulta);
             $stmt->bindValue(':cliente_id', $datos['cliente_id'], PDO::PARAM_INT);
             $stmt->bindValue(':usuario_id', $datos['usuario_id'], PDO::PARAM_INT);
             $stmt->bindValue(':total', $datos['total']);
+            $stmt->bindValue(':estado', $estadoNota, PDO::PARAM_STR);
+            $stmt->bindValue(':tipo_pago', $tipoPago, PDO::PARAM_STR);
+            $stmt->bindValue(':metodo_pago', $metodoPago, empty($metodoPago) ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmt->bindValue(':presupuesto_id', $datos['presupuesto_id'], empty($datos['presupuesto_id']) ? PDO::PARAM_NULL : PDO::PARAM_INT);
             $stmt->execute();
             
@@ -134,25 +140,35 @@ class NotaEntregaModel
                 $stmtPresupuesto->execute();
             }
             
-            // Crear cuenta por cobrar asociada solo si es credito
-            if (!empty($datos['tipo_pago']) && $datos['tipo_pago'] === 'credito') {
-                error_log('CxC: Insertando cuenta por cobrar para nota_id=' . $notaId . ', total=' . $datos['total']);
-                $fechaVen = !empty($datos['fecha_vencimiento']) ? $datos['fecha_vencimiento'] : date('Y-m-d', strtotime('+30 days'));
-                $consultaCxC = "INSERT INTO cuentas_cobrar (cliente_id, nota_entrega_id, monto_total, saldo_pendiente, fecha_vencimiento, estado, activo) 
-                                VALUES (:cliente_id, :nota_id, :monto_total, :saldo_pendiente, :fecha_vencimiento, 'pendiente', 1)";
-                $stmtCxC = $this->conexion->prepare($consultaCxC);
-                $stmtCxC->bindValue(':cliente_id', $datos['cliente_id'], PDO::PARAM_INT);
-                $stmtCxC->bindValue(':nota_id', $notaId, PDO::PARAM_INT);
-                $stmtCxC->bindValue(':monto_total', $datos['total']);
-                $stmtCxC->bindValue(':saldo_pendiente', $datos['total']);
-                $stmtCxC->bindValue(':fecha_vencimiento', $fechaVen, PDO::PARAM_STR);
-                if (!$stmtCxC->execute()) {
-                    $errInfo = $stmtCxC->errorInfo();
-                    throw new PDOException('Error al insertar en cuentas_cobrar: ' . ($errInfo[2] ?? 'desconocido'));
+            // Registrar ingreso segun tipo de pago
+            if (!empty($datos['tipo_pago'])) {
+                if ($datos['tipo_pago'] === 'credito') {
+                    // Credito: crear cuenta por cobrar pendiente
+                    $fechaVen = !empty($datos['fecha_vencimiento']) ? $datos['fecha_vencimiento'] : date('Y-m-d', strtotime('+10 days'));
+                    $consultaCxC = "INSERT INTO cuentas_cobrar (cliente_id, nota_entrega_id, monto_total, saldo_pendiente, fecha_vencimiento, estado, activo) 
+                                    VALUES (:cliente_id, :nota_id, :monto_total, :saldo_pendiente, :fecha_vencimiento, 'pendiente', 1)";
+                    $stmtCxC = $this->conexion->prepare($consultaCxC);
+                    $stmtCxC->bindValue(':cliente_id', $datos['cliente_id'], PDO::PARAM_INT);
+                    $stmtCxC->bindValue(':nota_id', $notaId, PDO::PARAM_INT);
+                    $stmtCxC->bindValue(':monto_total', $datos['total']);
+                    $stmtCxC->bindValue(':saldo_pendiente', $datos['total']);
+                    $stmtCxC->bindValue(':fecha_vencimiento', $fechaVen, PDO::PARAM_STR);
+                    if (!$stmtCxC->execute()) {
+                        $errInfo = $stmtCxC->errorInfo();
+                        throw new PDOException('Error al insertar en cuentas_cobrar: ' . ($errInfo[2] ?? 'desconocido'));
+                    }
+                } else {
+                    // Contado: registrar ingreso directo (sin cuenta por cobrar)
+                    $fechaHoy = date('Y-m-d');
+                    $metodoPago = !empty($datos['metodo_pago']) ? $datos['metodo_pago'] : 'Efectivo';
+                    $consultaPago = "INSERT INTO pagos_recibidos (cuenta_cobrar_id, monto, fecha, metodo_pago) 
+                                     VALUES (NULL, :monto, :fecha, :metodo)";
+                    $stmtPago = $this->conexion->prepare($consultaPago);
+                    $stmtPago->bindValue(':monto', $datos['total']);
+                    $stmtPago->bindValue(':fecha', $fechaHoy, PDO::PARAM_STR);
+                    $stmtPago->bindValue(':metodo', $metodoPago, PDO::PARAM_STR);
+                    $stmtPago->execute();
                 }
-                error_log('CxC: Cuenta creada exitosamente para nota_id=' . $notaId);
-            } else {
-                error_log('CxC: No se crea cuenta — tipo_pago=' . ($datos['tipo_pago'] ?? 'vacio'));
             }
             
             // Confirmar transaccion
@@ -162,6 +178,93 @@ class NotaEntregaModel
             
         } catch (PDOException $e) {
             // Revertir todo en caso de error
+            $this->conexion->rollback();
+            throw $e;
+        }
+    }
+
+    // Pone una nota de entrega en espera
+    public function ponerEnEspera($id)
+    {
+        return $this->cambiarEstado($id, 'en_espera');
+    }
+
+    // Cambia el estado de una nota de entrega
+    public function cambiarEstado($id, $estado)
+    {
+        $consulta = "UPDATE notas_entrega SET estado = :estado WHERE id = :id AND activo = 1";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':estado', $estado, PDO::PARAM_STR);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    // Actualiza el detalle y total de una nota existente
+    public function actualizarDetalleNota($id, $detalle)
+    {
+        try {
+            $this->conexion->beginTransaction();
+
+            // Obtener detalle anterior para restaurar stock
+            $detalleAnterior = $this->obtenerDetalle($id);
+            foreach ($detalleAnterior as $item) {
+                $consultaRestaurar = "UPDATE insumos SET stock_actual = stock_actual + :cantidad WHERE id = :id";
+                $stmtRestaurar = $this->conexion->prepare($consultaRestaurar);
+                $stmtRestaurar->bindValue(':cantidad', $item['cantidad']);
+                $stmtRestaurar->bindValue(':id', $item['insumo_id'], PDO::PARAM_INT);
+                $stmtRestaurar->execute();
+            }
+
+            // Eliminar detalle anterior
+            $consultaEliminar = "DELETE FROM nota_entrega_detalle WHERE nota_id = :nota_id";
+            $stmtEliminar = $this->conexion->prepare($consultaEliminar);
+            $stmtEliminar->bindValue(':nota_id', $id, PDO::PARAM_INT);
+            $stmtEliminar->execute();
+
+            // Verificar stock para nuevo detalle y descontar
+            $total = 0;
+            $consultaDetalle = "INSERT INTO nota_entrega_detalle (nota_id, insumo_id, cantidad, precio_unitario, subtotal) 
+                                VALUES (:nota_id, :insumo_id, :cantidad, :precio_unitario, :subtotal)";
+            $stmtDetalle = $this->conexion->prepare($consultaDetalle);
+
+            $consultaDescontar = "UPDATE insumos SET stock_actual = stock_actual - :cantidad WHERE id = :id";
+            $stmtDescontar = $this->conexion->prepare($consultaDescontar);
+
+            foreach ($detalle as $item) {
+                $consultaStock = "SELECT stock_actual FROM insumos WHERE id = :id AND activo = 1";
+                $stmtStock = $this->conexion->prepare($consultaStock);
+                $stmtStock->bindValue(':id', $item['insumo_id'], PDO::PARAM_INT);
+                $stmtStock->execute();
+                $insumo = $stmtStock->fetch();
+
+                if (!$insumo || $insumo['stock_actual'] < $item['cantidad']) {
+                    throw new PDOException('Stock insuficiente para el insumo ID: ' . $item['insumo_id']);
+                }
+
+                $stmtDetalle->bindValue(':nota_id', $id, PDO::PARAM_INT);
+                $stmtDetalle->bindValue(':insumo_id', $item['insumo_id'], PDO::PARAM_INT);
+                $stmtDetalle->bindValue(':cantidad', $item['cantidad']);
+                $stmtDetalle->bindValue(':precio_unitario', $item['precio_unitario']);
+                $stmtDetalle->bindValue(':subtotal', $item['subtotal']);
+                $stmtDetalle->execute();
+
+                $stmtDescontar->bindValue(':cantidad', $item['cantidad']);
+                $stmtDescontar->bindValue(':id', $item['insumo_id'], PDO::PARAM_INT);
+                $stmtDescontar->execute();
+
+                $total += $item['subtotal'];
+            }
+
+            // Actualizar total
+            $consultaTotal = "UPDATE notas_entrega SET total = :total WHERE id = :id";
+            $stmtTotal = $this->conexion->prepare($consultaTotal);
+            $stmtTotal->bindValue(':total', $total);
+            $stmtTotal->bindValue(':id', $id, PDO::PARAM_INT);
+            $stmtTotal->execute();
+
+            $this->conexion->commit();
+            return true;
+        } catch (PDOException $e) {
             $this->conexion->rollback();
             throw $e;
         }

@@ -3,11 +3,11 @@
 
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="mb-0">Notas de Entrega</h4>
-            <div class="d-flex gap-2 align-items-center">
-                <input type="text" id="busquedaNotas" class="form-control" style="width: 250px;" placeholder="Buscar por cliente o cedula...">
-                <button type="button" class="btn btn-success" onclick="location.href='/SP%20Perfect%20Color/notaEntrega/nueva'">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h4 class="mb-0 toolbar-title"><i class="bi bi-receipt-cutoff me-2 text-primary"></i>Notas de Entrega</h4>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <input type="text" id="busquedaNotas" class="form-control" style="width: 220px;" placeholder="Buscar por cliente o cedula...">
+                <button type="button" class="btn btn-primary" onclick="location.href='/SP%20Perfect%20Color/notaEntrega/nueva'">
                     <i class="bi bi-plus-lg me-2"></i>Nuevo
                 </button>
             </div>
@@ -15,13 +15,15 @@
 
         <div class="table-responsive">
             <table id="tablaNotas" class="table table-hover table-striped mb-0">
-                <thead class="table-dark">
+                <thead>
                     <tr>
                         <th>ID</th>
                         <th>Fecha</th>
                         <th>Cliente</th>
                         <th>Cedula</th>
                         <th>Total</th>
+                        <th>Estado</th>
+                        <th>Pago</th>
                         <th>Vendedor</th>
                         <th>Acciones</th>
                     </tr>

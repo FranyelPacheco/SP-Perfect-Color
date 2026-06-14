@@ -7,8 +7,8 @@
 </div>
 
 <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white">
-        <h5 class="mb-0">Informacion de la Cuenta</h5>
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-credit-card-2-back-fill me-2 text-primary"></i>Informacion de la Cuenta</h5>
     </div>
     <div class="card-body">
         <div class="row g-3">
@@ -22,16 +22,16 @@
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Telefono:</small>
-                <span><?php echo $cuenta['proveedor_telefono'] ?? '-'; ?></span>
+                <span><?php echo $cuenta['proveedor_telefonos'] ?? '-'; ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Monto Total:</small>
-                <span>Bs. <?php echo number_format($cuenta['monto_total'], 2, ',', '.'); ?></span>
+                <span>$ <?php echo number_format($cuenta['monto_total'], 2, ',', '.'); ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Saldo Pendiente:</small>
                 <span class="fw-bold fs-5 <?php echo $cuenta['saldo_pendiente'] > 0 ? 'text-danger' : 'text-success'; ?>">
-                    Bs. <?php echo number_format($cuenta['saldo_pendiente'], 2, ',', '.'); ?>
+                    $ <?php echo number_format($cuenta['saldo_pendiente'], 2, ',', '.'); ?>
                 </span>
             </div>
             <div class="col-md-4 col-6">
@@ -43,13 +43,13 @@
 </div>
 
 <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white">
-        <h5 class="mb-0">Pagos Realizados</h5>
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-cash-stack me-2 text-primary"></i>Pagos Realizados</h5>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
                         <th>Fecha</th>
                         <th>Monto</th>
@@ -60,7 +60,7 @@
                     <?php foreach ($pagos as $pago): ?>
                     <tr>
                         <td><?php echo $pago['fecha']; ?></td>
-                        <td>Bs. <?php echo number_format($pago['monto'], 2, ',', '.'); ?></td>
+                        <td>$ <?php echo number_format($pago['monto'], 2, ',', '.'); ?></td>
                         <td><?php echo $pago['metodo_pago']; ?></td>
                     </tr>
                     <?php endforeach; ?>
@@ -92,9 +92,9 @@
                     <input type="hidden" id="cuentaId" value="<?php echo $cuenta['id']; ?>">
 
                     <div class="mb-3">
-                        <label for="montoPago" class="form-label">Monto del Abono (Bs.)</label>
+                        <label for="montoPago" class="form-label">Monto del Abono ($)</label>
                         <input type="number" id="montoPago" class="form-control" step="0.01" min="0.01" max="<?php echo $cuenta['saldo_pendiente']; ?>" value="<?php echo $cuenta['saldo_pendiente']; ?>" required>
-                        <small class="text-muted">Saldo pendiente: Bs. <?php echo number_format($cuenta['saldo_pendiente'], 2, ',', '.'); ?></small>
+                        <small class="text-muted">Saldo pendiente: $ <?php echo number_format($cuenta['saldo_pendiente'], 2, ',', '.'); ?></small>
                     </div>
 
                     <div class="mb-3">

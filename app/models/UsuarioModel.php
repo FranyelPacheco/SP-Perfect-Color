@@ -29,7 +29,7 @@ class UsuarioModel
     // Busca un usuario por su ID primario
     public function buscarPorId($id)
     {
-        $consulta = "SELECT * FROM usuarios WHERE id = :id AND activo = 1 LIMIT 1";
+        $consulta = "SELECT * FROM usuarios WHERE id = :id LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();

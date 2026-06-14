@@ -57,7 +57,7 @@ if ($metodo === 'index') {
     $contacto = trim($_POST['contacto'] ?? '');
     $telefono = trim($_POST['telefono'] ?? '');
     $correo = trim($_POST['correo'] ?? '');
-    $rubros = trim($_POST['rubros'] ?? '');
+    $rubros = $_POST['rubros'] ?? [];
 
     // Validar campos obligatorios
     if (!validarRequerido($rif)) {
@@ -91,13 +91,21 @@ if ($metodo === 'index') {
         'nombre_empresa' => $nombreEmpresa,
         'direccion' => $direccion,
         'contacto' => $contacto,
-        'telefono' => $telefono,
-        'correo' => $correo,
-        'rubros' => $rubros
+        'correo' => $correo
     ];
 
     // Insertar proveedor
-    if ($proveedorModel->insertarProveedor($datos)) {
+    $nuevoId = $proveedorModel->insertarProveedor($datos);
+    if ($nuevoId) {
+        if (!empty($telefono)) {
+            $proveedorModel->insertarTelefono($nuevoId, $telefono, 'movil');
+        }
+        foreach ($rubros as $rubro) {
+            $nombre = trim($rubro);
+            if (!empty($nombre)) {
+                $proveedorModel->insertarRubro($nuevoId, $nombre);
+            }
+        }
         respuestaJson('exito', 'Proveedor creado exitosamente');
     } else {
         respuestaJson('error', 'Error al crear el proveedor');
@@ -133,7 +141,7 @@ if ($metodo === 'index') {
     $contacto = trim($_POST['contacto'] ?? '');
     $telefono = trim($_POST['telefono'] ?? '');
     $correo = trim($_POST['correo'] ?? '');
-    $rubros = trim($_POST['rubros'] ?? '');
+    $rubros = $_POST['rubros'] ?? [];
 
     // Validar
     if ($id < 1) {
@@ -172,13 +180,24 @@ if ($metodo === 'index') {
         'nombre_empresa' => $nombreEmpresa,
         'direccion' => $direccion,
         'contacto' => $contacto,
-        'telefono' => $telefono,
-        'correo' => $correo,
-        'rubros' => $rubros
+        'correo' => $correo
     ];
 
     // Actualizar proveedor
     if ($proveedorModel->actualizarProveedor($datos)) {
+        // Actualizar telefonos
+        $proveedorModel->eliminarTelefonos($id);
+        if (!empty($telefono)) {
+            $proveedorModel->insertarTelefono($id, $telefono, 'movil');
+        }
+        // Actualizar rubros
+        $proveedorModel->eliminarRubros($id);
+        foreach ($rubros as $rubro) {
+            $nombre = trim($rubro);
+            if (!empty($nombre)) {
+                $proveedorModel->insertarRubro($id, $nombre);
+            }
+        }
         respuestaJson('exito', 'Proveedor actualizado exitosamente');
     } else {
         respuestaJson('error', 'Error al actualizar el proveedor');

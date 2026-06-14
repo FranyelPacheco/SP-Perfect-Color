@@ -4,18 +4,18 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-            <h2 class="h4 mb-0">Gestion de Proveedores</h2>
+            <h4 class="mb-0 toolbar-title"><i class="bi bi-truck me-2 text-primary"></i>Proveedores</h4>
             <div class="d-flex gap-2 align-items-center">
-                <input type="text" id="busquedaProveedores" class="form-control" style="width: 250px;" placeholder="Buscar por nombre de empresa o RIF...">
+                <input type="text" id="busquedaProveedores" class="form-control" style="width: 220px;" placeholder="Buscar por nombre de empresa o RIF...">
                 <?php if ($_SESSION['usuario_rol'] == 1): ?>
-                <button id="btnNuevoProveedor" class="btn btn-success"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
+                <button id="btnNuevoProveedor" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
                 <?php endif; ?>
             </div>
         </div>
 
         <div class="table-responsive">
             <table id="tablaProveedores" class="table table-hover table-striped mb-0">
-                <thead class="table-dark">
+                <thead>
                     <tr>
                         <th>RIF</th>
                         <th>Nombre de Empresa</th>
@@ -78,8 +78,14 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="rubrosProveedor" class="form-label">Rubros</label>
-                        <input type="text" id="rubrosProveedor" name="rubros" class="form-control" placeholder="Rubros que suministra">
+                        <label class="form-label">Rubros</label>
+                        <div id="rubrosContainer">
+                            <div class="input-group mb-2 rubro-item">
+                                <input type="text" name="rubros[]" class="form-control" placeholder="Rubro que suministra">
+                                <button class="btn btn-outline-danger btn-remove-rubro" type="button"><i class="bi bi-x"></i></button>
+                            </div>
+                        </div>
+                        <button type="button" id="btnAgregarRubro" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg me-1"></i>Agregar Rubro</button>
                     </div>
 
                     <div id="mensajeErrorProveedor" class="alert alert-danger d-none"></div>

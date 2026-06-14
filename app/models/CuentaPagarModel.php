@@ -34,7 +34,7 @@ class CuentaPagarModel
     public function buscarPorId($id)
     {
         $consulta = "SELECT cp.*, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif,
-                            p.telefono as proveedor_telefono
+                            (SELECT GROUP_CONCAT(tp.telefono SEPARATOR ', ') FROM telf_proveedor tp WHERE tp.proveedor_id = p.id) as proveedor_telefonos
                      FROM cuentas_pagar cp 
                      INNER JOIN proveedores p ON cp.proveedor_id = p.id 
                      WHERE cp.id = :id AND cp.activo = 1";
@@ -117,6 +117,26 @@ class CuentaPagarModel
         $stmt->execute();
         
         return $this->conexion->lastInsertId();
+    }
+
+    // Obtiene el total de pagos realizados hoy
+    public function obtenerTotalPagosHoy()
+    {
+        $hoy = date('Y-m-d');
+        $consulta = "SELECT COALESCE(SUM(monto), 0) as total FROM pagos_realizados WHERE fecha = :hoy";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':hoy', $hoy, PDO::PARAM_STR);
+        $stmt->execute();
+        return $stmt->fetchColumn();
+    }
+
+    // Eliminacion logica de una cuenta (activo = 0)
+    public function eliminarCuenta($id)
+    {
+        $consulta = "UPDATE cuentas_pagar SET activo = 0 WHERE id = :id";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
     }
 
     // Busca cuentas por pagar

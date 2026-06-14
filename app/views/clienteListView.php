@@ -4,16 +4,16 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-            <h2 class="h4 mb-0">Gestion de Clientes</h2>
+            <h4 class="mb-0 toolbar-title"><i class="bi bi-people-fill me-2 text-primary"></i>Clientes</h4>
             <div class="d-flex gap-2 align-items-center">
-                <input type="text" id="busquedaClientes" class="form-control" style="width: 250px;" placeholder="Buscar por cedula, nombre o apellido...">
-                <button id="btnNuevoCliente" class="btn btn-success"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
+                <input type="text" id="busquedaClientes" class="form-control" style="width: 220px;" placeholder="Buscar por cedula, nombre o apellido...">
+                <button id="btnNuevoCliente" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
             </div>
         </div>
 
         <div class="table-responsive">
             <table id="tablaClientes" class="table table-hover table-striped mb-0">
-                <thead class="table-dark">
+                <thead>
                     <tr>
                         <th>Cedula</th>
                         <th>Nombres</th>

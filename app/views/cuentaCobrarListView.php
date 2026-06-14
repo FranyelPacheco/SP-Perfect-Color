@@ -3,16 +3,16 @@
 
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="mb-0">Cuentas por Cobrar</h4>
-            <div class="d-flex gap-2 align-items-center">
-                <input type="text" id="busquedaCuentas" class="form-control" style="width: 250px;" placeholder="Buscar por cliente o cedula...">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h4 class="mb-0 toolbar-title"><i class="bi bi-cash-coin me-2 text-primary"></i>Cuentas por Cobrar</h4>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <input type="text" id="busquedaCuentas" class="form-control" style="width: 220px;" placeholder="Buscar por cliente o cedula...">
             </div>
         </div>
 
         <div class="table-responsive">
             <table id="tablaCuentas" class="table table-hover table-striped mb-0">
-                <thead class="table-dark">
+                <thead>
                     <tr>
                         <th>Cliente</th>
                         <th>Cedula</th>

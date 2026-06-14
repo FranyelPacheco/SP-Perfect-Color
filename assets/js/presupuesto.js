@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         data: 'total',
                         render: function(data) {
                             if (data == null) return '';
-                            return 'Bs. ' + formatearMoneda(data);
+                            return '$ ' + formatearMoneda(data);
                         }
                     },
                     {
@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     '<button class="btn btn-sm btn-success btn-aprobar-presupuesto" data-id="' + row.id + '"><i class="bi bi-check-lg me-1"></i>Aprobar</button>' +
                                     '<button class="btn btn-sm btn-danger btn-rechazar-presupuesto" data-id="' + row.id + '"><i class="bi bi-x-lg me-1"></i>Rechazar</button>';
                             }
+                            html += '<button class="btn btn-sm btn-outline-danger btn-eliminar-presupuesto" data-id="' + row.id + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>';
                             html += '</div>';
                             return html;
                         }
@@ -94,6 +95,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (btn) { cambiarEstado(parseInt(btn.dataset.id), 'aprobado'); return; }
         btn = e.target.closest('.btn-rechazar-presupuesto');
         if (btn) { cambiarEstado(parseInt(btn.dataset.id), 'rechazado'); return; }
+        btn = e.target.closest('.btn-eliminar-presupuesto');
+        if (btn) {
+            if (!confirm('Esta seguro de eliminar este presupuesto?')) return;
+            var fd = new FormData();
+            fd.append('id', btn.dataset.id);
+            fetch('presupuesto/eliminar', { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (res.estado === 'exito') { mostrarNotificacion(res.mensaje, 'exito'); cargarPresupuestos(); }
+                else { mostrarNotificacion(res.mensaje, 'error'); }
+            })
+            .catch(function() { mostrarNotificacion('Error de conexion', 'error'); });
+        }
     });
 
     if (busquedaPresupuestos) {

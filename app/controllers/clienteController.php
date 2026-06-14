@@ -94,13 +94,17 @@ if ($metodo === 'index') {
         'cedula' => $cedula,
         'nombres' => $nombres,
         'apellidos' => $apellidos,
-        'telefono' => $telefono,
         'correo' => $correo,
         'direccion' => $direccion
     ];
 
     // Insertar cliente
-    if ($clienteModel->insertarCliente($datos)) {
+    $nuevoId = $clienteModel->insertarCliente($datos);
+    if ($nuevoId) {
+        // Guardar telefono en la tabla separada
+        if (!empty($telefono)) {
+            $clienteModel->insertarTelefono($nuevoId, $telefono, 'movil');
+        }
         respuestaJson('exito', 'Cliente creado exitosamente');
     } else {
         respuestaJson('error', 'Error al crear el cliente');
@@ -177,13 +181,17 @@ if ($metodo === 'index') {
         'cedula' => $cedula,
         'nombres' => $nombres,
         'apellidos' => $apellidos,
-        'telefono' => $telefono,
         'correo' => $correo,
         'direccion' => $direccion
     ];
 
     // Actualizar cliente
     if ($clienteModel->actualizarCliente($datos)) {
+        // Actualizar telefonos
+        $clienteModel->eliminarTelefonos($id);
+        if (!empty($telefono)) {
+            $clienteModel->insertarTelefono($id, $telefono, 'movil');
+        }
         respuestaJson('exito', 'Cliente actualizado exitosamente');
     } else {
         respuestaJson('error', 'Error al actualizar el cliente');

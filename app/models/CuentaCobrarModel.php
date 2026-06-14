@@ -23,7 +23,7 @@ class CuentaCobrarModel
         $consulta = "SELECT cc.*, 
                         CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                         c.cedula as cliente_cedula,
-                        c.telefono as cliente_telefono,
+                        (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.cliente_id = c.id) as cliente_telefonos,
                         ne.id as nota_id,
                         ne.fecha as nota_fecha
                 FROM cuentas_cobrar cc 
@@ -42,7 +42,7 @@ class CuentaCobrarModel
         $consulta = "SELECT cc.*, 
                         CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                         c.cedula as cliente_cedula,
-                        c.telefono as cliente_telefono,
+                        (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.cliente_id = c.id) as cliente_telefonos,
                         ne.id as nota_id,
                         ne.fecha as nota_fecha
                 FROM cuentas_cobrar cc 
@@ -116,6 +116,26 @@ class CuentaCobrarModel
         }
     }
 
+    // Obtiene el total de pagos recibidos hoy
+    public function obtenerTotalPagosHoy()
+    {
+        $hoy = date('Y-m-d');
+        $consulta = "SELECT COALESCE(SUM(monto), 0) as total FROM pagos_recibidos WHERE fecha = :hoy";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':hoy', $hoy, PDO::PARAM_STR);
+        $stmt->execute();
+        return $stmt->fetchColumn();
+    }
+
+    // Eliminacion logica de una cuenta (activo = 0)
+    public function eliminarCuenta($id)
+    {
+        $consulta = "UPDATE cuentas_cobrar SET activo = 0 WHERE id = :id";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
     // Busca cuentas por cobrar por cliente
     public function buscarCuentas($termino)
     {
@@ -123,7 +143,7 @@ class CuentaCobrarModel
         $consulta = "SELECT cc.*, 
                         CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                         c.cedula as cliente_cedula,
-                        c.telefono as cliente_telefono,
+                        (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.cliente_id = c.id) as cliente_telefonos,
                         ne.id as nota_id,
                         ne.fecha as nota_fecha
                 FROM cuentas_cobrar cc 

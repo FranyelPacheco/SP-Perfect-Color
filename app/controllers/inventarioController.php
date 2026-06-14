@@ -71,7 +71,6 @@ if ($metodo === 'index') {
     $stockMinimo = floatval($_POST['stock_minimo'] ?? 5);
     $precioVenta = floatval($_POST['precio_venta'] ?? 0);
     $precioCompra = floatval($_POST['precio_compra'] ?? 0);
-    $fechaVencimiento = trim($_POST['fecha_vencimiento'] ?? '');
     $proveedorId = !empty($_POST['proveedor_id']) ? intval($_POST['proveedor_id']) : null;
     
     // Validar campos obligatorios
@@ -85,10 +84,6 @@ if ($metodo === 'index') {
     
     if (!validarDecimalPositivo($precioVenta)) {
         respuestaJson('error', 'El precio de venta debe ser un numero positivo');
-    }
-    
-    if (!empty($fechaVencimiento) && !validarFecha($fechaVencimiento)) {
-        respuestaJson('error', 'La fecha de vencimiento no es valida');
     }
     
     // Verificar que el codigo no exista
@@ -106,13 +101,15 @@ if ($metodo === 'index') {
         'stock_actual' => $stockActual,
         'stock_minimo' => $stockMinimo,
         'precio_venta' => $precioVenta,
-        'precio_compra' => $precioCompra,
-        'fecha_vencimiento' => !empty($fechaVencimiento) ? $fechaVencimiento : null,
-        'proveedor_id' => $proveedorId
+        'precio_compra' => $precioCompra
     ];
     
     // Insertar insumo
-    if ($inventarioModel->insertarInsumo($datos)) {
+    $nuevoId = $inventarioModel->insertarInsumo($datos);
+    if ($nuevoId) {
+        if ($proveedorId) {
+            $inventarioModel->asignarProveedorAInsumo($nuevoId, $proveedorId);
+        }
         respuestaJson('exito', 'Insumo creado exitosamente');
     } else {
         respuestaJson('error', 'Error al crear el insumo');
@@ -155,7 +152,6 @@ if ($metodo === 'index') {
     $stockMinimo = floatval($_POST['stock_minimo'] ?? 5);
     $precioVenta = floatval($_POST['precio_venta'] ?? 0);
     $precioCompra = floatval($_POST['precio_compra'] ?? 0);
-    $fechaVencimiento = trim($_POST['fecha_vencimiento'] ?? '');
     $proveedorId = !empty($_POST['proveedor_id']) ? intval($_POST['proveedor_id']) : null;
     
     // Validar
@@ -175,10 +171,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El precio de venta debe ser un numero positivo');
     }
     
-    if (!empty($fechaVencimiento) && !validarFecha($fechaVencimiento)) {
-        respuestaJson('error', 'La fecha de vencimiento no es valida');
-    }
-    
     // Verificar que el codigo no exista en otro insumo
     if ($inventarioModel->codigoExiste($codigo, $id)) {
         respuestaJson('error', 'Ya existe otro insumo con ese codigo');
@@ -195,13 +187,16 @@ if ($metodo === 'index') {
         'stock_actual' => $stockActual,
         'stock_minimo' => $stockMinimo,
         'precio_venta' => $precioVenta,
-        'precio_compra' => $precioCompra,
-        'fecha_vencimiento' => !empty($fechaVencimiento) ? $fechaVencimiento : null,
-        'proveedor_id' => $proveedorId
+        'precio_compra' => $precioCompra
     ];
     
     // Actualizar insumo
     if ($inventarioModel->actualizarInsumo($datos)) {
+        // Actualizar relacion con proveedor
+        $inventarioModel->eliminarProveedoresDeInsumo($id);
+        if ($proveedorId) {
+            $inventarioModel->asignarProveedorAInsumo($id, $proveedorId);
+        }
         respuestaJson('exito', 'Insumo actualizado exitosamente');
     } else {
         respuestaJson('error', 'Error al actualizar el insumo');

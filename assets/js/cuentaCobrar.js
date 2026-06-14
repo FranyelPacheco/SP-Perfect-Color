@@ -14,6 +14,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     cargarCuentas();
 
+    document.getElementById('tablaCuentas').addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-eliminar-cxc');
+        if (btn) {
+            if (!confirm('Esta seguro de eliminar esta cuenta por cobrar?')) return;
+            var fd = new FormData();
+            fd.append('id', btn.dataset.id);
+            fetch('/SP%20Perfect%20Color/cuentaCobrar/eliminar', { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (res.estado === 'exito') { mostrarNotificacion(res.mensaje, 'exito'); cargarCuentas(); }
+                else { mostrarNotificacion(res.mensaje, 'error'); }
+            })
+            .catch(function() { mostrarNotificacion('Error de conexion', 'error'); });
+        }
+    });
+
     if (busquedaCuentas) {
         busquedaCuentas.addEventListener('keyup', function() {
             if ($.fn.DataTable.isDataTable('#tablaCuentas')) {
@@ -51,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         data: 'monto_total',
                         render: function(data) {
                             if (data == null) return '';
-                            return 'Bs. ' + formatearMoneda(data);
+                            return '$ ' + formatearMoneda(data);
                         }
                     },
                     {
@@ -59,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         render: function(data) {
                             if (data == null) return '';
                             var cls = parseFloat(data) > 0 ? 'saldo-pendiente-positivo' : 'saldo-pendiente-cero';
-                            return '<span class="' + cls + '">Bs. ' + formatearMoneda(data) + '</span>';
+                            return '<span class="' + cls + '">$ ' + formatearMoneda(data) + '</span>';
                         }
                     },
                     {
@@ -85,6 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (!row) return '';
                             return '<div class="d-flex gap-2">' +
                                 '<a href="/SP%20Perfect%20Color/cuentaCobrar/ver?id=' + row.id + '" class="btn btn-sm btn-info" title="Ver" data-bs-toggle="tooltip"><i class="bi bi-eye"></i></a>' +
+                                '<button class="btn btn-sm btn-outline-danger btn-eliminar-cxc" data-id="' + row.id + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>' +
                                 '</div>';
                         }
                     }

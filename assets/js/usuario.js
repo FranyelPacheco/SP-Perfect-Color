@@ -49,6 +49,14 @@ document.addEventListener('DOMContentLoaded', function () {
             bootstrap.Modal.getInstance(document.getElementById('modalUsuario')).hide();
         });
 
+        var chk = document.getElementById('chkCambiarClave');
+        if (chk) {
+            chk.addEventListener('change', function() {
+                var grupo = document.getElementById('grupoNuevaClave');
+                if (grupo) grupo.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+
         var modal = document.getElementById('modalUsuario');
         if (modal) {
             modal.addEventListener('hidden.bs.modal', function () {
@@ -56,9 +64,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('mensajeErrorUsuario').style.display = 'none';
                 document.getElementById('grupoClave').style.display = 'block';
                 document.getElementById('claveUsuario').required = false;
-                document.getElementById('btnToggleClave').classList.add('d-none');
+                document.getElementById('grupoCambiarClave').style.display = 'none';
                 document.getElementById('grupoNuevaClave').style.display = 'none';
                 document.getElementById('nuevaClaveUsuario').value = '';
+                document.getElementById('chkCambiarClave').checked = false;
                 document.getElementById('contenedorRol').style.display = 'block';
                 document.getElementById('contenedorEstado').style.display = 'block';
                 document.getElementById('rolUsuario').required = true;
@@ -88,15 +97,8 @@ document.addEventListener('DOMContentLoaded', function () {
         var grupoClave = document.getElementById('grupoClave');
         if (grupoClave) grupoClave.classList.add('d-none');
 
-        var btnToggle = document.getElementById('btnToggleClave');
-        if (btnToggle) {
-            btnToggle.classList.remove('d-none');
-            btnToggle.addEventListener('click', function () {
-                this.classList.add('d-none');
-                var grupo = document.getElementById('grupoNuevaClave');
-                if (grupo) grupo.style.display = 'block';
-            });
-        }
+        var grupoCambiar = document.getElementById('grupoCambiarClave');
+        if (grupoCambiar) grupoCambiar.style.display = 'block';
 
         var btnEditar = document.getElementById('btnEditarPerfil');
         if (btnEditar) {
@@ -189,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('grupoClave').style.display = 'block';
         document.getElementById('claveUsuario').required = true;
 
-        document.getElementById('btnToggleClave').classList.add('d-none');
+        document.getElementById('grupoCambiarClave').style.display = 'none';
         document.getElementById('grupoNuevaClave').style.display = 'none';
         document.getElementById('nuevaClaveUsuario').value = '';
 
@@ -224,9 +226,11 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('grupoClave').style.display = 'none';
             document.getElementById('claveUsuario').required = false;
 
-            document.getElementById('btnToggleClave').classList.remove('d-none');
+            document.getElementById('grupoCambiarClave').style.display = 'block';
             document.getElementById('grupoNuevaClave').style.display = 'none';
             document.getElementById('nuevaClaveUsuario').value = '';
+            var chk = document.getElementById('chkCambiarClave');
+            if (chk) chk.checked = false;
 
             document.getElementById('tituloModalUsuario').textContent = ROL === 2 ? 'Editar Perfil' : 'Editar Usuario';
 
@@ -277,8 +281,14 @@ document.addEventListener('DOMContentLoaded', function () {
         var formData = new FormData(document.getElementById('formularioUsuario'));
 
         if (esEdicion) {
-            var nuevaClave = document.getElementById('nuevaClaveUsuario').value.trim();
-            if (nuevaClave !== '') {
+            var chk = document.getElementById('chkCambiarClave');
+            var cambiarClave = chk && chk.checked;
+            if (cambiarClave) {
+                var nuevaClave = document.getElementById('nuevaClaveUsuario').value.trim();
+                if (!nuevaClave) {
+                    mostrarError('Ingrese la nueva contraseña');
+                    return;
+                }
                 if (nuevaClave.length < 6) {
                     mostrarError('La nueva clave debe tener al menos 6 caracteres');
                     return;
@@ -302,8 +312,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     bootstrap.Modal.getInstance(document.getElementById('modalUsuario')).hide();
                     cargarUsuarios();
                 } else {
-                    var btnToggle = document.getElementById('btnToggleClave');
-                    if (btnToggle) btnToggle.classList.remove('d-none');
+                    var chk = document.getElementById('chkCambiarClave');
+                    if (chk) chk.checked = false;
                     var grupoNC = document.getElementById('grupoNuevaClave');
                     if (grupoNC) grupoNC.style.display = 'none';
                     document.getElementById('nuevaClaveUsuario').value = '';

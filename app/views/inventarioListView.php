@@ -4,11 +4,11 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-            <h2 class="h4 mb-0">Gestion de Inventario</h2>
+            <h4 class="mb-0 toolbar-title"><i class="bi bi-box-seam-fill me-2 text-primary"></i>Inventario / Insumos</h4>
             <div class="d-flex gap-2 align-items-center">
-                <input type="text" id="busquedaInsumos" class="form-control" style="width: 250px;" placeholder="Buscar por codigo, nombre o categoria...">
+                <input type="text" id="busquedaInsumos" class="form-control" style="width: 220px;" placeholder="Buscar por codigo, nombre o categoria...">
                 <?php if ($_SESSION['usuario_rol'] == 1): ?>
-                <button id="btnNuevoInsumo" class="btn btn-success"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
+                <button id="btnNuevoInsumo" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
                 <?php endif; ?>
             </div>
         </div>
@@ -20,7 +20,7 @@
 
         <div class="table-responsive">
             <table id="tablaInsumos" class="table table-hover table-striped mb-0">
-                <thead class="table-dark">
+                <thead>
                     <tr>
                         <th>Codigo</th>
                         <th>Nombre</th>
@@ -120,19 +120,15 @@
                             <label for="stockMinimoInsumo" class="form-label">Stock Minimo</label>
                             <input type="number" id="stockMinimoInsumo" name="stock_minimo" class="form-control" step="0.01" min="0" value="5">
                         </div>
-                        <div class="col-md-4">
-                            <label for="fechaVencimientoInsumo" class="form-label">Fecha Venc.</label>
-                            <input type="date" id="fechaVencimientoInsumo" name="fecha_vencimiento" class="form-control">
-                        </div>
                     </div>
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label for="precioVentaInsumo" class="form-label">Precio de Venta (Bs.)</label>
+                            <label for="precioVentaInsumo" class="form-label">Precio de Venta ($)</label>
                             <input type="number" id="precioVentaInsumo" name="precio_venta" class="form-control" step="0.01" min="0" value="0" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="precioCompraInsumo" class="form-label">Precio de Compra (Bs.)</label>
+                            <label for="precioCompraInsumo" class="form-label">Precio de Compra ($)</label>
                             <input type="number" id="precioCompraInsumo" name="precio_compra" class="form-control" step="0.01" min="0" value="0">
                         </div>
                     </div>

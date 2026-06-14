@@ -4,13 +4,15 @@
         <?php if ($_SESSION['usuario_rol'] == 1): ?>
         <div id="areaAdminUsuarios" class="card border-0 shadow-sm mb-4">
             <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-                    <h2 class="h4 mb-0">Gestion de Usuarios</h2>
-                    <button id="btnNuevoUsuario" class="btn btn-success"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <h4 class="mb-0 toolbar-title"><i class="bi bi-person-badge-fill me-2 text-primary"></i>Usuarios</h4>
+                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                        <button id="btnNuevoUsuario" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table id="tablaUsuarios" class="table table-hover table-striped mb-0">
-                        <thead class="table-dark">
+                        <thead>
                             <tr>
                                 <th>Nombre</th>
                                 <th>Correo</th>
@@ -89,13 +91,15 @@
                         <input type="password" id="claveUsuario" name="clave" class="form-control" placeholder="Minimo 6 caracteres">
                     </div>
 
-                    <button type="button" id="btnToggleClave" class="btn btn-primary btn-sm mt-2 mb-3 d-none">
-                        <i class="bi bi-key me-1"></i>Cambiar Contraseña
-                    </button>
-
-                    <div id="grupoNuevaClave" class="mb-3" style="display: none;">
-                        <label for="nuevaClaveUsuario" class="form-label">Nueva Contrasena</label>
-                        <input type="password" id="nuevaClaveUsuario" name="nueva_clave" class="form-control" placeholder="Minimo 6 caracteres">
+                    <div id="grupoCambiarClave" class="mb-3" style="display:none">
+                        <div class="form-check">
+                            <input type="checkbox" id="chkCambiarClave" class="form-check-input">
+                            <label for="chkCambiarClave" class="form-check-label">Cambiar Contraseña</label>
+                        </div>
+                        <div id="grupoNuevaClave" class="mt-2" style="display:none">
+                            <label for="nuevaClaveUsuario" class="form-label">Nueva Contrasena</label>
+                            <input type="password" id="nuevaClaveUsuario" name="nueva_clave" class="form-control" placeholder="Minimo 6 caracteres">
+                        </div>
                     </div>
 
 <?php if ($_SESSION['usuario_rol'] == 1): ?>

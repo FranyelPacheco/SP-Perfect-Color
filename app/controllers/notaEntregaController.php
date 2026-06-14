@@ -72,6 +72,8 @@ if ($metodo === 'index') {
     
     $detalle = $presupuestoModel->obtenerDetalle($presupuestoId);
     
+    $pageTitle = 'SP Perfect Color - Nota de Entrega desde Presupuesto #' . $presupuestoId;
+    $pageDescription = 'Crear nota de entrega a partir del presupuesto #' . $presupuestoId . ' - SP Perfect Color';
     $contenidoVista = __DIR__ . '/../views/notaEntregaFormView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
@@ -79,6 +81,8 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'nueva') {
     verificarRolVendedor();
     
+    $pageTitle = 'SP Perfect Color - Nueva Nota de Entrega';
+    $pageDescription = 'Crear una nueva nota de entrega directa - SP Perfect Color';
     $contenidoVista = __DIR__ . '/../views/notaEntregaDirectaView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
@@ -95,6 +99,8 @@ if ($metodo === 'index') {
     $clienteId = intval($_POST['cliente_id'] ?? 0);
     $presupuestoId = !empty($_POST['presupuesto_id']) ? intval($_POST['presupuesto_id']) : null;
     $tipoPago = $_POST['tipo_pago'] ?? 'credito';
+    $metodoPago = trim($_POST['metodo_pago'] ?? 'Efectivo');
+    $estadoNota = $_POST['estado'] ?? 'pendiente';
     $fechaVencimiento = $_POST['fecha_vencimiento'] ?? '';
     $items = json_decode($_POST['items'] ?? '[]', true);
     
@@ -152,7 +158,9 @@ if ($metodo === 'index') {
         'usuario_id' => $_SESSION['usuario_id'],
         'total' => $total,
         'presupuesto_id' => $presupuestoId,
+        'estado' => $estadoNota,
         'tipo_pago' => $tipoPago,
+        'metodo_pago' => $metodoPago,
         'fecha_vencimiento' => $fechaVencimiento
     ];
     
@@ -192,6 +200,8 @@ if ($metodo === 'index') {
     
     $detalle = $notaEntregaModel->obtenerDetalle($id);
     
+    $pageTitle = 'SP Perfect Color - Nota de Entrega #' . $id;
+    $pageDescription = 'Detalle de la nota de entrega #' . $id . ' - SP Perfect Color';
     $contenidoVista = __DIR__ . '/../views/notaEntregaVerView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
@@ -218,6 +228,109 @@ if ($metodo === 'index') {
     respuestaJson('exito', 'Insumos obtenidos correctamente', [
         'insumos' => $insumos
     ]);
+
+// 10. Cambia el estado de una nota de entrega (en_espera)
+} elseif ($metodo === 'cambiarEstado') {
+    verificarRolVendedor();
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        respuestaJson('error', 'Metodo no permitido');
+    }
+    
+    $id = intval($_POST['id'] ?? 0);
+    $estado = $_POST['estado'] ?? '';
+    
+    if ($id < 1 || !in_array($estado, ['en_espera', 'pendiente', 'entregado'])) {
+        respuestaJson('error', 'Datos invalidos');
+    }
+    
+    $nota = $notaEntregaModel->buscarPorId($id);
+    if (!$nota) {
+        respuestaJson('error', 'Nota de entrega no encontrada');
+    }
+    
+    try {
+        $notaEntregaModel->cambiarEstado($id, $estado);
+        respuestaJson('exito', 'Estado actualizado a: ' . $estado);
+    } catch (\Throwable $e) {
+        error_log('ERROR al cambiar estado de nota: ' . $e->getMessage());
+        respuestaJson('error', 'Error al actualizar el estado');
+    }
+
+// 11. Muestra formulario para editar una nota en espera
+} elseif ($metodo === 'editar') {
+    verificarRolVendedor();
+
+    $id = intval($_GET['id'] ?? 0);
+    if ($id < 1) {
+        header('Location: /SP%20Perfect%20Color/notaEntrega');
+        exit;
+    }
+
+    $nota = $notaEntregaModel->buscarPorId($id);
+    if (!$nota || $nota['estado'] !== 'en_espera') {
+        header('Location: /SP%20Perfect%20Color/notaEntrega');
+        exit;
+    }
+
+    $detalle = $notaEntregaModel->obtenerDetalle($id);
+
+    $pageTitle = 'SP Perfect Color - Editar Nota de Entrega #' . $id;
+    $pageDescription = 'Modificar items de la nota de entrega #' . $id . ' - SP Perfect Color';
+    $contenidoVista = __DIR__ . '/../views/notaEntregaEditView.php';
+    require_once __DIR__ . '/../views/plantillaBase.php';
+
+// 12. Guarda los cambios de una nota editada
+} elseif ($metodo === 'actualizar') {
+    verificarRolVendedor();
+
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        respuestaJson('error', 'Metodo no permitido');
+    }
+
+    $id = intval($_POST['nota_id'] ?? 0);
+    $items = json_decode($_POST['items'] ?? '[]', true);
+
+    if ($id < 1) {
+        respuestaJson('error', 'ID de nota invalido');
+    }
+
+    $nota = $notaEntregaModel->buscarPorId($id);
+    if (!$nota || $nota['estado'] !== 'en_espera') {
+        respuestaJson('error', 'Solo se pueden editar notas en espera');
+    }
+
+    if (empty($items)) {
+        respuestaJson('error', 'Debe agregar al menos un insumo');
+    }
+
+    $detalle = [];
+    foreach ($items as $item) {
+        $insumoId = intval($item['insumo_id'] ?? 0);
+        $cantidad = floatval($item['cantidad'] ?? 0);
+        $precioUnitario = floatval($item['precio_unitario'] ?? 0);
+        $subtotal = $cantidad * $precioUnitario;
+
+        if ($insumoId < 1 || $cantidad <= 0 || $precioUnitario <= 0) {
+            respuestaJson('error', 'Datos invalidos en uno de los items');
+        }
+
+        $detalle[] = [
+            'insumo_id' => $insumoId,
+            'cantidad' => $cantidad,
+            'precio_unitario' => $precioUnitario,
+            'subtotal' => $subtotal
+        ];
+    }
+
+    try {
+        $notaEntregaModel->actualizarDetalleNota($id, $detalle);
+        respuestaJson('exito', 'Nota de entrega actualizada exitosamente', ['nota_id' => $id]);
+    } catch (PDOException $e) {
+        respuestaJson('error', 'Error al actualizar: ' . $e->getMessage());
+    } catch (\Throwable $e) {
+        respuestaJson('error', 'Error al actualizar la nota: ' . $e->getMessage());
+    }
 
 // Fallback: Metodo desconocido
 } else {

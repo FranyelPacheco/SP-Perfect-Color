@@ -44,6 +44,8 @@ if ($metodo === 'index') {
     }
 
     echo "<script>var SESSION_USER_ROL = " . $_SESSION['usuario_rol'] . "; var SESSION_USER_ID = " . $_SESSION['usuario_id'] . ";</script>";
+    $pageTitle = 'SP Perfect Color - Mi Perfil';
+    $pageDescription = 'Gestión de perfil y usuarios - SP Perfect Color';
     $contenidoVista = __DIR__ . '/../views/usuarioListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
     exit;

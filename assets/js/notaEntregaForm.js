@@ -66,7 +66,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (formularioNotaEntrega) {
         formularioNotaEntrega.addEventListener('submit', function(evento) {
             evento.preventDefault();
-            guardarNotaEntrega();
+            var accion = evento.submitter ? evento.submitter.value : 'pendiente';
+            guardarNotaEntrega(accion);
         });
     }
 
@@ -138,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     '<span class="insumo-nombre">' + insumo.codigo + ' - ' + insumo.nombre + '</span>' +
                     '<span class="insumo-detalle">Stock: ' + formatearMoneda(insumo.stock_actual) + '</span>' +
                 '</div>' +
-                '<span class="insumo-precio">Bs. ' + formatearMoneda(insumo.precio_venta) + '</span>' +
+                '<span class="insumo-precio">$ ' + formatearMoneda(insumo.precio_venta) + '</span>' +
                 '<button type="button" class="btn-primario btn-agregar">Agregar</button>';
             
             div.querySelector('.btn-agregar').addEventListener('click', function() {
@@ -216,8 +217,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 '<td>' + formatearMoneda(item.stock_actual) + '</td>' +
                 '<td><input type="number" class="cantidad-input" value="' + item.cantidad + '" min="0.01" step="0.01" data-indice="' + indice + '"></td>' +
                 '<td><input type="number" class="precio-input" value="' + item.precio_unitario + '" min="0.01" step="0.01" data-indice="' + indice + '"></td>' +
-                '<td>Bs. ' + formatearMoneda(item.subtotal) + '</td>' +
-                '<td><button type="button" class="btn-peligro btn-agregar" data-indice="' + indice + '">Quitar</button></td>';
+                '<td>$ ' + formatearMoneda(item.subtotal) + '</td>' +
+                '<td><button type="button" class="btn btn-sm btn-outline-danger" data-indice="' + indice + '"><i class="bi bi-trash"></i> Quitar</button></td>';
 
             // Evento para cambiar cantidad
             fila.querySelector('.cantidad-input').addEventListener('change', function() {
@@ -253,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             // Evento para quitar item
-            fila.querySelector('.btn-peligro').addEventListener('click', function() {
+            fila.querySelector('.btn-outline-danger').addEventListener('click', function() {
                 var idx = parseInt(this.dataset.indice);
                 itemsNota.splice(idx, 1);
                 actualizarTablaItems();
@@ -263,11 +264,12 @@ document.addEventListener('DOMContentLoaded', function() {
             total += item.subtotal;
         });
 
-        totalNota.textContent = 'Bs. ' + formatearMoneda(total);
+        totalNota.textContent = '$ ' + formatearMoneda(total);
     }
 
     // Guarda la nota de entrega
-    function guardarNotaEntrega() {
+    function guardarNotaEntrega(accion) {
+        accion = accion || 'pendiente';
         try {
             if (!clienteNota) {
                 mostrarError('Error interno: campo cliente no encontrado');
@@ -295,6 +297,12 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('cliente_id', clienteNota.value);
             formData.append('presupuesto_id', presupuestoInput ? presupuestoInput.value : '');
             formData.append('tipo_pago', tipoPagoSelect ? tipoPagoSelect.value : 'credito');
+            formData.append('estado', accion);
+
+            var metodoPagoInput = document.getElementById('metodoPago');
+            if (metodoPagoInput) {
+                formData.append('metodo_pago', metodoPagoInput.value);
+            }
 
             if (fechaVencimientoInput) {
                 formData.append('fecha_vencimiento', fechaVencimientoInput.value);

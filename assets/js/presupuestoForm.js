@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     '<span class="insumo-nombre">' + insumo.codigo + ' - ' + insumo.nombre + '</span>' +
                     '<span class="insumo-detalle">' + (insumo.marca || 'Sin marca') + ' | Stock: ' + formatearMoneda(insumo.stock_actual) + '</span>' +
                 '</div>' +
-                '<span class="insumo-precio">Bs. ' + formatearMoneda(insumo.precio_venta) + '</span>' +
+                '<span class="insumo-precio">$ ' + formatearMoneda(insumo.precio_venta) + '</span>' +
                 '<button type="button" class="btn-primario btn-agregar" data-id="' + insumo.id + '">Agregar</button>';
             
             // Evento para agregar insumo al presupuesto
@@ -229,9 +229,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     '<input type="number" class="precio-input" value="' + item.precio_unitario + '" ' +
                            'min="0.01" step="0.01" data-indice="' + indice + '">' +
                 '</td>' +
-                '<td>Bs. ' + formatearMoneda(item.subtotal) + '</td>' +
+                '<td>$ ' + formatearMoneda(item.subtotal) + '</td>' +
                 '<td>' +
-                    '<button type="button" class="btn-peligro btn-agregar" data-indice="' + indice + '">Quitar</button>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger" data-indice="' + indice + '"><i class="bi bi-trash"></i> Quitar</button>' +
                 '</td>';
 
             // Evento para cambiar cantidad
@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             // Evento para quitar item
-            fila.querySelector('.btn-peligro').addEventListener('click', function() {
+            fila.querySelector('.btn-outline-danger').addEventListener('click', function() {
                 var idx = parseInt(this.dataset.indice);
                 itemsPresupuesto.splice(idx, 1);
                 actualizarTablaItems();
@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Actualizar total
-        totalPresupuesto.textContent = 'Bs. ' + formatearMoneda(total);
+        totalPresupuesto.textContent = '$ ' + formatearMoneda(total);
     }
 
     // Guarda el presupuesto en el servidor
@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(function(respuesta) { return respuesta.json(); })
         .then(function(resultado) {
             if (resultado.estado === 'exito') {
-                mostrarNotificacion('Presupuesto #' + resultado.datos.presupuesto_id + ' creado exitosamente. Total: Bs. ' + formatearMoneda(resultado.datos.total), 'exito');
+                mostrarNotificacion('Presupuesto #' + resultado.datos.presupuesto_id + ' creado exitosamente. Total: $ ' + formatearMoneda(resultado.datos.total), 'exito');
                 
                 // Redirigir a la lista despues de 2 segundos
                 setTimeout(function() {

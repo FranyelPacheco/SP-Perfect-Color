@@ -3,12 +3,12 @@
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0">Presupuesto #<?php echo $presupuesto['id']; ?></h2>
-    <a href="../presupuesto" class="btn btn-secondary">Volver a la lista</a>
+    <a href="../presupuesto" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Volver</a>
 </div>
 
 <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white">
-        <h5 class="mb-0">Informacion del Presupuesto</h5>
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-file-earmark-text-fill me-2 text-primary"></i>Informacion del Presupuesto</h5>
     </div>
     <div class="card-body">
         <div class="row g-3">
@@ -30,13 +30,13 @@
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Estado:</small>
-                <span class="badge <?php echo $presupuesto['estado'] === 'aprobado' ? 'bg-success' : ($presupuesto['estado'] === 'rechazado' ? 'bg-danger' : ($presupuesto['estado'] === 'convertido' ? 'bg-info text-dark' : 'bg-warning text-dark')); ?>">
+                <span class="estado-<?php echo $presupuesto['estado']; ?>">
                     <?php echo ucfirst($presupuesto['estado']); ?>
                 </span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Total:</small>
-                <span class="fw-bold fs-5">Bs. <?php echo number_format($presupuesto['total'], 2, ',', '.'); ?></span>
+                <span class="fw-bold fs-5">$ <?php echo number_format($presupuesto['total'], 2, ',', '.'); ?></span>
             </div>
         </div>
 
@@ -50,13 +50,13 @@
 </div>
 
 <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white">
-        <h5 class="mb-0">Items del Presupuesto</h5>
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-list-check me-2 text-primary"></i>Items del Presupuesto</h5>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
                         <th>Codigo</th>
                         <th>Insumo</th>
@@ -73,15 +73,15 @@
                         <td><?php echo $item['insumo_nombre']; ?></td>
                         <td><?php echo $item['insumo_marca'] ?: '-'; ?></td>
                         <td><?php echo number_format($item['cantidad'], 2, ',', '.'); ?></td>
-                        <td>Bs. <?php echo number_format($item['precio_unitario'], 2, ',', '.'); ?></td>
-                        <td>Bs. <?php echo number_format($item['subtotal'], 2, ',', '.'); ?></td>
+                        <td>$ <?php echo number_format($item['precio_unitario'], 2, ',', '.'); ?></td>
+                        <td>$ <?php echo number_format($item['subtotal'], 2, ',', '.'); ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
-                <tfoot class="table-light">
+                <tfoot>
                     <tr>
                         <td colspan="5" class="text-end fw-bold">Total:</td>
-                        <td class="fw-bold">Bs. <?php echo number_format($presupuesto['total'], 2, ',', '.'); ?></td>
+                        <td class="fw-bold">$ <?php echo number_format($presupuesto['total'], 2, ',', '.'); ?></td>
                     </tr>
                 </tfoot>
             </table>
@@ -91,14 +91,14 @@
 
 <?php if ($presupuesto['estado'] == 'pendiente'): ?>
 <div class="d-flex justify-content-end gap-2">
-    <button class="btn btn-danger" onclick="cambiarEstado(<?php echo $presupuesto['id']; ?>, 'rechazado')">Rechazar</button>
-    <button class="btn btn-success" onclick="cambiarEstado(<?php echo $presupuesto['id']; ?>, 'aprobado')">Aprobar</button>
+    <button class="btn btn-outline-danger" onclick="cambiarEstado(<?php echo $presupuesto['id']; ?>, 'rechazado')"><i class="bi bi-x-lg me-1"></i>Rechazar</button>
+    <button class="btn btn-success" onclick="cambiarEstado(<?php echo $presupuesto['id']; ?>, 'aprobado')"><i class="bi bi-check-lg me-1"></i>Aprobar</button>
 </div>
 <?php endif; ?>
 
 <?php if ($presupuesto['estado'] == 'aprobado'): ?>
 <div class="d-flex justify-content-end">
-    <a href="../notaEntrega/crearDesdePresupuesto?id=<?php echo $presupuesto['id']; ?>" class="btn btn-primary btn-lg">Crear Nota de Entrega</a>
+    <a href="../notaEntrega/crearDesdePresupuesto?id=<?php echo $presupuesto['id']; ?>" class="btn btn-primary btn-lg"><i class="bi bi-receipt-cutoff me-2"></i>Crear Nota de Entrega</a>
 </div>
 <?php endif; ?>
 

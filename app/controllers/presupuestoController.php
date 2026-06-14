@@ -52,6 +52,8 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'nuevo') {
     verificarRolVendedor();
     
+    $pageTitle = 'SP Perfect Color - Nuevo Presupuesto';
+    $pageDescription = 'Crear un nuevo presupuesto o cotización - SP Perfect Color';
     $contenidoVista = __DIR__ . '/../views/presupuestoFormView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
@@ -167,6 +169,8 @@ if ($metodo === 'index') {
     
     $detalle = $presupuestoModel->obtenerDetalle($id);
     
+    $pageTitle = 'SP Perfect Color - Presupuesto #' . $id;
+    $pageDescription = 'Detalle del presupuesto #' . $id . ' - SP Perfect Color';
     $contenidoVista = __DIR__ . '/../views/presupuestoVerView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
@@ -198,6 +202,26 @@ if ($metodo === 'index') {
         respuestaJson('exito', $mensajes[$estado] ?? 'Estado actualizado');
     } else {
         respuestaJson('error', 'Error al cambiar el estado');
+    }
+
+// 10. Eliminacion logica de un presupuesto
+} elseif ($metodo === 'eliminar') {
+    verificarRolVendedor();
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        respuestaJson('error', 'Metodo no permitido');
+    }
+    
+    $id = intval($_POST['id'] ?? 0);
+    if ($id < 1) {
+        respuestaJson('error', 'ID invalido');
+    }
+    
+    try {
+        $presupuestoModel->eliminarPresupuesto($id);
+        respuestaJson('exito', 'Presupuesto eliminado correctamente');
+    } catch (PDOException $e) {
+        respuestaJson('error', 'Error al eliminar el presupuesto: ' . $e->getMessage());
     }
 
 // Fallback: Metodo desconocido

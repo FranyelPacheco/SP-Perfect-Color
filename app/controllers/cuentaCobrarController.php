@@ -66,6 +66,8 @@ if ($metodo === 'index') {
     
     $pagos = $cuentaCobrarModel->obtenerPagos($id);
     
+    $pageTitle = 'SP Perfect Color - Cuenta por Cobrar #' . $id;
+    $pageDescription = 'Detalle de la cuenta por cobrar #' . $id . ' - SP Perfect Color';
     $contenidoVista = __DIR__ . '/../views/cuentaCobrarVerView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
@@ -95,6 +97,26 @@ if ($metodo === 'index') {
         respuestaJson('exito', 'Pago registrado exitosamente');
     } catch (PDOException $e) {
         respuestaJson('error', $e->getMessage());
+    }
+
+// 6. Eliminacion logica de una cuenta
+} elseif ($metodo === 'eliminar') {
+    verificarRolVendedor();
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        respuestaJson('error', 'Metodo no permitido');
+    }
+    
+    $id = intval($_POST['id'] ?? 0);
+    if ($id < 1) {
+        respuestaJson('error', 'ID invalido');
+    }
+    
+    try {
+        $cuentaCobrarModel->eliminarCuenta($id);
+        respuestaJson('exito', 'Cuenta eliminada correctamente');
+    } catch (PDOException $e) {
+        respuestaJson('error', 'Error al eliminar la cuenta: ' . $e->getMessage());
     }
 
 // Fallback: Metodo desconocido

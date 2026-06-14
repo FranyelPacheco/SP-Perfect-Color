@@ -5,7 +5,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SP Perfect Color - Sistema de Gestion</title>
+    <title><?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) : 'SP Perfect Color - Sistema de Gestión'; ?></title>
+    <meta name="description" content="<?php echo isset($pageDescription) ? htmlspecialchars($pageDescription) : 'Sistema de gestión administrativa para SP Perfect Color'; ?>">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="author" content="SP Perfect Color">
+    <meta name="generator" content="SP Perfect Color">
+    <link rel="canonical" href="<?php echo 'https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . ($_SERVER['REQUEST_URI'] ?? '/'); ?>">
+    <link rel="icon" type="image/webp" href="/SP%20Perfect%20Color/assets/images/logo.webp">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="<?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) : 'SP Perfect Color - Sistema de Gestión'; ?>">
+    <meta property="og:description" content="<?php echo isset($pageDescription) ? htmlspecialchars($pageDescription) : 'Sistema de gestión administrativa para SP Perfect Color'; ?>">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SP Perfect Color">
+    <meta property="og:locale" content="es_VE">
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="<?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) : 'SP Perfect Color - Sistema de Gestión'; ?>">
+    <meta name="twitter:description" content="<?php echo isset($pageDescription) ? htmlspecialchars($pageDescription) : 'Sistema de gestión administrativa para SP Perfect Color'; ?>">
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "SP Perfect Color",
+        "url": "<?php echo 'https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/SP%20Perfect%20Color'; ?>",
+        "description": "Sistema de gestión administrativa para SP Perfect Color",
+        "foundingDate": "2025"
+    }
+    </script>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/estiloBase.css">
@@ -13,77 +44,90 @@
 <body>
     <div class="d-flex min-vh-100">
         <!-- Offcanvas sidebar (mobile) -->
-        <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="offcanvasSidebar">
-            <div class="offcanvas-header border-bottom border-secondary">
-                <h5 class="offcanvas-title">SP Perfect Color</h5>
+        <div class="offcanvas offcanvas-start sidebar-offcanvas text-white" tabindex="-1" id="offcanvasSidebar">
+            <div class="offcanvas-header border-bottom border-white border-opacity-10">
+                <div class="d-flex align-items-center gap-2">
+                    <img src="/SP%20Perfect%20Color/assets/images/logo.webp" alt="SP Perfect Color" height="36">
+                    <div>
+                        <h5 class="offcanvas-title fw-bold">SP Perfect Color</h5>
+                        <small class="text-white-50" style="font-size:0.7rem;">Sistema de Gestión</small>
+                    </div>
+                </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
             </div>
             <div class="offcanvas-body p-0 d-flex flex-column">
                 <nav class="mt-2">
                     <ul class="nav flex-column">
-                        <li class="nav-item"><a href="/SP%20Perfect%20Color/dashboard" class="nav-link text-white-50">Inicio</a></li>
-                        <li class="nav-item"><a href="/SP%20Perfect%20Color/cliente" class="nav-link text-white-50">Clientes</a></li>
+                        <li class="nav-item"><a href="/SP%20Perfect%20Color/dashboard" class="nav-link<?php echo ($controlador === 'dashboard') ? ' active' : ''; ?>"><i class="bi bi-grid-fill"></i>Inicio</a></li>
+                        <li class="nav-item"><a href="/SP%20Perfect%20Color/cliente" class="nav-link<?php echo ($controlador === 'cliente') ? ' active' : ''; ?>"><i class="bi bi-people-fill"></i>Clientes</a></li>
                         <?php if ($_SESSION['usuario_rol'] === 1): ?>
-                        <li class="nav-item"><a href="/SP%20Perfect%20Color/proveedor" class="nav-link text-white-50">Proveedores</a></li>
-                        <li class="nav-item"><a href="/SP%20Perfect%20Color/inventario" class="nav-link text-white-50">Inventario</a></li>
+                        <li class="nav-item"><a href="/SP%20Perfect%20Color/proveedor" class="nav-link<?php echo ($controlador === 'proveedor') ? ' active' : ''; ?>"><i class="bi bi-truck"></i>Proveedores</a></li>
+                        <li class="nav-item"><a href="/SP%20Perfect%20Color/inventario" class="nav-link<?php echo ($controlador === 'inventario') ? ' active' : ''; ?>"><i class="bi bi-box-seam-fill"></i>Inventario</a></li>
                         <?php endif; ?>
-                        <li class="nav-item"><a href="/SP%20Perfect%20Color/presupuesto" class="nav-link text-white-50">Presupuestos</a></li>
-                        <li class="nav-item"><a href="/SP%20Perfect%20Color/notaEntrega" class="nav-link text-white-50">Notas de Entrega</a></li>
-                        <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaCobrar" class="nav-link text-white-50">Cuentas por Cobrar</a></li>
+                        <li class="nav-item"><a href="/SP%20Perfect%20Color/presupuesto" class="nav-link<?php echo ($controlador === 'presupuesto') ? ' active' : ''; ?>"><i class="bi bi-file-earmark-text-fill"></i>Presupuestos</a></li>
+                        <li class="nav-item"><a href="/SP%20Perfect%20Color/notaEntrega" class="nav-link<?php echo ($controlador === 'notaEntrega') ? ' active' : ''; ?>"><i class="bi bi-receipt-cutoff"></i>Notas de Entrega</a></li>
+                        <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaCobrar" class="nav-link<?php echo ($controlador === 'cuentaCobrar') ? ' active' : ''; ?>"><i class="bi bi-cash-coin"></i>Cuentas por Cobrar</a></li>
                         <?php if ($_SESSION['usuario_rol'] === 1): ?>
-                        <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaPagar" class="nav-link text-white-50">Cuentas por Pagar</a></li>
+                        <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaPagar" class="nav-link<?php echo ($controlador === 'cuentaPagar') ? ' active' : ''; ?>"><i class="bi bi-credit-card-2-back-fill"></i>Cuentas por Pagar</a></li>
                         <?php endif; ?>
+                        <li class="nav-item mt-2"><a href="/SP%20Perfect%20Color/reporte" class="nav-link<?php echo ($controlador === 'reporte') ? ' active' : ''; ?>"><i class="bi bi-bar-chart-fill"></i>Reportes</a></li>
                     </ul>
                 </nav>
-                <div class="mt-auto p-3 border-top border-secondary small">
+                <div class="sidebar-user">
                     <?php if (isset($_SESSION['usuario_rol']) && in_array($_SESSION['usuario_rol'], [1, 2])): ?>
-                        <a href="/SP%20Perfect%20Color/usuario" class="text-white text-decoration-none d-block mb-2"><?php echo $_SESSION['usuario_nombre'] ?? 'Usuario'; ?></a>
+                        <a href="/SP%20Perfect%20Color/usuario" class="user-name"><i class="bi bi-person-circle me-1"></i><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></a>
                     <?php else: ?>
-                        <span class="text-white-50 d-block mb-2"><?php echo $_SESSION['usuario_nombre'] ?? 'Usuario'; ?></span>
+                        <span class="user-name"><i class="bi bi-person-circle me-1"></i><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></span>
                     <?php endif; ?>
-                    <a href="/SP%20Perfect%20Color/login/salir" class="text-danger text-decoration-none small">Cerrar Sesion</a>
+                    <a href="/SP%20Perfect%20Color/login/salir" class="logout-link"><i class="bi bi-box-arrow-left me-1"></i>Cerrar Sesión</a>
                 </div>
             </div>
         </div>
 
         <!-- Desktop sidebar -->
-        <nav class="bg-dark text-white d-none d-lg-flex flex-column" style="width: 250px; flex-shrink: 0;">
-            <div class="p-3 border-bottom border-secondary">
-                <h5 class="mb-0 fs-5">SP Perfect Color</h5>
+        <nav class="sidebar d-none d-lg-flex">
+            <div class="sidebar-brand">
+                <img src="/SP%20Perfect%20Color/assets/images/logo.webp" alt="SP Perfect Color" class="sidebar-logo">
+                <div class="sidebar-brand-text">
+                    <h5>SP Perfect Color</h5>
+                    <small>Sistema de Gestión</small>
+                </div>
             </div>
-            <ul class="nav flex-column mt-2">
-                <li class="nav-item"><a href="/SP%20Perfect%20Color/dashboard" class="nav-link text-white-50">Inicio</a></li>
-                <li class="nav-item"><a href="/SP%20Perfect%20Color/cliente" class="nav-link text-white-50">Clientes</a></li>
+            <ul class="nav flex-column mt-1">
+                <li class="nav-item"><a href="/SP%20Perfect%20Color/dashboard" class="nav-link<?php echo ($controlador === 'dashboard') ? ' active' : ''; ?>"><i class="bi bi-grid-fill"></i>Inicio</a></li>
+                <li class="nav-item"><a href="/SP%20Perfect%20Color/cliente" class="nav-link<?php echo ($controlador === 'cliente') ? ' active' : ''; ?>"><i class="bi bi-people-fill"></i>Clientes</a></li>
                 <?php if ($_SESSION['usuario_rol'] === 1): ?>
-                <li class="nav-item"><a href="/SP%20Perfect%20Color/proveedor" class="nav-link text-white-50">Proveedores</a></li>
-                <li class="nav-item"><a href="/SP%20Perfect%20Color/inventario" class="nav-link text-white-50">Inventario</a></li>
+                <li class="nav-item"><a href="/SP%20Perfect%20Color/proveedor" class="nav-link<?php echo ($controlador === 'proveedor') ? ' active' : ''; ?>"><i class="bi bi-truck"></i>Proveedores</a></li>
+                <li class="nav-item"><a href="/SP%20Perfect%20Color/inventario" class="nav-link<?php echo ($controlador === 'inventario') ? ' active' : ''; ?>"><i class="bi bi-box-seam-fill"></i>Inventario</a></li>
                 <?php endif; ?>
-                <li class="nav-item"><a href="/SP%20Perfect%20Color/presupuesto" class="nav-link text-white-50">Presupuestos</a></li>
-                <li class="nav-item"><a href="/SP%20Perfect%20Color/notaEntrega" class="nav-link text-white-50">Notas de Entrega</a></li>
-                <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaCobrar" class="nav-link text-white-50">Cuentas por Cobrar</a></li>
+                <li class="nav-item"><a href="/SP%20Perfect%20Color/presupuesto" class="nav-link<?php echo ($controlador === 'presupuesto') ? ' active' : ''; ?>"><i class="bi bi-file-earmark-text-fill"></i>Presupuestos</a></li>
+                <li class="nav-item"><a href="/SP%20Perfect%20Color/notaEntrega" class="nav-link<?php echo ($controlador === 'notaEntrega') ? ' active' : ''; ?>"><i class="bi bi-receipt-cutoff"></i>Notas de Entrega</a></li>
+                <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaCobrar" class="nav-link<?php echo ($controlador === 'cuentaCobrar') ? ' active' : ''; ?>"><i class="bi bi-cash-coin"></i>Cuentas por Cobrar</a></li>
                 <?php if ($_SESSION['usuario_rol'] === 1): ?>
-                <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaPagar" class="nav-link text-white-50">Cuentas por Pagar</a></li>
+                <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaPagar" class="nav-link<?php echo ($controlador === 'cuentaPagar') ? ' active' : ''; ?>"><i class="bi bi-credit-card-2-back-fill"></i>Cuentas por Pagar</a></li>
                 <?php endif; ?>
+                <li class="nav-item mt-2"><a href="/SP%20Perfect%20Color/reporte" class="nav-link<?php echo ($controlador === 'reporte') ? ' active' : ''; ?>"><i class="bi bi-bar-chart-fill"></i>Reportes</a></li>
             </ul>
-            <div class="mt-auto p-3 border-top border-secondary small">
+            <div class="sidebar-user">
                 <?php if (isset($_SESSION['usuario_rol']) && in_array($_SESSION['usuario_rol'], [1, 2])): ?>
-                    <a href="/SP%20Perfect%20Color/usuario" class="text-white text-decoration-none d-block mb-2"><?php echo $_SESSION['usuario_nombre'] ?? 'Usuario'; ?></a>
+                    <a href="/SP%20Perfect%20Color/usuario" class="user-name"><i class="bi bi-person-circle me-1"></i><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></a>
                 <?php else: ?>
-                    <span class="text-white-50 d-block mb-2"><?php echo $_SESSION['usuario_nombre'] ?? 'Usuario'; ?></span>
+                    <span class="user-name"><i class="bi bi-person-circle me-1"></i><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></span>
                 <?php endif; ?>
-                <a href="/SP%20Perfect%20Color/login/salir" class="text-danger text-decoration-none small">Cerrar Sesion</a>
+                <a href="/SP%20Perfect%20Color/login/salir" class="logout-link"><i class="bi bi-box-arrow-left me-1"></i>Cerrar Sesión</a>
             </div>
         </nav>
 
         <!-- Main content -->
-        <main class="flex-grow-1 bg-light">
+        <main class="flex-grow-1" style="background: #f4f6f9;">
             <!-- Mobile top navbar -->
-            <nav class="navbar navbar-dark bg-dark d-lg-none px-3 py-2">
+            <nav class="navbar navbar-dark top-navbar d-lg-none px-3 py-2">
                 <div class="d-flex align-items-center w-100">
                     <button class="navbar-toggler border-0 me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar">
                         <span class="navbar-toggler-icon"></span>
                     </button>
-                    <span class="navbar-brand mb-0 fs-6">SP Perfect Color</span>
+                    <img src="/SP%20Perfect%20Color/assets/images/logo.webp" alt="SP Perfect Color" height="28" class="me-2">
+                    <span class="navbar-brand mb-0 fs-6 fw-bold">SP Perfect Color</span>
                 </div>
             </nav>
 

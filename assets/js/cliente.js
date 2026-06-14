@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cliente.cedula,
                 cliente.nombres,
                 cliente.apellidos,
-                cliente.telefono || '-',
+                cliente.telefonos || '-',
                 cliente.correo || '-',
                 acciones
             ]);
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cedulaCliente.value = c.cedula;
                 nombresCliente.value = c.nombres;
                 apellidosCliente.value = c.apellidos;
-                telefonoCliente.value = c.telefono || '';
+                telefonoCliente.value = c.telefonos || '';
                 correoCliente.value = c.correo || '';
                 direccionCliente.value = c.direccion || '';
                 tituloModal.textContent = 'Editar Cliente';

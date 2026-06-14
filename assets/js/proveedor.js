@@ -25,13 +25,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const telefonoProveedor = document.getElementById('telefonoProveedor');
     const correoProveedor = document.getElementById('correoProveedor');
     const direccionProveedor = document.getElementById('direccionProveedor');
-    const rubrosProveedor = document.getElementById('rubrosProveedor');
+    const rubrosContainer = document.getElementById('rubrosContainer');
+    const btnAgregarRubro = document.getElementById('btnAgregarRubro');
     const mensajeError = document.getElementById('mensajeErrorProveedor');
 
     var esAdmin = document.getElementById('btnNuevoProveedor') !== null;
 
     // Cargar lista de proveedores al iniciar
     cargarProveedores();
+
+    function crearItemRubro(valor) {
+        var div = document.createElement('div');
+        div.className = 'input-group mb-2 rubro-item';
+        div.innerHTML = '<input type="text" name="rubros[]" class="form-control" placeholder="Rubro que suministra" value="' + (typeof valor === 'string' ? valor.replace(/"/g, '&quot;') : '') + '">' +
+            '<button class="btn btn-outline-danger btn-remove-rubro" type="button"><i class="bi bi-x"></i></button>';
+        return div;
+    }
+
+    function resetRubrosContainer(valores) {
+        rubrosContainer.innerHTML = '';
+        if (valores && valores.length) {
+            valores.forEach(function(v) { rubrosContainer.appendChild(crearItemRubro(v)); });
+        } else {
+            rubrosContainer.appendChild(crearItemRubro(''));
+        }
+    }
 
     // Evento para abrir modal de nuevo proveedor
     if (btnNuevoProveedor) {
@@ -45,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
             telefonoProveedor.value = '';
             correoProveedor.value = '';
             direccionProveedor.value = '';
-            rubrosProveedor.value = '';
+            resetRubrosContainer();
             mensajeError.classList.add('d-none');
             bootstrap.Modal.getOrCreateInstance(modalProveedor).show();
         });
@@ -61,6 +79,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Agregar rubro dinamico
+    if (btnAgregarRubro) {
+        btnAgregarRubro.addEventListener('click', function() {
+            rubrosContainer.appendChild(crearItemRubro(''));
+        });
+    }
+
+    // Eliminar rubro (delegation)
+    if (rubrosContainer) {
+        rubrosContainer.addEventListener('click', function(e) {
+            var btn = e.target.closest('.btn-remove-rubro');
+            if (btn) {
+                var items = rubrosContainer.querySelectorAll('.rubro-item');
+                if (items.length > 1) {
+                    btn.closest('.rubro-item').remove();
+                }
+            }
+        });
+    }
+
     // Evento para enviar formulario
     if (formularioProveedor) {
         formularioProveedor.addEventListener('submit', async function(evento) {
@@ -73,6 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (modalProveedor) {
         modalProveedor.addEventListener('hidden.bs.modal', function () {
             formularioProveedor.reset();
+            resetRubrosContainer();
             mensajeError.classList.add('d-none');
         });
     }
@@ -134,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 proveedor.rif,
                 proveedor.nombre_empresa,
                 proveedor.contacto || '-',
-                proveedor.telefono || '-',
+                proveedor.telefonos || '-',
                 proveedor.correo || '-',
                 proveedor.rubros || '-'
             ];
@@ -172,10 +211,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 rifProveedor.disabled = true;
                 nombreEmpresaProveedor.value = proveedor.nombre_empresa;
                 contactoProveedor.value = proveedor.contacto || '';
-                telefonoProveedor.value = proveedor.telefono || '';
+                telefonoProveedor.value = proveedor.telefonos || '';
                 correoProveedor.value = proveedor.correo || '';
                 direccionProveedor.value = proveedor.direccion || '';
-                rubrosProveedor.value = proveedor.rubros || '';
+                var rubrosArray = proveedor.rubros ? proveedor.rubros.split(', ').filter(Boolean) : [];
+                resetRubrosContainer(rubrosArray.length ? rubrosArray : ['']);
                 mensajeError.classList.add('d-none');
 
                 bootstrap.Modal.getOrCreateInstance(modalProveedor).show();

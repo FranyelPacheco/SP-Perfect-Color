@@ -1,55 +1,65 @@
-// Archivo: login.js
-// Manejo del formulario de inicio de sesion
-
 document.addEventListener('DOMContentLoaded', function() {
-    const formulario = document.getElementById('formularioLogin');
-    const mensajeError = document.getElementById('mensajeError');
+    var formulario = document.getElementById('formularioLogin');
+    var mensajeError = document.getElementById('mensajeError');
+    var correoInput = document.getElementById('correo');
+    var claveInput = document.getElementById('clave');
+    var btnLogin = document.getElementById('btnLogin');
+    var btnText = document.getElementById('btnText');
+    var btnSpinner = document.getElementById('btnSpinner');
+    var toggleClave = document.getElementById('toggleClave');
+    var toggleIcono = document.getElementById('toggleIcono');
 
-    // Verificar que los elementos existen antes de continuar
-    if (!formulario) {
-        console.error('No se encontro el formulario de login');
-        return;
-    }
-    if (!mensajeError) {
-        console.error('No se encontro el contenedor de mensajes de error');
-        return;
+    if (!formulario) return;
+
+    correoInput.focus();
+
+    if (toggleClave) {
+        toggleClave.addEventListener('click', function() {
+            var type = claveInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            claveInput.setAttribute('type', type);
+            toggleIcono.classList.toggle('bi-eye-slash-fill');
+            toggleIcono.classList.toggle('bi-eye-fill');
+        });
     }
 
     formulario.addEventListener('submit', async function(evento) {
-        // Prevenir el envio tradicional del formulario
         evento.preventDefault();
 
-        // Ocultar mensajes de error anteriores
-        mensajeError.style.display = 'none';
+        mensajeError.classList.add('d-none');
         mensajeError.textContent = '';
+        mensajeError.classList.remove('shake');
 
-        // Recoger datos del formulario
-        const datosFormulario = new FormData(formulario);
+        btnLogin.disabled = true;
+        btnText.textContent = 'Ingresando...';
+        btnSpinner.classList.remove('d-none');
+
+        var datosFormulario = new FormData(formulario);
 
         try {
-            // Enviar peticion AJAX al servidor
-            const respuesta = await fetch('login/iniciarSesion', {
+            var respuesta = await fetch('/SP%20Perfect%20Color/login/iniciarSesion', {
                 method: 'POST',
                 body: datosFormulario
             });
 
-            const resultado = await respuesta.json();
+            var resultado = await respuesta.json();
 
             if (resultado.estado === 'exito') {
-                // Redirigir al dashboard
                 window.location.href = resultado.datos.redirect;
             } else {
-                // Mostrar mensaje de error
                 mensajeError.textContent = resultado.mensaje;
-                mensajeError.style.display = 'block';
+                mensajeError.classList.remove('d-none');
+                mensajeError.classList.add('shake');
+                btnLogin.disabled = false;
+                btnText.textContent = 'Iniciar Sesión';
+                btnSpinner.classList.add('d-none');
             }
         } catch (error) {
-            // Mostrar el error real en consola para depuracion
-            console.error('Error en la peticion:', error);
-            
-            // Manejar error de conexion
             mensajeError.textContent = 'Error de conexion. Intente nuevamente.';
-            mensajeError.style.display = 'block';
+            mensajeError.classList.remove('d-none');
+            mensajeError.classList.add('shake');
+            btnLogin.disabled = false;
+            btnText.textContent = 'Iniciar Sesión';
+            btnSpinner.classList.add('d-none');
         }
     });
 });
