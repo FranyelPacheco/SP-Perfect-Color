@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const contenidoAlertas = document.getElementById('contenidoAlertas');
 
     let proveedoresGlobal = [];
+    let rubrosGlobal = [];
     const esAdmin = document.getElementById('btnNuevoInsumo') !== null;
 
     // Cargar lista de insumos al iniciar
@@ -43,6 +44,8 @@ document.addEventListener('DOMContentLoaded', function() {
             nombreInsumo.value = '';
             marcaInsumo.value = '';
             rubroInsumo.value = '';
+            rubroInsumo.disabled = false;
+            if (rubrosGlobal.length) llenarSelectRubros(rubrosGlobal);
             unidadMedidaInsumo.value = '';
             stockActualInsumo.value = '0';
             stockMinimoInsumo.value = '5';
@@ -95,7 +98,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     llenarSelectProveedores();
                 }
                 if (resultado.datos.rubros) {
-                    llenarSelectRubros(resultado.datos.rubros);
+                    rubrosGlobal = resultado.datos.rubros;
+                    llenarSelectRubros(rubrosGlobal);
                 }
 
                 if (resultado.datos.alertas && resultado.datos.alertas.length > 0) {
@@ -214,6 +218,46 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Carga los rubros filtrados por proveedor
+    async function cargarRubrosPorProveedor(proveedorId) {
+        if (!proveedorId) {
+            llenarSelectRubros(rubrosGlobal);
+            rubroInsumo.disabled = false;
+            return [];
+        }
+        try {
+            const respuesta = await fetch('inventario/obtenerRubrosPorProveedorAjax?proveedor_id=' + proveedorId);
+            const resultado = await respuesta.json();
+            if (resultado.estado === 'exito') {
+                const rubros = resultado.datos.rubros;
+                if (rubros.length === 0) {
+                    llenarSelectRubros(rubrosGlobal);
+                } else {
+                    llenarSelectRubros(rubros);
+                }
+                rubroInsumo.disabled = false;
+                return rubros;
+            }
+        } catch (error) {
+            console.error('Error al cargar rubros por proveedor:', error);
+        }
+        return [];
+    }
+
+    // Cuando cambia el proveedor, filtrar rubros
+    if (proveedorInsumo) {
+        proveedorInsumo.addEventListener('change', async function() {
+            const rubros = await cargarRubrosPorProveedor(this.value);
+            if (this.value && rubros.length === 1) {
+                rubroInsumo.value = rubros[0].id_rubro;
+                rubroInsumo.disabled = true;
+            } else {
+                rubroInsumo.value = '';
+                rubroInsumo.disabled = false;
+            }
+        });
+    }
+
     // Abre el modal en modo edicion
     async function abrirModalEditar(id) {
         try {
@@ -229,13 +273,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 codigoInsumo.disabled = true;
                 nombreInsumo.value = insumo.nombre;
                 marcaInsumo.value = insumo.marca || '';
-                rubroInsumo.value = insumo.rubro_id || '';
                 unidadMedidaInsumo.value = insumo.unidad_medida || '';
                 stockActualInsumo.value = insumo.stock_actual;
                 stockMinimoInsumo.value = insumo.stock_minimo;
                 precioVentaInsumo.value = insumo.precio_venta;
                 precioCompraInsumo.value = insumo.precio_compra;
                 proveedorInsumo.value = insumo.proveedores_id || '';
+                // Cargar rubros segun el proveedor del insumo
+                const rubrosEdit = await cargarRubrosPorProveedor(proveedorInsumo.value);
+                if (proveedorInsumo.value && rubrosEdit.length === 1) {
+                    rubroInsumo.value = rubrosEdit[0].id_rubro;
+                    rubroInsumo.disabled = true;
+                } else {
+                    rubroInsumo.value = insumo.rubro_id || '';
+                    rubroInsumo.disabled = false;
+                }
                 mensajeError.classList.add('d-none');
 
                 bootstrap.Modal.getOrCreateInstance(modalInsumo).show();

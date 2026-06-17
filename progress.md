@@ -164,6 +164,13 @@
 - [x] 6 controladores: `guardar` reactiva registro inactivo antes de INSERT
 - [x] Evita error UNIQUE KEY al reinsertar después de eliminar
 
+## Rubro — ciclo eliminado: insumo hereda rubro del proveedor
+- [x] `InventarioModel._obtenerRubrosPorProveedor()` — query que trae rubros desde `rubro_proveedor` para un proveedor
+- [x] `inventarioController.obtenerRubrosPorProveedorAjax` — endpoint para frontend
+- [x] Al seleccionar proveedor en el insumo: si tiene 1 rubro → auto-selecciona y bloquea; si tiene varios → filtra; si tiene 0 → muestra todos
+- [x] Al editar insumo: carga rubros del proveedor guardado y selecciona el rubro correcto
+- [x] Formulario reorganizado: Proveedor y Rubro están lado a lado
+
 ## Pendiente
 - [ ] Probar end-to-end: crear Cliente/Proveedor/Insumo con múltiples rubros desde la UI
 - [ ] Verificar que los módulos de Presupuestos y Notas de Entrega funcionen con el nuevo diseño y moneda

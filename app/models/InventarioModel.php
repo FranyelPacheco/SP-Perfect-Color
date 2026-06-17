@@ -69,6 +69,11 @@ class InventarioModel
         return $this->_obtenerAlertasStockBajo();
     }
 
+    public function obtenerRubrosPorProveedor($proveedorId)
+    {
+        return $this->_obtenerRubrosPorProveedor($proveedorId);
+    }
+
     public function asignarProveedorAInsumo($insumoId, $proveedorId)
     {
         return $this->_asignarProveedorAInsumo($insumoId, $proveedorId);
@@ -81,13 +86,14 @@ class InventarioModel
 
     private function _listarTodos()
     {
-        $consulta = "SELECT i.*, r.nombre as rubro_nombre,
+        $consulta = "SELECT i.*, GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
                             GROUP_CONCAT(DISTINCT p.nombre_empresa SEPARATOR ', ') as proveedores_nombre,
                             GROUP_CONCAT(DISTINCT p.id_proveedor SEPARATOR ',') as proveedores_id
                      FROM insumos i
-                     LEFT JOIN rubro r ON i.rubro_id = r.id_rubro
                      LEFT JOIN insumo_proveedor ip ON ip.insumo_id = i.id_insumo
                      LEFT JOIN proveedores p ON p.id_proveedor = ip.proveedor_id
+                     LEFT JOIN rubro_proveedor rp ON rp.proveedor_id = p.id_proveedor
+                     LEFT JOIN rubro r ON rp.rubro_id = r.id_rubro
                      WHERE i.activo = 1
                      GROUP BY i.id_insumo
                      ORDER BY i.nombre ASC";
@@ -113,13 +119,14 @@ class InventarioModel
 
     private function _buscarPorId($id)
     {
-        $consulta = "SELECT i.*, r.nombre as rubro_nombre,
+        $consulta = "SELECT i.*, GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
                             GROUP_CONCAT(DISTINCT p.nombre_empresa SEPARATOR ', ') as proveedores_nombre,
                             GROUP_CONCAT(DISTINCT p.id_proveedor SEPARATOR ',') as proveedores_id
                      FROM insumos i
-                     LEFT JOIN rubro r ON i.rubro_id = r.id_rubro
                      LEFT JOIN insumo_proveedor ip ON ip.insumo_id = i.id_insumo
                      LEFT JOIN proveedores p ON p.id_proveedor = ip.proveedor_id
+                     LEFT JOIN rubro_proveedor rp ON rp.proveedor_id = p.id_proveedor
+                     LEFT JOIN rubro r ON rp.rubro_id = r.id_rubro
                      WHERE i.id_insumo = :id AND i.activo = 1
                      GROUP BY i.id_insumo LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
@@ -141,15 +148,14 @@ class InventarioModel
 
     private function _insertarInsumo($datos)
     {
-        $consulta = "INSERT INTO insumos (codigo, nombre, marca, rubro_id, unidad_medida,
+        $consulta = "INSERT INTO insumos (codigo, nombre, marca, unidad_medida,
                      stock_actual, stock_minimo, precio_venta, precio_compra)
-                     VALUES (:codigo, :nombre, :marca, :rubro_id, :unidad_medida,
+                     VALUES (:codigo, :nombre, :marca, :unidad_medida,
                      :stock_actual, :stock_minimo, :precio_venta, :precio_compra)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':codigo', $datos['codigo'], PDO::PARAM_STR);
         $stmt->bindParam(':nombre', $datos['nombre'], PDO::PARAM_STR);
         $stmt->bindParam(':marca', $datos['marca'], PDO::PARAM_STR);
-        $stmt->bindValue(':rubro_id', !empty($datos['rubro_id']) ? $datos['rubro_id'] : null, empty($datos['rubro_id']) ? PDO::PARAM_NULL : PDO::PARAM_INT);
         $stmt->bindParam(':unidad_medida', $datos['unidad_medida'], PDO::PARAM_STR);
         $stmt->bindParam(':stock_actual', $datos['stock_actual']);
         $stmt->bindParam(':stock_minimo', $datos['stock_minimo']);
@@ -165,7 +171,7 @@ class InventarioModel
     private function _actualizarInsumo($datos)
     {
         $consulta = "UPDATE insumos 
-                     SET codigo = :codigo, nombre = :nombre, marca = :marca, rubro_id = :rubro_id,
+                     SET codigo = :codigo, nombre = :nombre, marca = :marca,
                          unidad_medida = :unidad_medida, stock_actual = :stock_actual,
                          stock_minimo = :stock_minimo, precio_venta = :precio_venta,
                          precio_compra = :precio_compra, activo = 1
@@ -174,7 +180,6 @@ class InventarioModel
         $stmt->bindParam(':codigo', $datos['codigo'], PDO::PARAM_STR);
         $stmt->bindParam(':nombre', $datos['nombre'], PDO::PARAM_STR);
         $stmt->bindParam(':marca', $datos['marca'], PDO::PARAM_STR);
-        $stmt->bindValue(':rubro_id', !empty($datos['rubro_id']) ? $datos['rubro_id'] : null, empty($datos['rubro_id']) ? PDO::PARAM_NULL : PDO::PARAM_INT);
         $stmt->bindParam(':unidad_medida', $datos['unidad_medida'], PDO::PARAM_STR);
         $stmt->bindParam(':stock_actual', $datos['stock_actual']);
         $stmt->bindParam(':stock_minimo', $datos['stock_minimo']);
@@ -233,13 +238,14 @@ class InventarioModel
     private function _buscarInsumos($termino)
     {
         $termino = '%' . $termino . '%';
-        $consulta = "SELECT i.*, r.nombre as rubro_nombre,
+        $consulta = "SELECT i.*, GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
                             GROUP_CONCAT(DISTINCT p.nombre_empresa SEPARATOR ', ') as proveedores_nombre,
                             GROUP_CONCAT(DISTINCT p.id_proveedor SEPARATOR ',') as proveedores_id
                      FROM insumos i
-                     LEFT JOIN rubro r ON i.rubro_id = r.id_rubro
                      LEFT JOIN insumo_proveedor ip ON ip.insumo_id = i.id_insumo
                      LEFT JOIN proveedores p ON p.id_proveedor = ip.proveedor_id
+                     LEFT JOIN rubro_proveedor rp ON rp.proveedor_id = p.id_proveedor
+                     LEFT JOIN rubro r ON rp.rubro_id = r.id_rubro
                      WHERE i.activo = 1 AND (i.nombre LIKE :termino1
                         OR i.codigo LIKE :termino2
                         OR r.nombre LIKE :termino3)
@@ -256,17 +262,31 @@ class InventarioModel
 
     private function _obtenerAlertasStockBajo()
     {
-        $consulta = "SELECT i.*, r.nombre as rubro_nombre,
+        $consulta = "SELECT i.*, GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
                             GROUP_CONCAT(DISTINCT p.nombre_empresa SEPARATOR ', ') as proveedores_nombre
                      FROM insumos i
-                     LEFT JOIN rubro r ON i.rubro_id = r.id_rubro
                      LEFT JOIN insumo_proveedor ip ON ip.insumo_id = i.id_insumo
                      LEFT JOIN proveedores p ON p.id_proveedor = ip.proveedor_id
+                     LEFT JOIN rubro_proveedor rp ON rp.proveedor_id = p.id_proveedor
+                     LEFT JOIN rubro r ON rp.rubro_id = r.id_rubro
                      WHERE i.activo = 1 AND i.stock_actual <= i.stock_minimo
                      GROUP BY i.id_insumo
                      ORDER BY i.stock_actual ASC";
         $stmt = $this->conexion->query($consulta);
 
+        return $stmt->fetchAll();
+    }
+
+    private function _obtenerRubrosPorProveedor($proveedorId)
+    {
+        $consulta = "SELECT r.id_rubro, r.nombre
+                     FROM rubro r
+                     INNER JOIN rubro_proveedor rp ON rp.rubro_id = r.id_rubro
+                     WHERE rp.proveedor_id = :proveedor_id
+                     ORDER BY r.nombre ASC";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':proveedor_id', $proveedorId, PDO::PARAM_INT);
+        $stmt->execute();
         return $stmt->fetchAll();
     }
 

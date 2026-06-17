@@ -67,7 +67,6 @@ if ($metodo === 'index') {
     $codigo = strtoupper(trim($_POST['codigo'] ?? ''));
     $nombre = trim($_POST['nombre'] ?? '');
     $marca = trim($_POST['marca'] ?? '');
-    $rubroId = !empty($_POST['rubro_id']) ? intval($_POST['rubro_id']) : null;
     $unidadMedida = trim($_POST['unidad_medida'] ?? '');
     $stockActual = floatval($_POST['stock_actual'] ?? 0);
     $stockMinimo = floatval($_POST['stock_minimo'] ?? 5);
@@ -98,7 +97,6 @@ if ($metodo === 'index') {
         'codigo' => $codigo,
         'nombre' => $nombre,
         'marca' => $marca,
-        'rubro_id' => $rubroId,
         'unidad_medida' => $unidadMedida,
         'stock_actual' => $stockActual,
         'stock_minimo' => $stockMinimo,
@@ -229,7 +227,22 @@ if ($metodo === 'index') {
         'rubros' => $rubros
     ]);
 
-// 8. Elimina un insumo
+// 8. Obtiene rubros filtrados por proveedor
+} elseif ($metodo === 'obtenerRubrosPorProveedorAjax') {
+    verificarAcceso([1]);
+
+    $proveedorId = intval($_GET['proveedor_id'] ?? 0);
+    if ($proveedorId < 1) {
+        respuestaJson('error', 'ID de proveedor no valido');
+    }
+
+    $rubros = $inventarioModel->obtenerRubrosPorProveedor($proveedorId);
+
+    respuestaJson('exito', 'Rubros obtenidos correctamente', [
+        'rubros' => $rubros
+    ]);
+
+// 9. Elimina un insumo
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
     

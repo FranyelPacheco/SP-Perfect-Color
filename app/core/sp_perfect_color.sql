@@ -134,7 +134,6 @@ CREATE TABLE `insumos` (
   `codigo` varchar(50) NOT NULL,
   `nombre` varchar(150) NOT NULL,
   `marca` varchar(100) DEFAULT NULL,
-  `rubro_id` int(11) DEFAULT NULL,
   `unidad_medida` varchar(30) DEFAULT NULL,
   `stock_actual` decimal(10,2) NOT NULL DEFAULT 0.00,
   `stock_minimo` decimal(10,2) NOT NULL DEFAULT 5.00,
@@ -148,9 +147,9 @@ CREATE TABLE `insumos` (
 -- Volcado de datos para la tabla `insumos`
 --
 
-INSERT INTO `insumos` (`id_insumo`, `activo`, `codigo`, `nombre`, `marca`, `rubro_id`, `unidad_medida`, `stock_actual`, `stock_minimo`, `precio_venta`, `precio_compra`, `created_at`, `updated_at`) VALUES
-(6, 1, '001', 'Fondos esteticos', 'Dall', 1, 'Unidad', 2.00, 5.00, 15.00, 10.00, '2026-06-16 20:49:42', '2026-06-17 12:48:56'),
-(7, 1, '002', 'Colors', 'Jbalvin', 1, 'Unidad', 6.00, 5.00, 33.00, 15.90, '2026-06-16 21:46:58', '2026-06-16 23:19:44');
+INSERT INTO `insumos` (`id_insumo`, `activo`, `codigo`, `nombre`, `marca`, `unidad_medida`, `stock_actual`, `stock_minimo`, `precio_venta`, `precio_compra`, `created_at`, `updated_at`) VALUES
+(6, 1, '001', 'Fondos esteticos', 'Dall', 'Unidad', 2.00, 5.00, 15.00, 10.00, '2026-06-16 20:49:42', '2026-06-17 12:48:56'),
+(7, 1, '002', 'Colors', 'Jbalvin', 'Unidad', 6.00, 5.00, 33.00, 15.90, '2026-06-16 21:46:58', '2026-06-16 23:19:44');
 
 -- --------------------------------------------------------
 
@@ -576,8 +575,7 @@ ALTER TABLE `cuentas_pagar`
 --
 ALTER TABLE `insumos`
   ADD PRIMARY KEY (`id_insumo`),
-  ADD UNIQUE KEY `codigo` (`codigo`),
-  ADD KEY `rubro_id` (`rubro_id`);
+  ADD UNIQUE KEY `codigo` (`codigo`);
 
 --
 -- Indices de la tabla `insumo_proveedor`
@@ -838,12 +836,6 @@ ALTER TABLE `cuentas_cobrar`
 --
 ALTER TABLE `cuentas_pagar`
   ADD CONSTRAINT `fk_cp_proveedor` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedores` (`id_proveedor`) ON UPDATE CASCADE;
-
---
--- Filtros para la tabla `insumos`
---
-ALTER TABLE `insumos`
-  ADD CONSTRAINT `fk_insumos_rubro` FOREIGN KEY (`rubro_id`) REFERENCES `rubro` (`id_rubro`) ON UPDATE CASCADE;
 
 --
 -- Filtros para la tabla `insumo_proveedor`

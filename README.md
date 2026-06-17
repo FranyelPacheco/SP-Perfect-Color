@@ -169,6 +169,7 @@ http://localhost/SP%20Perfect%20Color/login
 - Registro de precios de venta y compra
 - Múltiples proveedores por insumo (bridge table)
 - Reactivación automática al reinsertar código ya existente
+- **Rubro se hereda del proveedor:** al seleccionar un proveedor, el rubro se auto-carga. Si el proveedor tiene 1 rubro, se bloquea y auto-selecciona; si tiene varios, se filtran; si tiene 0, se muestran todos
 
 ### 5. Presupuestos
 - Creación de presupuestos con múltiples items

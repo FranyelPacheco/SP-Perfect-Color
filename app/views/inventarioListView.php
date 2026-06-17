@@ -58,16 +58,9 @@
                             <input type="text" id="codigoInsumo" name="codigo" class="form-control" required placeholder="Codigo unico del insumo">
                         </div>
                         <div class="col-md-6">
-                            <label for="rubroInsumo" class="form-label">Rubro</label>
-                            <select id="rubroInsumo" name="rubro_id" class="form-select">
-                                <option value="">Seleccione un rubro</option>
-                            </select>
+                            <label for="nombreInsumo" class="form-label">Nombre del Insumo</label>
+                            <input type="text" id="nombreInsumo" name="nombre" class="form-control" required placeholder="Ingrese el nombre del insumo">
                         </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="nombreInsumo" class="form-label">Nombre del Insumo</label>
-                        <input type="text" id="nombreInsumo" name="nombre" class="form-control" required placeholder="Ingrese el nombre del insumo">
                     </div>
 
                     <div class="row g-3 mb-3">
@@ -113,11 +106,19 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="proveedorInsumo" class="form-label">Proveedor</label>
-                        <select id="proveedorInsumo" name="proveedor_id" class="form-select">
-                            <option value="">Seleccione un proveedor...</option>
-                        </select>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="proveedorInsumo" class="form-label">Proveedor</label>
+                            <select id="proveedorInsumo" name="proveedor_id" class="form-select">
+                                <option value="">Seleccione un proveedor...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="rubroInsumo" class="form-label">Rubro</label>
+                            <select id="rubroInsumo" name="rubro_id" class="form-select">
+                                <option value="">Seleccione un proveedor primero</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div id="mensajeErrorInsumo" class="alert alert-danger d-none"></div>
