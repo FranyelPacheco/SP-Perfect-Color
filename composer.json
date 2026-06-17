@@ -1,0 +1,21 @@
+{
+    "name": "sp-perfect-color/sistema-gestion",
+    "description": "Sistema de gestion administrativa para SP Perfect Color",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        },
+        "files": [
+            "app/helpers/respuestaHelper.php",
+            "app/helpers/sesionHelper.php",
+            "app/helpers/validacionHelper.php",
+            "app/helpers/exportarReporteHelper.php"
+        ]
+    },
+    "require": {
+        "php": ">=8.0",
+        "dompdf/dompdf": "^3.1",
+        "openspout/openspout": "^4.25"
+    }
+}
