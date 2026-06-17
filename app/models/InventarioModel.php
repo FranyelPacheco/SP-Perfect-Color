@@ -168,7 +168,7 @@ class InventarioModel
                      SET codigo = :codigo, nombre = :nombre, marca = :marca, rubro_id = :rubro_id,
                          unidad_medida = :unidad_medida, stock_actual = :stock_actual,
                          stock_minimo = :stock_minimo, precio_venta = :precio_venta,
-                         precio_compra = :precio_compra
+                         precio_compra = :precio_compra, activo = 1
                      WHERE id_insumo = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':codigo', $datos['codigo'], PDO::PARAM_STR);
@@ -192,6 +192,22 @@ class InventarioModel
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
 
         return $stmt->execute();
+    }
+
+    public function buscarInactivoPorCodigo($codigo)
+    {
+        if (empty($codigo)) return false;
+        return $this->_buscarInactivoPorCodigo($codigo);
+    }
+
+    private function _buscarInactivoPorCodigo($codigo)
+    {
+        $consulta = "SELECT id_insumo FROM insumos WHERE codigo = :codigo AND activo = 0 LIMIT 1";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':codigo', $codigo, PDO::PARAM_STR);
+        $stmt->execute();
+        $fila = $stmt->fetch();
+        return $fila ? (int)$fila['id_insumo'] : false;
     }
 
     private function _codigoExiste($codigo, $idExcluir = null)

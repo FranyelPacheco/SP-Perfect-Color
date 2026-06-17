@@ -141,6 +141,30 @@
 - [x] `sp_perfect_color.sql` actualizado: todas las ocurrencias `utf8mb4_unicode_ci` → `utf8mb4_spanish2_ci`
 - [x] `conexionBD.php`: agregado `SET NAMES 'utf8mb4' COLLATE 'utf8mb4_spanish2_ci'`
 
+## Módulo Config. de Pago — Bancos + Tipos de Pago unificados
+- [x] `configPagoController.php` creado — renderiza vista combinada
+- [x] `configPagoListView.php` — dos cards lado a lado (Bancos + Tipos de Pago)
+- [x] `bancoController.php` / `tipoPagoController.php` redirigen `index` a `configPago`
+- [x] Sidebar reemplazó ambos por "Config. de Pago"
+- [x] `frontController.php`: `configPago` en `$titulosPagina`
+
+## DATATABLES_SPANISH globalizado
+- [x] `utilidades.js`: define `window.DATATABLES_SPANISH`
+- [x] 10 feature JS: `language: window.DATATABLES_SPANISH`
+- [x] `plantillaBase.php`: cache buster `?v=filemtime` en utilidades.js
+
+## Git + GitHub
+- [x] Repositorio inicializado y subido a `https://github.com/FranyelPacheco/SP-Perfect-Color`
+- [x] Rama `main`, commit "optimización y mejora de BD"
+- [x] `vendor/` incluido (quitado de `.gitignore`)
+
+## Reactivación de registros soft-delete
+- [x] 6 modelos: agregado `_buscarInactivoPor*` (cedula, RIF, codigo, correo, nombre)
+- [x] `_actualizar` en Cliente/Proveedor/Inventario ahora setea `activo = 1`
+- [x] 6 controladores: `guardar` reactiva registro inactivo antes de INSERT
+- [x] Evita error UNIQUE KEY al reinsertar después de eliminar
+
 ## Pendiente
 - [ ] Probar end-to-end: crear Cliente/Proveedor/Insumo con múltiples rubros desde la UI
 - [ ] Verificar que los módulos de Presupuestos y Notas de Entrega funcionen con el nuevo diseño y moneda
+- [ ] Probar reactivación: eliminar → crear mismo valor único → verificar activo=1

@@ -106,6 +106,21 @@ if ($metodo === 'index') {
         'precio_compra' => $precioCompra
     ];
     
+    // Si existe un insumo inactivo con el mismo codigo, reactivarlo
+    $inactivoId = $inventarioModel->buscarInactivoPorCodigo($codigo);
+    if ($inactivoId) {
+        $datos['id'] = $inactivoId;
+        if ($inventarioModel->actualizarInsumo($datos)) {
+            $inventarioModel->eliminarProveedoresDeInsumo($inactivoId);
+            if ($proveedorId) {
+                $inventarioModel->asignarProveedorAInsumo($inactivoId, $proveedorId);
+            }
+            respuestaJson('exito', 'Insumo reactivado exitosamente');
+        } else {
+            respuestaJson('error', 'Error al reactivar el insumo');
+        }
+    }
+    
     // Insertar insumo
     $nuevoId = $inventarioModel->insertarInsumo($datos);
     if ($nuevoId) {

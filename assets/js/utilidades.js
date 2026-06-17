@@ -1,6 +1,14 @@
 // Archivo: utilidades.js
 // Funciones utilitarias comunes para todas las vistas
 
+window.DATATABLES_SPANISH = {
+    "emptyTable": "No hay informacion",
+    "zeroRecords": "No se encontraron registros",
+    "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+    "search": "Buscar:",
+    "paginate": { "first": "Primero", "last": "Ultimo", "next": "Siguiente", "previous": "Anterior" }
+};
+
 // Muestra un mensaje temporal en pantalla (toast)
 function mostrarNotificacion(mensaje, tipo) {
     // Crear elemento de notificacion

@@ -1,13 +1,6 @@
 // Archivo: cuentaPagar.js
 // Manejo de la vista de cuentas por pagar
 
-const DATATABLES_SPANISH = {
-    "emptyTable": "No hay informacion",
-    "zeroRecords": "No se encontraron registros",
-    "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
-    "search": "Buscar:",
-    "paginate": { "first": "Primero", "last": "Ultimo", "next": "Siguiente", "previous": "Anterior" }
-};
 
 document.addEventListener('DOMContentLoaded', function() {
     var busquedaCuentas = document.getElementById('busquedaCuentasPagar');
@@ -119,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('[CxP] Columnas en columns[]:', 7);
             $t.DataTable({
                 dom: 'lrtip',
-                language: DATATABLES_SPANISH,
+                language: window.DATATABLES_SPANISH,
                 columns: [
                     { data: 'proveedor_nombre' },
                     { data: 'proveedor_rif' },

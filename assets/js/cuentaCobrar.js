@@ -1,13 +1,6 @@
 // Archivo: cuentaCobrar.js
 // Manejo de la vista de cuentas por cobrar
 
-const DATATABLES_SPANISH = {
-    "emptyTable": "No hay informacion",
-    "zeroRecords": "No se encontraron registros",
-    "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
-    "search": "Buscar:",
-    "paginate": { "first": "Primero", "last": "Ultimo", "next": "Siguiente", "previous": "Anterior" }
-};
 
 document.addEventListener('DOMContentLoaded', function() {
     var busquedaCuentas = document.getElementById('busquedaCuentas');
@@ -52,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!$.fn.DataTable.isDataTable('#tablaCuentas')) {
             $('#tablaCuentas').DataTable({
                 dom: 'lrtip',
-                language: DATATABLES_SPANISH,
+                language: window.DATATABLES_SPANISH,
                 columns: [
                     { data: 'cliente_nombre' },
                     { data: 'cliente_cedula' },

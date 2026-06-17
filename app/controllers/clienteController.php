@@ -98,6 +98,21 @@ if ($metodo === 'index') {
         'direccion' => $direccion
     ];
 
+    // Si existe un cliente inactivo con la misma cedula, reactivarlo
+    $inactivoId = $clienteModel->buscarInactivoPorCedula($cedula);
+    if ($inactivoId) {
+        $datos['id'] = $inactivoId;
+        if ($clienteModel->actualizarCliente($datos)) {
+            if (!empty($telefono)) {
+                $clienteModel->eliminarTelefonos($inactivoId);
+                $clienteModel->insertarTelefono($inactivoId, $telefono, 'movil');
+            }
+            respuestaJson('exito', 'Cliente reactivado exitosamente');
+        } else {
+            respuestaJson('error', 'Error al reactivar el cliente');
+        }
+    }
+
     // Insertar cliente
     $nuevoId = $clienteModel->insertarCliente($datos);
     if ($nuevoId) {

@@ -71,8 +71,7 @@
                         <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaPagar" class="nav-link<?php echo ($controlador === 'cuentaPagar') ? ' active' : ''; ?>"><i class="bi bi-credit-card-2-back-fill"></i>Cuentas por Pagar</a></li>
                         <?php endif; ?>
                         <?php if ($_SESSION['usuario_rol'] === 1): ?>
-                        <li class="nav-item"><a href="/SP%20Perfect%20Color/banco" class="nav-link<?php echo ($controlador === 'banco') ? ' active' : ''; ?>"><i class="bi bi-bank"></i>Bancos</a></li>
-                        <li class="nav-item"><a href="/SP%20Perfect%20Color/tipoPago" class="nav-link<?php echo ($controlador === 'tipoPago') ? ' active' : ''; ?>"><i class="bi bi-credit-card"></i>Tipos de Pago</a></li>
+                        <li class="nav-item"><a href="/SP%20Perfect%20Color/configPago" class="nav-link<?php echo ($controlador === 'configPago') ? ' active' : ''; ?>"><i class="bi bi-gear-fill"></i>Config. de Pago</a></li>
                         <?php endif; ?>
                         <li class="nav-item mt-2"><a href="/SP%20Perfect%20Color/reporte" class="nav-link<?php echo ($controlador === 'reporte') ? ' active' : ''; ?>"><i class="bi bi-bar-chart-fill"></i>Reportes</a></li>
                     </ul>
@@ -111,8 +110,7 @@
                 <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaPagar" class="nav-link<?php echo ($controlador === 'cuentaPagar') ? ' active' : ''; ?>"><i class="bi bi-credit-card-2-back-fill"></i>Cuentas por Pagar</a></li>
                 <?php endif; ?>
                 <?php if ($_SESSION['usuario_rol'] === 1): ?>
-                <li class="nav-item"><a href="/SP%20Perfect%20Color/banco" class="nav-link<?php echo ($controlador === 'banco') ? ' active' : ''; ?>"><i class="bi bi-bank"></i>Bancos</a></li>
-                <li class="nav-item"><a href="/SP%20Perfect%20Color/tipoPago" class="nav-link<?php echo ($controlador === 'tipoPago') ? ' active' : ''; ?>"><i class="bi bi-credit-card"></i>Tipos de Pago</a></li>
+                <li class="nav-item"><a href="/SP%20Perfect%20Color/configPago" class="nav-link<?php echo ($controlador === 'configPago') ? ' active' : ''; ?>"><i class="bi bi-gear-fill"></i>Config. de Pago</a></li>
                 <?php endif; ?>
                 <li class="nav-item mt-2"><a href="/SP%20Perfect%20Color/reporte" class="nav-link<?php echo ($controlador === 'reporte') ? ' active' : ''; ?>"><i class="bi bi-bar-chart-fill"></i>Reportes</a></li>
             </ul>
@@ -151,7 +149,7 @@
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/SP%20Perfect%20Color/assets/js/utilidades.js"></script>
+    <script src="/SP%20Perfect%20Color/assets/js/utilidades.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/utilidades.js'); ?>"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

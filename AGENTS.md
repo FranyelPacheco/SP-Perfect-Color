@@ -117,9 +117,57 @@ Patrón aplicado a cada modelo: métodos públicos con operaciones DB ahora dele
 
 Los helpers y controllers son procedurales (funciones/if-else sin clases), el patrón público→privado no aplica. Se verificaron los 4 helpers y 14 controllers — no faltan archivos.
 
-### 5. Nota de Entrega — tipo_pago obligatorio + botón Nuevo eliminado + view huérfana
+### 5. Bancos + Tipos de Pago unificados en un solo módulo "Config. de Pago"
+- **`app/controllers/configPagoController.php`**: Creado — solo renderiza la vista combinada (`index`)
+- **`app/views/configPagoListView.php`**: Creada — dos cards lado a lado (Bancos + Tipos de Pago), cada una con su DataTable y su modal, carga `banco.js` + `tipoPago.js`
+- **`app/controllers/bancoController.php`**: `index` redirige a `configPago` (AJAX endpoints siguen igual)
+- **`app/controllers/tipoPagoController.php`**: `index` redirige a `configPago` (AJAX endpoints siguen igual)
+- **`app/views/plantillaBase.php`**: Sidebar (móvil y desktop): reemplazados "Bancos" y "Tipos de Pago" por un solo "Config. de Pago"
+- **`app/controllers/frontController.php`**: `$titulosPagina` — agregado `configPago`, quitados `banco`/`tipoPago`
+- **`assets/js/utilidades.js`**: Agregado `window.DATATABLES_SPANISH` (disponible globalmente)
+- **10 JS feature files**: Eliminado `const DATATABLES_SPANISH` de todos (banco, tipoPago, cliente, proveedor, inventario, presupuesto, notaEntrega, cuentaCobrar, cuentaPagar, usuario)
+
+### 6. Nota de Entrega — tipo_pago obligatorio + botón Nuevo eliminado + view huérfana
 - **`app/views/notaEntregaListView.php`**: Botón "Nuevo" eliminado (notas solo se crean desde presupuesto)
 - **`app/views/notaEntregaFormView.php`**: `<select required>` en tipoPago; `toggleCondicionPago()` togglea `required` dinámico
 - **`assets/js/notaEntregaForm.js`**: Validación JS: si condicion_pago es contado, tipo_pago obligatorio
 - **`app/controllers/notaEntregaController.php`**: Validación PHP idem; ruta `nueva` eliminada
 - **`app/views/notaEntregaDirectaView.php`**: Archivo eliminado (ya no usado)
+
+---
+
+## Sesión — Git + DATATABLES_SPANISH + Config. Pago + Reactivación soft-delete
+
+### 1. Git init + push a GitHub
+- Inicializado repositorio en `https://github.com/FranyelPacheco/SP-Perfect-Color`
+- Rama `main`, commit "optimización y mejora de BD"
+- `vendor/` quitado de `.gitignore` e incluido en el repo
+
+### 2. DATATABLES_SPANISH globalizado (fix ReferenceError)
+- **`assets/js/utilidades.js`**: define `window.DATATABLES_SPANISH = {...}`
+- **10 feature JS**: `language: DATATABLES_SPANISH` → `language: window.DATATABLES_SPANISH`
+- **`app/views/plantillaBase.php`**: cache buster `?v=filemtime` en script tag de utilidades.js
+
+### 3. Bancos + Tipos de Pago → Config. de Pago
+- **`app/controllers/configPagoController.php`**: Creado — renderiza vista combinada
+- **`app/views/configPagoListView.php`**: Creada — dos cards lado a lado (Bancos + Tipos de Pago)
+- **`bancoController.php` / `tipoPagoController.php`**: `index` redirige a `configPago`
+- **`plantillaBase.php`**: Sidebar reemplazó "Bancos" y "Tipos de Pago" por "Config. de Pago"
+- **`frontController.php`**: `configPago` en `$titulosPagina`
+
+### 4. Reactivación de registros soft-delete (6 entidades)
+**Problema:** PHP filtra por `activo=1` pero MySQL UNIQUE KEY rechaza el INSERT si existe una fila inactiva con el mismo valor único.
+
+**Solución:** Antes de INSERT, se busca un registro inactivo por su campo único. Si existe, se UPDATE con `activo=1` + datos nuevos.
+
+| Entidad | Campo único | Modelo método | Controller cambio |
+|---------|-------------|---------------|-------------------|
+| Cliente | cedula | `buscarInactivoPorCedula()` | `guardar`: reactiva antes de insertar |
+| Proveedor | rif | `buscarInactivoPorRIF()` | `guardar`: reactiva + reasigna teléfonos/rubros |
+| Insumo | codigo | `buscarInactivoPorCodigo()` | `guardar`: reactiva + reasigna proveedores |
+| Usuario | correo | `buscarInactivoPorCorreo()` | `guardar`: reactiva + actualiza clave |
+| Banco | nombre | `buscarInactivoPorNombre()` | `guardar`: reactiva vía `actualizar(..., 1)` |
+| TipoPago | nombre | `buscarInactivoPorNombre()` | `guardar`: reactiva vía `actualizar(..., 1)` |
+
+**Models:** `_actualizar` en Cliente/Proveedor/Inventario ahora setean `activo = 1` en el UPDATE.
+**Controllers:** Los 6 `guardar` verifican `buscarInactivoPor*` antes de `insertar*`.

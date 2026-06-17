@@ -1,10 +1,3 @@
-const DATATABLES_SPANISH = {
-    "emptyTable": "No hay informacion",
-    "zeroRecords": "No se encontraron registros",
-    "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
-    "search": "Buscar:",
-    "paginate": { "first": "Primero", "last": "Ultimo", "next": "Siguiente", "previous": "Anterior" }
-};
 
 document.addEventListener('DOMContentLoaded', function () {
     var ROL = typeof SESSION_USER_ROL !== 'undefined' ? SESSION_USER_ROL : null;
@@ -162,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!$.fn.DataTable.isDataTable('#tablaUsuarios')) {
                 $('#tablaUsuarios').DataTable({
                     dom: 'lrtip',
-                    language: DATATABLES_SPANISH
+                    language: window.DATATABLES_SPANISH
                 });
             }
 

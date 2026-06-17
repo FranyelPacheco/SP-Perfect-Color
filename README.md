@@ -159,7 +159,7 @@ http://localhost/SP%20Perfect%20Color/login
 - Edición y eliminación de registros
 
 ### 3. Proveedores
-- Registro de proveedores con RIF único
+- Registro de proveedores con RIF único (reactivación automática al reinsertar)
 - Múltiples teléfonos y rubros por proveedor (bridge tables)
 - Solo el Administrador puede modificar registros
 
@@ -168,6 +168,7 @@ http://localhost/SP%20Perfect%20Color/login
 - Alertas de stock bajo (por debajo del mínimo)
 - Registro de precios de venta y compra
 - Múltiples proveedores por insumo (bridge table)
+- Reactivación automática al reinsertar código ya existente
 
 ### 5. Presupuestos
 - Creación de presupuestos con múltiples items
@@ -177,7 +178,6 @@ http://localhost/SP%20Perfect%20Color/login
 
 ### 6. Notas de Entrega
 - Creación desde presupuestos aprobados
-- Creación directa con selección de items
 - Descuento automático de inventario
 - Validación de stock disponible
 - Estados: Pendiente, Entregado, En Espera (con botones de cambio rápido en tabla y detalle)
@@ -202,16 +202,17 @@ http://localhost/SP%20Perfect%20Color/login
 - Eliminación lógica de cuentas
 - Dashboard muestra Egresos del día
 
-### 9. Presupuestos
-- Creación con múltiples items
-- Cálculo automático de totales
-- Estados: Pendiente, Aprobado, Rechazado, Convertido
-- Aprobación/Rechazo desde la tabla listado
-- Eliminación lógica de presupuestos
-- Filtro por estado en el listado
-- Badge de estado estilizado en detalle
+### 9. Config. de Pago
+- Unifica Bancos y Tipos de Pago en una sola vista
+- Dos cards lado a lado con sus DataTables y modales independientes
+- Reactivación automática al reinsertar nombre ya existente (inactivo)
 
-### 10. Reportes
+### 10. Usuarios
+- CRUD con roles Administrador/Vendedor
+- Cambio de clave (admin a cualquiera, vendedor solo propia)
+- Reactivación automática al reinsertar correo ya existente
+
+### 11. Reportes
 - Reporte de Ventas (notas de entrega) por rango de fechas
 - Reporte de Ingresos (pagos recibidos + contado directo) por rango de fechas
 - Reporte de Egresos (pagos realizados) por rango de fechas
@@ -327,7 +328,8 @@ El esquema completo está en `app/core/sp_perfect_color.sql`.
 - Plazo crédito por defecto: 10 días
 - Notas de entrega en estado "en espera" pueden editar sus items (agregar/quitar insumos)
 - Pago a contado registra ingreso inmediato en el dashboard
-- Eliminación lógica (activo=0) en CxC, CxP y Presupuestos
+- Eliminación lógica (activo=0) en Clientes, Proveedores, Insumos, Usuarios, CxC, CxP, Presupuestos, Bancos, Tipos de Pago
+- Reactivación automática al reinsertar valor único duplicado (cédula, RIF, código, correo, nombre) — se actualiza el registro inactivo en vez de fallar por UNIQUE KEY
 - Reportes de ventas, ingresos y egresos por rango de fechas con desglose por tipo de pago y método de pago
 - Admin puede cambiar contraseña de cualquier usuario (activo o inactivo)
 - Login con URL absoluta y cache-busting en JS para evitar errores de sesión/caché

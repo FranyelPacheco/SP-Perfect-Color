@@ -11,10 +11,8 @@ $tipoPagoModel = new TipoPagoModel();
 if ($metodo === 'index') {
     verificarRolAdmin();
 
-    $pageTitle = 'SP Perfect Color - Tipos de Pago';
-    $pageDescription = 'Gestión de tipos de pago - SP Perfect Color';
-    $contenidoVista = __DIR__ . '/../views/tipoPagoListView.php';
-    require_once __DIR__ . '/../views/plantillaBase.php';
+    header('Location: /SP%20Perfect%20Color/configPago');
+    exit;
 
 } elseif ($metodo === 'listarAjax') {
     verificarRolAdmin();
@@ -34,6 +32,16 @@ if ($metodo === 'index') {
     $nombre = trim($_POST['nombre'] ?? '');
     if (empty($nombre)) {
         respuestaJson('error', 'El nombre del tipo de pago es obligatorio');
+    }
+
+    // Si existe un tipo de pago inactivo con el mismo nombre, reactivarlo
+    $inactivoId = $tipoPagoModel->buscarInactivoPorNombre($nombre);
+    if ($inactivoId) {
+        if ($tipoPagoModel->actualizar($inactivoId, $nombre, 1)) {
+            respuestaJson('exito', 'Tipo de pago reactivado exitosamente');
+        } else {
+            respuestaJson('error', 'Error al reactivar el tipo de pago');
+        }
     }
 
     if ($tipoPagoModel->insertar($nombre)) {

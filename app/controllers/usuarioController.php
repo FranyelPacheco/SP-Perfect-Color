@@ -85,10 +85,30 @@ if ($metodo === 'index') {
     if ($rol_id < 1) respuestaJson('error', 'Debe seleccionar un rol');
     if ($usuarioModel->correoExiste($correo)) respuestaJson('error', 'El correo electronico ya esta registrado');
 
+    $passwordHash = password_hash($clave, PASSWORD_DEFAULT);
+
+    // Si existe un usuario inactivo con el mismo correo, reactivarlo
+    $inactivoId = $usuarioModel->buscarInactivoPorCorreo($correo);
+    if ($inactivoId) {
+        $datosActualizar = [
+            'id' => $inactivoId,
+            'nombre' => $nombre,
+            'correo' => $correo,
+            'rol_id' => $rol_id,
+            'activo' => 1
+        ];
+        if ($usuarioModel->actualizarUsuario($datosActualizar)) {
+            $usuarioModel->actualizarClave($inactivoId, $passwordHash);
+            respuestaJson('exito', 'Usuario reactivado exitosamente');
+        } else {
+            respuestaJson('error', 'Error al reactivar el usuario');
+        }
+    }
+
     $datos = [
         'nombre' => $nombre,
         'correo' => $correo,
-        'password_hash' => password_hash($clave, PASSWORD_DEFAULT),
+        'password_hash' => $passwordHash,
         'rol_id' => $rol_id,
         'activo' => 1
     ];

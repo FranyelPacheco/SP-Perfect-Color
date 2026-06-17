@@ -111,7 +111,7 @@ class ProveedorModel
     {
         $consulta = "UPDATE proveedores 
                      SET rif = :rif, nombre_empresa = :nombre_empresa, direccion = :direccion, 
-                         contacto = :contacto, correo = :correo 
+                         contacto = :contacto, correo = :correo, activo = 1 
                      WHERE id_proveedor = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':rif', $datos['rif'], PDO::PARAM_STR);
@@ -162,6 +162,22 @@ class ProveedorModel
     public function rifExiste($rif, $idExcluir = null)
     {
         return $this->_rifExiste($rif, $idExcluir);
+    }
+
+    public function buscarInactivoPorRIF($rif)
+    {
+        if (empty($rif)) return false;
+        return $this->_buscarInactivoPorRIF($rif);
+    }
+
+    private function _buscarInactivoPorRIF($rif)
+    {
+        $consulta = "SELECT id_proveedor FROM proveedores WHERE rif = :rif AND activo = 0 LIMIT 1";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':rif', $rif, PDO::PARAM_STR);
+        $stmt->execute();
+        $fila = $stmt->fetch();
+        return $fila ? (int)$fila['id_proveedor'] : false;
     }
 
     private function _rifExiste($rif, $idExcluir = null)

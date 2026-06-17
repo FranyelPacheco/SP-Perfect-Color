@@ -94,6 +94,28 @@ if ($metodo === 'index') {
         'correo' => $correo
     ];
 
+    // Si existe un proveedor inactivo con el mismo RIF, reactivarlo
+    $inactivoId = $proveedorModel->buscarInactivoPorRIF($rif);
+    if ($inactivoId) {
+        $datos['id'] = $inactivoId;
+        if ($proveedorModel->actualizarProveedor($datos)) {
+            $proveedorModel->eliminarTelefonos($inactivoId);
+            if (!empty($telefono)) {
+                $proveedorModel->insertarTelefono($inactivoId, $telefono, 'movil');
+            }
+            $proveedorModel->eliminarRubros($inactivoId);
+            foreach ($rubros as $rubroId) {
+                $rubroId = intval($rubroId);
+                if ($rubroId > 0) {
+                    $proveedorModel->insertarRubro($inactivoId, $rubroId);
+                }
+            }
+            respuestaJson('exito', 'Proveedor reactivado exitosamente');
+        } else {
+            respuestaJson('error', 'Error al reactivar el proveedor');
+        }
+    }
+
     // Insertar proveedor
     $nuevoId = $proveedorModel->insertarProveedor($datos);
     if ($nuevoId) {

@@ -11,10 +11,8 @@ $bancoModel = new BancoModel();
 if ($metodo === 'index') {
     verificarRolAdmin();
 
-    $pageTitle = 'SP Perfect Color - Bancos';
-    $pageDescription = 'Gestión de bancos - SP Perfect Color';
-    $contenidoVista = __DIR__ . '/../views/bancoListView.php';
-    require_once __DIR__ . '/../views/plantillaBase.php';
+    header('Location: /SP%20Perfect%20Color/configPago');
+    exit;
 
 } elseif ($metodo === 'listarAjax') {
     verificarRolAdmin();
@@ -34,6 +32,16 @@ if ($metodo === 'index') {
     $nombre = trim($_POST['nombre'] ?? '');
     if (empty($nombre)) {
         respuestaJson('error', 'El nombre del banco es obligatorio');
+    }
+
+    // Si existe un banco inactivo con el mismo nombre, reactivarlo
+    $inactivoId = $bancoModel->buscarInactivoPorNombre($nombre);
+    if ($inactivoId) {
+        if ($bancoModel->actualizar($inactivoId, $nombre, 1)) {
+            respuestaJson('exito', 'Banco reactivado exitosamente');
+        } else {
+            respuestaJson('error', 'Error al reactivar el banco');
+        }
     }
 
     if ($bancoModel->insertar($nombre)) {

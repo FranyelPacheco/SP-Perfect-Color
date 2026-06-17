@@ -80,4 +80,20 @@ class BancoModel
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         return $stmt->execute();
     }
+
+    public function buscarInactivoPorNombre($nombre)
+    {
+        if (empty($nombre)) return false;
+        return $this->_buscarInactivoPorNombre($nombre);
+    }
+
+    private function _buscarInactivoPorNombre($nombre)
+    {
+        $consulta = "SELECT id_banco FROM banco WHERE nombre = :nombre AND activo = 0 LIMIT 1";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':nombre', $nombre, PDO::PARAM_STR);
+        $stmt->execute();
+        $fila = $stmt->fetch();
+        return $fila ? (int)$fila['id_banco'] : false;
+    }
 }

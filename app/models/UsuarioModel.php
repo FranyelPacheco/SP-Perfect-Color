@@ -162,6 +162,22 @@ class UsuarioModel
         return $this->_correoExiste($correo, $idExcluir);
     }
 
+    public function buscarInactivoPorCorreo($correo)
+    {
+        if (empty($correo)) return false;
+        return $this->_buscarInactivoPorCorreo($correo);
+    }
+
+    private function _buscarInactivoPorCorreo($correo)
+    {
+        $consulta = "SELECT id_usuario FROM usuarios WHERE correo = :correo AND activo = 0 LIMIT 1";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':correo', $correo, PDO::PARAM_STR);
+        $stmt->execute();
+        $fila = $stmt->fetch();
+        return $fila ? (int)$fila['id_usuario'] : false;
+    }
+
     private function _correoExiste($correo, $idExcluir = null)
     {
         $consulta = "SELECT COUNT(*) as total FROM usuarios WHERE correo = :correo AND activo = 1";

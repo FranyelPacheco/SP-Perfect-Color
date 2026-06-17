@@ -107,7 +107,7 @@ class ClienteModel
     {
         $consulta = "UPDATE clientes 
                      SET cedula = :cedula, nombres = :nombres, apellidos = :apellidos, 
-                         correo = :correo, direccion = :direccion 
+                         correo = :correo, direccion = :direccion, activo = 1 
                      WHERE id_cliente = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':cedula', $datos['cedula'], PDO::PARAM_STR);
@@ -194,6 +194,22 @@ class ClienteModel
     {
         if (empty($cedula)) return false;
         return $this->_cedulaExiste($cedula, $idExcluir);
+    }
+
+    public function buscarInactivoPorCedula($cedula)
+    {
+        if (empty($cedula)) return false;
+        return $this->_buscarInactivoPorCedula($cedula);
+    }
+
+    private function _buscarInactivoPorCedula($cedula)
+    {
+        $consulta = "SELECT id_cliente FROM clientes WHERE cedula = :cedula AND activo = 0 LIMIT 1";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':cedula', $cedula, PDO::PARAM_STR);
+        $stmt->execute();
+        $fila = $stmt->fetch();
+        return $fila ? (int)$fila['id_cliente'] : false;
     }
 
     private function _cedulaExiste($cedula, $idExcluir = null)

@@ -1,13 +1,6 @@
 // Archivo: notaEntrega.js
 // Manejo de la vista de notas de entrega
 
-const DATATABLES_SPANISH = {
-    "emptyTable": "No hay informacion",
-    "zeroRecords": "No se encontraron registros",
-    "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
-    "search": "Buscar:",
-    "paginate": { "first": "Primero", "last": "Ultimo", "next": "Siguiente", "previous": "Anterior" }
-};
 
 document.addEventListener('DOMContentLoaded', function() {
     var busquedaNotas = document.getElementById('busquedaNotas');
@@ -31,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!$.fn.DataTable.isDataTable('#tablaNotas')) {
             $('#tablaNotas').DataTable({
                 dom: 'lrtip',
-                language: DATATABLES_SPANISH,
+                language: window.DATATABLES_SPANISH,
                 columns: [
                     {
                         data: 'id',

@@ -1,13 +1,6 @@
 // Archivo: proveedor.js
 // Manejo de la vista de gestion de proveedores
 
-const DATATABLES_SPANISH = {
-    "emptyTable": "No hay informacion",
-    "zeroRecords": "No se encontraron registros",
-    "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
-    "search": "Buscar:",
-    "paginate": { "first": "Primero", "last": "Ultimo", "next": "Siguiente", "previous": "Anterior" }
-};
 
 var rubrosDisponibles = [];
 
@@ -175,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!$.fn.DataTable.isDataTable('#tablaProveedores')) {
             $('#tablaProveedores').DataTable({
                 dom: 'lrtip',
-                language: DATATABLES_SPANISH
+                language: window.DATATABLES_SPANISH
             });
         }
 

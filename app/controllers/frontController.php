@@ -18,8 +18,7 @@ class frontController
         'cuentaPagar'  => ['Cuentas por Pagar', 'Gestión de cuentas por pagar - SP Perfect Color'],
         'usuario'      => ['Usuarios', 'Gestión de usuarios - SP Perfect Color'],
         'login'        => ['Iniciar Sesión', 'Inicio de sesión - SP Perfect Color'],
-        'banco'        => ['Bancos', 'Gestión de bancos - SP Perfect Color'],
-        'tipoPago'     => ['Tipos de Pago', 'Gestión de tipos de pago - SP Perfect Color'],
+        'configPago'   => ['Configuración de Pago', 'Gestión de bancos y tipos de pago - SP Perfect Color'],
         'reporte'      => ['Reportes', 'Reportes de ventas, ingresos y egresos - SP Perfect Color'],
     ];
 
