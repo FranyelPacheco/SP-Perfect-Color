@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('tablaCuentasPagar').addEventListener('click', function(e) {
         var btn = e.target.closest('.btn-eliminar-cxp');
         if (btn) {
-            if (!confirm('Esta seguro de eliminar esta cuenta por pagar?')) return;
+            confirmarConModal('Eliminar', 'Esta seguro de eliminar esta cuenta por pagar?', function() {
             var fd = new FormData();
             fd.append('id', btn.dataset.id);
             fetch('/SP%20Perfect%20Color/cuentaPagar/eliminar', { method: 'POST', body: fd })
@@ -182,6 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 else { mostrarNotificacion(res.mensaje, 'error'); }
             })
             .catch(function() { mostrarNotificacion('Error de conexion', 'error'); });
+            });
+            return;
         }
     });
 

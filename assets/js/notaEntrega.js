@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('tablaNotas').addEventListener('click', function(e) {
         var btn = e.target.closest('.btn-espera-nota');
         if (btn) {
-            if (!confirm('Poner esta nota de entrega en espera?')) return;
+            confirmarConModal('En espera', 'Poner esta nota de entrega en espera?', function() {
             var fd = new FormData();
             fd.append('id', btn.dataset.id);
             fd.append('estado', 'en_espera');
@@ -105,11 +105,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 else { mostrarNotificacion(res.mensaje, 'error'); }
             })
             .catch(function() { mostrarNotificacion('Error de conexion', 'error'); });
+            });
             return;
         }
         btn = e.target.closest('.btn-entregar-nota');
         if (btn) {
-            if (!confirm('Marcar esta nota como entregada?')) return;
+            confirmarConModal('Entregar', 'Marcar esta nota como entregada?', function() {
             var fd = new FormData();
             fd.append('id', btn.dataset.id);
             fd.append('estado', 'entregado');
@@ -120,6 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 else { mostrarNotificacion(res.mensaje, 'error'); }
             })
             .catch(function() { mostrarNotificacion('Error de conexion', 'error'); });
+            });
         }
     });
 

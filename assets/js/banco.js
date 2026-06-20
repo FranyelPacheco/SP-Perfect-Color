@@ -20,10 +20,16 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('tablaBancos').addEventListener('click', function(e) {
         var btn = e.target.closest('.btn-editar-banco');
         if (btn) { abrirModalEditar(parseInt(btn.dataset.id)); return; }
-        btn = e.target.closest('.btn-eliminar-banco');
+        btn = e.target.closest('.btn-toggle-banco');
         if (btn) {
-            if (!confirm('Esta seguro de eliminar este banco?')) return;
-            eliminarBanco(parseInt(btn.dataset.id));
+            var id = parseInt(btn.dataset.id);
+            var activo = parseInt(btn.dataset.activo);
+            var titulo = activo ? 'Deshabilitar' : 'Habilitar';
+            var msg = activo ? 'Esta seguro de deshabilitar este banco?' : 'Esta seguro de habilitar este banco?';
+            confirmarConModal(titulo, msg, function() {
+                toggleBancoEstado(id);
+            });
+            return;
         }
     });
 
@@ -53,9 +59,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     { data: 'nombre' },
                     { data: 'activo', render: function(d) { return d == 1 ? '<span class="badge bg-success">Si</span>' : '<span class="badge bg-secondary">No</span>'; } },
                     { data: null, render: function(d, t, row) {
+                        var activo = row.activo == 1;
                         return '<div class="d-flex gap-2">' +
                             '<button class="btn btn-sm btn-warning btn-editar-banco" data-id="' + row.id_banco + '"><i class="bi bi-pencil-square"></i></button>' +
-                            '<button class="btn btn-sm btn-danger btn-eliminar-banco" data-id="' + row.id_banco + '"><i class="bi bi-trash"></i></button>' +
+                            (activo
+                                ? '<button class="btn btn-sm btn-danger btn-toggle-banco" data-id="' + row.id_banco + '" data-activo="1" title="Deshabilitar"><i class="bi bi-toggle-off"></i></button>'
+                                : '<button class="btn btn-sm btn-success btn-toggle-banco" data-id="' + row.id_banco + '" data-activo="0" title="Habilitar"><i class="bi bi-toggle-on"></i></button>') +
                             '</div>';
                     }}
                 ]
@@ -103,10 +112,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(function() { mostrarError('Error de conexion'); });
     }
 
-    function eliminarBanco(id) {
+    function toggleBancoEstado(id) {
         var fd = new FormData();
         fd.append('id', id);
-        fetch('/SP%20Perfect%20Color/banco/eliminar', { method: 'POST', body: fd })
+        fetch('/SP%20Perfect%20Color/banco/toggleActivo', { method: 'POST', body: fd })
             .then(function(r) { return r.json(); })
             .then(function(res) {
                 if (res.estado === 'exito') { mostrarNotificacion(res.mensaje, 'exito'); cargarBancos(); }

@@ -68,6 +68,19 @@ class TipoPagoModel
         return $stmt->execute();
     }
 
+    public function toggleActivo($id)
+    {
+        return $this->_toggleActivo($id);
+    }
+
+    private function _toggleActivo($id)
+    {
+        $consulta = "UPDATE tipo_pago SET activo = 1 - activo WHERE id_tipo_pago = :id";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
     public function eliminar($id)
     {
         return $this->_eliminar($id);

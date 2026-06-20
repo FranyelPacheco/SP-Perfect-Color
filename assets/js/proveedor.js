@@ -297,31 +297,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function eliminarProveedor(id, nombre) {
-        if (!confirm('Esta seguro de eliminar al proveedor ' + nombre + '?')) {
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('id', id);
-
-        try {
-            const respuesta = await fetch('proveedor/eliminar', {
-                method: 'POST',
-                body: formData
-            });
-
-            const resultado = await respuesta.json();
-
-            if (resultado.estado === 'exito') {
-                cargarProveedores();
-                mostrarNotificacion(resultado.mensaje, 'exito');
-            } else {
-                mostrarNotificacion(resultado.mensaje, 'error');
-            }
-        } catch (error) {
-            console.error('Error al eliminar proveedor:', error);
-            mostrarNotificacion('Error de conexion', 'error');
-        }
+        confirmarConModal('Eliminar', 'Esta seguro de eliminar al proveedor ' + nombre + '?', function() {
+            const formData = new FormData();
+            formData.append('id', id);
+            fetch('proveedor/eliminar', { method: 'POST', body: formData })
+                .then(function(r) { return r.json(); })
+                .then(function(resultado) {
+                    if (resultado.estado === 'exito') {
+                        cargarProveedores();
+                        if (typeof mostrarNotificacion === 'function') {
+                            mostrarNotificacion(resultado.mensaje, 'exito');
+                        } else {
+                            alert(resultado.mensaje);
+                        }
+                    } else {
+                        if (typeof mostrarNotificacion === 'function') {
+                            mostrarNotificacion(resultado.mensaje, 'error');
+                        } else {
+                            alert(resultado.mensaje);
+                        }
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error al eliminar proveedor:', error);
+                    if (typeof mostrarNotificacion === 'function') {
+                        mostrarNotificacion('Error de conexion al eliminar el proveedor', 'error');
+                    } else {
+                        alert('Error de conexion al eliminar el proveedor');
+                    }
+                });
+        });
     }
 
     if (busquedaProveedores) {

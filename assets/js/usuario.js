@@ -358,35 +358,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ---- Eliminar usuario ----
     async function eliminarUsuario(id, nombre) {
-        if (!confirm('Â¿Esta seguro de eliminar al usuario ' + nombre + '?')) return;
-
-        var fd = new FormData();
-        fd.append('id', id);
-
-        try {
-            var res = await fetch('usuario/eliminar', { method: 'POST', body: fd });
-            var json = await res.json();
-
-            if (json.estado === 'exito') {
-                cargarUsuarios();
-                if (typeof mostrarNotificacion === 'function') {
-                    mostrarNotificacion(json.mensaje, 'exito');
-                } else {
-                    alert(json.mensaje);
-                }
-            } else {
-                if (typeof mostrarNotificacion === 'function') {
-                    mostrarNotificacion(json.mensaje, 'error');
-                } else {
-                    alert(json.mensaje);
-                }
-            }
-
-        } catch (error) {
-            console.error('Error al eliminar usuario:', error);
-            if (typeof mostrarNotificacion === 'function') {
-                mostrarNotificacion('Error de conexion', 'error');
-            }
-        }
+        confirmarConModal('Eliminar', 'Esta seguro de eliminar al usuario ' + nombre + '?', function() {
+            var fd = new FormData();
+            fd.append('id', id);
+            fetch('usuario/eliminar', { method: 'POST', body: fd })
+                .then(function(r) { return r.json(); })
+                .then(function(json) {
+                    if (json.estado === 'exito') {
+                        cargarUsuarios();
+                        if (typeof mostrarNotificacion === 'function') {
+                            mostrarNotificacion(json.mensaje, 'exito');
+                        } else {
+                            alert(json.mensaje);
+                        }
+                    } else {
+                        if (typeof mostrarNotificacion === 'function') {
+                            mostrarNotificacion(json.mensaje, 'error');
+                        } else {
+                            alert(json.mensaje);
+                        }
+                    }
+                })
+                .catch(function() {
+                    if (typeof mostrarNotificacion === 'function') {
+                        mostrarNotificacion('Error de conexion', 'error');
+                    }
+                });
+        });
     }
 });

@@ -99,6 +99,22 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al eliminar el banco');
     }
 
+} elseif ($metodo === 'toggleActivo') {
+    verificarRolAdmin();
+
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        respuestaJson('error', 'Metodo no permitido');
+    }
+
+    $id = intval($_POST['id'] ?? 0);
+    if ($id < 1) respuestaJson('error', 'ID de banco no valido');
+
+    if ($bancoModel->toggleActivo($id)) {
+        respuestaJson('exito', 'Estado cambiado exitosamente');
+    } else {
+        respuestaJson('error', 'Error al cambiar el estado');
+    }
+
 } else {
     require_once __DIR__ . '/../views/error404View.php';
 }

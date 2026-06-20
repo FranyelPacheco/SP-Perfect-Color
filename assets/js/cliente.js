@@ -195,37 +195,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Elimina un cliente
     async function eliminarCliente(id, nombre) {
-        if (!confirm('Esta seguro de eliminar al cliente ' + nombre + '?')) {
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('id', id);
-
-        try {
-            const respuesta = await fetch('cliente/eliminar', { method: 'POST', body: formData });
-            const resultado = await respuesta.json();
-
-            if (resultado.estado === 'exito') {
-                cargarClientes();
-                if (typeof mostrarNotificacion === 'function') {
-                    mostrarNotificacion(resultado.mensaje, 'exito');
-                } else {
-                    alert(resultado.mensaje);
-                }
-            } else {
-                if (typeof mostrarNotificacion === 'function') {
-                    mostrarNotificacion(resultado.mensaje, 'error');
-                } else {
-                    alert(resultado.mensaje);
-                }
-            }
-        } catch (error) {
-            console.error('Error al eliminar cliente:', error);
-            if (typeof mostrarNotificacion === 'function') {
-                mostrarNotificacion('Error de conexion', 'error');
-            }
-        }
+        confirmarConModal('Eliminar', 'Esta seguro de eliminar al cliente ' + nombre + '?', function() {
+            const formData = new FormData();
+            formData.append('id', id);
+            fetch('cliente/eliminar', { method: 'POST', body: formData })
+                .then(function(r) { return r.json(); })
+                .then(function(resultado) {
+                    if (resultado.estado === 'exito') {
+                        cargarClientes();
+                        if (typeof mostrarNotificacion === 'function') {
+                            mostrarNotificacion(resultado.mensaje, 'exito');
+                        } else {
+                            alert(resultado.mensaje);
+                        }
+                    } else {
+                        if (typeof mostrarNotificacion === 'function') {
+                            mostrarNotificacion(resultado.mensaje, 'error');
+                        } else {
+                            alert(resultado.mensaje);
+                        }
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error al eliminar cliente:', error);
+                    if (typeof mostrarNotificacion === 'function') {
+                        mostrarNotificacion('Error de conexion al eliminar el cliente', 'error');
+                    } else {
+                        alert('Error de conexion al eliminar el cliente');
+                    }
+                });
+        });
     }
 
     // Muestra un mensaje de error en el modal

@@ -352,31 +352,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Elimina un insumo
     async function eliminarInsumo(id, nombre) {
-        if (!confirm('Esta seguro de eliminar el insumo ' + nombre + '?')) {
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('id', id);
-
-        try {
-            const respuesta = await fetch('inventario/eliminar', {
-                method: 'POST',
-                body: formData
-            });
-
-            const resultado = await respuesta.json();
-
-            if (resultado.estado === 'exito') {
-                cargarInsumos();
-                mostrarNotificacion(resultado.mensaje, 'exito');
-            } else {
-                mostrarNotificacion(resultado.mensaje, 'error');
-            }
-        } catch (error) {
-            console.error('Error al eliminar insumo:', error);
-            mostrarNotificacion('Error de conexion', 'error');
-        }
+        confirmarConModal('Eliminar', 'Esta seguro de eliminar el insumo ' + nombre + '?', function() {
+            const formData = new FormData();
+            formData.append('id', id);
+            fetch('inventario/eliminar', { method: 'POST', body: formData })
+                .then(function(r) { return r.json(); })
+                .then(function(resultado) {
+                    if (resultado.estado === 'exito') {
+                        cargarInsumos();
+                        if (typeof mostrarNotificacion === 'function') {
+                            mostrarNotificacion(resultado.mensaje, 'exito');
+                        } else {
+                            alert(resultado.mensaje);
+                        }
+                    } else {
+                        if (typeof mostrarNotificacion === 'function') {
+                            mostrarNotificacion(resultado.mensaje, 'error');
+                        } else {
+                            alert(resultado.mensaje);
+                        }
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error al eliminar insumo:', error);
+                    if (typeof mostrarNotificacion === 'function') {
+                        mostrarNotificacion('Error de conexion al eliminar el insumo', 'error');
+                    } else {
+                        alert('Error de conexion al eliminar el insumo');
+                    }
+                });
+        });
     }
 
     // Enlazar busqueda manual a DataTables

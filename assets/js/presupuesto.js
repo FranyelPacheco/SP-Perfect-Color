@@ -90,16 +90,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (btn) { cambiarEstado(parseInt(btn.dataset.id), 'rechazado'); return; }
         btn = e.target.closest('.btn-eliminar-presupuesto');
         if (btn) {
-            if (!confirm('Esta seguro de eliminar este presupuesto?')) return;
-            var fd = new FormData();
-            fd.append('id', btn.dataset.id);
-            fetch('presupuesto/eliminar', { method: 'POST', body: fd })
-            .then(function(r) { return r.json(); })
-            .then(function(res) {
-                if (res.estado === 'exito') { mostrarNotificacion(res.mensaje, 'exito'); cargarPresupuestos(); }
-                else { mostrarNotificacion(res.mensaje, 'error'); }
-            })
-            .catch(function() { mostrarNotificacion('Error de conexion', 'error'); });
+            confirmarConModal('Eliminar', 'Esta seguro de eliminar este presupuesto?', function() {
+                var fd = new FormData();
+                fd.append('id', btn.dataset.id);
+                fetch('presupuesto/eliminar', { method: 'POST', body: fd })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res.estado === 'exito') { mostrarNotificacion(res.mensaje, 'exito'); cargarPresupuestos(); }
+                    else { mostrarNotificacion(res.mensaje, 'error'); }
+                })
+                .catch(function() { mostrarNotificacion('Error de conexion', 'error'); });
+            });
+            return;
         }
     });
 
@@ -129,15 +131,12 @@ document.addEventListener('DOMContentLoaded', function() {
             ? 'Esta seguro de aprobar este presupuesto?'
             : 'Esta seguro de rechazar este presupuesto?';
 
-        if (!confirm(mensaje)) {
-            return;
-        }
+        confirmarConModal('Confirmar', mensaje, function() {
+            var formData = new FormData();
+            formData.append('id', id);
+            formData.append('estado', estado);
 
-        var formData = new FormData();
-        formData.append('id', id);
-        formData.append('estado', estado);
-
-        fetch('presupuesto/cambiarEstado', {
+            fetch('presupuesto/cambiarEstado', {
             method: 'POST',
             body: formData
         })
@@ -153,6 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(function(error) {
             console.error('Error:', error);
             mostrarNotificacion('Error de conexion', 'error');
+        });
         });
     }
 });

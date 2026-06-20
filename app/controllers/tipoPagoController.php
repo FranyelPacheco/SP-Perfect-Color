@@ -99,6 +99,22 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al eliminar el tipo de pago');
     }
 
+} elseif ($metodo === 'toggleActivo') {
+    verificarRolAdmin();
+
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        respuestaJson('error', 'Metodo no permitido');
+    }
+
+    $id = intval($_POST['id'] ?? 0);
+    if ($id < 1) respuestaJson('error', 'ID de tipo de pago no valido');
+
+    if ($tipoPagoModel->toggleActivo($id)) {
+        respuestaJson('exito', 'Estado cambiado exitosamente');
+    } else {
+        respuestaJson('error', 'Error al cambiar el estado');
+    }
+
 } else {
     require_once __DIR__ . '/../views/error404View.php';
 }

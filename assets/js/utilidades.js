@@ -11,7 +11,6 @@ window.DATATABLES_SPANISH = {
 
 // Muestra un mensaje temporal en pantalla (toast)
 function mostrarNotificacion(mensaje, tipo) {
-    // Crear elemento de notificacion
     const notificacion = document.createElement('div');
     notificacion.textContent = mensaje;
     notificacion.style.position = 'fixed';
@@ -23,7 +22,6 @@ function mostrarNotificacion(mensaje, tipo) {
     notificacion.style.zIndex = '9999';
     notificacion.style.transition = 'opacity 0.3s';
     
-    // Definir color segun tipo
     if (tipo === 'exito') {
         notificacion.style.background = '#4caf50';
     } else if (tipo === 'error') {
@@ -34,13 +32,33 @@ function mostrarNotificacion(mensaje, tipo) {
     
     document.body.appendChild(notificacion);
     
-    // Eliminar la notificacion despues de 3 segundos
     setTimeout(function() {
         notificacion.style.opacity = '0';
         setTimeout(function() {
             notificacion.remove();
         }, 300);
     }, 3000);
+}
+
+function confirmarConModal(titulo, mensaje, callback, claseBoton) {
+    claseBoton = claseBoton || 'btn-danger';
+    var modal = document.getElementById('modalConfirmacion');
+    if (!modal) return;
+    document.getElementById('modalConfirmacionTitulo').textContent = titulo;
+    document.getElementById('modalConfirmacionCuerpo').textContent = mensaje;
+    var btn = document.getElementById('modalConfirmacionBtn');
+    btn.className = 'btn ' + claseBoton;
+    var nuevoBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(nuevoBtn, btn);
+    nuevoBtn.addEventListener('click', function() {
+        bootstrap.Modal.getInstance(modal).hide();
+        callback();
+    });
+    bootstrap.Modal.getOrCreateInstance(modal).show();
+}
+
+function confirmarAccion(mensaje, funcionCallback) {
+    confirmarConModal('Confirmar', mensaje || 'Esta seguro de realizar esta accion?', funcionCallback);
 }
 
 // Formatea un numero como moneda (formato venezolano)
@@ -50,13 +68,6 @@ function formatearMoneda(cantidad) {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     }).format(cantidad);
-}
-
-// Confirma una accion antes de ejecutarla
-function confirmarAccion(mensaje, funcionCallback) {
-    if (confirm(mensaje || 'Esta seguro de realizar esta accion?')) {
-        funcionCallback();
-    }
 }
 
 // Envia una peticion AJAX generica
