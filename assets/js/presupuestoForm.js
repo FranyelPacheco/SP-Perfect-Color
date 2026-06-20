@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Verificar si el insumo ya esta en la lista
         var existe = false;
         for (var i = 0; i < itemsPresupuesto.length; i++) {
-            if (itemsPresupuesto[i].insumo_id === insumo.id_insumo) {
+            if (itemsPresupuesto[i].id_insumo === insumo.id_insumo) {
                 existe = true;
                 break;
             }
@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Agregar al array de items
         var nuevoItem = {
-            insumo_id: insumo.id_insumo,
+            id_insumo: insumo.id_insumo,
             insumo_codigo: insumo.codigo,
             insumo_nombre: insumo.nombre,
             cantidad: 1,
@@ -295,13 +295,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Preparar datos del formulario
         var formData = new FormData();
-        formData.append('cliente_id', clientePresupuesto.value);
+        formData.append('id_cliente', clientePresupuesto.value);
         formData.append('observaciones', document.getElementById('observacionesPresupuesto').value);
 
         // Preparar items como JSON
         var itemsSimplificados = itemsPresupuesto.map(function(item) {
             return {
-                insumo_id: item.insumo_id,
+                id_insumo: item.id_insumo,
                 cantidad: item.cantidad,
                 precio_unitario: item.precio_unitario
             };
@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(function(respuesta) { return respuesta.json(); })
         .then(function(resultado) {
             if (resultado.estado === 'exito') {
-                mostrarNotificacion('Presupuesto #' + resultado.datos.presupuesto_id + ' creado exitosamente. Total: $ ' + formatearMoneda(resultado.datos.total), 'exito');
+                mostrarNotificacion('Presupuesto #' + resultado.datos.id_presupuesto + ' creado exitosamente. Total: $ ' + formatearMoneda(resultado.datos.total), 'exito');
                 
                 // Redirigir a la lista despues de 2 segundos
                 setTimeout(function() {

@@ -7,7 +7,7 @@
 </div>
 
 <form id="formularioEditarNota">
-    <input type="hidden" name="nota_id" value="<?php echo $nota['id_nota_entrega']; ?>">
+    <input type="hidden" name="id_nota_entrega" value="<?php echo $nota['id_nota_entrega']; ?>">
 
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header">

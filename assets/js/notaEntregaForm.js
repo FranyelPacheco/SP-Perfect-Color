@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof presupuestoDetalle !== 'undefined' && presupuestoDetalle.length > 0) {
         presupuestoDetalle.forEach(function(item) {
             var nuevoItem = {
-                presupuesto_detalle_id: item.id_presupuesto_detalle,
+                id_presupuesto_detalle: item.id_presupuesto_detalle,
                 insumo_codigo: item.insumo_codigo,
                 insumo_nombre: item.insumo_nombre,
                 insumo_marca: item.insumo_marca || '',
@@ -212,8 +212,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             var formData = new FormData();
-            formData.append('cliente_id', clienteNota.value);
-            formData.append('presupuesto_id', presupuestoInput ? presupuestoInput.value : '');
+            formData.append('id_cliente', clienteNota.value);
+            formData.append('id_presupuesto', presupuestoInput ? presupuestoInput.value : '');
             var condPago = condicionPagoSelect ? condicionPagoSelect.value : 'contado';
             formData.append('condicion_pago', condPago);
             formData.append('estado', accion);
@@ -227,11 +227,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             if (tipoPagoInput && tipoPagoInput.value) {
-                formData.append('tipo_pago_id', tipoPagoInput.value);
+                formData.append('id_tipo_pago', tipoPagoInput.value);
             }
 
             var tipoPagoVal = tipoPagoInput ? parseInt(tipoPagoInput.value) : 0;
-            // Transferencia=2, Pago Movil=3 — banco y referencia obligatorios
+            // Transferencia=2, Pago Movil=3 â€” banco y referencia obligatorios
             if (tipoPagoVal === 2 || tipoPagoVal === 3) {
                 var bancoInput = document.getElementById('bancoPago');
                 if (!bancoInput || !bancoInput.value) {
@@ -243,12 +243,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     mostrarError('Debe ingresar el numero de referencia para transferencia o pago movil');
                     return;
                 }
-                formData.append('banco_id', bancoInput.value);
+                formData.append('id_banco', bancoInput.value);
                 formData.append('referencia', referenciaInput.value.trim());
             } else {
                 var bancoInput = document.getElementById('bancoPago');
                 if (bancoInput && bancoInput.value) {
-                    formData.append('banco_id', bancoInput.value);
+                    formData.append('id_banco', bancoInput.value);
                 }
                 var referenciaInput = document.getElementById('referenciaPago');
                 if (referenciaInput && referenciaInput.value) {
@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             var itemsSimplificados = itemsNota.map(function(item) {
                 return {
-                    presupuesto_detalle_id: item.presupuesto_detalle_id,
+                    id_presupuesto_detalle: item.id_presupuesto_detalle,
                     cantidad: item.cantidad,
                     precio_unitario: item.precio_unitario
                 };
@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
-                    mostrarNotificacion('Nota de entrega #' + resultado.datos.nota_id + ' creada exitosamente', 'exito');
+                    mostrarNotificacion('Nota de entrega #' + resultado.datos.id_nota_entrega + ' creada exitosamente', 'exito');
                     setTimeout(function() {
                         window.location.href = '/SP%20Perfect%20Color/notaEntrega';
                     }, 2000);

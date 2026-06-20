@@ -170,8 +170,24 @@
 - [x] Al seleccionar proveedor en el insumo: si tiene 1 rubro → auto-selecciona y bloquea; si tiene varios → filtra; si tiene 0 → muestra todos
 - [x] Al editar insumo: carga rubros del proveedor guardado y selecciona el rubro correcto
 - [x] Formulario reorganizado: Proveedor y Rubro están lado a lado
+- [x] `rubro_id` eliminado de tabla `insumos` (rubro ahora va por proveedor)
+
+## FK/PK renaming — todas las FK ahora usan `id_nombre` (26 columnas)
+- [x] **SQL (`sp_perfect_color.sql`):** CREATE TABLE, INSERT, KEY y FK constraints renombrados
+- [x] **Models (8):** Cliente, Proveedor, Inventario, Presupuesto, NotaEntrega, CuentaCobrar, CuentaPagar, Usuario
+- [x] **Controllers (14):** arrays, POST/GET actualizados (`$_POST['cliente_id']`→`$_POST['id_cliente']`, etc.)
+- [x] **Helpers (2):** `sesionHelper.php` (`$_SESSION['usuario_id']`→`$_SESSION['id_usuario']`)
+- [x] **Views (6):** form name attributes actualizados
+- [x] **JS (7):** referencias AJAX y objeto DataTable actualizadas
+
+## Mejoras UI/UX (Junio 2026)
+- [x] **Login:** Gradiente quitado del `card-header`, fondo sólido (`--brand-dark`)
+- [x] **Sidebar replegable:** Botón toggle que colapsa/expande sidebar (solo iconos visible en colapsado)
+- [x] **Counter Animation:** `animarContador()` en `utilidades.js` — números animados en stat-cards del dashboard
+- [x] **Gráfica ingresos:** Chart.js vía CDN — barras verticales con ingresos diarios últimos 7 días
+- [x] **Bancos/TiposPago separados:** 2 módulos independientes; sidebar muestra "Config. de Pago" con submenú hover (Bancos / Tipos de Pago)
 
 ## Pendiente
-- [ ] Probar end-to-end: crear Cliente/Proveedor/Insumo con múltiples rubros desde la UI
-- [ ] Verificar que los módulos de Presupuestos y Notas de Entrega funcionen con el nuevo diseño y moneda
+- [ ] **Verificar:** Probar toda la app — login, CRUD clientes/proveedores/insumos, presupuestos, notas de entrega, cuentas, reportes
+- [ ] **Re-importar BD:** Ejecutar `sp_perfect_color.sql` actualizado en phpMyAdmin (tablas existentes se borrarán por las FK)
 - [ ] Probar reactivación: eliminar → crear mismo valor único → verificar activo=1

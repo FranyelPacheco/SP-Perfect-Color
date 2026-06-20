@@ -25,12 +25,12 @@ class CuentaCobrarModel
         $consulta = "SELECT cc.*, 
                         CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                         c.cedula as cliente_cedula,
-                        (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.cliente_id = c.id_cliente) as cliente_telefonos,
-                        ne.id_nota_entrega as nota_id,
+                        (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
+                        ne.id_nota_entrega as id_nota_entrega,
                         ne.fecha as nota_fecha
                 FROM cuentas_cobrar cc 
-                INNER JOIN clientes c ON cc.cliente_id = c.id_cliente
-                LEFT JOIN notas_entrega ne ON cc.nota_entrega_id = ne.id_nota_entrega
+                INNER JOIN clientes c ON cc.id_cliente = c.id_cliente
+                LEFT JOIN notas_entrega ne ON cc.id_nota_entrega = ne.id_nota_entrega
                 WHERE cc.activo = 1
                 ORDER BY cc.estado ASC, cc.fecha_vencimiento ASC";
         $stmt = $this->conexion->query($consulta);
@@ -41,7 +41,7 @@ class CuentaCobrarModel
     public function buscarPorId($id)
     {
         if (empty($id)) {
-            throw new PDOException('ID no válido');
+            throw new PDOException('ID no vÃ¡lido');
         }
         return $this->_buscarPorId($id);
     }
@@ -51,12 +51,12 @@ class CuentaCobrarModel
         $consulta = "SELECT cc.*, 
                         CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                         c.cedula as cliente_cedula,
-                        (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.cliente_id = c.id_cliente) as cliente_telefonos,
-                        ne.id_nota_entrega as nota_id,
+                        (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
+                        ne.id_nota_entrega as id_nota_entrega,
                         ne.fecha as nota_fecha
                 FROM cuentas_cobrar cc 
-                INNER JOIN clientes c ON cc.cliente_id = c.id_cliente
-                LEFT JOIN notas_entrega ne ON cc.nota_entrega_id = ne.id_nota_entrega
+                INNER JOIN clientes c ON cc.id_cliente = c.id_cliente
+                LEFT JOIN notas_entrega ne ON cc.id_nota_entrega = ne.id_nota_entrega
                 WHERE cc.id_cuenta_cobrar = :id AND cc.activo = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
@@ -68,7 +68,7 @@ class CuentaCobrarModel
     public function obtenerPagos($cuentaId)
     {
         if (empty($cuentaId)) {
-            throw new PDOException('ID de cuenta no válido');
+            throw new PDOException('ID de cuenta no vÃ¡lido');
         }
         return $this->_obtenerPagos($cuentaId);
     }
@@ -77,9 +77,9 @@ class CuentaCobrarModel
     {
         $consulta = "SELECT pr.*, tp.nombre as tipo_pago_nombre, b.nombre as banco_nombre
                      FROM pagos_recibidos pr
-                     LEFT JOIN tipo_pago tp ON pr.tipo_pago_id = tp.id_tipo_pago
-                     LEFT JOIN banco b ON pr.banco_id = b.id_banco
-                     WHERE pr.cuenta_cobrar_id = :cuenta_id 
+                     LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
+                     LEFT JOIN banco b ON pr.id_banco = b.id_banco
+                     WHERE pr.id_cuenta_cobrar = :cuenta_id 
                      ORDER BY pr.fecha DESC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':cuenta_id', $cuentaId, PDO::PARAM_INT);
@@ -91,7 +91,7 @@ class CuentaCobrarModel
     public function registrarPago($cuentaId, $monto, $tipoPagoId, $bancoId = null, $referencia = null, $fecha = null)
     {
         if (empty($cuentaId) || empty($monto) || empty($tipoPagoId)) {
-            throw new PDOException('Parámetros obligatorios faltantes');
+            throw new PDOException('ParÃ¡metros obligatorios faltantes');
         }
         return $this->_registrarPago($cuentaId, $monto, $tipoPagoId, $bancoId, $referencia, $fecha);
     }
@@ -112,12 +112,12 @@ class CuentaCobrarModel
             }
             
             $fecha = $fecha ?? date('Y-m-d H:i:s');
-            $consultaPago = "INSERT INTO pagos_recibidos (cuenta_cobrar_id, tipo_pago_id, banco_id, monto, fecha, referencia) 
-                             VALUES (:cuenta_id, :tipo_pago_id, :banco_id, :monto, :fecha, :referencia)";
+            $consultaPago = "INSERT INTO pagos_recibidos (id_cuenta_cobrar, id_tipo_pago, id_banco, monto, fecha, referencia) 
+                             VALUES (:cuenta_id, :id_tipo_pago, :id_banco, :monto, :fecha, :referencia)";
             $stmtPago = $this->conexion->prepare($consultaPago);
             $stmtPago->bindParam(':cuenta_id', $cuentaId, PDO::PARAM_INT);
-            $stmtPago->bindParam(':tipo_pago_id', $tipoPagoId, PDO::PARAM_INT);
-            $stmtPago->bindValue(':banco_id', $bancoId, empty($bancoId) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmtPago->bindParam(':id_tipo_pago', $tipoPagoId, PDO::PARAM_INT);
+            $stmtPago->bindValue(':id_banco', $bancoId, empty($bancoId) ? PDO::PARAM_NULL : PDO::PARAM_INT);
             $stmtPago->bindParam(':monto', $monto);
             $stmtPago->bindParam(':fecha', $fecha, PDO::PARAM_STR);
             $stmtPago->bindValue(':referencia', $referencia, empty($referencia) ? PDO::PARAM_NULL : PDO::PARAM_STR);
@@ -158,10 +158,28 @@ class CuentaCobrarModel
         return $stmt->fetchColumn();
     }
 
+    public function obtenerPagosPorDia($dias = 7)
+    {
+        return $this->_obtenerPagosPorDia($dias);
+    }
+
+    private function _obtenerPagosPorDia($dias)
+    {
+        $consulta = "SELECT DATE(fecha) as fecha, COALESCE(SUM(monto), 0) as total
+                     FROM pagos_recibidos
+                     WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL :dias DAY)
+                     GROUP BY DATE(fecha)
+                     ORDER BY fecha ASC";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':dias', $dias, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function eliminarCuenta($id)
     {
         if (empty($id)) {
-            throw new PDOException('ID no válido');
+            throw new PDOException('ID no vÃ¡lido');
         }
         return $this->_eliminarCuenta($id);
     }
@@ -177,7 +195,7 @@ class CuentaCobrarModel
     public function buscarCuentas($termino)
     {
         if (empty($termino)) {
-            throw new PDOException('Término de búsqueda no válido');
+            throw new PDOException('TÃ©rmino de bÃºsqueda no vÃ¡lido');
         }
         return $this->_buscarCuentas($termino);
     }
@@ -188,12 +206,12 @@ class CuentaCobrarModel
         $consulta = "SELECT cc.*, 
                         CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                         c.cedula as cliente_cedula,
-                        (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.cliente_id = c.id_cliente) as cliente_telefonos,
-                        ne.id_nota_entrega as nota_id,
+                        (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
+                        ne.id_nota_entrega as id_nota_entrega,
                         ne.fecha as nota_fecha
                 FROM cuentas_cobrar cc 
-                INNER JOIN clientes c ON cc.cliente_id = c.id_cliente
-                LEFT JOIN notas_entrega ne ON cc.nota_entrega_id = ne.id_nota_entrega
+                INNER JOIN clientes c ON cc.id_cliente = c.id_cliente
+                LEFT JOIN notas_entrega ne ON cc.id_nota_entrega = ne.id_nota_entrega
                 WHERE cc.activo = 1 AND (c.nombres LIKE :termino1 
                     OR c.apellidos LIKE :termino2 
                     OR c.cedula LIKE :termino3) 

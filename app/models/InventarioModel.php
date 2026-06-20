@@ -90,10 +90,10 @@ class InventarioModel
                             GROUP_CONCAT(DISTINCT p.nombre_empresa SEPARATOR ', ') as proveedores_nombre,
                             GROUP_CONCAT(DISTINCT p.id_proveedor SEPARATOR ',') as proveedores_id
                      FROM insumos i
-                     LEFT JOIN insumo_proveedor ip ON ip.insumo_id = i.id_insumo
-                     LEFT JOIN proveedores p ON p.id_proveedor = ip.proveedor_id
-                     LEFT JOIN rubro_proveedor rp ON rp.proveedor_id = p.id_proveedor
-                     LEFT JOIN rubro r ON rp.rubro_id = r.id_rubro
+                     LEFT JOIN insumo_proveedor ip ON ip.id_insumo = i.id_insumo
+                     LEFT JOIN proveedores p ON p.id_proveedor = ip.id_proveedor
+                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
                      WHERE i.activo = 1
                      GROUP BY i.id_insumo
                      ORDER BY i.nombre ASC";
@@ -123,10 +123,10 @@ class InventarioModel
                             GROUP_CONCAT(DISTINCT p.nombre_empresa SEPARATOR ', ') as proveedores_nombre,
                             GROUP_CONCAT(DISTINCT p.id_proveedor SEPARATOR ',') as proveedores_id
                      FROM insumos i
-                     LEFT JOIN insumo_proveedor ip ON ip.insumo_id = i.id_insumo
-                     LEFT JOIN proveedores p ON p.id_proveedor = ip.proveedor_id
-                     LEFT JOIN rubro_proveedor rp ON rp.proveedor_id = p.id_proveedor
-                     LEFT JOIN rubro r ON rp.rubro_id = r.id_rubro
+                     LEFT JOIN insumo_proveedor ip ON ip.id_insumo = i.id_insumo
+                     LEFT JOIN proveedores p ON p.id_proveedor = ip.id_proveedor
+                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
                      WHERE i.id_insumo = :id AND i.activo = 1
                      GROUP BY i.id_insumo LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
@@ -242,10 +242,10 @@ class InventarioModel
                             GROUP_CONCAT(DISTINCT p.nombre_empresa SEPARATOR ', ') as proveedores_nombre,
                             GROUP_CONCAT(DISTINCT p.id_proveedor SEPARATOR ',') as proveedores_id
                      FROM insumos i
-                     LEFT JOIN insumo_proveedor ip ON ip.insumo_id = i.id_insumo
-                     LEFT JOIN proveedores p ON p.id_proveedor = ip.proveedor_id
-                     LEFT JOIN rubro_proveedor rp ON rp.proveedor_id = p.id_proveedor
-                     LEFT JOIN rubro r ON rp.rubro_id = r.id_rubro
+                     LEFT JOIN insumo_proveedor ip ON ip.id_insumo = i.id_insumo
+                     LEFT JOIN proveedores p ON p.id_proveedor = ip.id_proveedor
+                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
                      WHERE i.activo = 1 AND (i.nombre LIKE :termino1
                         OR i.codigo LIKE :termino2
                         OR r.nombre LIKE :termino3)
@@ -265,10 +265,10 @@ class InventarioModel
         $consulta = "SELECT i.*, GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
                             GROUP_CONCAT(DISTINCT p.nombre_empresa SEPARATOR ', ') as proveedores_nombre
                      FROM insumos i
-                     LEFT JOIN insumo_proveedor ip ON ip.insumo_id = i.id_insumo
-                     LEFT JOIN proveedores p ON p.id_proveedor = ip.proveedor_id
-                     LEFT JOIN rubro_proveedor rp ON rp.proveedor_id = p.id_proveedor
-                     LEFT JOIN rubro r ON rp.rubro_id = r.id_rubro
+                     LEFT JOIN insumo_proveedor ip ON ip.id_insumo = i.id_insumo
+                     LEFT JOIN proveedores p ON p.id_proveedor = ip.id_proveedor
+                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
                      WHERE i.activo = 1 AND i.stock_actual <= i.stock_minimo
                      GROUP BY i.id_insumo
                      ORDER BY i.stock_actual ASC";
@@ -281,29 +281,29 @@ class InventarioModel
     {
         $consulta = "SELECT r.id_rubro, r.nombre
                      FROM rubro r
-                     INNER JOIN rubro_proveedor rp ON rp.rubro_id = r.id_rubro
-                     WHERE rp.proveedor_id = :proveedor_id
+                     INNER JOIN rubro_proveedor rp ON rp.id_rubro = r.id_rubro
+                     WHERE rp.id_proveedor = :id_proveedor
                      ORDER BY r.nombre ASC";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':proveedor_id', $proveedorId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_proveedor', $proveedorId, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll();
     }
 
     private function _asignarProveedorAInsumo($insumoId, $proveedorId)
     {
-        $consulta = "INSERT IGNORE INTO insumo_proveedor (insumo_id, proveedor_id) VALUES (:insumo_id, :proveedor_id)";
+        $consulta = "INSERT IGNORE INTO insumo_proveedor (id_insumo, id_proveedor) VALUES (:id_insumo, :id_proveedor)";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':insumo_id', $insumoId, PDO::PARAM_INT);
-        $stmt->bindParam(':proveedor_id', $proveedorId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_insumo', $insumoId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_proveedor', $proveedorId, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
     private function _eliminarProveedoresDeInsumo($insumoId)
     {
-        $consulta = "DELETE FROM insumo_proveedor WHERE insumo_id = :insumo_id";
+        $consulta = "DELETE FROM insumo_proveedor WHERE id_insumo = :id_insumo";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':insumo_id', $insumoId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_insumo', $insumoId, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
@@ -325,10 +325,10 @@ class InventarioModel
     private function obtenerProveedoresDeInsumo($insumoId)
     {
         $consulta = "SELECT p.* FROM proveedores p
-                     INNER JOIN insumo_proveedor ip ON ip.proveedor_id = p.id_proveedor
-                     WHERE ip.insumo_id = :insumo_id";
+                     INNER JOIN insumo_proveedor ip ON ip.id_proveedor = p.id_proveedor
+                     WHERE ip.id_insumo = :id_insumo";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':insumo_id', $insumoId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_insumo', $insumoId, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll();
     }

@@ -66,9 +66,9 @@ class ReporteModel
                             u.nombre as usuario_nombre,
                             tp.nombre as tipo_pago_nombre
                      FROM notas_entrega ne 
-                     INNER JOIN clientes c ON ne.cliente_id = c.id_cliente
-                     INNER JOIN usuarios u ON ne.usuario_id = u.id_usuario
-                     LEFT JOIN tipo_pago tp ON ne.tipo_pago_id = tp.id_tipo_pago
+                     INNER JOIN clientes c ON ne.id_cliente = c.id_cliente
+                     INNER JOIN usuarios u ON ne.id_usuario = u.id_usuario
+                     LEFT JOIN tipo_pago tp ON ne.id_tipo_pago = tp.id_tipo_pago
                      WHERE ne.activo = 1 AND DATE(ne.fecha) BETWEEN :desde AND :hasta
                      ORDER BY ne.fecha DESC, ne.id_nota_entrega DESC";
         $stmt = $this->conexion->prepare($consulta);
@@ -96,9 +96,9 @@ class ReporteModel
     {
         $consulta = "SELECT COALESCE(tp.nombre, 'sin_asignar') as metodo, COUNT(*) as cantidad, SUM(ne.total) as total
                      FROM notas_entrega ne
-                     LEFT JOIN tipo_pago tp ON ne.tipo_pago_id = tp.id_tipo_pago
+                     LEFT JOIN tipo_pago tp ON ne.id_tipo_pago = tp.id_tipo_pago
                      WHERE ne.activo = 1 AND DATE(ne.fecha) BETWEEN :desde AND :hasta AND ne.condicion_pago = 'contado'
-                     GROUP BY ne.tipo_pago_id
+                     GROUP BY ne.id_tipo_pago
                      ORDER BY total DESC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':desde', $desde, PDO::PARAM_STR);
@@ -112,11 +112,11 @@ class ReporteModel
         $consulta = "SELECT cc.*,
                         CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                         c.cedula as cliente_cedula,
-                        ne.id_nota_entrega as nota_id,
+                        ne.id_nota_entrega as id_nota_entrega,
                         ne.fecha as nota_fecha
                  FROM cuentas_cobrar cc
-                 INNER JOIN clientes c ON cc.cliente_id = c.id_cliente
-                 LEFT JOIN notas_entrega ne ON cc.nota_entrega_id = ne.id_nota_entrega
+                 INNER JOIN clientes c ON cc.id_cliente = c.id_cliente
+                 LEFT JOIN notas_entrega ne ON cc.id_nota_entrega = ne.id_nota_entrega
                  WHERE cc.activo = 1
                    AND cc.estado IN ('pendiente', 'moroso')
                    AND DATE(cc.created_at) BETWEEN :desde AND :hasta

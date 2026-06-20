@@ -16,7 +16,7 @@ class UsuarioModel
         $this->conexion = ConexionBD::obtenerInstancia()->obtenerConexion();
     }
 
-    // Busca un usuario por su correo electrónico
+    // Busca un usuario por su correo electrÃ³nico
     public function buscarPorCorreo($correo)
     {
         return $this->_buscarPorCorreo($correo);
@@ -56,7 +56,7 @@ class UsuarioModel
     {
         $consulta = "SELECT u.*, r.nombre as rol_nombre
                      FROM usuarios u
-                     INNER JOIN roles r ON u.rol_id = r.id_rol
+                     INNER JOIN roles r ON u.id_rol = r.id_rol
                      WHERE u.activo = 1
                      ORDER BY u.nombre ASC";
         $stmt = $this->conexion->query($consulta);
@@ -84,19 +84,19 @@ class UsuarioModel
 
     private function _insertarUsuario($datos)
     {
-        $consulta = "INSERT INTO usuarios (nombre, correo, password_hash, rol_id, activo)
-                     VALUES (:nombre, :correo, :password_hash, :rol_id, :activo)";
+        $consulta = "INSERT INTO usuarios (nombre, correo, password_hash, id_rol, activo)
+                     VALUES (:nombre, :correo, :password_hash, :id_rol, :activo)";
         $stmt = $this->conexion->prepare($consulta);
         return $stmt->execute([
             ':nombre' => $datos['nombre'],
             ':correo' => $datos['correo'],
             ':password_hash' => $datos['password_hash'],
-            ':rol_id' => $datos['rol_id'],
+            ':id_rol' => $datos['id_rol'],
             ':activo' => $datos['activo']
         ]);
     }
 
-    // Actualiza los datos básicos de un usuario existente
+    // Actualiza los datos bÃ¡sicos de un usuario existente
     public function actualizarUsuario($datos)
     {
         return $this->_actualizarUsuario($datos);
@@ -104,12 +104,12 @@ class UsuarioModel
 
     private function _actualizarUsuario($datos)
     {
-        $consulta = "UPDATE usuarios SET nombre = :nombre, correo = :correo, rol_id = :rol_id, activo = :activo WHERE id_usuario = :id";
+        $consulta = "UPDATE usuarios SET nombre = :nombre, correo = :correo, id_rol = :id_rol, activo = :activo WHERE id_usuario = :id";
         $stmt = $this->conexion->prepare($consulta);
         return $stmt->execute([
             ':nombre' => $datos['nombre'],
             ':correo' => $datos['correo'],
-            ':rol_id' => $datos['rol_id'],
+            ':id_rol' => $datos['id_rol'],
             ':activo' => $datos['activo'],
             ':id' => $datos['id']
         ]);
@@ -131,7 +131,7 @@ class UsuarioModel
         ]);
     }
 
-    // Elimina un usuario protegiendo al último administrador
+    // Elimina un usuario protegiendo al Ãºltimo administrador
     public function eliminarUsuario($id)
     {
         return $this->_eliminarUsuario($id);
@@ -140,8 +140,8 @@ class UsuarioModel
     private function _eliminarUsuario($id)
     {
         $usuario = $this->_buscarPorId($id);
-        if ($usuario && $usuario['rol_id'] == 1) {
-            $consulta = "SELECT COUNT(*) as total FROM usuarios WHERE rol_id = 1 AND activo = 1";
+        if ($usuario && $usuario['id_rol'] == 1) {
+            $consulta = "SELECT COUNT(*) as total FROM usuarios WHERE id_rol = 1 AND activo = 1";
             $stmt = $this->conexion->query($consulta);
             $totalAdmins = $stmt->fetch()['total'];
 
@@ -156,7 +156,7 @@ class UsuarioModel
         return $stmt->execute();
     }
 
-    // Verifica si un correo ya existe, con exclusión opcional por ID
+    // Verifica si un correo ya existe, con exclusiÃ³n opcional por ID
     public function correoExiste($correo, $idExcluir = null)
     {
         return $this->_correoExiste($correo, $idExcluir);

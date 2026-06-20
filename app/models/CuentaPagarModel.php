@@ -24,7 +24,7 @@ class CuentaPagarModel
     {
         $consulta = "SELECT cp.*, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif
                      FROM cuentas_pagar cp 
-                     INNER JOIN proveedores p ON cp.proveedor_id = p.id_proveedor
+                     INNER JOIN proveedores p ON cp.id_proveedor = p.id_proveedor
                      WHERE cp.activo = 1
                      ORDER BY cp.estado ASC, cp.fecha_vencimiento ASC";
         $stmt = $this->conexion->query($consulta);
@@ -40,9 +40,9 @@ class CuentaPagarModel
     private function _buscarPorId($id)
     {
         $consulta = "SELECT cp.*, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif,
-                            (SELECT GROUP_CONCAT(tp.telefono SEPARATOR ', ') FROM telf_proveedor tp WHERE tp.proveedor_id = p.id_proveedor) as proveedor_telefonos
+                            (SELECT GROUP_CONCAT(tp.telefono SEPARATOR ', ') FROM telf_proveedor tp WHERE tp.id_proveedor = p.id_proveedor) as proveedor_telefonos
                      FROM cuentas_pagar cp 
-                     INNER JOIN proveedores p ON cp.proveedor_id = p.id_proveedor
+                     INNER JOIN proveedores p ON cp.id_proveedor = p.id_proveedor
                      WHERE cp.id_cuenta_pagar = :id AND cp.activo = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
@@ -60,9 +60,9 @@ class CuentaPagarModel
     {
         $consulta = "SELECT pr.*, tp.nombre as tipo_pago_nombre, b.nombre as banco_nombre
                      FROM pagos_realizados pr
-                     LEFT JOIN tipo_pago tp ON pr.tipo_pago_id = tp.id_tipo_pago
-                     LEFT JOIN banco b ON pr.banco_id = b.id_banco
-                     WHERE pr.cuenta_pagar_id = :cuenta_id 
+                     LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
+                     LEFT JOIN banco b ON pr.id_banco = b.id_banco
+                     WHERE pr.id_cuenta_pagar = :cuenta_id 
                      ORDER BY pr.fecha DESC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':cuenta_id', $cuentaId, PDO::PARAM_INT);
@@ -92,12 +92,12 @@ class CuentaPagarModel
             }
             
             $fecha = $fecha ?? date('Y-m-d H:i:s');
-            $consulta = "INSERT INTO pagos_realizados (cuenta_pagar_id, tipo_pago_id, banco_id, monto, fecha, referencia) 
-                         VALUES (:cuenta_id, :tipo_pago_id, :banco_id, :monto, :fecha, :referencia)";
+            $consulta = "INSERT INTO pagos_realizados (id_cuenta_pagar, id_tipo_pago, id_banco, monto, fecha, referencia) 
+                         VALUES (:cuenta_id, :id_tipo_pago, :id_banco, :monto, :fecha, :referencia)";
             $stmt = $this->conexion->prepare($consulta);
             $stmt->bindParam(':cuenta_id', $cuentaId, PDO::PARAM_INT);
-            $stmt->bindParam(':tipo_pago_id', $tipoPagoId, PDO::PARAM_INT);
-            $stmt->bindValue(':banco_id', $bancoId, empty($bancoId) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmt->bindParam(':id_tipo_pago', $tipoPagoId, PDO::PARAM_INT);
+            $stmt->bindValue(':id_banco', $bancoId, empty($bancoId) ? PDO::PARAM_NULL : PDO::PARAM_INT);
             $stmt->bindParam(':monto', $monto);
             $stmt->bindParam(':fecha', $fecha, PDO::PARAM_STR);
             $stmt->bindValue(':referencia', $referencia, empty($referencia) ? PDO::PARAM_NULL : PDO::PARAM_STR);
@@ -130,10 +130,10 @@ class CuentaPagarModel
 
     private function _crearCuenta($proveedorId, $montoTotal, $fechaVencimiento)
     {
-        $consulta = "INSERT INTO cuentas_pagar (proveedor_id, monto_total, saldo_pendiente, fecha_vencimiento, estado, activo) 
-                     VALUES (:proveedor_id, :monto_total, :saldo_pendiente, :fecha_vencimiento, 'pendiente', 1)";
+        $consulta = "INSERT INTO cuentas_pagar (id_proveedor, monto_total, saldo_pendiente, fecha_vencimiento, estado, activo) 
+                     VALUES (:id_proveedor, :monto_total, :saldo_pendiente, :fecha_vencimiento, 'pendiente', 1)";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':proveedor_id', $proveedorId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_proveedor', $proveedorId, PDO::PARAM_INT);
         $stmt->bindParam(':monto_total', $montoTotal);
         $stmt->bindParam(':saldo_pendiente', $montoTotal);
         $stmt->bindParam(':fecha_vencimiento', $fechaVencimiento, PDO::PARAM_STR);
@@ -180,7 +180,7 @@ class CuentaPagarModel
         $terminoLike = '%' . $termino . '%';
         $consulta = "SELECT cp.*, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif
                      FROM cuentas_pagar cp 
-                     INNER JOIN proveedores p ON cp.proveedor_id = p.id_proveedor
+                     INNER JOIN proveedores p ON cp.id_proveedor = p.id_proveedor
                      WHERE cp.activo = 1 AND (p.nombre_empresa LIKE :termino1 
                         OR p.rif LIKE :termino2) 
                      ORDER BY cp.estado ASC, cp.fecha_vencimiento ASC";

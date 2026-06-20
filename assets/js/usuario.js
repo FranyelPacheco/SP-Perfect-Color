@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var formUsuario = document.getElementById('formularioUsuario');
     if (!formUsuario) {
-        console.warn('El formulario #formularioUsuario no se encontró en esta página.');
+        console.warn('El formulario #formularioUsuario no se encontrÃ³ en esta pÃ¡gina.');
         return;
     }
 
@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function () {
             var contRol = document.getElementById('contenedorRol');
             if (contRol) {
                 contRol.style.display = 'block';
-                document.getElementById('rolUsuario').value = u.rol_id;
+                document.getElementById('rolUsuario').value = u.id_rol;
                 document.getElementById('rolUsuario').required = true;
             }
             var contEstado = document.getElementById('contenedorEstado');
@@ -301,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (cambiarClave) {
                 var nuevaClave = document.getElementById('nuevaClaveUsuario').value.trim();
                 if (!nuevaClave) {
-                    mostrarError('Ingrese la nueva contraseña');
+                    mostrarError('Ingrese la nueva contraseÃ±a');
                     return;
                 }
                 if (nuevaClave.length < 6) {
@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ---- Eliminar usuario ----
     async function eliminarUsuario(id, nombre) {
-        if (!confirm('¿Esta seguro de eliminar al usuario ' + nombre + '?')) return;
+        if (!confirm('Â¿Esta seguro de eliminar al usuario ' + nombre + '?')) return;
 
         var fd = new FormData();
         fd.append('id', id);

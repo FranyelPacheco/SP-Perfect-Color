@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         var formData = new FormData();
-        formData.append('proveedor_id', proveedorId);
+        formData.append('id_proveedor', proveedorId);
         formData.append('monto_total', montoTotal);
         formData.append('fecha_vencimiento', fechaVencimiento);
 

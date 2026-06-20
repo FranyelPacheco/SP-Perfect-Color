@@ -53,13 +53,13 @@ if ($metodo === 'index') {
     verificarRolVendedor();
     
     $pageTitle = 'SP Perfect Color - Nuevo Presupuesto';
-    $pageDescription = 'Crear un nuevo presupuesto o cotización - SP Perfect Color';
+    $pageDescription = 'Crear un nuevo presupuesto o cotizaciÃ³n - SP Perfect Color';
     $contenidoVista = __DIR__ . '/../views/presupuestoFormView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
 // 5. Obtiene los insumos disponibles para el presupuesto en formato JSON
 } elseif ($metodo === 'obtenerInsumosAjax') {
-    if (!isset($_SESSION['usuario_id'])) {
+    if (!isset($_SESSION['id_usuario'])) {
         respuestaJson('error', 'Sesion expirada');
     }
     
@@ -71,7 +71,7 @@ if ($metodo === 'index') {
 
 // 6. Obtiene los clientes disponibles para el presupuesto en formato JSON
 } elseif ($metodo === 'obtenerClientesAjax') {
-    if (!isset($_SESSION['usuario_id'])) {
+    if (!isset($_SESSION['id_usuario'])) {
         respuestaJson('error', 'Sesion expirada');
     }
     
@@ -90,7 +90,7 @@ if ($metodo === 'index') {
     }
     
     // Obtener datos del presupuesto
-    $clienteId = intval($_POST['cliente_id'] ?? 0);
+    $clienteId = intval($_POST['id_cliente'] ?? 0);
     $observaciones = trim($_POST['observaciones'] ?? '');
     
     // Obtener items del detalle desde el JSON enviado
@@ -110,7 +110,7 @@ if ($metodo === 'index') {
     $detalle = [];
     
     foreach ($items as $item) {
-        $insumoId = intval($item['insumo_id'] ?? 0);
+        $insumoId = intval($item['id_insumo'] ?? 0);
         $cantidad = floatval($item['cantidad'] ?? 0);
         $precioUnitario = floatval($item['precio_unitario'] ?? 0);
         $subtotal = $cantidad * $precioUnitario;
@@ -122,7 +122,7 @@ if ($metodo === 'index') {
         $total += $subtotal;
         
         $detalle[] = [
-            'insumo_id' => $insumoId,
+            'id_insumo' => $insumoId,
             'cantidad' => $cantidad,
             'precio_unitario' => $precioUnitario,
             'subtotal' => $subtotal
@@ -131,8 +131,8 @@ if ($metodo === 'index') {
     
     // Preparar datos del presupuesto
     $datos = [
-        'cliente_id' => $clienteId,
-        'usuario_id' => $_SESSION['usuario_id'],
+        'id_cliente' => $clienteId,
+        'id_usuario' => $_SESSION['id_usuario'],
         'total' => $total,
         'observaciones' => $observaciones
     ];
@@ -142,7 +142,7 @@ if ($metodo === 'index') {
         $presupuestoId = $presupuestoModel->insertarPresupuesto($datos, $detalle);
         
         respuestaJson('exito', 'Presupuesto creado exitosamente', [
-            'presupuesto_id' => $presupuestoId,
+            'id_presupuesto' => $presupuestoId,
             'total' => $total
         ]);
     } catch (PDOException $e) {

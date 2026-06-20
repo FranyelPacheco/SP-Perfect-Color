@@ -71,7 +71,13 @@
                         <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaPagar" class="nav-link<?php echo ($controlador === 'cuentaPagar') ? ' active' : ''; ?>"><i class="bi bi-credit-card-2-back-fill"></i>Cuentas por Pagar</a></li>
                         <?php endif; ?>
                         <?php if ($_SESSION['usuario_rol'] === 1): ?>
-                        <li class="nav-item"><a href="/SP%20Perfect%20Color/configPago" class="nav-link<?php echo ($controlador === 'configPago') ? ' active' : ''; ?>"><i class="bi bi-gear-fill"></i>Config. de Pago</a></li>
+                        <li class="nav-item dropdown-hover">
+                            <a href="#" class="nav-link"><i class="bi bi-gear-fill"></i> Config. de Pago <i class="bi bi-chevron-down ms-auto"></i></a>
+                            <ul class="dropdown-submenu">
+                                <li><a href="/SP%20Perfect%20Color/banco"><i class="bi bi-bank"></i>Bancos</a></li>
+                                <li><a href="/SP%20Perfect%20Color/tipoPago"><i class="bi bi-credit-card"></i>Tipos de Pago</a></li>
+                            </ul>
+                        </li>
                         <?php endif; ?>
                         <li class="nav-item mt-2"><a href="/SP%20Perfect%20Color/reporte" class="nav-link<?php echo ($controlador === 'reporte') ? ' active' : ''; ?>"><i class="bi bi-bar-chart-fill"></i>Reportes</a></li>
                     </ul>
@@ -95,6 +101,7 @@
                     <h5>SP Perfect Color</h5>
                     <small>Sistema de Gestión</small>
                 </div>
+                <button class="sidebar-toggle" id="sidebarToggle" title="Colapsar sidebar"><i class="bi bi-list"></i></button>
             </div>
             <ul class="nav flex-column mt-1">
                 <li class="nav-item"><a href="/SP%20Perfect%20Color/dashboard" class="nav-link<?php echo ($controlador === 'dashboard') ? ' active' : ''; ?>"><i class="bi bi-grid-fill"></i>Inicio</a></li>
@@ -109,12 +116,18 @@
                 <?php if ($_SESSION['usuario_rol'] === 1): ?>
                 <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaPagar" class="nav-link<?php echo ($controlador === 'cuentaPagar') ? ' active' : ''; ?>"><i class="bi bi-credit-card-2-back-fill"></i>Cuentas por Pagar</a></li>
                 <?php endif; ?>
-                <?php if ($_SESSION['usuario_rol'] === 1): ?>
-                <li class="nav-item"><a href="/SP%20Perfect%20Color/configPago" class="nav-link<?php echo ($controlador === 'configPago') ? ' active' : ''; ?>"><i class="bi bi-gear-fill"></i>Config. de Pago</a></li>
-                <?php endif; ?>
-                <li class="nav-item mt-2"><a href="/SP%20Perfect%20Color/reporte" class="nav-link<?php echo ($controlador === 'reporte') ? ' active' : ''; ?>"><i class="bi bi-bar-chart-fill"></i>Reportes</a></li>
-            </ul>
-            <div class="sidebar-user">
+                        <?php if ($_SESSION['usuario_rol'] === 1): ?>
+                        <li class="nav-item dropdown-hover">
+                            <a href="#" class="nav-link"><i class="bi bi-gear-fill"></i> Config. de Pago <i class="bi bi-chevron-down ms-auto"></i></a>
+                            <ul class="dropdown-submenu">
+                                <li><a href="/SP%20Perfect%20Color/banco"><i class="bi bi-bank"></i>Bancos</a></li>
+                                <li><a href="/SP%20Perfect%20Color/tipoPago"><i class="bi bi-credit-card"></i>Tipos de Pago</a></li>
+                            </ul>
+                        </li>
+                        <?php endif; ?>
+                        <li class="nav-item mt-2"><a href="/SP%20Perfect%20Color/reporte" class="nav-link<?php echo ($controlador === 'reporte') ? ' active' : ''; ?>"><i class="bi bi-bar-chart-fill"></i>Reportes</a></li>
+                    </ul>
+                <div class="sidebar-user">
                 <?php if (isset($_SESSION['usuario_rol']) && in_array($_SESSION['usuario_rol'], [1, 2])): ?>
                     <a href="/SP%20Perfect%20Color/usuario" class="user-name"><i class="bi bi-person-circle me-1"></i><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></a>
                 <?php else: ?>
@@ -148,10 +161,48 @@
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/SP%20Perfect%20Color/assets/js/utilidades.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/utilidades.js'); ?>"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Sidebar toggle
+            var sidebarToggle = document.getElementById('sidebarToggle');
+            var sidebar = document.querySelector('.sidebar');
+            var sidebarBrand = document.querySelector('.sidebar-brand');
+            function toggleSidebar() {
+                sidebar.classList.toggle('collapsed');
+            }
+            if (sidebarToggle && sidebar) {
+                sidebarToggle.addEventListener('click', toggleSidebar);
+            }
+            // Click brand area to expand when collapsed
+            if (sidebarBrand && sidebar) {
+                sidebarBrand.addEventListener('click', function(e) {
+                    if (e.target.closest('.sidebar-toggle')) return;
+                    if (sidebar.classList.contains('collapsed')) {
+                        toggleSidebar();
+                    }
+                });
+            }
+
+            // Config. de Pago dropdown toggle (click instead of hover)
+            document.querySelectorAll('.dropdown-hover > .nav-link').forEach(function(link) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var parent = this.parentElement;
+                    parent.classList.toggle('open');
+                });
+            });
+            // Cerrar al hacer clic fuera
+            document.addEventListener('click', function(e) {
+                document.querySelectorAll('.dropdown-hover.open').forEach(function(el) {
+                    if (!el.contains(e.target)) {
+                        el.classList.remove('open');
+                    }
+                });
+            });
+
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             tooltipTriggerList.map(function(el) { return new bootstrap.Tooltip(el); });
             $(document).on('draw.dt', function() {

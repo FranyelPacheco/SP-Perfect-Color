@@ -72,7 +72,7 @@ if ($metodo === 'index') {
     $stockMinimo = floatval($_POST['stock_minimo'] ?? 5);
     $precioVenta = floatval($_POST['precio_venta'] ?? 0);
     $precioCompra = floatval($_POST['precio_compra'] ?? 0);
-    $proveedorId = !empty($_POST['proveedor_id']) ? intval($_POST['proveedor_id']) : null;
+    $proveedorId = !empty($_POST['id_proveedor']) ? intval($_POST['id_proveedor']) : null;
     
     // Validar campos obligatorios
     if (!validarRequerido($codigo)) {
@@ -161,13 +161,13 @@ if ($metodo === 'index') {
     $codigo = strtoupper(trim($_POST['codigo'] ?? ''));
     $nombre = trim($_POST['nombre'] ?? '');
     $marca = trim($_POST['marca'] ?? '');
-    $rubroId = !empty($_POST['rubro_id']) ? intval($_POST['rubro_id']) : null;
+    $rubroId = !empty($_POST['id_rubro']) ? intval($_POST['id_rubro']) : null;
     $unidadMedida = trim($_POST['unidad_medida'] ?? '');
     $stockActual = floatval($_POST['stock_actual'] ?? 0);
     $stockMinimo = floatval($_POST['stock_minimo'] ?? 5);
     $precioVenta = floatval($_POST['precio_venta'] ?? 0);
     $precioCompra = floatval($_POST['precio_compra'] ?? 0);
-    $proveedorId = !empty($_POST['proveedor_id']) ? intval($_POST['proveedor_id']) : null;
+    $proveedorId = !empty($_POST['id_proveedor']) ? intval($_POST['id_proveedor']) : null;
     
     // Validar
     if ($id < 1) {
@@ -197,7 +197,7 @@ if ($metodo === 'index') {
         'codigo' => $codigo,
         'nombre' => $nombre,
         'marca' => $marca,
-        'rubro_id' => $rubroId,
+        'id_rubro' => $rubroId,
         'unidad_medida' => $unidadMedida,
         'stock_actual' => $stockActual,
         'stock_minimo' => $stockMinimo,
@@ -231,7 +231,7 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'obtenerRubrosPorProveedorAjax') {
     verificarAcceso([1]);
 
-    $proveedorId = intval($_GET['proveedor_id'] ?? 0);
+    $proveedorId = intval($_GET['id_proveedor'] ?? 0);
     if ($proveedorId < 1) {
         respuestaJson('error', 'ID de proveedor no valido');
     }

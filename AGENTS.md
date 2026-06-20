@@ -171,3 +171,74 @@ Los helpers y controllers son procedurales (funciones/if-else sin clases), el pa
 
 **Models:** `_actualizar` en Cliente/Proveedor/Inventario ahora setean `activo = 1` en el UPDATE.
 **Controllers:** Los 6 `guardar` verifican `buscarInactivoPor*` antes de `insertar*`.
+
+---
+
+## Sesión — FK/PK renaming (26 columnas en 13 tablas)
+
+### Problema
+Las FK tenían nombres inconsistentes con las PKs que referenciaban. Ej: `cuentas_cobrar.cliente_id` referenciaba `clientes.id_cliente`. Todas las FK debían llamarse igual que su PK (`id_nombre`).
+
+### Cambios realizados
+
+**SQL (`app/core/sp_perfect_color.sql`):** 26 FK columns renombradas en CREATE TABLE, INSERT, INDEX, y FOREIGN KEY constraints:
+
+| Tabla | Old FK | New FK |
+|-------|--------|--------|
+| `cuentas_cobrar` | `cliente_id`, `nota_entrega_id` | `id_cliente`, `id_nota_entrega` |
+| `cuentas_pagar` | `proveedor_id` | `id_proveedor` |
+| `insumo_proveedor` | `insumo_id`, `proveedor_id` | `id_insumo`, `id_proveedor` |
+| `notas_entrega` | `cliente_id`, `usuario_id`, `tipo_pago_id`, `presupuesto_id` | `id_cliente`, `id_usuario`, `id_tipo_pago`, `id_presupuesto` |
+| `nota_entrega_detalle` | `nota_id`, `presupuesto_detalle_id` | `id_nota_entrega`, `id_presupuesto_detalle` |
+| `pagos_realizados` | `cuenta_pagar_id`, `tipo_pago_id`, `banco_id` | `id_cuenta_pagar`, `id_tipo_pago`, `id_banco` |
+| `pagos_recibidos` | `cuenta_cobrar_id`, `tipo_pago_id`, `banco_id` | `id_cuenta_cobrar`, `id_tipo_pago`, `id_banco` |
+| `presupuestos` | `cliente_id`, `usuario_id` | `id_cliente`, `id_usuario` |
+| `presupuesto_detalle` | `presupuesto_id`, `insumo_id` | `id_presupuesto`, `id_insumo` |
+| `rubro_proveedor` | `proveedor_id`, `rubro_id` | `id_proveedor`, `id_rubro` |
+| `telefono_cliente` | `cliente_id` | `id_cliente` |
+| `telf_proveedor` | `proveedor_id` | `id_proveedor` |
+| `usuarios` | `rol_id` | `id_rol` |
+
+**Código (PHP/JS):** 33 archivos modificados con PowerShell (bulk replaceAll):
+
+- **8 Models:** ClienteModel, ProveedorModel, InventarioModel, PresupuestoModel, NotaEntregaModel, CuentaCobrarModel, CuentaPagarModel, UsuarioModel — SQL queries, bind params, array keys
+- **8 Controllers:** cliente, proveedor, inventario, presupuesto, notaEntrega, cuentaCobrar, cuentaPagar, usuario — `$_POST`/`$_GET` keys, `$_SESSION` keys
+- **1 Helper:** `sesionHelper.php` — `$_SESSION['usuario_id']` → `$_SESSION['id_usuario']`
+- **6 Views:** form `name` attributes (`name="cliente_id"` → `name="id_cliente"`), PHP echo de columnas
+- **7 JS:** `notaEntregaForm.js`, `notaEntregaEdit.js`, `presupuestoForm.js`, `inventario.js`, `cuentaCobrar.js`, `cuentaPagar.js`, `usuario.js` — fetch/FormData keys, DataTable column data
+- **1 View:** `loginController.php`, `frontController.php` — `$_SESSION['usuario_id']` → `$_SESSION['id_usuario']`
+
+**Ejecutado con:** Script PowerShell `(Get-Content).Replace()` sobre 70 archivos, 14 reemplazos en orden específico (largo→corto para evitar colisiones: `presupuesto_detalle_id` antes que `presupuesto_id`, etc.)
+
+### Verificación
+- `grep` confirmó 0 ocurrencias de los 14 patrones viejos (`cliente_id`, `proveedor_id`, etc.) en PHP y JS
+- SQL FK constraints revisados manualmente — todos referencian `id_*` correctamente
+
+---
+
+## Sesión — 5 mejoras UI/UX
+
+### 1. Login — gradiente quitado, fondo sólido
+- **`assets/css/estiloBase.css`**: `.login-card .card-header` cambió de `var(--brand-gradient)` a `var(--brand-dark)` (azul sólido `#1E3A5F`)
+
+### 2. Sidebar replegable (collapsible)
+- **`assets/css/estiloBase.css`**: Clase `.sidebar.collapsed` con `width: 70px`, oculta textos, iconos centrados. Botón toggle en `.sidebar-brand` con icono `bi-arrow-bar-left`/`bi-arrow-bar-right`
+- **`app/views/plantillaBase.php`**: Botón toggle dentro del sidebar; JS togglea clase `.collapsed` y cambia icono
+
+### 3. Counter Animation en Dashboard
+- **`assets/js/utilidades.js`**: `animarContador(elemento, valorFinal, duracion)` — anima de 0→valor usando `requestAnimationFrame`. Soporta formato moneda (`data-moneda="1"`)
+- **`app/views/dashboardView.php`**: Todos los `.stat-value` tienen `data-valor` con el valor real; arrancan en 0. El DOMContentLoaded en utilidades.js los anima automáticamente
+
+### 4. Gráfica de Ingresos (Chart.js)
+- **`app/models/CuentaCobrarModel.php`**: Nuevo `obtenerPagosPorDia(7)` — SELECT agrupado por fecha últimos N días
+- **`app/controllers/dashboardController.php`**: Pasa `$ingresosPorDia` a la vista
+- **`app/views/dashboardView.php`**: `<canvas id="graficoIngresos">` dentro de card; script inline pasa `json_encode($ingresosPorDia)`
+- **`assets/js/utilidades.js`**: `inicializarGraficoIngresos()` — Chart.js barras verticales con 7 días, rellena con 0 los días sin datos
+- **`app/views/plantillaBase.php`**: CDN Chart.js agregado antes del cierre `</body>`
+
+### 5. Bancos/TiposPago → 2 módulos separados + dropdown hover
+- **`app/controllers/bancoController.php`**: `index` ahora renderiza `bancoListView.php` (antes redirigía a configPago)
+- **`app/controllers/tipoPagoController.php`**: `index` renderiza `tipoPagoListView.php` (antes redirigía)
+- **`app/controllers/frontController.php`**: Agregados `'banco'` y `'tipoPago'` a `$titulosPagina`
+- **`app/views/plantillaBase.php`**: Sidebar desktop: `<li class="nav-item dropdown-hover">` con submenú hover (Bancos / Tipos de Pago). Sidebar móvil: sublista anidada dentro del mismo `<li>`
+- **`assets/css/estiloBase.css`**: Estilos para `.dropdown-hover` (posición absoluta a la derecha del sidebar, visible en hover, sombra, animación)

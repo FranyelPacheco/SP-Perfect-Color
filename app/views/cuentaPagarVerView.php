@@ -216,8 +216,8 @@ document.getElementById('formularioPago').addEventListener('submit', function(ev
     formData.append('cuenta_id', cuentaId);
     formData.append('monto', monto);
     formData.append('fecha', fecha);
-    formData.append('tipo_pago_id', tipoPagoId);
-    formData.append('banco_id', bancoId || '');
+    formData.append('id_tipo_pago', tipoPagoId);
+    formData.append('id_banco', bancoId || '');
     formData.append('referencia', referencia);
     fetch('/SP%20Perfect%20Color/cuentaPagar/registrarPago', { method: 'POST', body: formData })
     .then(function(r) { return r.json(); })

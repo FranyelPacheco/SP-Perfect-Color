@@ -83,11 +83,11 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
     
-    $clienteId = intval($_POST['cliente_id'] ?? 0);
-    $presupuestoId = intval($_POST['presupuesto_id'] ?? 0);
+    $clienteId = intval($_POST['id_cliente'] ?? 0);
+    $presupuestoId = intval($_POST['id_presupuesto'] ?? 0);
     $condicionPago = $_POST['condicion_pago'] ?? 'contado';
-    $tipoPagoId = !empty($_POST['tipo_pago_id']) ? intval($_POST['tipo_pago_id']) : null;
-    $bancoId = !empty($_POST['banco_id']) ? intval($_POST['banco_id']) : null;
+    $tipoPagoId = !empty($_POST['id_tipo_pago']) ? intval($_POST['id_tipo_pago']) : null;
+    $bancoId = !empty($_POST['id_banco']) ? intval($_POST['id_banco']) : null;
     $referencia = trim($_POST['referencia'] ?? '');
     $estadoNota = $_POST['estado'] ?? 'pendiente';
     $fechaVencimiento = $_POST['fecha_vencimiento'] ?? '';
@@ -130,7 +130,7 @@ if ($metodo === 'index') {
     $detalle = [];
     
     foreach ($items as $item) {
-        $presupuestoDetalleId = intval($item['presupuesto_detalle_id'] ?? 0);
+        $presupuestoDetalleId = intval($item['id_presupuesto_detalle'] ?? 0);
         $cantidad = floatval($item['cantidad'] ?? 0);
         $precioUnitario = floatval($item['precio_unitario'] ?? 0);
         $subtotal = $cantidad * $precioUnitario;
@@ -142,7 +142,7 @@ if ($metodo === 'index') {
         $total += $subtotal;
         
         $detalle[] = [
-            'presupuesto_detalle_id' => $presupuestoDetalleId,
+            'id_presupuesto_detalle' => $presupuestoDetalleId,
             'cantidad' => $cantidad,
             'precio_unitario' => $precioUnitario,
             'subtotal' => $subtotal
@@ -151,14 +151,14 @@ if ($metodo === 'index') {
     
     // Preparar datos
     $datos = [
-        'cliente_id' => $clienteId,
-        'usuario_id' => $_SESSION['usuario_id'],
+        'id_cliente' => $clienteId,
+        'id_usuario' => $_SESSION['id_usuario'],
         'total' => $total,
-        'presupuesto_id' => $presupuestoId,
+        'id_presupuesto' => $presupuestoId,
         'estado' => $estadoNota,
         'condicion_pago' => $condicionPago,
-        'tipo_pago_id' => $tipoPagoId,
-        'banco_id' => $bancoId,
+        'id_tipo_pago' => $tipoPagoId,
+        'id_banco' => $bancoId,
         'referencia' => $referencia,
         'fecha_vencimiento' => $fechaVencimiento
     ];
@@ -167,7 +167,7 @@ if ($metodo === 'index') {
         $notaId = $notaEntregaModel->crearNotaEntrega($datos, $detalle);
         
         respuestaJson('exito', 'Nota de entrega creada exitosamente', [
-            'nota_id' => $notaId,
+            'id_nota_entrega' => $notaId,
             'total' => $total
         ]);
     } catch (\Throwable $e) {
@@ -203,7 +203,7 @@ if ($metodo === 'index') {
 
 // 8. Obtiene los clientes para el formulario
 } elseif ($metodo === 'obtenerClientesAjax') {
-    if (!isset($_SESSION['usuario_id'])) {
+    if (!isset($_SESSION['id_usuario'])) {
         respuestaJson('error', 'Sesion expirada');
     }
     
@@ -215,7 +215,7 @@ if ($metodo === 'index') {
 
 // 9. Obtiene presupuestos aprobados para crear nota
 } elseif ($metodo === 'obtenerPresupuestosAprobadosAjax') {
-    if (!isset($_SESSION['usuario_id'])) {
+    if (!isset($_SESSION['id_usuario'])) {
         respuestaJson('error', 'Sesion expirada');
     }
     
@@ -227,11 +227,11 @@ if ($metodo === 'index') {
 
 // 10. Obtiene detalle de un presupuesto para pre-cargar items
 } elseif ($metodo === 'obtenerDetallePresupuestoAjax') {
-    if (!isset($_SESSION['usuario_id'])) {
+    if (!isset($_SESSION['id_usuario'])) {
         respuestaJson('error', 'Sesion expirada');
     }
     
-    $presupuestoId = intval($_GET['presupuesto_id'] ?? 0);
+    $presupuestoId = intval($_GET['id_presupuesto'] ?? 0);
     if ($presupuestoId < 1) {
         respuestaJson('error', 'ID de presupuesto invalido');
     }
@@ -250,7 +250,7 @@ if ($metodo === 'index') {
 
 // 11. Obtiene tipos de pago
 } elseif ($metodo === 'obtenerTiposPagoAjax') {
-    if (!isset($_SESSION['usuario_id'])) {
+    if (!isset($_SESSION['id_usuario'])) {
         respuestaJson('error', 'Sesion expirada');
     }
     
@@ -265,7 +265,7 @@ if ($metodo === 'index') {
 
 // 12. Obtiene bancos
 } elseif ($metodo === 'obtenerBancosAjax') {
-    if (!isset($_SESSION['usuario_id'])) {
+    if (!isset($_SESSION['id_usuario'])) {
         respuestaJson('error', 'Sesion expirada');
     }
     
@@ -337,7 +337,7 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
 
-    $id = intval($_POST['nota_id'] ?? 0);
+    $id = intval($_POST['id_nota_entrega'] ?? 0);
     $items = json_decode($_POST['items'] ?? '[]', true);
 
     if ($id < 1) {
@@ -355,7 +355,7 @@ if ($metodo === 'index') {
 
     $detalle = [];
     foreach ($items as $item) {
-        $presupuestoDetalleId = intval($item['presupuesto_detalle_id'] ?? 0);
+        $presupuestoDetalleId = intval($item['id_presupuesto_detalle'] ?? 0);
         $cantidad = floatval($item['cantidad'] ?? 0);
         $precioUnitario = floatval($item['precio_unitario'] ?? 0);
         $subtotal = $cantidad * $precioUnitario;
@@ -365,7 +365,7 @@ if ($metodo === 'index') {
         }
 
         $detalle[] = [
-            'presupuesto_detalle_id' => $presupuestoDetalleId,
+            'id_presupuesto_detalle' => $presupuestoDetalleId,
             'cantidad' => $cantidad,
             'precio_unitario' => $precioUnitario,
             'subtotal' => $subtotal
@@ -374,7 +374,7 @@ if ($metodo === 'index') {
 
     try {
         $notaEntregaModel->actualizarDetalleNota($id, $detalle);
-        respuestaJson('exito', 'Nota de entrega actualizada exitosamente', ['nota_id' => $id]);
+        respuestaJson('exito', 'Nota de entrega actualizada exitosamente', ['id_nota_entrega' => $id]);
     } catch (PDOException $e) {
         respuestaJson('error', 'Error al actualizar: ' . $e->getMessage());
     } catch (\Throwable $e) {

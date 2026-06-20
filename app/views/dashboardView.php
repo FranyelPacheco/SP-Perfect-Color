@@ -11,42 +11,42 @@
         <div class="stat-card stat-teal">
             <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
             <div class="stat-label">Clientes</div>
-            <div class="stat-value"><?php echo $totalClientes; ?></div>
+            <div class="stat-value" data-valor="<?php echo $totalClientes; ?>">0</div>
         </div>
     </div>
     <div class="col-6 col-md-4 col-xl-2">
         <div class="stat-card stat-blue">
             <div class="stat-icon"><i class="bi bi-truck"></i></div>
             <div class="stat-label">Proveedores</div>
-            <div class="stat-value"><?php echo $totalProveedores; ?></div>
+            <div class="stat-value" data-valor="<?php echo $totalProveedores; ?>">0</div>
         </div>
     </div>
     <div class="col-6 col-md-4 col-xl-2">
         <div class="stat-card stat-purple">
             <div class="stat-icon"><i class="bi bi-box-seam-fill"></i></div>
             <div class="stat-label">Insumos</div>
-            <div class="stat-value"><?php echo $totalInsumos; ?></div>
+            <div class="stat-value" data-valor="<?php echo $totalInsumos; ?>">0</div>
         </div>
     </div>
     <div class="col-6 col-md-4 col-xl-2">
         <div class="stat-card stat-orange">
             <div class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
             <div class="stat-label">Alertas Stock</div>
-            <div class="stat-value"><?php echo count($alertasStock); ?></div>
+            <div class="stat-value" data-valor="<?php echo count($alertasStock); ?>">0</div>
         </div>
     </div>
     <div class="col-6 col-md-4 col-xl-2">
         <div class="stat-card stat-green">
             <div class="stat-icon"><i class="bi bi-cash-coin"></i></div>
             <div class="stat-label">Ingresos Hoy</div>
-            <div class="stat-value">$ <?php echo number_format($pagosRecibidosHoy, 2, ',', '.'); ?></div>
+            <div class="stat-value" data-valor="<?php echo $pagosRecibidosHoy; ?>" data-moneda="1">$ 0,00</div>
         </div>
     </div>
     <div class="col-6 col-md-4 col-xl-2">
         <div class="stat-card stat-red">
             <div class="stat-icon"><i class="bi bi-credit-card-2-back-fill"></i></div>
             <div class="stat-label">Egresos Hoy</div>
-            <div class="stat-value">$ <?php echo number_format($pagosRealizadosHoy, 2, ',', '.'); ?></div>
+            <div class="stat-value" data-valor="<?php echo $pagosRealizadosHoy; ?>" data-moneda="1">$ 0,00</div>
         </div>
     </div>
 </div>
@@ -129,3 +129,25 @@
         </div>
     </div>
 </div>
+
+<div class="row g-3 mt-2">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-graph-up-arrow me-2 text-success"></i>Ingresos Diarios (Últimos 7 Días)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoIngresos" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var datos = <?php echo json_encode($ingresosPorDia); ?>;
+    if (typeof inicializarGraficoIngresos === 'function') {
+        inicializarGraficoIngresos(datos);
+    }
+});
+</script>

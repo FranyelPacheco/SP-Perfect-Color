@@ -94,7 +94,7 @@
                     <div id="grupoCambiarClave" class="mb-3" style="display:none">
                         <div class="form-check">
                             <input type="checkbox" id="chkCambiarClave" class="form-check-input">
-                            <label for="chkCambiarClave" class="form-check-label">Cambiar Contraseña</label>
+                            <label for="chkCambiarClave" class="form-check-label">Cambiar ContraseÃ±a</label>
                         </div>
                         <div id="grupoNuevaClave" class="mt-2" style="display:none">
                             <label for="nuevaClaveUsuario" class="form-label">Nueva Contrasena</label>
@@ -105,7 +105,7 @@
 <?php if ($_SESSION['usuario_rol'] == 1): ?>
                     <div id="contenedorRol" class="mb-3">
                         <label for="rolUsuario" class="form-label">Rol</label>
-                        <select id="rolUsuario" name="rol_id" class="form-select" required>
+                        <select id="rolUsuario" name="id_rol" class="form-select" required>
                             <option value="">Seleccione un rol</option>
                         </select>
                     </div>

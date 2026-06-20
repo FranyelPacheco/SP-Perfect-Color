@@ -85,8 +85,8 @@ if ($metodo === 'index') {
     
     $cuentaId = intval($_POST['cuenta_id'] ?? 0);
     $monto = floatval($_POST['monto'] ?? 0);
-    $tipoPagoId = intval($_POST['tipo_pago_id'] ?? 0);
-    $bancoId = !empty($_POST['banco_id']) ? intval($_POST['banco_id']) : null;
+    $tipoPagoId = intval($_POST['id_tipo_pago'] ?? 0);
+    $bancoId = !empty($_POST['id_banco']) ? intval($_POST['id_banco']) : null;
     $referencia = trim($_POST['referencia'] ?? '');
     $fecha = $_POST['fecha'] ?? date('Y-m-d');
     
@@ -151,7 +151,7 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
     
-    $proveedorId = intval($_POST['proveedor_id'] ?? 0);
+    $proveedorId = intval($_POST['id_proveedor'] ?? 0);
     $montoTotal = floatval($_POST['monto_total'] ?? 0);
     $fechaVencimiento = $_POST['fecha_vencimiento'] ?? '';
     

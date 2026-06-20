@@ -11,8 +11,8 @@ $tipoPagoModel = new TipoPagoModel();
 if ($metodo === 'index') {
     verificarRolAdmin();
 
-    header('Location: /SP%20Perfect%20Color/configPago');
-    exit;
+    $contenidoVista = __DIR__ . '/../views/tipoPagoListView.php';
+    require_once __DIR__ . '/../views/plantillaBase.php';
 
 } elseif ($metodo === 'listarAjax') {
     verificarRolAdmin();

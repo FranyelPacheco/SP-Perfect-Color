@@ -30,6 +30,8 @@ if ($metodo === 'index') {
     $pagosRealizadosHoy = $cuentaPagarModel->obtenerTotalPagosHoy();
     $pagosRecibidosHoy = $cuentaCobrarModel->obtenerTotalPagosHoy();
 
+    $ingresosPorDia = $cuentaCobrarModel->obtenerPagosPorDia(7);
+
     // Definir la vista de contenido que se cargara en la plantilla
     $contenidoVista = __DIR__ . '/../views/dashboardView.php';
 

@@ -15,7 +15,7 @@ $usuarioModel = new UsuarioModel();
 
 function verificarPropietario($idSolicitado)
 {
-    $idSesion = $_SESSION['usuario_id'] ?? null;
+    $idSesion = $_SESSION['id_usuario'] ?? null;
     if ($idSesion === null || (int)$idSolicitado !== (int)$idSesion) {
         respuestaJson('error', 'Acceso denegado. Solo puedes acceder a tu propio perfil');
     }
@@ -25,9 +25,9 @@ function verificarPropietario($idSolicitado)
 if ($metodo === 'index') {
     verificarAutenticacion();
 
-    // Asegurar que el correo esté en sesión para mostrarlo en la vista
+    // Asegurar que el correo estÃ© en sesiÃ³n para mostrarlo en la vista
     if (!isset($_SESSION['usuario_correo'])) {
-        $usuarioActual = $usuarioModel->buscarPorId($_SESSION['usuario_id']);
+        $usuarioActual = $usuarioModel->buscarPorId($_SESSION['id_usuario']);
         if ($usuarioActual) {
             $_SESSION['usuario_correo'] = $usuarioActual['correo'];
         }
@@ -43,9 +43,9 @@ if ($metodo === 'index') {
         verificarRolAdmin();
     }
 
-    echo "<script>var SESSION_USER_ROL = " . $_SESSION['usuario_rol'] . "; var SESSION_USER_ID = " . $_SESSION['usuario_id'] . ";</script>";
+    echo "<script>var SESSION_USER_ROL = " . $_SESSION['usuario_rol'] . "; var SESSION_USER_ID = " . $_SESSION['id_usuario'] . ";</script>";
     $pageTitle = 'SP Perfect Color - Mi Perfil';
-    $pageDescription = 'Gestión de perfil y usuarios - SP Perfect Color';
+    $pageDescription = 'GestiÃ³n de perfil y usuarios - SP Perfect Color';
     $contenidoVista = __DIR__ . '/../views/usuarioListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
     exit;
@@ -77,12 +77,12 @@ if ($metodo === 'index') {
     $nombre = trim($_POST['nombre'] ?? '');
     $correo = trim($_POST['correo'] ?? '');
     $clave = $_POST['clave'] ?? '';
-    $rol_id = intval($_POST['rol_id'] ?? 0);
+    $id_rol = intval($_POST['id_rol'] ?? 0);
 
     if (!validarRequerido($nombre)) respuestaJson('error', 'El nombre es obligatorio');
     if (!validarCorreo($correo)) respuestaJson('error', 'El correo electronico no es valido');
     if (!validarRequerido($clave) || strlen($clave) < 6) respuestaJson('error', 'La clave debe tener al menos 6 caracteres');
-    if ($rol_id < 1) respuestaJson('error', 'Debe seleccionar un rol');
+    if ($id_rol < 1) respuestaJson('error', 'Debe seleccionar un rol');
     if ($usuarioModel->correoExiste($correo)) respuestaJson('error', 'El correo electronico ya esta registrado');
 
     $passwordHash = password_hash($clave, PASSWORD_DEFAULT);
@@ -94,7 +94,7 @@ if ($metodo === 'index') {
             'id' => $inactivoId,
             'nombre' => $nombre,
             'correo' => $correo,
-            'rol_id' => $rol_id,
+            'id_rol' => $id_rol,
             'activo' => 1
         ];
         if ($usuarioModel->actualizarUsuario($datosActualizar)) {
@@ -109,7 +109,7 @@ if ($metodo === 'index') {
         'nombre' => $nombre,
         'correo' => $correo,
         'password_hash' => $passwordHash,
-        'rol_id' => $rol_id,
+        'id_rol' => $id_rol,
         'activo' => 1
     ];
 
@@ -161,12 +161,12 @@ if ($metodo === 'index') {
     if ($_SESSION['usuario_rol'] == 2) {
         verificarPropietario($id);
         $usuarioActual = $usuarioModel->buscarPorId($id);
-        $rol_id = $usuarioActual['rol_id'];
+        $id_rol = $usuarioActual['id_rol'];
         $activo = $usuarioActual['activo'];
     } else {
-        $rol_id = intval($_POST['rol_id'] ?? 0);
+        $id_rol = intval($_POST['id_rol'] ?? 0);
         $activo = intval($_POST['activo'] ?? 1);
-        if ($rol_id < 1) respuestaJson('error', 'Debe seleccionar un rol');
+        if ($id_rol < 1) respuestaJson('error', 'Debe seleccionar un rol');
     }
 
     if ($usuarioModel->correoExiste($correo, $id)) {
@@ -177,13 +177,13 @@ if ($metodo === 'index') {
         'id' => $id,
         'nombre' => $nombre,
         'correo' => $correo,
-        'rol_id' => $rol_id,
+        'id_rol' => $id_rol,
         'activo' => $activo
     ];
 
     if ($usuarioModel->actualizarUsuario($datos)) {
         // Refrescar sesion si el usuario edito su propio perfil
-        if ($id == $_SESSION['usuario_id']) {
+        if ($id == $_SESSION['id_usuario']) {
             $_SESSION['usuario_nombre'] = $nombre;
             $_SESSION['usuario_correo'] = $correo;
         }
@@ -213,7 +213,7 @@ if ($metodo === 'index') {
 
     $id = intval($_POST['id'] ?? 0);
     if ($id < 1) respuestaJson('error', 'ID de usuario no valido');
-    if ($id == $_SESSION['usuario_id']) respuestaJson('error', 'No puede eliminar su propio usuario');
+    if ($id == $_SESSION['id_usuario']) respuestaJson('error', 'No puede eliminar su propio usuario');
 
     if ($usuarioModel->eliminarUsuario($id)) {
         respuestaJson('exito', 'Usuario eliminado exitosamente');

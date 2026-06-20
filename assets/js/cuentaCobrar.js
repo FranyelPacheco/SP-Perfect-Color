@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         data: null,
                         render: function(data, type, row) {
                             if (!row) return '';
-                            return row.nota_id ? 'NE #' + row.nota_id : '-';
+                            return row.id_nota_entrega ? 'NE #' + row.id_nota_entrega : '-';
                         }
                     },
                     {

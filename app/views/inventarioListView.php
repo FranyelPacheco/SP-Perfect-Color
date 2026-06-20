@@ -109,13 +109,13 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label for="proveedorInsumo" class="form-label">Proveedor</label>
-                            <select id="proveedorInsumo" name="proveedor_id" class="form-select">
+                            <select id="proveedorInsumo" name="id_proveedor" class="form-select">
                                 <option value="">Seleccione un proveedor...</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label for="rubroInsumo" class="form-label">Rubro</label>
-                            <select id="rubroInsumo" name="rubro_id" class="form-select">
+                            <select id="rubroInsumo" name="id_rubro" class="form-select">
                                 <option value="">Seleccione un proveedor primero</option>
                             </select>
                         </div>

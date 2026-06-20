@@ -60,10 +60,10 @@
             </div>
         </div>
 
-        <?php if (!empty($nota['presupuesto_id'])): ?>
+        <?php if (!empty($nota['id_presupuesto'])): ?>
         <div class="mt-3 pt-3 border-top">
             <small class="text-muted d-block mb-1">Presupuesto de origen:</small>
-            <a href="/SP%20Perfect%20Color/presupuesto/ver?id=<?php echo $nota['presupuesto_id']; ?>">Ver Presupuesto #<?php echo $nota['presupuesto_id']; ?></a>
+            <a href="/SP%20Perfect%20Color/presupuesto/ver?id=<?php echo $nota['id_presupuesto']; ?>">Ver Presupuesto #<?php echo $nota['id_presupuesto']; ?></a>
         </div>
         <?php endif; ?>
     </div>

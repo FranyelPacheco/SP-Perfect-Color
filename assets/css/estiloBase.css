@@ -44,7 +44,94 @@ body {
   background: var(--brand-gradient);
   display: flex;
   flex-direction: column;
-  transition: background var(--transition-speed);
+  transition: width 0.25s ease, background var(--transition-speed);
+  position: relative;
+  z-index: 10;
+}
+
+.sidebar.collapsed {
+  width: 70px;
+}
+
+.sidebar.collapsed .sidebar-brand {
+  justify-content: center;
+  padding: 1rem 0.75rem;
+}
+
+.sidebar.collapsed .sidebar-logo {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-brand-text {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-toggle {
+  display: flex;
+}
+
+.sidebar.collapsed .nav-link {
+  font-size: 0;
+  line-height: 0;
+  gap: 0;
+  justify-content: center;
+  padding: 0.75rem 0.5rem;
+  border-left: none;
+  min-height: 44px;
+}
+.sidebar.collapsed .nav-link i {
+  font-size: 1.25rem;
+  line-height: 1;
+  width: auto;
+}
+.sidebar.collapsed .nav-link .bi-chevron-down {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-user {
+  padding: 0.5rem;
+  text-align: center;
+}
+.sidebar.collapsed .sidebar-user .user-name,
+.sidebar.collapsed .sidebar-user .logout-link {
+  font-size: 0;
+  line-height: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0.35rem 0;
+}
+.sidebar.collapsed .sidebar-user .user-name i,
+.sidebar.collapsed .sidebar-user .logout-link i {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.sidebar.collapsed .sidebar-user .user-name .me-1 {
+  margin-right: 0 !important;
+}
+
+.sidebar.collapsed .dropdown-submenu {
+  left: 70px !important;
+}
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  font-size: 1.35rem;
+  cursor: pointer;
+  padding: 0.35rem;
+  transition: color var(--transition-speed);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+.sidebar-toggle:hover {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
 }
 
 .sidebar-brand {
@@ -108,6 +195,91 @@ body {
   background: rgba(255,255,255,0.1);
   color: #fff !important;
   border-left-color: var(--brand-bright);
+}
+
+/* Dropdown click-to-open */
+.nav-item.dropdown-hover {
+  position: relative;
+}
+
+.nav-item.dropdown-hover > .nav-link {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.nav-item.dropdown-hover > .nav-link .bi-chevron-down {
+  transition: transform 0.25s ease;
+}
+
+.nav-item.dropdown-hover.open > .nav-link .bi-chevron-down {
+  transform: rotate(180deg);
+}
+
+.dropdown-submenu {
+  display: none;
+  position: absolute;
+  left: var(--sidebar-width);
+  top: 0;
+  background: var(--brand-gradient);
+  min-width: 200px;
+  border-radius: 0 8px 8px 0;
+  padding: 0.5rem 0;
+  box-shadow: 4px 4px 16px rgba(0,0,0,0.3);
+  z-index: 100;
+  list-style: none;
+  margin: 0;
+}
+
+.nav-item.dropdown-hover.open > .dropdown-submenu,
+.nav-item.dropdown-hover .dropdown-submenu.open {
+  display: block;
+}
+
+.dropdown-submenu li a {
+  color: rgba(255,255,255,0.65);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 1.25rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: all var(--transition-speed);
+}
+
+.dropdown-submenu li a i {
+  font-size: 1rem;
+  width: 1.25rem;
+  text-align: center;
+}
+
+.dropdown-submenu li a:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+.dropdown-submenu li a.active {
+  color: #fff !important;
+  border-left: 3px solid var(--brand-bright);
+  background: rgba(255,255,255,0.05);
+}
+
+/* Offcanvas mobile: inline dropdown instead of absolute */
+.offcanvas.sidebar-offcanvas .dropdown-submenu {
+  position: static;
+  box-shadow: none;
+  border-radius: 0;
+  min-width: auto;
+  padding-left: 0.5rem;
+  left: auto;
+  top: auto;
+  background: transparent;
+}
+
+/* Main content transition for sidebar collapse */
+main.flex-grow-1 {
+  transition: margin-left 0.25s ease;
 }
 
 .sidebar .nav-link.active {
@@ -813,7 +985,7 @@ textarea.form-control {
 }
 
 .login-card .card-header {
-  background: var(--brand-gradient);
+  background: var(--brand-dark);
   color: #fff;
   text-align: center;
   padding: 2.25rem 1.5rem 1.75rem;

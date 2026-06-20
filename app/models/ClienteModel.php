@@ -26,7 +26,7 @@ class ClienteModel
     {
         $consulta = "SELECT c.*, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
                      FROM clientes c
-                     LEFT JOIN telefono_cliente tc ON tc.cliente_id = c.id_cliente
+                     LEFT JOIN telefono_cliente tc ON tc.id_cliente = c.id_cliente
                      WHERE c.activo = 1
                      GROUP BY c.id_cliente
                      ORDER BY c.apellidos ASC, c.nombres ASC";
@@ -40,7 +40,7 @@ class ClienteModel
     {
         $consulta = "SELECT c.*, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
                      FROM clientes c
-                     LEFT JOIN telefono_cliente tc ON tc.cliente_id = c.id_cliente
+                     LEFT JOIN telefono_cliente tc ON tc.id_cliente = c.id_cliente
                      WHERE c.cedula = :cedula AND c.activo = 1
                      GROUP BY c.id_cliente LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
@@ -61,7 +61,7 @@ class ClienteModel
     {
         $consulta = "SELECT c.*, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
                      FROM clientes c
-                     LEFT JOIN telefono_cliente tc ON tc.cliente_id = c.id_cliente
+                     LEFT JOIN telefono_cliente tc ON tc.id_cliente = c.id_cliente
                      WHERE c.id_cliente = :id AND c.activo = 1
                      GROUP BY c.id_cliente LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
@@ -123,9 +123,9 @@ class ClienteModel
     // Gestion de telefonos del cliente
     private function obtenerTelefonos($clienteId)
     {
-        $consulta = "SELECT * FROM telefono_cliente WHERE cliente_id = :cliente_id ORDER BY id_telefono_cliente ASC";
+        $consulta = "SELECT * FROM telefono_cliente WHERE id_cliente = :id_cliente ORDER BY id_telefono_cliente ASC";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':cliente_id', $clienteId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_cliente', $clienteId, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll();
     }
@@ -139,9 +139,9 @@ class ClienteModel
 
     private function _insertarTelefono($clienteId, $telefono, $tipo = null)
     {
-        $consulta = "INSERT INTO telefono_cliente (cliente_id, telefono, tipo) VALUES (:cliente_id, :telefono, :tipo)";
+        $consulta = "INSERT INTO telefono_cliente (id_cliente, telefono, tipo) VALUES (:id_cliente, :telefono, :tipo)";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':cliente_id', $clienteId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_cliente', $clienteId, PDO::PARAM_INT);
         $stmt->bindParam(':telefono', $telefono, PDO::PARAM_STR);
         $stmt->bindParam(':tipo', $tipo, PDO::PARAM_STR);
         return $stmt->execute();
@@ -155,9 +155,9 @@ class ClienteModel
 
     private function _eliminarTelefonos($clienteId)
     {
-        $consulta = "DELETE FROM telefono_cliente WHERE cliente_id = :cliente_id";
+        $consulta = "DELETE FROM telefono_cliente WHERE id_cliente = :id_cliente";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':cliente_id', $clienteId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_cliente', $clienteId, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
@@ -172,7 +172,7 @@ class ClienteModel
     {
         // Verificar que el cliente no tenga cuentas por cobrar pendientes
         $consulta = "SELECT COUNT(*) as total FROM cuentas_cobrar 
-                     WHERE cliente_id = :id AND estado = 'pendiente'";
+                     WHERE id_cliente = :id AND estado = 'pendiente'";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -244,7 +244,7 @@ class ClienteModel
         $termino = '%' . $termino . '%';
         $consulta = "SELECT c.*, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
                      FROM clientes c
-                     LEFT JOIN telefono_cliente tc ON tc.cliente_id = c.id_cliente
+                     LEFT JOIN telefono_cliente tc ON tc.id_cliente = c.id_cliente
                      WHERE c.activo = 1 AND (c.nombres LIKE :termino1 
                         OR c.apellidos LIKE :termino2 
                         OR c.cedula LIKE :termino3) 

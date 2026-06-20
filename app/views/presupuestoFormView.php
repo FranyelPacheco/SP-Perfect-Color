@@ -14,7 +14,7 @@
         <div class="card-body">
             <div class="mb-0">
                 <label for="clientePresupuesto" class="form-label">Cliente</label>
-                <select id="clientePresupuesto" name="cliente_id" class="form-select" required>
+                <select id="clientePresupuesto" name="id_cliente" class="form-select" required>
                     <option value="">Cargando clientes...</option>
                 </select>
             </div>

@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return [];
         }
         try {
-            const respuesta = await fetch('inventario/obtenerRubrosPorProveedorAjax?proveedor_id=' + proveedorId);
+            const respuesta = await fetch('inventario/obtenerRubrosPorProveedorAjax?id_proveedor=' + proveedorId);
             const resultado = await respuesta.json();
             if (resultado.estado === 'exito') {
                 const rubros = resultado.datos.rubros;
@@ -285,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     rubroInsumo.value = rubrosEdit[0].id_rubro;
                     rubroInsumo.disabled = true;
                 } else {
-                    rubroInsumo.value = insumo.rubro_id || '';
+                    rubroInsumo.value = insumo.id_rubro || '';
                     rubroInsumo.disabled = false;
                 }
                 mensajeError.classList.add('d-none');

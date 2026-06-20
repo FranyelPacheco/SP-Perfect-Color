@@ -30,8 +30,8 @@ class PresupuestoModel
                             c.cedula as cliente_cedula,
                             u.nombre as usuario_nombre
                      FROM presupuestos p 
-                     INNER JOIN clientes c ON p.cliente_id = c.id_cliente
-                     INNER JOIN usuarios u ON p.usuario_id = u.id_usuario
+                     INNER JOIN clientes c ON p.id_cliente = c.id_cliente
+                     INNER JOIN usuarios u ON p.id_usuario = u.id_usuario
                      WHERE p.activo = 1
                      ORDER BY p.fecha DESC, p.id_presupuesto DESC";
         $stmt = $this->conexion->query($consulta);
@@ -52,8 +52,8 @@ class PresupuestoModel
                             c.cedula as cliente_cedula,
                             u.nombre as usuario_nombre
                      FROM presupuestos p 
-                     INNER JOIN clientes c ON p.cliente_id = c.id_cliente
-                     INNER JOIN usuarios u ON p.usuario_id = u.id_usuario
+                     INNER JOIN clientes c ON p.id_cliente = c.id_cliente
+                     INNER JOIN usuarios u ON p.id_usuario = u.id_usuario
                      WHERE p.id_presupuesto = :id AND p.activo = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
@@ -73,10 +73,10 @@ class PresupuestoModel
         $consulta = "SELECT pd.*, i.nombre as insumo_nombre, i.codigo as insumo_codigo,
                             i.marca as insumo_marca
                      FROM presupuesto_detalle pd
-                     INNER JOIN insumos i ON pd.insumo_id = i.id_insumo
-                     WHERE pd.presupuesto_id = :presupuesto_id";
+                     INNER JOIN insumos i ON pd.id_insumo = i.id_insumo
+                     WHERE pd.id_presupuesto = :id_presupuesto";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':presupuesto_id', $presupuestoId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_presupuesto', $presupuestoId, PDO::PARAM_INT);
         $stmt->execute();
         
         return $stmt->fetchAll();
@@ -95,11 +95,11 @@ class PresupuestoModel
             $this->conexion->beginTransaction();
             
             // Insertar el presupuesto principal
-            $consulta = "INSERT INTO presupuestos (cliente_id, usuario_id, fecha, total, estado, observaciones) 
-                         VALUES (:cliente_id, :usuario_id, NOW(), :total, 'pendiente', :observaciones)";
+            $consulta = "INSERT INTO presupuestos (id_cliente, id_usuario, fecha, total, estado, observaciones) 
+                         VALUES (:id_cliente, :id_usuario, NOW(), :total, 'pendiente', :observaciones)";
             $stmt = $this->conexion->prepare($consulta);
-            $stmt->bindParam(':cliente_id', $datos['cliente_id'], PDO::PARAM_INT);
-            $stmt->bindParam(':usuario_id', $datos['usuario_id'], PDO::PARAM_INT);
+            $stmt->bindParam(':id_cliente', $datos['id_cliente'], PDO::PARAM_INT);
+            $stmt->bindParam(':id_usuario', $datos['id_usuario'], PDO::PARAM_INT);
             $stmt->bindParam(':total', $datos['total']);
             $stmt->bindParam(':observaciones', $datos['observaciones'], PDO::PARAM_STR);
             $stmt->execute();
@@ -108,13 +108,13 @@ class PresupuestoModel
             $presupuestoId = $this->conexion->lastInsertId();
             
             // Insertar cada item del detalle
-            $consultaDetalle = "INSERT INTO presupuesto_detalle (presupuesto_id, insumo_id, cantidad, precio_unitario, subtotal) 
-                                VALUES (:presupuesto_id, :insumo_id, :cantidad, :precio_unitario, :subtotal)";
+            $consultaDetalle = "INSERT INTO presupuesto_detalle (id_presupuesto, id_insumo, cantidad, precio_unitario, subtotal) 
+                                VALUES (:id_presupuesto, :id_insumo, :cantidad, :precio_unitario, :subtotal)";
             $stmtDetalle = $this->conexion->prepare($consultaDetalle);
             
             foreach ($detalle as $item) {
-                $stmtDetalle->bindParam(':presupuesto_id', $presupuestoId, PDO::PARAM_INT);
-                $stmtDetalle->bindParam(':insumo_id', $item['insumo_id'], PDO::PARAM_INT);
+                $stmtDetalle->bindParam(':id_presupuesto', $presupuestoId, PDO::PARAM_INT);
+                $stmtDetalle->bindParam(':id_insumo', $item['id_insumo'], PDO::PARAM_INT);
                 $stmtDetalle->bindParam(':cantidad', $item['cantidad']);
                 $stmtDetalle->bindParam(':precio_unitario', $item['precio_unitario']);
                 $stmtDetalle->bindParam(':subtotal', $item['subtotal']);
@@ -199,8 +199,8 @@ class PresupuestoModel
                             c.cedula as cliente_cedula,
                             u.nombre as usuario_nombre
                      FROM presupuestos p 
-                     INNER JOIN clientes c ON p.cliente_id = c.id_cliente
-                     INNER JOIN usuarios u ON p.usuario_id = u.id_usuario
+                     INNER JOIN clientes c ON p.id_cliente = c.id_cliente
+                     INNER JOIN usuarios u ON p.id_usuario = u.id_usuario
                      {$where}
                      ORDER BY p.fecha DESC, p.id_presupuesto DESC";
         

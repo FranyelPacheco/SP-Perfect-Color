@@ -7,7 +7,7 @@
 </div>
 
 <form id="formularioNotaEntrega">
-    <input type="hidden" id="presupuestoId" name="presupuesto_id" value="<?php echo $presupuesto['id_presupuesto']; ?>">
+    <input type="hidden" id="presupuestoId" name="id_presupuesto" value="<?php echo $presupuesto['id_presupuesto']; ?>">
 
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header">
@@ -16,7 +16,7 @@
         <div class="card-body">
             <div class="mb-3">
                 <label for="clienteNota" class="form-label">Cliente</label>
-                <select id="clienteNota" name="cliente_id" class="form-select" required>
+                <select id="clienteNota" name="id_cliente" class="form-select" required>
                     <option value="">Cargando clientes...</option>
                 </select>
             </div>
@@ -38,13 +38,13 @@
                 </div>
                 <div class="col-md-4" id="contenedorTipoPago" style="display:block">
                     <label for="tipoPago" class="form-label">Tipo de Pago</label>
-                    <select id="tipoPago" name="tipo_pago_id" class="form-select" required>
+                    <select id="tipoPago" name="id_tipo_pago" class="form-select" required>
                         <option value="">Seleccione...</option>
                     </select>
                 </div>
                 <div class="col-md-4" id="contenedorBanco" style="display:none">
                     <label for="bancoPago" class="form-label">Banco</label>
-                    <select id="bancoPago" name="banco_id" class="form-select">
+                    <select id="bancoPago" name="id_banco" class="form-select">
                         <option value="">Seleccione un banco...</option>
                     </select>
                 </div>
@@ -169,6 +169,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 toggleCondicionPago();
 var presupuestoDetalle = <?php echo json_encode($detalle); ?>;
-var presupuestoClienteId = <?php echo (int)$presupuesto['cliente_id']; ?>;
+var presupuestoClienteId = <?php echo (int)$presupuesto['id_cliente']; ?>;
 </script>
 <script src="/SP%20Perfect%20Color/assets/js/notaEntregaForm.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/notaEntregaForm.js'); ?>"></script>

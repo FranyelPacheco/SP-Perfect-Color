@@ -24,11 +24,11 @@ class ProveedorModel
         $consulta = "SELECT p.*,
                             GROUP_CONCAT(DISTINCT tp.telefono SEPARATOR ', ') as telefonos,
                             GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubros,
-                            GROUP_CONCAT(DISTINCT rp.rubro_id SEPARATOR ',') as rubros_id
+                            GROUP_CONCAT(DISTINCT rp.id_rubro SEPARATOR ',') as rubros_id
                      FROM proveedores p
-                     LEFT JOIN telf_proveedor tp ON tp.proveedor_id = p.id_proveedor
-                     LEFT JOIN rubro_proveedor rp ON rp.proveedor_id = p.id_proveedor
-                     LEFT JOIN rubro r ON rp.rubro_id = r.id_rubro
+                     LEFT JOIN telf_proveedor tp ON tp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
                      WHERE p.activo = 1
                      GROUP BY p.id_proveedor
                      ORDER BY p.nombre_empresa ASC";
@@ -42,11 +42,11 @@ class ProveedorModel
         $consulta = "SELECT p.*,
                             GROUP_CONCAT(DISTINCT tp.telefono SEPARATOR ', ') as telefonos,
                             GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubros,
-                            GROUP_CONCAT(DISTINCT rp.rubro_id SEPARATOR ',') as rubros_id
+                            GROUP_CONCAT(DISTINCT rp.id_rubro SEPARATOR ',') as rubros_id
                      FROM proveedores p
-                     LEFT JOIN telf_proveedor tp ON tp.proveedor_id = p.id_proveedor
-                     LEFT JOIN rubro_proveedor rp ON rp.proveedor_id = p.id_proveedor
-                     LEFT JOIN rubro r ON rp.rubro_id = r.id_rubro
+                     LEFT JOIN telf_proveedor tp ON tp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
                      WHERE p.rif = :rif AND p.activo = 1
                      GROUP BY p.id_proveedor LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
@@ -66,11 +66,11 @@ class ProveedorModel
         $consulta = "SELECT p.*,
                             GROUP_CONCAT(DISTINCT tp.telefono SEPARATOR ', ') as telefonos,
                             GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubros,
-                            GROUP_CONCAT(DISTINCT rp.rubro_id SEPARATOR ',') as rubros_id
+                            GROUP_CONCAT(DISTINCT rp.id_rubro SEPARATOR ',') as rubros_id
                      FROM proveedores p
-                     LEFT JOIN telf_proveedor tp ON tp.proveedor_id = p.id_proveedor
-                     LEFT JOIN rubro_proveedor rp ON rp.proveedor_id = p.id_proveedor
-                     LEFT JOIN rubro r ON rp.rubro_id = r.id_rubro
+                     LEFT JOIN telf_proveedor tp ON tp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
                      WHERE p.id_proveedor = :id AND p.activo = 1
                      GROUP BY p.id_proveedor LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
@@ -132,7 +132,7 @@ class ProveedorModel
     private function _eliminarProveedor($id)
     {
         $consulta = "SELECT COUNT(*) as total FROM cuentas_pagar 
-                     WHERE proveedor_id = :id AND estado = 'pendiente'";
+                     WHERE id_proveedor = :id AND estado = 'pendiente'";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -142,7 +142,7 @@ class ProveedorModel
             return false;
         }
 
-        $consulta = "SELECT COUNT(*) as total FROM insumo_proveedor WHERE proveedor_id = :id";
+        $consulta = "SELECT COUNT(*) as total FROM insumo_proveedor WHERE id_proveedor = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -211,11 +211,11 @@ class ProveedorModel
         $consulta = "SELECT p.*,
                             GROUP_CONCAT(DISTINCT tp.telefono SEPARATOR ', ') as telefonos,
                             GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubros,
-                            GROUP_CONCAT(DISTINCT rp.rubro_id SEPARATOR ',') as rubros_id
+                            GROUP_CONCAT(DISTINCT rp.id_rubro SEPARATOR ',') as rubros_id
                      FROM proveedores p
-                     LEFT JOIN telf_proveedor tp ON tp.proveedor_id = p.id_proveedor
-                     LEFT JOIN rubro_proveedor rp ON rp.proveedor_id = p.id_proveedor
-                     LEFT JOIN rubro r ON rp.rubro_id = r.id_rubro
+                     LEFT JOIN telf_proveedor tp ON tp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
                      WHERE p.activo = 1 AND (p.nombre_empresa LIKE :termino1 
                         OR p.rif LIKE :termino2)
                      GROUP BY p.id_proveedor
@@ -230,9 +230,9 @@ class ProveedorModel
 
     private function obtenerTelefonos($proveedorId)
     {
-        $consulta = "SELECT * FROM telf_proveedor WHERE proveedor_id = :proveedor_id ORDER BY id_telf_proveedor ASC";
+        $consulta = "SELECT * FROM telf_proveedor WHERE id_proveedor = :id_proveedor ORDER BY id_telf_proveedor ASC";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':proveedor_id', $proveedorId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_proveedor', $proveedorId, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll();
     }
@@ -244,9 +244,9 @@ class ProveedorModel
 
     private function _insertarTelefono($proveedorId, $telefono, $tipo = null)
     {
-        $consulta = "INSERT INTO telf_proveedor (proveedor_id, telefono, tipo) VALUES (:proveedor_id, :telefono, :tipo)";
+        $consulta = "INSERT INTO telf_proveedor (id_proveedor, telefono, tipo) VALUES (:id_proveedor, :telefono, :tipo)";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':proveedor_id', $proveedorId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_proveedor', $proveedorId, PDO::PARAM_INT);
         $stmt->bindParam(':telefono', $telefono, PDO::PARAM_STR);
         $stmt->bindParam(':tipo', $tipo, PDO::PARAM_STR);
         return $stmt->execute();
@@ -259,9 +259,9 @@ class ProveedorModel
 
     private function _eliminarTelefonos($proveedorId)
     {
-        $consulta = "DELETE FROM telf_proveedor WHERE proveedor_id = :proveedor_id";
+        $consulta = "DELETE FROM telf_proveedor WHERE id_proveedor = :id_proveedor";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':proveedor_id', $proveedorId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_proveedor', $proveedorId, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
@@ -269,11 +269,11 @@ class ProveedorModel
     {
         $consulta = "SELECT rp.*, r.nombre 
                      FROM rubro_proveedor rp
-                     INNER JOIN rubro r ON rp.rubro_id = r.id_rubro
-                     WHERE rp.proveedor_id = :proveedor_id 
+                     INNER JOIN rubro r ON rp.id_rubro = r.id_rubro
+                     WHERE rp.id_proveedor = :id_proveedor 
                      ORDER BY rp.id_rubro_proveedor ASC";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':proveedor_id', $proveedorId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_proveedor', $proveedorId, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll();
     }
@@ -285,10 +285,10 @@ class ProveedorModel
 
     private function _insertarRubro($proveedorId, $rubroId)
     {
-        $consulta = "INSERT INTO rubro_proveedor (proveedor_id, rubro_id) VALUES (:proveedor_id, :rubro_id)";
+        $consulta = "INSERT INTO rubro_proveedor (id_proveedor, id_rubro) VALUES (:id_proveedor, :id_rubro)";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':proveedor_id', $proveedorId, PDO::PARAM_INT);
-        $stmt->bindParam(':rubro_id', $rubroId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_proveedor', $proveedorId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_rubro', $rubroId, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
@@ -299,9 +299,9 @@ class ProveedorModel
 
     private function _eliminarRubros($proveedorId)
     {
-        $consulta = "DELETE FROM rubro_proveedor WHERE proveedor_id = :proveedor_id";
+        $consulta = "DELETE FROM rubro_proveedor WHERE id_proveedor = :id_proveedor";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':proveedor_id', $proveedorId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_proveedor', $proveedorId, PDO::PARAM_INT);
         return $stmt->execute();
     }
 }

@@ -23,8 +23,8 @@
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Documento:</small>
                 <span>
-                    <?php if (!empty($cuenta['nota_id'])): ?>
-                        <a href="/SP%20Perfect%20Color/notaEntrega/ver?id=<?php echo $cuenta['nota_id']; ?>">Nota de Entrega #<?php echo $cuenta['nota_id']; ?></a>
+                    <?php if (!empty($cuenta['id_nota_entrega'])): ?>
+                        <a href="/SP%20Perfect%20Color/notaEntrega/ver?id=<?php echo $cuenta['id_nota_entrega']; ?>">Nota de Entrega #<?php echo $cuenta['id_nota_entrega']; ?></a>
                     <?php else: ?>
                         N/A
                     <?php endif; ?>
@@ -236,8 +236,8 @@ document.getElementById('formularioPago').addEventListener('submit', function(ev
     formData.append('cuenta_id', cuentaId);
     formData.append('monto', monto);
     formData.append('fecha', fecha);
-    formData.append('tipo_pago_id', tipoPagoId);
-    formData.append('banco_id', bancoId || '');
+    formData.append('id_tipo_pago', tipoPagoId);
+    formData.append('id_banco', bancoId || '');
     formData.append('referencia', referencia);
     fetch('/SP%20Perfect%20Color/cuentaCobrar/registrarPago', { method: 'POST', body: formData })
     .then(function(r) { return r.json(); })

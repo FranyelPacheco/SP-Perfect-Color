@@ -7,7 +7,7 @@ namespace App\Helpers;
 // Verifica que el usuario haya iniciado sesion
 function verificarAutenticacion()
 {
-    if (!isset($_SESSION['usuario_id'])) {
+    if (!isset($_SESSION['id_usuario'])) {
         respuestaJson('error', 'Debe iniciar sesion para acceder');
     }
 }
@@ -36,7 +36,7 @@ function verificarRolVendedor()
 // Gestiona tanto respuestas JSON como redirecciones de pagina
 function verificarAcceso($rolesPermitidos)
 {
-    if (!isset($_SESSION['usuario_id'])) {
+    if (!isset($_SESSION['id_usuario'])) {
         $esJson = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
         if ($esJson) {
             respuestaJson('error', 'Debe iniciar sesion para acceder');
@@ -52,7 +52,7 @@ function verificarAcceso($rolesPermitidos)
     }
 
     error_log('[ACCESO DENEGADO] Usuario: ' . ($_SESSION['usuario_nombre'] ?? 'N/A') .
-              ' (ID: ' . ($_SESSION['usuario_id'] ?? 'N/A') .
+              ' (ID: ' . ($_SESSION['id_usuario'] ?? 'N/A') .
               ', Rol: ' . $rolUsuario .
               ') intento acceder a: ' . ($_SERVER['REQUEST_URI'] ?? 'N/A'));
 
@@ -68,7 +68,7 @@ function verificarAcceso($rolesPermitidos)
 // Obtiene el ID del usuario en sesion
 function obtenerUsuarioId()
 {
-    return $_SESSION['usuario_id'] ?? null;
+    return $_SESSION['id_usuario'] ?? null;
 }
 
 // Obtiene el rol del usuario en sesion

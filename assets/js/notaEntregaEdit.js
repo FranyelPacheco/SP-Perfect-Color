@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof notaDetalleExistente !== 'undefined' && notaDetalleExistente.length > 0) {
             notaDetalleExistente.forEach(function(item) {
                 items.push({
-                    presupuesto_detalle_id: parseInt(item.presupuesto_detalle_id),
+                    id_presupuesto_detalle: parseInt(item.id_presupuesto_detalle),
                     insumo_codigo: item.insumo_codigo || '',
                     insumo_nombre: item.insumo_nombre || '',
                     cantidad: parseFloat(item.cantidad),
@@ -72,16 +72,16 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             if (items.length === 0) { mostrarError('Debe agregar al menos un item'); return; }
             var fd = new FormData();
-            fd.append('nota_id', document.querySelector('input[name="nota_id"]').value);
+            fd.append('id_nota_entrega', document.querySelector('input[name="id_nota_entrega"]').value);
             fd.append('items', JSON.stringify(items.map(function(i) {
-                return { presupuesto_detalle_id: i.presupuesto_detalle_id, cantidad: i.cantidad, precio_unitario: i.precio_unitario };
+                return { id_presupuesto_detalle: i.id_presupuesto_detalle, cantidad: i.cantidad, precio_unitario: i.precio_unitario };
             })));
             fetch('/SP%20Perfect%20Color/notaEntrega/actualizar', { method: 'POST', body: fd })
             .then(function(r) { return r.json(); })
             .then(function(res) {
                 if (res.estado === 'exito') {
                     mostrarNotificacion(res.mensaje, 'exito');
-                    setTimeout(function() { window.location.href = '/SP%20Perfect%20Color/notaEntrega/ver?id=' + res.datos.nota_id; }, 1500);
+                    setTimeout(function() { window.location.href = '/SP%20Perfect%20Color/notaEntrega/ver?id=' + res.datos.id_nota_entrega; }, 1500);
                 } else {
                     mostrarError(res.mensaje);
                 }

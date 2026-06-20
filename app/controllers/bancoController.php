@@ -11,8 +11,8 @@ $bancoModel = new BancoModel();
 if ($metodo === 'index') {
     verificarRolAdmin();
 
-    header('Location: /SP%20Perfect%20Color/configPago');
-    exit;
+    $contenidoVista = __DIR__ . '/../views/bancoListView.php';
+    require_once __DIR__ . '/../views/plantillaBase.php';
 
 } elseif ($metodo === 'listarAjax') {
     verificarRolAdmin();

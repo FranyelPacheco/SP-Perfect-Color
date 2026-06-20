@@ -11,7 +11,7 @@ $usuarioModel = new UsuarioModel();
 
 if ($metodo === 'index') {
     // Si ya hay sesion activa, redirigir al dashboard
-    if (isset($_SESSION['usuario_id'])) {
+    if (isset($_SESSION['id_usuario'])) {
         header('Location: /SP%20Perfect%20Color/dashboard');
         exit;
     }
@@ -50,10 +50,10 @@ if ($metodo === 'index') {
     }
 
     // Establecer variables de sesion
-    $_SESSION['usuario_id'] = $usuario['id_usuario'];
+    $_SESSION['id_usuario'] = $usuario['id_usuario'];
     $_SESSION['usuario_nombre'] = $usuario['nombre'];
     $_SESSION['usuario_correo'] = $usuario['correo'];
-    $_SESSION['usuario_rol'] = $usuario['rol_id'];
+    $_SESSION['usuario_rol'] = $usuario['id_rol'];
 
     respuestaJson('exito', 'Inicio de sesion exitoso', [
         'redirect' => '/SP%20Perfect%20Color/dashboard'
