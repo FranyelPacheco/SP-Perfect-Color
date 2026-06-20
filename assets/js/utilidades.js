@@ -5,6 +5,9 @@ window.DATATABLES_SPANISH = {
     "emptyTable": "No hay informacion",
     "zeroRecords": "No se encontraron registros",
     "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+    "infoEmpty": "Mostrando 0 a 0 de 0 Entradas",
+    "infoFiltered": "(filtrado de _MAX_ entradas totales)",
+    "lengthMenu": "Mostrar _MENU_ entradas",
     "search": "Buscar:",
     "paginate": { "first": "Primero", "last": "Ultimo", "next": "Siguiente", "previous": "Anterior" }
 };

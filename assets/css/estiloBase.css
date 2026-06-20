@@ -35,6 +35,19 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--brand-bg-border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--brand-light); }
 
+/* Main content scroll */
+main {
+  height: 100vh;
+  overflow-y: auto;
+}
+
+/* DataTables "Show entries" select */
+select.form-select.form-select-sm {
+  font-size: 0.875rem;
+  padding: 0.35rem 2rem 0.35rem 0.75rem;
+  min-width: 72px;
+}
+
 /* ============================================================
    SIDEBAR
    ============================================================ */

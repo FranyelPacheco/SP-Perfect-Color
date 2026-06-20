@@ -87,17 +87,17 @@
                     </div>
 
                     <div id="grupoClave" class="mb-3">
-                        <label for="claveUsuario" class="form-label">Contrasena</label>
+                        <label for="claveUsuario" class="form-label">Contraseña</label>
                         <input type="password" id="claveUsuario" name="clave" class="form-control" placeholder="Minimo 6 caracteres">
                     </div>
 
                     <div id="grupoCambiarClave" class="mb-3" style="display:none">
                         <div class="form-check">
                             <input type="checkbox" id="chkCambiarClave" class="form-check-input">
-                            <label for="chkCambiarClave" class="form-check-label">Cambiar ContraseÃ±a</label>
+                            <label for="chkCambiarClave" class="form-check-label">Cambiar Contraseña</label>
                         </div>
                         <div id="grupoNuevaClave" class="mt-2" style="display:none">
-                            <label for="nuevaClaveUsuario" class="form-label">Nueva Contrasena</label>
+                            <label for="nuevaClaveUsuario" class="form-label">Nueva Contraseña</label>
                             <input type="password" id="nuevaClaveUsuario" name="nueva_clave" class="form-control" placeholder="Minimo 6 caracteres">
                         </div>
                     </div>

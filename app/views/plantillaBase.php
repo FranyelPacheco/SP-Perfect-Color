@@ -42,7 +42,7 @@
     <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/estiloBase.css">
 </head>
 <body>
-    <div class="d-flex min-vh-100">
+    <div class="d-flex" style="height:100vh;">
         <!-- Offcanvas sidebar (mobile) -->
         <div class="offcanvas offcanvas-start sidebar-offcanvas text-white" tabindex="-1" id="offcanvasSidebar">
             <div class="offcanvas-header border-bottom border-white border-opacity-10">
