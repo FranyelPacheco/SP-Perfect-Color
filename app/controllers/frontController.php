@@ -1,6 +1,9 @@
 <?php
 namespace App\Controllers;
 
+// FUNCIÓN: — (clase frontController)
+// OBJETIVO: Enrutador principal — parsea la URL, carga el controlador correspondiente y define variables SEO (pageTitle, pageDescription)
+// NOTA: Controlador forzado a minúsculas; solo caracteres a-z permitidos para prevenir path traversal
 class frontController
 {
     private $controlador;
@@ -8,18 +11,18 @@ class frontController
     private $parametros;
 
     private $titulosPagina = [
-        'dashboard'    => ['Panel de Control', 'Resumen general del sistema de gestiÃ³n SP Perfect Color'],
-        'cliente'      => ['Clientes', 'GestiÃ³n de clientes - SP Perfect Color'],
-        'proveedor'    => ['Proveedores', 'GestiÃ³n de proveedores - SP Perfect Color'],
+        'dashboard'    => ['Panel de Control', 'Resumen general del sistema de gestión administrativa en SP Perfect Color'],
+        'cliente'      => ['Clientes', 'Gestión de clientes - SP Perfect Color'],
+        'proveedor'    => ['Proveedores', 'Gestión de proveedores - SP Perfect Color'],
         'inventario'   => ['Inventario', 'Control de inventario y existencias - SP Perfect Color'],
-        'presupuesto'  => ['Presupuestos', 'GestiÃ³n de presupuestos y cotizaciones - SP Perfect Color'],
-        'notaEntrega'  => ['Notas de Entrega', 'GestiÃ³n de notas de entrega - SP Perfect Color'],
-        'cuentaCobrar' => ['Cuentas por Cobrar', 'GestiÃ³n de cuentas por cobrar - SP Perfect Color'],
-        'cuentaPagar'  => ['Cuentas por Pagar', 'GestiÃ³n de cuentas por pagar - SP Perfect Color'],
-        'usuario'      => ['Usuarios', 'GestiÃ³n de usuarios - SP Perfect Color'],
-        'login'        => ['Iniciar SesiÃ³n', 'Inicio de sesiÃ³n - SP Perfect Color'],
-        'banco'        => ['Bancos', 'GestiÃ³n de bancos - SP Perfect Color'],
-        'tipoPago'     => ['Tipos de Pago', 'GestiÃ³n de tipos de pago - SP Perfect Color'],
+        'presupuesto'  => ['Presupuestos', 'Gestión de presupuestos y cotizaciones - SP Perfect Color'],
+        'notaEntrega'  => ['Notas de Entrega', 'Gestión de notas de entrega - SP Perfect Color'],
+        'cuentaCobrar' => ['Cuentas por Cobrar', 'Gestión de cuentas por cobrar - SP Perfect Color'],
+        'cuentaPagar'  => ['Cuentas por Pagar', 'Gestión de cuentas por pagar - SP Perfect Color'],
+        'usuario'      => ['Usuarios', 'Gestión de usuarios - SP Perfect Color'],
+        'login'        => ['Iniciar Sesión', 'Inicio de sesión - SP Perfect Color'],
+        'banco'        => ['Bancos', 'Gestión de bancos - SP Perfect Color'],
+        'tipoPago'     => ['Tipos de Pago', 'Gestión de tipos de pago - SP Perfect Color'],
         'reporte'      => ['Reportes', 'Reportes de ventas, ingresos y egresos - SP Perfect Color'],
     ];
 
@@ -29,21 +32,23 @@ class frontController
         $url = trim($url, '/');
         $partes = explode('/', $url);
 
-        // Forzamos el nombre del controlador a minÃºsculas para evitar caÃ­das en Linux
-        $this->controlador = !empty($partes[0]) ? strtolower($partes[0]) : 'login';
+        $controladorRaw = !empty($partes[0]) ? strtolower($partes[0]) : 'login';
+        $this->controlador = preg_match('/^[a-z]+$/', $controladorRaw) ? $controladorRaw : 'login';
         $this->metodo = !empty($partes[1]) ? $partes[1] : 'index';
         $this->parametros = array_slice($partes, 2);
 
         $this->disparador();
     }
 
+    // FUNCIÓN: disparador (privado)
+    // OBJETIVO: Incluye el archivo del controlador si existe; si no, redirige al login o muestra 404
+    // NOTA: Las variables $controlador, $metodo, $parametros se heredan por alcance al hacer require_once
     private function disparador()
     {
         $rutaControlador = __DIR__ . '/' . $this->controlador . 'Controller.php';
 
-        // Variables SEO por defecto (los controladores pueden sobrescribirlas)
-        $tituloDefecto = 'SP Perfect Color - Sistema de GestiÃ³n';
-        $descripcionDefecto = 'Sistema de gestiÃ³n administrativa para SP Perfect Color';
+        $tituloDefecto = 'SP Perfect Color - Sistema de Gestión';
+        $descripcionDefecto = 'Sistema de gestión administrativa para SP Perfect Color';
 
         if (isset($this->titulosPagina[$this->controlador])) {
             $pageTitle = 'SP Perfect Color - ' . $this->titulosPagina[$this->controlador][0];
@@ -58,26 +63,23 @@ class frontController
             $metodo = $this->metodo;
             $parametros = $this->parametros;
 
-            // Al requerir el archivo aquÃ­, hereda las variables locales ($controlador, $metodo, $parametros)
             require_once $rutaControlador;
             return;
         }
 
-        // Si el archivo no existe pero no hay sesiÃ³n activa, redirige al login por defecto
         if (!isset($_SESSION['id_usuario'])) {
             $controlador = 'login';
             $metodo = 'index';
             $parametros = [];
-            $pageTitle = 'SP Perfect Color - Iniciar SesiÃ³n';
-            $pageDescription = 'Inicio de sesiÃ³n - SP Perfect Color';
+            $pageTitle = 'SP Perfect Color - Iniciar Sesión';
+            $pageDescription = 'Inicio de sesión - SP Perfect Color';
 
             require_once __DIR__ . '/loginController.php';
             return;
         }
 
-        // Si estÃ¡ logueado pero la ruta estÃ¡ mala, muestra el error 404
-        $pageTitle = 'PÃ¡gina no encontrada - SP Perfect Color';
-        $pageDescription = 'La pÃ¡gina solicitada no estÃ¡ disponible - SP Perfect Color';
+        $pageTitle = 'Página no encontrada - SP Perfect Color';
+        $pageDescription = 'La página solicitada no está disponible - SP Perfect Color';
         require_once __DIR__ . '/../views/error404View.php';
     }
 }

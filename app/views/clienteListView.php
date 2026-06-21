@@ -1,6 +1,7 @@
-<!-- Archivo: clienteListView.php -->
-<!-- Vista para la gestion de clientes con Bootstrap 5 -->
-
+<?php
+// VISTA: clienteListView.php
+// OBJETIVO: Lista de clientes con DataTable, búsqueda y modal CRUD
+?>
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">

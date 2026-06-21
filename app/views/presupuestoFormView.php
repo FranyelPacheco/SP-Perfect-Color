@@ -1,5 +1,7 @@
-<!-- Archivo: presupuestoFormView.php -->
-<!-- Vista para crear un nuevo presupuesto con Bootstrap 5 -->
+<?php
+// VISTA: presupuestoFormView.php
+// OBJETIVO: Formulario para crear un nuevo presupuesto
+?>
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0">Nuevo Presupuesto</h2>

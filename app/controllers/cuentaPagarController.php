@@ -6,25 +6,27 @@ namespace App\Controllers;
 
 use App\Models\CuentaPagarModel;
 use App\Models\ProveedorModel;
-use App\Core\ConexionBD;
+use App\Models\TipoPagoModel;
+use App\Models\BancoModel;
 use function App\Helpers\respuestaJson;
 use function App\Helpers\verificarAutenticacion;
 use function App\Helpers\verificarAcceso;
 use function App\Helpers\verificarRolAdmin;
 use \PDOException;
 
-// Instancias limpias de los modelos para uso procedimental
 $cuentaPagarModel = new CuentaPagarModel();
 $proveedorModel = new ProveedorModel();
 
-// 1. Muestra la lista de cuentas por pagar
+// FUNCIÓN: index
+// OBJETIVO: Renderiza la vista del listado de cuentas por pagar
 if ($metodo === 'index') {
     verificarAcceso([1]);
     
     $contenidoVista = __DIR__ . '/../views/cuentaPagarListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
-// 2. Obtiene las cuentas en formato JSON
+// FUNCIÓN: listarAjax
+// OBJETIVO: Obtiene el listado completo de cuentas por pagar en JSON
 } elseif ($metodo === 'listarAjax') {
     verificarAcceso([1]);
     
@@ -34,7 +36,8 @@ if ($metodo === 'index') {
         'cuentas' => $cuentas
     ]);
 
-// 3. Busca cuentas
+// FUNCIÓN: buscarAjax
+// OBJETIVO: Busca cuentas por pagar por término de búsqueda o devuelve todas
 } elseif ($metodo === 'buscarAjax') {
     verificarAcceso([1]);
     
@@ -50,7 +53,8 @@ if ($metodo === 'index') {
         'cuentas' => $cuentas
     ]);
 
-// 4. Muestra el detalle de una cuenta
+// FUNCIÓN: ver
+// OBJETIVO: Renderiza la vista de detalle de una cuenta con sus pagos realizados
 } elseif ($metodo === 'ver') {
     verificarAcceso([1]);
     
@@ -75,7 +79,8 @@ if ($metodo === 'index') {
     $contenidoVista = __DIR__ . '/../views/cuentaPagarVerView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
-// 5. Registra un pago via AJAX
+// FUNCIÓN: registrarPago
+// OBJETIVO: Registra un pago realizado con validación de banco/referencia para transferencia o pago móvil
 } elseif ($metodo === 'registrarPago') {
     verificarRolAdmin();
     
@@ -102,7 +107,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Debe seleccionar un tipo de pago');
     }
     
-    // Transferencia(2) o Pago Movil(3) requieren banco y referencia
     if ($tipoPagoId === 2 || $tipoPagoId === 3) {
         if (empty($bancoId) || $bancoId < 1) {
             respuestaJson('error', 'Debe seleccionar un banco para transferencia o pago movil');
@@ -116,34 +120,36 @@ if ($metodo === 'index') {
         $cuentaPagarModel->registrarPago($cuentaId, $monto, $tipoPagoId, $bancoId, $referencia, $fecha);
         respuestaJson('exito', 'Pago registrado exitosamente');
     } catch (PDOException $e) {
-        respuestaJson('error', $e->getMessage());
+        error_log('Error al registrar pago CxP: ' . $e->getMessage());
+        respuestaJson('error', 'Error al registrar el pago');
     }
 
-// 6. Obtiene tipos de pago y bancos para el modal
+// FUNCIÓN: obtenerDatosPagoAjax
+// OBJETIVO: Obtiene tipos de pago y bancos para el modal de registro de pago
 } elseif ($metodo === 'obtenerDatosPagoAjax') {
     verificarAcceso([1]);
     
-    $conexion = ConexionBD::obtenerInstancia()->obtenerConexion();
-    $tiposPago = $conexion->query("SELECT id_tipo_pago, nombre FROM tipo_pago WHERE activo = 1 ORDER BY nombre ASC")->fetchAll();
-    $bancos = $conexion->query("SELECT id_banco, nombre FROM banco WHERE activo = 1 ORDER BY nombre ASC")->fetchAll();
+    $tiposPago = (new TipoPagoModel())->listarTodos();
+    $bancos = (new BancoModel())->listarTodos();
     
     respuestaJson('exito', 'Datos obtenidos', [
         'tipos_pago' => $tiposPago,
         'bancos' => $bancos
     ]);
 
-// 7. Obtiene los proveedores para el formulario
+// FUNCIÓN: obtenerProveedoresAjax
+// OBJETIVO: Obtiene los proveedores activos para el formulario de creación manual
 } elseif ($metodo === 'obtenerProveedoresAjax') {
     verificarAcceso([1]);
     
     $proveedores = $proveedorModel->listarTodos();
-    error_log('[CxP] Proveedores encontrados: ' . count($proveedores));
     
     respuestaJson('exito', 'Proveedores obtenidos correctamente', [
         'proveedores' => $proveedores
     ]);
 
-// 7. Guarda una nueva cuenta por pagar via AJAX
+// FUNCIÓN: guardarManual
+// OBJETIVO: Crea una cuenta por pagar manualmente con proveedor, monto y fecha de vencimiento
 } elseif ($metodo === 'guardarManual') {
     verificarRolAdmin();
     
@@ -173,10 +179,12 @@ if ($metodo === 'index') {
             'cuenta_id' => $cuentaId
         ]);
     } catch (PDOException $e) {
-        respuestaJson('error', 'Error al crear la cuenta: ' . $e->getMessage());
+        error_log('Error al crear CxP manual: ' . $e->getMessage());
+        respuestaJson('error', 'Error al crear la cuenta');
     }
 
-// 7. Eliminacion logica de una cuenta
+// FUNCIÓN: eliminar
+// OBJETIVO: Eliminación lógica de una cuenta por pagar (soft-delete)
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
     
@@ -193,10 +201,10 @@ if ($metodo === 'index') {
         $cuentaPagarModel->eliminarCuenta($id);
         respuestaJson('exito', 'Cuenta eliminada correctamente');
     } catch (PDOException $e) {
-        respuestaJson('error', 'Error al eliminar la cuenta: ' . $e->getMessage());
+        error_log('Error al eliminar CxP: ' . $e->getMessage());
+        respuestaJson('error', 'Error al eliminar la cuenta');
     }
 
-// Fallback: Metodo desconocido
 } else {
     require_once __DIR__ . '/../views/error404View.php';
 }

@@ -13,17 +13,18 @@ use function App\Helpers\validarRequerido;
 use function App\Helpers\validarDecimalPositivo;
 use function App\Helpers\validarFecha;
 
-// Instancia limpia del modelo para usar de forma procedimental
 $inventarioModel = new InventarioModel();
 
-// 1. Muestra la lista de insumos
+// FUNCIÓN: index
+// OBJETIVO: Renderiza la vista del listado de insumos
 if ($metodo === 'index') {
     verificarAcceso([1]);
     
     $contenidoVista = __DIR__ . '/../views/inventarioListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
-// 2. Obtiene la lista de insumos en formato JSON
+// FUNCIÓN: listarAjax
+// OBJETIVO: Obtiene insumos, proveedores, alertas de stock bajo y rubros en JSON
 } elseif ($metodo === 'listarAjax') {
     verificarAcceso([1]);
     
@@ -39,7 +40,8 @@ if ($metodo === 'index') {
         'rubros' => $rubros
     ]);
 
-// 3. Busca insumos por termino
+// FUNCIÓN: buscarAjax
+// OBJETIVO: Busca insumos por término de búsqueda o devuelve todos
 } elseif ($metodo === 'buscarAjax') {
     verificarAcceso([1]);
     
@@ -55,7 +57,8 @@ if ($metodo === 'index') {
         'insumos' => $insumos
     ]);
 
-// 4. Guarda un nuevo insumo (solo Administrador)
+// FUNCIÓN: guardar
+// OBJETIVO: Crea un nuevo insumo o reactiva uno inactivo, con proveedor asociado
 } elseif ($metodo === 'guardar') {
     verificarRolAdmin();
     
@@ -63,7 +66,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
     
-    // Obtener datos del formulario
     $codigo = strtoupper(trim($_POST['codigo'] ?? ''));
     $nombre = trim($_POST['nombre'] ?? '');
     $marca = trim($_POST['marca'] ?? '');
@@ -73,8 +75,8 @@ if ($metodo === 'index') {
     $precioVenta = floatval($_POST['precio_venta'] ?? 0);
     $precioCompra = floatval($_POST['precio_compra'] ?? 0);
     $proveedorId = !empty($_POST['id_proveedor']) ? intval($_POST['id_proveedor']) : null;
+    $rubroId = !empty($_POST['id_rubro']) ? intval($_POST['id_rubro']) : null;
     
-    // Validar campos obligatorios
     if (!validarRequerido($codigo)) {
         respuestaJson('error', 'El codigo es obligatorio');
     }
@@ -87,28 +89,13 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El precio de venta debe ser un numero positivo');
     }
     
-    // Verificar que el codigo no exista
     if ($inventarioModel->codigoExiste($codigo)) {
         respuestaJson('error', 'Ya existe un insumo con ese codigo');
     }
     
-    // Preparar datos para insertar
-    $datos = [
-        'codigo' => $codigo,
-        'nombre' => $nombre,
-        'marca' => $marca,
-        'unidad_medida' => $unidadMedida,
-        'stock_actual' => $stockActual,
-        'stock_minimo' => $stockMinimo,
-        'precio_venta' => $precioVenta,
-        'precio_compra' => $precioCompra
-    ];
-    
-    // Si existe un insumo inactivo con el mismo codigo, reactivarlo
     $inactivoId = $inventarioModel->buscarInactivoPorCodigo($codigo);
     if ($inactivoId) {
-        $datos['id'] = $inactivoId;
-        if ($inventarioModel->actualizarInsumo($datos)) {
+        if ($inventarioModel->actualizarInsumo($inactivoId, $codigo, $nombre, $marca, $rubroId, $unidadMedida, $stockActual, $stockMinimo, $precioVenta, $precioCompra)) {
             $inventarioModel->eliminarProveedoresDeInsumo($inactivoId);
             if ($proveedorId) {
                 $inventarioModel->asignarProveedorAInsumo($inactivoId, $proveedorId);
@@ -119,8 +106,7 @@ if ($metodo === 'index') {
         }
     }
     
-    // Insertar insumo
-    $nuevoId = $inventarioModel->insertarInsumo($datos);
+    $nuevoId = $inventarioModel->insertarInsumo($codigo, $nombre, $marca, $rubroId, $unidadMedida, $stockActual, $stockMinimo, $precioVenta, $precioCompra);
     if ($nuevoId) {
         if ($proveedorId) {
             $inventarioModel->asignarProveedorAInsumo($nuevoId, $proveedorId);
@@ -130,7 +116,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al crear el insumo');
     }
 
-// 5. Obtiene un insumo por ID para edicion
+// FUNCIÓN: obtener
+// OBJETIVO: Obtiene un insumo por ID para edición
 } elseif ($metodo === 'obtener') {
     verificarRolAdmin();
     
@@ -148,7 +135,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Insumo no encontrado');
     }
 
-// 6. Actualiza un insumo existente
+// FUNCIÓN: actualizar
+// OBJETIVO: Actualiza un insumo existente y su relación con proveedor
 } elseif ($metodo === 'actualizar') {
     verificarRolAdmin();
     
@@ -156,7 +144,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
     
-    // Obtener datos del formulario
     $id = intval($_POST['id'] ?? 0);
     $codigo = strtoupper(trim($_POST['codigo'] ?? ''));
     $nombre = trim($_POST['nombre'] ?? '');
@@ -169,7 +156,6 @@ if ($metodo === 'index') {
     $precioCompra = floatval($_POST['precio_compra'] ?? 0);
     $proveedorId = !empty($_POST['id_proveedor']) ? intval($_POST['id_proveedor']) : null;
     
-    // Validar
     if ($id < 1) {
         respuestaJson('error', 'ID de insumo no valido');
     }
@@ -186,28 +172,11 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El precio de venta debe ser un numero positivo');
     }
     
-    // Verificar que el codigo no exista en otro insumo
     if ($inventarioModel->codigoExiste($codigo, $id)) {
         respuestaJson('error', 'Ya existe otro insumo con ese codigo');
     }
     
-    // Preparar datos para actualizar
-    $datos = [
-        'id' => $id,
-        'codigo' => $codigo,
-        'nombre' => $nombre,
-        'marca' => $marca,
-        'id_rubro' => $rubroId,
-        'unidad_medida' => $unidadMedida,
-        'stock_actual' => $stockActual,
-        'stock_minimo' => $stockMinimo,
-        'precio_venta' => $precioVenta,
-        'precio_compra' => $precioCompra
-    ];
-    
-    // Actualizar insumo
-    if ($inventarioModel->actualizarInsumo($datos)) {
-        // Actualizar relacion con proveedor
+    if ($inventarioModel->actualizarInsumo($id, $codigo, $nombre, $marca, $rubroId, $unidadMedida, $stockActual, $stockMinimo, $precioVenta, $precioCompra)) {
         $inventarioModel->eliminarProveedoresDeInsumo($id);
         if ($proveedorId) {
             $inventarioModel->asignarProveedorAInsumo($id, $proveedorId);
@@ -217,7 +186,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al actualizar el insumo');
     }
 
-// 7. Obtiene la lista de rubros para el select
+// FUNCIÓN: listarRubrosAjax
+// OBJETIVO: Obtiene la lista de rubros activos para el select del formulario
 } elseif ($metodo === 'listarRubrosAjax') {
     verificarAcceso([1]);
     
@@ -227,7 +197,8 @@ if ($metodo === 'index') {
         'rubros' => $rubros
     ]);
 
-// 8. Obtiene rubros filtrados por proveedor
+// FUNCIÓN: obtenerRubrosPorProveedorAjax
+// OBJETIVO: Obtiene rubros filtrados por un proveedor específico
 } elseif ($metodo === 'obtenerRubrosPorProveedorAjax') {
     verificarAcceso([1]);
 
@@ -242,7 +213,8 @@ if ($metodo === 'index') {
         'rubros' => $rubros
     ]);
 
-// 9. Elimina un insumo
+// FUNCIÓN: eliminar
+// OBJETIVO: Eliminación lógica de un insumo (soft-delete)
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
     
@@ -262,7 +234,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al eliminar el insumo');
     }
 
-// Fallback: Metodo desconocido
 } else {
     require_once __DIR__ . '/../views/error404View.php';
 }

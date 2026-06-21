@@ -1,6 +1,7 @@
-<!-- Archivo: cuentaCobrarVerView.php -->
-<!-- Vista para ver el detalle de una cuenta por cobrar con Bootstrap 5 -->
-
+<?php
+// VISTA: cuentaCobrarVerView.php
+// OBJETIVO: Detalle de una cuenta por cobrar con historial de pagos y modal de abono
+?>
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0">Cuenta por Cobrar #<?php echo $cuenta['id_cuenta_cobrar']; ?></h2>
     <a href="/SP%20Perfect%20Color/cuentaCobrar" class="btn btn-secondary">Volver a la lista</a>

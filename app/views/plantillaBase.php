@@ -1,5 +1,7 @@
-<!-- Archivo: plantillaBase.php -->
-<!-- Plantilla base HTML con Bootstrap 5 -->
+<?php
+// VISTA: plantillaBase.php
+// OBJETIVO: Plantilla base HTML con sidebar, navbar y layout principal
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>

@@ -1,6 +1,6 @@
 <?php
-// Archivo: exportarReporteHelper.php
-// Helper para exportar reportes a PDF y Excel
+// ARCHIVO: exportarReporteHelper.php
+// OBJETIVO: Generar y descargar reportes en formato PDF (Dompdf) y Excel (OpenSpout)
 
 namespace App\Helpers;
 
@@ -10,7 +10,9 @@ use OpenSpout\Common\Entity\Row;
 
 use App\Models\ReporteModel;
 
-// 1. Genera y descarga un PDF del reporte seleccionado
+// FUNCIÓN: generarPDF
+// OBJETIVO: Construir una tabla HTML con los datos del reporte y descargarla como PDF (A4 horizontal)
+// NOTA: Soporta dos tipos de reporte: 'ventas' (Notas de Entrega) y 'carteraCxc' (Cuentas por Cobrar)
 function generarPDF($tipo, $desde, $hasta)
 {
     $modelo = new ReporteModel();
@@ -65,7 +67,9 @@ function generarPDF($tipo, $desde, $hasta)
     exit;
 }
 
-// 2. Genera y descarga un archivo Excel del reporte seleccionado
+// FUNCIÓN: generarExcel
+// OBJETIVO: Construir un archivo XLSX con los datos del reporte y forzar su descarga en el navegador
+// NOTA: Usa OpenSpout Writer; los encabezados y datos varían según el tipo de reporte
 function generarExcel($tipo, $desde, $hasta)
 {
     $modelo = new ReporteModel();

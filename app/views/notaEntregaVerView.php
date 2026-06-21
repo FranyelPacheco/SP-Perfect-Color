@@ -1,5 +1,7 @@
-<!-- Archivo: notaEntregaVerView.php -->
-<!-- Vista para ver el detalle de una nota de entrega con Bootstrap 5 -->
+<?php
+// VISTA: notaEntregaVerView.php
+// OBJETIVO: Detalle de una nota de entrega
+?>
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0">Nota de Entrega #<?php echo $nota['id_nota_entrega']; ?></h2>

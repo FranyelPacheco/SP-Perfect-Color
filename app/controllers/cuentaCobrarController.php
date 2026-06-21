@@ -5,23 +5,25 @@
 namespace App\Controllers;
 
 use App\Models\CuentaCobrarModel;
-use App\Core\ConexionBD;
+use App\Models\TipoPagoModel;
+use App\Models\BancoModel;
 use function App\Helpers\respuestaJson;
 use function App\Helpers\verificarAutenticacion;
 use function App\Helpers\verificarRolVendedor;
 use \PDOException;
 
-// Instancia limpia del modelo para uso procedimental
 $cuentaCobrarModel = new CuentaCobrarModel();
 
-// 1. Muestra la lista de cuentas por cobrar
+// FUNCIÓN: index
+// OBJETIVO: Renderiza la vista del listado de cuentas por cobrar
 if ($metodo === 'index') {
     verificarAutenticacion();
     
     $contenidoVista = __DIR__ . '/../views/cuentaCobrarListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
-// 2. Obtiene las cuentas en formato JSON
+// FUNCIÓN: listarAjax
+// OBJETIVO: Obtiene el listado completo de cuentas por cobrar en JSON
 } elseif ($metodo === 'listarAjax') {
     verificarAutenticacion();
     
@@ -31,7 +33,8 @@ if ($metodo === 'index') {
         'cuentas' => $cuentas
     ]);
 
-// 3. Busca cuentas
+// FUNCIÓN: buscarAjax
+// OBJETIVO: Busca cuentas por cobrar por término de búsqueda o devuelve todas
 } elseif ($metodo === 'buscarAjax') {
     verificarAutenticacion();
     
@@ -47,7 +50,8 @@ if ($metodo === 'index') {
         'cuentas' => $cuentas
     ]);
 
-// 4. Muestra el detalle de una cuenta con sus pagos
+// FUNCIÓN: ver
+// OBJETIVO: Renderiza la vista de detalle de una cuenta con sus pagos recibidos
 } elseif ($metodo === 'ver') {
     verificarAutenticacion();
     
@@ -72,7 +76,8 @@ if ($metodo === 'index') {
     $contenidoVista = __DIR__ . '/../views/cuentaCobrarVerView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
-// 5. Registra un pago via AJAX
+// FUNCIÓN: registrarPago
+// OBJETIVO: Registra un pago recibido con validación de banco/referencia para transferencia o pago móvil
 } elseif ($metodo === 'registrarPago') {
     verificarRolVendedor();
     
@@ -99,7 +104,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Debe seleccionar un tipo de pago');
     }
     
-    // Transferencia(2) o Pago Movil(3) requieren banco y referencia
     if ($tipoPagoId === 2 || $tipoPagoId === 3) {
         if (empty($bancoId) || $bancoId < 1) {
             respuestaJson('error', 'Debe seleccionar un banco para transferencia o pago movil');
@@ -113,23 +117,25 @@ if ($metodo === 'index') {
         $cuentaCobrarModel->registrarPago($cuentaId, $monto, $tipoPagoId, $bancoId, $referencia, $fecha);
         respuestaJson('exito', 'Pago registrado exitosamente');
     } catch (PDOException $e) {
-        respuestaJson('error', $e->getMessage());
+        error_log('Error al registrar pago CxC: ' . $e->getMessage());
+        respuestaJson('error', 'Error al registrar el pago');
     }
 
-// 6. Obtiene tipos de pago y bancos para el modal
+// FUNCIÓN: obtenerDatosPagoAjax
+// OBJETIVO: Obtiene tipos de pago y bancos para el modal de registro de pago
 } elseif ($metodo === 'obtenerDatosPagoAjax') {
     verificarAutenticacion();
     
-    $conexion = ConexionBD::obtenerInstancia()->obtenerConexion();
-    $tiposPago = $conexion->query("SELECT id_tipo_pago, nombre FROM tipo_pago WHERE activo = 1 ORDER BY nombre ASC")->fetchAll();
-    $bancos = $conexion->query("SELECT id_banco, nombre FROM banco WHERE activo = 1 ORDER BY nombre ASC")->fetchAll();
+    $tiposPago = (new TipoPagoModel())->listarTodos();
+    $bancos = (new BancoModel())->listarTodos();
     
     respuestaJson('exito', 'Datos obtenidos', [
         'tipos_pago' => $tiposPago,
         'bancos' => $bancos
     ]);
 
-// 7. Eliminacion logica de una cuenta
+// FUNCIÓN: eliminar
+// OBJETIVO: Eliminación lógica de una cuenta por cobrar (soft-delete)
 } elseif ($metodo === 'eliminar') {
     verificarRolVendedor();
     
@@ -146,10 +152,10 @@ if ($metodo === 'index') {
         $cuentaCobrarModel->eliminarCuenta($id);
         respuestaJson('exito', 'Cuenta eliminada correctamente');
     } catch (PDOException $e) {
-        respuestaJson('error', 'Error al eliminar la cuenta: ' . $e->getMessage());
+        error_log('Error al eliminar CxC: ' . $e->getMessage());
+        respuestaJson('error', 'Error al eliminar la cuenta');
     }
 
-// Fallback: Metodo desconocido
 } else {
     require_once __DIR__ . '/../views/error404View.php';
 }

@@ -13,19 +13,20 @@ use function App\Helpers\verificarRolVendedor;
 use function App\Helpers\validarRequerido;
 use \PDOException;
 
-// Instancias limpias de los modelos para uso procedimental
 $presupuestoModel = new PresupuestoModel();
 $clienteModel = new ClienteModel();
 $inventarioModel = new InventarioModel();
 
-// 1. Muestra la lista de presupuestos
+// FUNCIÓN: index
+// OBJETIVO: Renderiza la vista del listado de presupuestos
 if ($metodo === 'index') {
     verificarAutenticacion();
     
     $contenidoVista = __DIR__ . '/../views/presupuestoListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
-// 2. Obtiene la lista de presupuestos en formato JSON
+// FUNCIÓN: listarAjax
+// OBJETIVO: Obtiene el listado completo de presupuestos en JSON
 } elseif ($metodo === 'listarAjax') {
     verificarAutenticacion();
     
@@ -35,7 +36,8 @@ if ($metodo === 'index') {
         'presupuestos' => $presupuestos
     ]);
 
-// 3. Busca presupuestos por cliente o estado
+// FUNCIÓN: buscarAjax
+// OBJETIVO: Busca presupuestos por cliente o estado
 } elseif ($metodo === 'buscarAjax') {
     verificarAutenticacion();
     
@@ -48,7 +50,8 @@ if ($metodo === 'index') {
         'presupuestos' => $presupuestos
     ]);
 
-// 4. Muestra el formulario para crear un nuevo presupuesto
+// FUNCIÓN: nuevo
+// OBJETIVO: Renderiza el formulario para crear un nuevo presupuesto
 } elseif ($metodo === 'nuevo') {
     verificarRolVendedor();
     
@@ -57,11 +60,10 @@ if ($metodo === 'index') {
     $contenidoVista = __DIR__ . '/../views/presupuestoFormView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
-// 5. Obtiene los insumos disponibles para el presupuesto en formato JSON
+// FUNCIÓN: obtenerInsumosAjax
+// OBJETIVO: Obtiene los insumos disponibles para el formulario de presupuesto
 } elseif ($metodo === 'obtenerInsumosAjax') {
-    if (!isset($_SESSION['id_usuario'])) {
-        respuestaJson('error', 'Sesion expirada');
-    }
+    verificarAutenticacion();
     
     $insumos = $inventarioModel->listarTodos();
     
@@ -69,11 +71,10 @@ if ($metodo === 'index') {
         'insumos' => $insumos
     ]);
 
-// 6. Obtiene los clientes disponibles para el presupuesto en formato JSON
+// FUNCIÓN: obtenerClientesAjax
+// OBJETIVO: Obtiene los clientes disponibles para el formulario de presupuesto
 } elseif ($metodo === 'obtenerClientesAjax') {
-    if (!isset($_SESSION['id_usuario'])) {
-        respuestaJson('error', 'Sesion expirada');
-    }
+    verificarAutenticacion();
     
     $clientes = $clienteModel->listarTodos();
     
@@ -81,7 +82,8 @@ if ($metodo === 'index') {
         'clientes' => $clientes
     ]);
 
-// 7. Guarda un nuevo presupuesto via AJAX
+// FUNCIÓN: guardar
+// OBJETIVO: Crea un nuevo presupuesto con su detalle y calcula el total
 } elseif ($metodo === 'guardar') {
     verificarRolVendedor();
     
@@ -89,14 +91,11 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
     
-    // Obtener datos del presupuesto
     $clienteId = intval($_POST['id_cliente'] ?? 0);
     $observaciones = trim($_POST['observaciones'] ?? '');
     
-    // Obtener items del detalle desde el JSON enviado
     $items = json_decode($_POST['items'] ?? '[]', true);
     
-    // Validar
     if ($clienteId < 1) {
         respuestaJson('error', 'Debe seleccionar un cliente');
     }
@@ -105,7 +104,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Debe agregar al menos un insumo al presupuesto');
     }
     
-    // Calcular total y preparar detalle
     $total = 0;
     $detalle = [];
     
@@ -129,17 +127,8 @@ if ($metodo === 'index') {
         ];
     }
     
-    // Preparar datos del presupuesto
-    $datos = [
-        'id_cliente' => $clienteId,
-        'id_usuario' => $_SESSION['id_usuario'],
-        'total' => $total,
-        'observaciones' => $observaciones
-    ];
-    
-    // Insertar presupuesto con su detalle
     try {
-        $presupuestoId = $presupuestoModel->insertarPresupuesto($datos, $detalle);
+        $presupuestoId = $presupuestoModel->insertarPresupuesto($clienteId, (int)$_SESSION['id_usuario'], $total, $observaciones, $detalle);
         
         respuestaJson('exito', 'Presupuesto creado exitosamente', [
             'id_presupuesto' => $presupuestoId,
@@ -149,7 +138,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al crear el presupuesto: ' . $e->getMessage());
     }
 
-// 8. Muestra el detalle de un presupuesto
+// FUNCIÓN: ver
+// OBJETIVO: Renderiza la vista de detalle de un presupuesto con sus items
 } elseif ($metodo === 'ver') {
     verificarAutenticacion();
     
@@ -174,7 +164,8 @@ if ($metodo === 'index') {
     $contenidoVista = __DIR__ . '/../views/presupuestoVerView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
-// 9. Cambia el estado de un presupuesto via AJAX
+// FUNCIÓN: cambiarEstado
+// OBJETIVO: Cambia el estado de un presupuesto (pendiente/aprobado/rechazado/convertido)
 } elseif ($metodo === 'cambiarEstado') {
     verificarRolVendedor();
     
@@ -204,7 +195,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al cambiar el estado');
     }
 
-// 10. Eliminacion logica de un presupuesto
+// FUNCIÓN: eliminar
+// OBJETIVO: Eliminación lógica de un presupuesto (soft-delete)
 } elseif ($metodo === 'eliminar') {
     verificarRolVendedor();
     
@@ -224,7 +216,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al eliminar el presupuesto: ' . $e->getMessage());
     }
 
-// Fallback: Metodo desconocido
 } else {
     require_once __DIR__ . '/../views/error404View.php';
 }

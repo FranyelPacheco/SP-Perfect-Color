@@ -11,21 +11,16 @@ use function App\Helpers\verificarRolAdmin;
 use function App\Helpers\validarRequerido;
 use function App\Helpers\validarCorreo;
 
+use function App\Helpers\verificarPropietario;
+
 $usuarioModel = new UsuarioModel();
 
-function verificarPropietario($idSolicitado)
-{
-    $idSesion = $_SESSION['id_usuario'] ?? null;
-    if ($idSesion === null || (int)$idSolicitado !== (int)$idSesion) {
-        respuestaJson('error', 'Acceso denegado. Solo puedes acceder a tu propio perfil');
-    }
-}
-
-// 1. Cargar la vista del listado de usuarios
+// FUNCIÓN: index
+// OBJETIVO: Renderiza la vista del listado de usuarios con datos de sesión
+// NOTA: Si el rol es 2 (vendedor) solo ve su propio perfil; si es 1 (admin) ve todos
 if ($metodo === 'index') {
     verificarAutenticacion();
 
-    // Asegurar que el correo estÃ© en sesiÃ³n para mostrarlo en la vista
     if (!isset($_SESSION['usuario_correo'])) {
         $usuarioActual = $usuarioModel->buscarPorId($_SESSION['id_usuario']);
         if ($usuarioActual) {
@@ -43,14 +38,15 @@ if ($metodo === 'index') {
         verificarRolAdmin();
     }
 
-    echo "<script>var SESSION_USER_ROL = " . $_SESSION['usuario_rol'] . "; var SESSION_USER_ID = " . $_SESSION['id_usuario'] . ";</script>";
+    echo "<script>var SESSION_USER_ROL = " . json_encode($_SESSION['usuario_rol']) . "; var SESSION_USER_ID = " . json_encode($_SESSION['id_usuario']) . ";</script>";
     $pageTitle = 'SP Perfect Color - Mi Perfil';
     $pageDescription = 'GestiÃ³n de perfil y usuarios - SP Perfect Color';
     $contenidoVista = __DIR__ . '/../views/usuarioListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
     exit;
 
-// 2. Obtener usuarios y roles en JSON (AJAX)
+// FUNCIÓN: listarAjax
+// OBJETIVO: Obtiene usuarios y roles en JSON (solo administrador)
 } elseif ($metodo === 'listarAjax') {
     verificarAutenticacion();
 
@@ -66,7 +62,8 @@ if ($metodo === 'index') {
         'roles' => $roles
     ]);
 
-// 3. Guardar un nuevo usuario
+// FUNCIÓN: guardar
+// OBJETIVO: Crea un nuevo usuario o reactiva uno inactivo, con hash de clave
 } elseif ($metodo === 'guardar') {
     verificarRolAdmin();
 
@@ -87,17 +84,9 @@ if ($metodo === 'index') {
 
     $passwordHash = password_hash($clave, PASSWORD_DEFAULT);
 
-    // Si existe un usuario inactivo con el mismo correo, reactivarlo
     $inactivoId = $usuarioModel->buscarInactivoPorCorreo($correo);
     if ($inactivoId) {
-        $datosActualizar = [
-            'id' => $inactivoId,
-            'nombre' => $nombre,
-            'correo' => $correo,
-            'id_rol' => $id_rol,
-            'activo' => 1
-        ];
-        if ($usuarioModel->actualizarUsuario($datosActualizar)) {
+        if ($usuarioModel->actualizarUsuario($inactivoId, $nombre, $correo, $id_rol, 1)) {
             $usuarioModel->actualizarClave($inactivoId, $passwordHash);
             respuestaJson('exito', 'Usuario reactivado exitosamente');
         } else {
@@ -105,21 +94,14 @@ if ($metodo === 'index') {
         }
     }
 
-    $datos = [
-        'nombre' => $nombre,
-        'correo' => $correo,
-        'password_hash' => $passwordHash,
-        'id_rol' => $id_rol,
-        'activo' => 1
-    ];
-
-    if ($usuarioModel->insertarUsuario($datos)) {
+    if ($usuarioModel->insertarUsuario($nombre, $correo, $passwordHash, $id_rol, 1)) {
         respuestaJson('exito', 'Usuario creado exitosamente');
     } else {
         respuestaJson('error', 'Error al crear el usuario');
     }
 
-// 4. Obtener un usuario por ID (AJAX para edicion)
+// FUNCIÓN: obtener
+// OBJETIVO: Obtiene un usuario por ID (oculta password_hash) para edición
 } elseif ($metodo === 'obtener') {
     verificarAutenticacion();
 
@@ -141,7 +123,9 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Usuario no encontrado');
     }
 
-// 5. Actualizar un usuario existente
+// FUNCIÓN: actualizar
+// OBJETIVO: Actualiza un usuario existente, con opción de cambio de clave
+// NOTA: Vendedor solo edita su propio perfil y conserva rol/activo original
 } elseif ($metodo === 'actualizar') {
     verificarAutenticacion();
 
@@ -157,7 +141,6 @@ if ($metodo === 'index') {
     if (!validarRequerido($nombre)) respuestaJson('error', 'El nombre es obligatorio');
     if (!validarCorreo($correo)) respuestaJson('error', 'El correo electronico no es valido');
 
-    // Vendedor solo edita su propio perfil y conserva sus valores originales
     if ($_SESSION['usuario_rol'] == 2) {
         verificarPropietario($id);
         $usuarioActual = $usuarioModel->buscarPorId($id);
@@ -173,16 +156,7 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El correo electronico ya esta registrado en otro usuario');
     }
 
-    $datos = [
-        'id' => $id,
-        'nombre' => $nombre,
-        'correo' => $correo,
-        'id_rol' => $id_rol,
-        'activo' => $activo
-    ];
-
-    if ($usuarioModel->actualizarUsuario($datos)) {
-        // Refrescar sesion si el usuario edito su propio perfil
+    if ($usuarioModel->actualizarUsuario($id, $nombre, $correo, $id_rol, $activo)) {
         if ($id == $_SESSION['id_usuario']) {
             $_SESSION['usuario_nombre'] = $nombre;
             $_SESSION['usuario_correo'] = $correo;
@@ -203,7 +177,9 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al actualizar el usuario');
     }
 
-// 6. Eliminar un usuario
+// FUNCIÓN: eliminar
+// OBJETIVO: Eliminación lógica de un usuario (soft-delete)
+// NOTA: No permite auto-eliminarse ni eliminar al único administrador
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
 
@@ -221,7 +197,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'No se puede eliminar al unico administrador del sistema');
     }
 
-// Fallback: ruta no valida
 } else {
     require_once __DIR__ . '/../views/error404View.php';
 }

@@ -1,10 +1,11 @@
 <?php
-// Archivo: sesionHelper.php
-// Helper para manejo de sesiones y verificacion de autenticacion
+// ARCHIVO: sesionHelper.php
+// OBJETIVO: Funciones para verificar autenticación, roles y permisos de usuario
 
 namespace App\Helpers;
 
-// Verifica que el usuario haya iniciado sesion
+// FUNCIÓN: verificarAutenticacion
+// OBJETIVO: Comprobar que existe una sesión activa con id_usuario; si no, devolver error JSON
 function verificarAutenticacion()
 {
     if (!isset($_SESSION['id_usuario'])) {
@@ -12,28 +13,32 @@ function verificarAutenticacion()
     }
 }
 
-// Verifica que el usuario tenga rol de Administrador
+// FUNCIÓN: verificarRolAdmin
+// OBJETIVO: Verificar que el usuario autenticado tenga rol de Administrador (rol = 1)
+// NOTA: Llama internamente a verificarAutenticacion()
 function verificarRolAdmin()
 {
     verificarAutenticacion();
-    
+
     if ($_SESSION['usuario_rol'] != 1) {
         respuestaJson('error', 'Acceso denegado. Se requieren privilegios de Administrador');
     }
 }
 
-// Verifica que el usuario tenga rol de Vendedor o Administrador
+// FUNCIÓN: verificarRolVendedor
+// OBJETIVO: Verificar que el usuario autenticado tenga rol de Vendedor o Administrador (roles 1 y 2)
 function verificarRolVendedor()
 {
     verificarAutenticacion();
-    
+
     if ($_SESSION['usuario_rol'] != 1 && $_SESSION['usuario_rol'] != 2) {
         respuestaJson('error', 'Acceso denegado. Se requieren privilegios de Vendedor');
     }
 }
 
-// Verifica que el usuario tenga uno de los roles permitidos
-// Gestiona tanto respuestas JSON como redirecciones de pagina
+// FUNCIÓN: verificarAcceso
+// OBJETIVO: Validar que el usuario tenga uno de los roles permitidos; soporta JSON y redirección
+// NOTA: Si la petición no es AJAX redirige al login o dashboard; si es AJAX devuelve JSON
 function verificarAcceso($rolesPermitidos)
 {
     if (!isset($_SESSION['id_usuario'])) {
@@ -65,14 +70,26 @@ function verificarAcceso($rolesPermitidos)
     exit;
 }
 
-// Obtiene el ID del usuario en sesion
+// FUNCIÓN: obtenerUsuarioId
+// OBJETIVO: Devolver el ID del usuario actual en sesión, o null si no existe
 function obtenerUsuarioId()
 {
     return $_SESSION['id_usuario'] ?? null;
 }
 
-// Obtiene el rol del usuario en sesion
+// FUNCIÓN: obtenerUsuarioRol
+// OBJETIVO: Devolver el rol del usuario actual en sesión, o null si no existe
 function obtenerUsuarioRol()
 {
     return $_SESSION['usuario_rol'] ?? null;
+}
+
+// FUNCIÓN: verificarPropietario
+// OBJETIVO: Comprobar que el ID recibido coincida con el usuario en sesión
+function verificarPropietario($idSolicitado)
+{
+    $idSesion = $_SESSION['id_usuario'] ?? null;
+    if ($idSesion === null || (int)$idSolicitado !== (int)$idSesion) {
+        respuestaJson('error', 'Acceso denegado. Solo puedes acceder a tu propio perfil');
+    }
 }

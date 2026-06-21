@@ -6,7 +6,8 @@ use App\Models\NotaEntregaModel;
 use App\Models\PresupuestoModel;
 use App\Models\ClienteModel;
 use App\Models\InventarioModel;
-use App\Core\ConexionBD;
+use App\Models\TipoPagoModel;
+use App\Models\BancoModel;
 use function App\Helpers\respuestaJson;
 use function App\Helpers\verificarAutenticacion;
 use function App\Helpers\verificarRolVendedor;
@@ -17,14 +18,16 @@ $presupuestoModel = new PresupuestoModel();
 $clienteModel = new ClienteModel();
 $inventarioModel = new InventarioModel();
 
-// 1. Muestra la lista de notas de entrega
+// FUNCIÓN: index
+// OBJETIVO: Renderiza la vista del listado de notas de entrega
 if ($metodo === 'index') {
     verificarAutenticacion();
     
     $contenidoVista = __DIR__ . '/../views/notaEntregaListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
-// 2. Obtiene la lista de notas de entrega en formato JSON
+// FUNCIÓN: listarAjax
+// OBJETIVO: Obtiene el listado completo de notas de entrega en JSON
 } elseif ($metodo === 'listarAjax') {
     verificarAutenticacion();
     
@@ -34,7 +37,8 @@ if ($metodo === 'index') {
         'notas' => $notas
     ]);
 
-// 3. Busca notas de entrega por cliente
+// FUNCIÓN: buscarAjax
+// OBJETIVO: Busca notas de entrega por término de búsqueda o devuelve todas
 } elseif ($metodo === 'buscarAjax') {
     verificarAutenticacion();
     
@@ -50,7 +54,8 @@ if ($metodo === 'index') {
         'notas' => $notas
     ]);
 
-// 4. Muestra el formulario para crear nota de entrega desde presupuesto
+// FUNCIÓN: crearDesdePresupuesto
+// OBJETIVO: Renderiza el formulario para crear nota de entrega desde un presupuesto aprobado
 } elseif ($metodo === 'crearDesdePresupuesto') {
     verificarRolVendedor();
     
@@ -75,7 +80,8 @@ if ($metodo === 'index') {
     $contenidoVista = __DIR__ . '/../views/notaEntregaFormView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
-// 6. Guarda una nueva nota de entrega via AJAX
+// FUNCIÓN: guardar
+// OBJETIVO: Crea una nueva nota de entrega con detalle, condicion de pago y datos de pago
 } elseif ($metodo === 'guardar') {
     verificarRolVendedor();
     
@@ -93,7 +99,6 @@ if ($metodo === 'index') {
     $fechaVencimiento = $_POST['fecha_vencimiento'] ?? '';
     $items = json_decode($_POST['items'] ?? '[]', true);
     
-    // Validar
     if ($clienteId < 1) {
         respuestaJson('error', 'Debe seleccionar un cliente');
     }
@@ -110,12 +115,10 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Debe seleccionar una fecha de vencimiento para pagos a credito');
     }
     
-    // Tipo de pago obligatorio cuando es contado
     if ($condicionPago === 'contado' && (empty($tipoPagoId) || $tipoPagoId < 1)) {
         respuestaJson('error', 'Debe seleccionar un tipo de pago');
     }
     
-    // Transferencia(2) o Pago Movil(3) requieren banco y referencia
     if ($condicionPago === 'contado' && ($tipoPagoId === 2 || $tipoPagoId === 3)) {
         if (empty($bancoId) || $bancoId < 1) {
             respuestaJson('error', 'Debe seleccionar un banco para transferencia o pago movil');
@@ -125,7 +128,6 @@ if ($metodo === 'index') {
         }
     }
     
-    // Calcular total y preparar detalle
     $total = 0;
     $detalle = [];
     
@@ -149,34 +151,32 @@ if ($metodo === 'index') {
         ];
     }
     
-    // Preparar datos
-    $datos = [
-        'id_cliente' => $clienteId,
-        'id_usuario' => $_SESSION['id_usuario'],
-        'total' => $total,
-        'id_presupuesto' => $presupuestoId,
-        'estado' => $estadoNota,
-        'condicion_pago' => $condicionPago,
-        'id_tipo_pago' => $tipoPagoId,
-        'id_banco' => $bancoId,
-        'referencia' => $referencia,
-        'fecha_vencimiento' => $fechaVencimiento
-    ];
-    
     try {
-        $notaId = $notaEntregaModel->crearNotaEntrega($datos, $detalle);
+        $notaId = $notaEntregaModel->crearNotaEntrega(
+            $clienteId,
+            (int)$_SESSION['id_usuario'],
+            $total,
+            $presupuestoId,
+            $estadoNota,
+            $condicionPago,
+            $detalle,
+            $tipoPagoId,
+            $bancoId,
+            $referencia !== '' ? $referencia : null,
+            $fechaVencimiento !== '' ? $fechaVencimiento : null
+        );
         
         respuestaJson('exito', 'Nota de entrega creada exitosamente', [
             'id_nota_entrega' => $notaId,
             'total' => $total
         ]);
     } catch (\Throwable $e) {
-        $detalleError = $e->getMessage() . ' (en ' . $e->getFile() . ':' . $e->getLine() . ')';
-        error_log('ERROR CRITICO AL CREAR NOTA: ' . $detalleError);
-        respuestaJson('error', 'Error al crear la nota: ' . $detalleError);
+        error_log('ERROR CRITICO AL CREAR NOTA: ' . $e->getMessage() . ' (en ' . $e->getFile() . ':' . $e->getLine() . ')');
+        respuestaJson('error', 'Error al crear la nota de entrega');
     }
 
-// 7. Muestra el detalle de una nota de entrega
+// FUNCIÓN: ver
+// OBJETIVO: Renderiza la vista de detalle de una nota de entrega con sus items
 } elseif ($metodo === 'ver') {
     verificarAutenticacion();
     
@@ -201,11 +201,10 @@ if ($metodo === 'index') {
     $contenidoVista = __DIR__ . '/../views/notaEntregaVerView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
-// 8. Obtiene los clientes para el formulario
+// FUNCIÓN: obtenerClientesAjax
+// OBJETIVO: Obtiene los clientes disponibles para el formulario de nota de entrega
 } elseif ($metodo === 'obtenerClientesAjax') {
-    if (!isset($_SESSION['id_usuario'])) {
-        respuestaJson('error', 'Sesion expirada');
-    }
+    verificarAutenticacion();
     
     $clientes = $clienteModel->listarTodos();
     
@@ -213,11 +212,10 @@ if ($metodo === 'index') {
         'clientes' => $clientes
     ]);
 
-// 9. Obtiene presupuestos aprobados para crear nota
+// FUNCIÓN: obtenerPresupuestosAprobadosAjax
+// OBJETIVO: Obtiene presupuestos aprobados para crear nota de entrega
 } elseif ($metodo === 'obtenerPresupuestosAprobadosAjax') {
-    if (!isset($_SESSION['id_usuario'])) {
-        respuestaJson('error', 'Sesion expirada');
-    }
+    verificarAutenticacion();
     
     $presupuestos = $presupuestoModel->buscarPresupuestos('', 'aprobado');
     
@@ -225,11 +223,10 @@ if ($metodo === 'index') {
         'presupuestos' => $presupuestos
     ]);
 
-// 10. Obtiene detalle de un presupuesto para pre-cargar items
+// FUNCIÓN: obtenerDetallePresupuestoAjax
+// OBJETIVO: Obtiene el detalle de un presupuesto para precargar los items en el formulario
 } elseif ($metodo === 'obtenerDetallePresupuestoAjax') {
-    if (!isset($_SESSION['id_usuario'])) {
-        respuestaJson('error', 'Sesion expirada');
-    }
+    verificarAutenticacion();
     
     $presupuestoId = intval($_GET['id_presupuesto'] ?? 0);
     if ($presupuestoId < 1) {
@@ -248,37 +245,30 @@ if ($metodo === 'index') {
         'presupuesto' => $presupuesto
     ]);
 
-// 11. Obtiene tipos de pago
+// FUNCIÓN: obtenerTiposPagoAjax
+// OBJETIVO: Obtiene los tipos de pago activos para el formulario
 } elseif ($metodo === 'obtenerTiposPagoAjax') {
-    if (!isset($_SESSION['id_usuario'])) {
-        respuestaJson('error', 'Sesion expirada');
-    }
+    verificarAutenticacion();
     
-    $conexion = ConexionBD::obtenerInstancia()->obtenerConexion();
-    $consulta = "SELECT id_tipo_pago, nombre FROM tipo_pago WHERE activo = 1 ORDER BY nombre ASC";
-    $stmt = $conexion->query($consulta);
-    $tiposPago = $stmt->fetchAll();
+    $tiposPago = (new TipoPagoModel())->listarTodos();
     
     respuestaJson('exito', 'Tipos de pago obtenidos', [
         'tipos_pago' => $tiposPago
     ]);
 
-// 12. Obtiene bancos
+// FUNCIÓN: obtenerBancosAjax
+// OBJETIVO: Obtiene los bancos activos para el formulario
 } elseif ($metodo === 'obtenerBancosAjax') {
-    if (!isset($_SESSION['id_usuario'])) {
-        respuestaJson('error', 'Sesion expirada');
-    }
+    verificarAutenticacion();
     
-    $conexion = ConexionBD::obtenerInstancia()->obtenerConexion();
-    $consulta = "SELECT id_banco, nombre FROM banco WHERE activo = 1 ORDER BY nombre ASC";
-    $stmt = $conexion->query($consulta);
-    $bancos = $stmt->fetchAll();
+    $bancos = (new BancoModel())->listarTodos();
     
     respuestaJson('exito', 'Bancos obtenidos', [
         'bancos' => $bancos
     ]);
 
-// 13. Cambia el estado de una nota de entrega
+// FUNCIÓN: cambiarEstado
+// OBJETIVO: Cambia el estado de una nota de entrega (en_espera/pendiente/entregado)
 } elseif ($metodo === 'cambiarEstado') {
     verificarRolVendedor();
     
@@ -306,7 +296,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al actualizar el estado');
     }
 
-// 14. Muestra formulario para editar una nota en espera
+// FUNCIÓN: editar
+// OBJETIVO: Renderiza el formulario de edición para una nota en espera
 } elseif ($metodo === 'editar') {
     verificarRolVendedor();
 
@@ -329,7 +320,8 @@ if ($metodo === 'index') {
     $contenidoVista = __DIR__ . '/../views/notaEntregaEditView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
-// 15. Guarda los cambios de una nota editada
+// FUNCIÓN: actualizar
+// OBJETIVO: Guarda los cambios de items de una nota de entrega en estado en_espera
 } elseif ($metodo === 'actualizar') {
     verificarRolVendedor();
 
@@ -381,7 +373,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al actualizar la nota: ' . $e->getMessage());
     }
 
-// Fallback: Metodo desconocido
 } else {
     require_once __DIR__ . '/../views/error404View.php';
 }

@@ -16,11 +16,15 @@ use function App\Helpers\validarCorreo;
 
 $proveedorModel = new ProveedorModel();
 
+// FUNCIÓN: index
+// OBJETIVO: Renderiza la vista del listado de proveedores
 if ($metodo === 'index') {
     verificarAcceso([1]);
 
     $contenidoVista = __DIR__ . '/../views/proveedorListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
+// FUNCIÓN: listarAjax
+// OBJETIVO: Obtiene el listado completo de proveedores en JSON
 } elseif ($metodo === 'listarAjax') {
     verificarAcceso([1]);
 
@@ -29,6 +33,8 @@ if ($metodo === 'index') {
     respuestaJson('exito', 'Proveedores obtenidos correctamente', [
         'proveedores' => $proveedores
     ]);
+// FUNCIÓN: buscarAjax
+// OBJETIVO: Busca proveedores por término de búsqueda o devuelve todos
 } elseif ($metodo === 'buscarAjax') {
     verificarAcceso([1]);
 
@@ -43,6 +49,8 @@ if ($metodo === 'index') {
     respuestaJson('exito', 'Busqueda completada', [
         'proveedores' => $proveedores
     ]);
+// FUNCIÓN: guardar
+// OBJETIVO: Crea un nuevo proveedor o reactiva uno inactivo, con teléfonos y rubros
 } elseif ($metodo === 'guardar') {
     verificarRolAdmin();
 
@@ -50,7 +58,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
 
-    // Obtener datos del formulario
     $rif = strtoupper(trim($_POST['rif'] ?? ''));
     $nombreEmpresa = trim($_POST['nombre_empresa'] ?? '');
     $direccion = trim($_POST['direccion'] ?? '');
@@ -59,7 +66,6 @@ if ($metodo === 'index') {
     $correo = trim($_POST['correo'] ?? '');
     $rubros = $_POST['rubros'] ?? [];
 
-    // Validar campos obligatorios
     if (!validarRequerido($rif)) {
         respuestaJson('error', 'El RIF es obligatorio');
     }
@@ -80,25 +86,13 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El correo electronico no es valido');
     }
 
-    // Verificar que el RIF no exista
     if ($proveedorModel->rifExiste($rif)) {
         respuestaJson('error', 'Ya existe un proveedor con ese RIF');
     }
 
-    // Preparar datos para insertar
-    $datos = [
-        'rif' => $rif,
-        'nombre_empresa' => $nombreEmpresa,
-        'direccion' => $direccion,
-        'contacto' => $contacto,
-        'correo' => $correo
-    ];
-
-    // Si existe un proveedor inactivo con el mismo RIF, reactivarlo
     $inactivoId = $proveedorModel->buscarInactivoPorRIF($rif);
     if ($inactivoId) {
-        $datos['id'] = $inactivoId;
-        if ($proveedorModel->actualizarProveedor($datos)) {
+        if ($proveedorModel->actualizarProveedor($inactivoId, $rif, $nombreEmpresa, $direccion, $contacto, $correo)) {
             $proveedorModel->eliminarTelefonos($inactivoId);
             if (!empty($telefono)) {
                 $proveedorModel->insertarTelefono($inactivoId, $telefono, 'movil');
@@ -116,8 +110,7 @@ if ($metodo === 'index') {
         }
     }
 
-    // Insertar proveedor
-    $nuevoId = $proveedorModel->insertarProveedor($datos);
+    $nuevoId = $proveedorModel->insertarProveedor($rif, $nombreEmpresa, $direccion, $contacto, $correo);
     if ($nuevoId) {
         if (!empty($telefono)) {
             $proveedorModel->insertarTelefono($nuevoId, $telefono, 'movil');
@@ -132,6 +125,8 @@ if ($metodo === 'index') {
     } else {
         respuestaJson('error', 'Error al crear el proveedor');
     }
+// FUNCIÓN: obtener
+// OBJETIVO: Obtiene un proveedor por ID para edición
 } elseif ($metodo === 'obtener') {
     verificarRolAdmin();
 
@@ -148,6 +143,8 @@ if ($metodo === 'index') {
     } else {
         respuestaJson('error', 'Proveedor no encontrado');
     }
+// FUNCIÓN: actualizar
+// OBJETIVO: Actualiza un proveedor existente con sus teléfonos y rubros
 } elseif ($metodo === 'actualizar') {
     verificarRolAdmin();
 
@@ -155,7 +152,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
 
-    // Obtener datos del formulario
     $id = intval($_POST['id'] ?? 0);
     $rif = strtoupper(trim($_POST['rif'] ?? ''));
     $nombreEmpresa = trim($_POST['nombre_empresa'] ?? '');
@@ -165,7 +161,6 @@ if ($metodo === 'index') {
     $correo = trim($_POST['correo'] ?? '');
     $rubros = $_POST['rubros'] ?? [];
 
-    // Validar
     if ($id < 1) {
         respuestaJson('error', 'ID de proveedor no valido');
     }
@@ -190,29 +185,15 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El correo electronico no es valido');
     }
 
-    // Verificar que el RIF no exista en otro proveedor
     if ($proveedorModel->rifExiste($rif, $id)) {
         respuestaJson('error', 'Ya existe otro proveedor con ese RIF');
     }
 
-    // Preparar datos para actualizar
-    $datos = [
-        'id' => $id,
-        'rif' => $rif,
-        'nombre_empresa' => $nombreEmpresa,
-        'direccion' => $direccion,
-        'contacto' => $contacto,
-        'correo' => $correo
-    ];
-
-    // Actualizar proveedor
-    if ($proveedorModel->actualizarProveedor($datos)) {
-        // Actualizar telefonos
+    if ($proveedorModel->actualizarProveedor($id, $rif, $nombreEmpresa, $direccion, $contacto, $correo)) {
         $proveedorModel->eliminarTelefonos($id);
         if (!empty($telefono)) {
             $proveedorModel->insertarTelefono($id, $telefono, 'movil');
         }
-        // Actualizar rubros
         $proveedorModel->eliminarRubros($id);
         foreach ($rubros as $rubroId) {
             $rubroId = intval($rubroId);
@@ -224,6 +205,8 @@ if ($metodo === 'index') {
     } else {
         respuestaJson('error', 'Error al actualizar el proveedor');
     }
+// FUNCIÓN: eliminar
+// OBJETIVO: Eliminación lógica de un proveedor (soft-delete)
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
 
@@ -237,7 +220,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'ID de proveedor no valido');
     }
 
-    // Intentar eliminar
     if ($proveedorModel->eliminarProveedor($id)) {
         respuestaJson('exito', 'Proveedor eliminado exitosamente');
     } else {

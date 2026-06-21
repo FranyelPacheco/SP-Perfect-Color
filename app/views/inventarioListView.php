@@ -1,6 +1,7 @@
-<!-- Archivo: inventarioListView.php -->
-<!-- Vista para la gestion de inventario con Bootstrap 5 -->
-
+<?php
+// VISTA: inventarioListView.php
+// OBJETIVO: Lista de insumos con DataTable, alertas de stock bajo y modal CRUD
+?>
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">

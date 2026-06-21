@@ -1,3 +1,7 @@
+<?php
+// VISTA: configPagoListView.php
+// OBJETIVO: Vista combinada de Bancos y Tipos de Pago con DataTables y modales
+?>
 <div class="row">
     <div class="col-md-6 mb-4">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">

@@ -8,12 +8,16 @@ use function App\Helpers\verificarRolAdmin;
 
 $bancoModel = new BancoModel();
 
+// FUNCIÓN: index
+// OBJETIVO: Renderiza la vista de listado de bancos
 if ($metodo === 'index') {
     verificarRolAdmin();
 
     $contenidoVista = __DIR__ . '/../views/bancoListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
+// FUNCIÓN: listarAjax
+// OBJETIVO: Devuelve listado JSON de todos los bancos para DataTable
 } elseif ($metodo === 'listarAjax') {
     verificarRolAdmin();
 
@@ -22,6 +26,9 @@ if ($metodo === 'index') {
         'bancos' => $bancos
     ]);
 
+// FUNCIÓN: guardar
+// OBJETIVO: Crea un banco nuevo o reactiva uno inactivo con el mismo nombre
+// NOTA: Verifica existencia de banco inactivo antes de insertar
 } elseif ($metodo === 'guardar') {
     verificarRolAdmin();
 
@@ -34,7 +41,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El nombre del banco es obligatorio');
     }
 
-    // Si existe un banco inactivo con el mismo nombre, reactivarlo
     $inactivoId = $bancoModel->buscarInactivoPorNombre($nombre);
     if ($inactivoId) {
         if ($bancoModel->actualizar($inactivoId, $nombre, 1)) {
@@ -50,6 +56,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al crear el banco');
     }
 
+// FUNCIÓN: obtener
+// OBJETIVO: Devuelve los datos de un banco por ID en formato JSON
 } elseif ($metodo === 'obtener') {
     verificarRolAdmin();
 
@@ -63,6 +71,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Banco no encontrado');
     }
 
+// FUNCIÓN: actualizar
+// OBJETIVO: Actualiza los datos de un banco existente
 } elseif ($metodo === 'actualizar') {
     verificarRolAdmin();
 
@@ -83,6 +93,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al actualizar el banco');
     }
 
+// FUNCIÓN: eliminar
+// OBJETIVO: Elimina (soft-delete) un banco por ID
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
 
@@ -99,6 +111,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al eliminar el banco');
     }
 
+// FUNCIÓN: toggleActivo
+// OBJETIVO: Alterna el estado activo/inactivo de un banco
 } elseif ($metodo === 'toggleActivo') {
     verificarRolAdmin();
 
@@ -115,6 +129,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al cambiar el estado');
     }
 
+// FUNCIÓN: 404
+// OBJETIVO: Muestra página de error 404 para método desconocido
 } else {
     require_once __DIR__ . '/../views/error404View.php';
 }

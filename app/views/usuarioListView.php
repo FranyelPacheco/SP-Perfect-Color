@@ -1,3 +1,7 @@
+<?php
+// VISTA: usuarioListView.php
+// OBJETIVO: Listado de usuarios (admin) y perfil (vendedor) con modal de formulario
+?>
 <div class="row justify-content-center">
     <div class="col-12<?php echo $_SESSION['usuario_rol'] == 1 ? ' col-lg-10' : ' col-md-8 col-lg-6'; ?>">
 

@@ -187,7 +187,92 @@
 - [x] **Gráfica ingresos:** Chart.js vía CDN — barras verticales con ingresos diarios últimos 7 días
 - [x] **Bancos/TiposPago separados:** 2 módulos independientes; sidebar muestra "Config. de Pago" con submenú hover (Bancos / Tipos de Pago)
 
+## Auditoría de encapsulamiento y seguridad (Junio 2026)
+
+### 🔴 Crítico — Corregido
+- [x] **LFI en `frontController.php`:** `$this->controlador` ahora se sanitiza con `preg_match('/^[a-z]+$/', ...)`. Si no coincide, cae a `'login'` por defecto.
+- [x] **`UsuarioModel._buscarPorId()`:** Agregado `AND activo = 1` — ya no retorna usuarios desactivados.
+
+### 🟠 Encapsulamiento — Corregido
+- [x] **Dead code eliminado (7 métodos):** `ClienteModel::buscarPorCedula()`, `ClienteModel::obtenerTelefonos()`, `ProveedorModel::buscarPorRIF()`, `ProveedorModel::obtenerTelefonos()`, `ProveedorModel::obtenerRubros()`, `InventarioModel::actualizarStock()`, `InventarioModel::obtenerProveedoresDeInsumo()`
+- [x] **SQL directo reemplazado por models (3 controllers):** `cuentaCobrarController`, `cuentaPagarController`, `notaEntregaController` — endpoints `obtenerDatosPagoAjax`, `obtenerTiposPagoAjax`, `obtenerBancosAjax` ahora usan `TipoPagoModel` y `BancoModel` en vez de `ConexionBD::query()`.
+- [x] **Session checks manuales reemplazados (2 controllers):** `notaEntregaController` (5 endpoints) y `presupuestoController` (2 endpoints) ahora usan `verificarAutenticacion()`.
+- [x] **Validación agregada a `CuentaPagarModel`:** `buscarPorId()`, `obtenerPagos()`, `registrarPago()`, `eliminarCuenta()`, `buscarCuentas()` ahora validan parámetros igual que `CuentaCobrarModel`.
+- [x] **Validación duplicada extraída en `ReporteModel`:** Las 4 copias del bloque `if (empty($desde) || empty($hasta))` se reemplazaron por `_validarRangoFechas()`.
+
+### 🟡 Seguridad — Corregido
+- [x] **XSS en `usuarioController.php`:** `$_SESSION['usuario_rol']` y `$_SESSION['id_usuario']` ahora se escapan con `json_encode()`.
+- [x] **Info sensible eliminada de errores:** `notaEntregaController` ya no envía `$e->getFile():$e->getLine()` al cliente. Los errores se loguean con `error_log()` y se devuelve mensaje genérico. Igual en `cuentaCobrarController` y `cuentaPagarController`.
+- [x] **Validación de fechas + whitelist en `reporteController`:** Los endpoints `ventasAjax`, `carteraCxcAjax`, `exportarPdfAjax`, `exportarExcelAjax` ahora validan formato fecha con `validarFecha()` y el parámetro `tipo` contra whitelist `['ventas', 'carteraCxc']`.
+
+### 🔵 Mejores prácticas — Corregido
+- [x] **`verificarPropietario()` movido de `usuarioController.php` a `sesionHelper.php`:** Elimina riesgo de "Cannot redeclare" si el controller se incluye 2 veces.
+- [x] **Dashboard optimizado:** `ClienteModel`, `ProveedorModel`, `InventarioModel` ahora tienen `contarTodos()` con `SELECT COUNT(*)`. DashboardController usa estos en vez de cargar todos los registros y hacer `count()` en PHP.
+- [x] **Debug log eliminado:** `error_log('[CxP] Proveedores encontrados')` removido de `cuentaPagarController`.
+- [x] **Inventario guardar:** Agregado soporte para `id_rubro` en los datos enviados (consistente con `actualizar`).
+
+### 🟣 Bugs encontrados y corregidos
+- [x] `_buscarPorId()` en UsuarioModel retornaba usuarios inactivos (corregido con `AND activo = 1`)
+
+## Refactor models — Herencia + propiedades privadas + patrón público→privado (Junio 2026)
+
+### Nuevo archivo
+- [x] **`app/models/ModeloBase.php`**: Clase abstracta con `protected PDO $conexion;` vía `ConexionBD::obtenerInstancia()`. Todos los models ahora la extienden.
+
+### 11 models refactorizados al patrón:
+```php
+class XxxModel extends ModeloBase
+{
+    // Propiedades privadas de la entidad
+    private ?int $id;
+    private ?string $nombre;
+    // ...
+
+    public function __construct() { parent::__construct(); }
+
+    // Público: asigna params, valida, delega
+    public function buscarPorId(int $id): array|false {
+        $this->id = $id;
+        if ($this->id < 1) return false;
+        return $this->_executeSelectById();
+    }
+
+    // Privado: ejecuta SQL usando $this->propiedades
+    private function _executeSelectById(): array|false { /* ... */ }
+}
+```
+
+| Modelo | Props privadas | Métodos públicos → `_execute*` privados |
+|--------|---------------|----------------------------------------|
+| `BancoModel` | id_banco, nombre, activo | 7 → 7 |
+| `TipoPagoModel` | id_tipo_pago, nombre, activo | 7 → 7 |
+| `ClienteModel` | id, cedula, nombres, apellidos, correo, direccion + 4 aux | 11 → 11 |
+| `ProveedorModel` | id, rif, nombreEmpresa, direccion, contacto, correo + 4 aux | 13 → 13 |
+| `InventarioModel` | id, codigo, nombre, marca, idRubro, unidadMedida, stockActual, stockMinimo, precioVenta, precioCompra + 3 aux | 15 → 15 |
+| `UsuarioModel` | id, nombre, correo, passwordHash, idRol, activo + 2 aux | 10 → 10 |
+| `PresupuestoModel` | id, idCliente, idUsuario, total, observaciones, estado + 3 aux | 7 → 7 |
+| `NotaEntregaModel` | id, idCliente, idUsuario, total, idPresupuesto, estado, condicionPago, idTipoPago, idBanco, referencia, fechaVencimiento, detalle + 2 aux | 7 → 7 (+ 5 helpers privados) |
+| `CuentaCobrarModel` | id, idCliente, idNotaEntrega, montoTotal, saldoPendiente, fechaVencimiento, estado + 7 aux | 8 → 8 |
+| `CuentaPagarModel` | id, idProveedor, montoTotal, saldoPendiente, fechaVencimiento, estado + 5 aux | 7 → 7 |
+| `ReporteModel` | desde, hasta | 4 → 4 (+ _validarRangoFechas privado) |
+
+### Cambios adicionales en NotaEntregaModel
+- [x] **`ponerEnEspera()` eliminado** — código muerto (0 referencias externas)
+- [x] **5 helpers privados extraídos** de `crearNotaEntrega()`: `_validarStock()`, `_insertarDetalleYDescontarStock()`, `_cambiarEstadoPresupuesto()`, `_crearCuentaCobrar()`, `_registrarPagoContado()`
+- [x] **Firma `crearNotaEntrega` corregida**: `array $detalle` movido antes de los parámetros opcionales (elimina deprecation PHP 8.0+ de optional param before required)
+- [x] **Controller `notaEntregaController` actualizado**: llamada a `crearNotaEntrega()` pasa `$detalle` en la posición correcta
+
+### Verificación
+- [x] `php -l` pasa en los 12 archivos (ModeloBase + 11 models)
+- [x] Las firmas de métodos públicos no cambiaron — controllers no requieren modificación
+
 ## Pendiente
-- [ ] **Verificar:** Probar toda la app — login, CRUD clientes/proveedores/insumos, presupuestos, notas de entrega, cuentas, reportes
-- [ ] **Re-importar BD:** Ejecutar `sp_perfect_color.sql` actualizado en phpMyAdmin (tablas existentes se borrarán por las FK)
-- [ ] Probar reactivación: eliminar → crear mismo valor único → verificar activo=1
+- [ ] **Probar toda la app post-refactor:** login, CRUD completo, reportes, exportaciones
+- [ ] **Re-importar BD:** Ejecutar `sp_perfect_color.sql` actualizado en phpMyAdmin
+- [ ] Probar reactivación soft-delete: eliminar → crear mismo valor único → verificar activo=1
+- [ ] Implementar CSRF token en todos los endpoints POST (prioridad media)
+- [ ] Implementar rate limiting en login (prioridad media)
+- [ ] Extraer SQL duplicado (SELECT JOINs repetidos 3-4x por modelo) a métodos helper privados
+- [ ] Extraer duplicación 70% en `exportarReporteHelper.php` (generarPDF/generarExcel comparten lógica)
+- [ ] Extraer reactivación soft-delete copiada en 6 controllers a helper centralizado
+- [ ] Unificar tipo `created_at` en BD (timestamp vs datetime)

@@ -1,6 +1,4 @@
 <?php
-// Archivo: clienteController.php
-// Controlador para la gestion de clientes
 
 namespace App\Controllers;
 
@@ -15,6 +13,8 @@ use function App\Helpers\validarCorreo;
 
 $clienteModel = new ClienteModel();
 
+// FUNCIÓN: index
+// OBJETIVO: Renderiza la vista de listado de clientes con datos precargados
 if ($metodo === 'index') {
     verificarAutenticacion();
 
@@ -22,6 +22,9 @@ if ($metodo === 'index') {
 
     $contenidoVista = __DIR__ . '/../views/clienteListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
+
+// FUNCIÓN: listarAjax
+// OBJETIVO: Devuelve listado JSON de todos los clientes para DataTable
 } elseif ($metodo === 'listarAjax') {
     verificarAutenticacion();
 
@@ -30,6 +33,9 @@ if ($metodo === 'index') {
     respuestaJson('exito', 'Clientes obtenidos correctamente', [
         'clientes' => $clientes
     ]);
+
+// FUNCIÓN: buscarAjax
+// OBJETIVO: Busca clientes por término de búsqueda (cédula, nombre, apellido) y devuelve JSON
 } elseif ($metodo === 'buscarAjax') {
     verificarAutenticacion();
 
@@ -44,6 +50,10 @@ if ($metodo === 'index') {
     respuestaJson('exito', 'Busqueda completada', [
         'clientes' => $clientes
     ]);
+
+// FUNCIÓN: guardar
+// OBJETIVO: Crea un cliente nuevo o reactiva uno inactivo con la misma cédula; incluye validaciones de campos
+// NOTA: El teléfono se guarda en tabla separada (telefono_cliente); verifica unicidad de cédula antes de insertar
 } elseif ($metodo === 'guardar') {
     verificarAutenticacion();
 
@@ -51,7 +61,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
 
-    // Obtener datos del formulario
     $cedula = trim($_POST['cedula'] ?? '');
     $nombres = trim($_POST['nombres'] ?? '');
     $apellidos = trim($_POST['apellidos'] ?? '');
@@ -59,7 +68,6 @@ if ($metodo === 'index') {
     $correo = trim($_POST['correo'] ?? '');
     $direccion = trim($_POST['direccion'] ?? '');
 
-    // Validar campos obligatorios
     if (!validarRequerido($cedula)) {
         respuestaJson('error', 'La cedula es obligatoria');
     }
@@ -84,25 +92,13 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El correo electronico no es valido');
     }
 
-    // Verificar que la cedula no exista
     if ($clienteModel->cedulaExiste($cedula)) {
         respuestaJson('error', 'Ya existe un cliente con esa cedula');
     }
 
-    // Preparar datos para insertar
-    $datos = [
-        'cedula' => $cedula,
-        'nombres' => $nombres,
-        'apellidos' => $apellidos,
-        'correo' => $correo,
-        'direccion' => $direccion
-    ];
-
-    // Si existe un cliente inactivo con la misma cedula, reactivarlo
     $inactivoId = $clienteModel->buscarInactivoPorCedula($cedula);
     if ($inactivoId) {
-        $datos['id'] = $inactivoId;
-        if ($clienteModel->actualizarCliente($datos)) {
+        if ($clienteModel->actualizarCliente($inactivoId, $cedula, $nombres, $apellidos, $correo, $direccion)) {
             if (!empty($telefono)) {
                 $clienteModel->eliminarTelefonos($inactivoId);
                 $clienteModel->insertarTelefono($inactivoId, $telefono, 'movil');
@@ -113,10 +109,8 @@ if ($metodo === 'index') {
         }
     }
 
-    // Insertar cliente
-    $nuevoId = $clienteModel->insertarCliente($datos);
+    $nuevoId = $clienteModel->insertarCliente($cedula, $nombres, $apellidos, $correo, $direccion);
     if ($nuevoId) {
-        // Guardar telefono en la tabla separada
         if (!empty($telefono)) {
             $clienteModel->insertarTelefono($nuevoId, $telefono, 'movil');
         }
@@ -124,6 +118,9 @@ if ($metodo === 'index') {
     } else {
         respuestaJson('error', 'Error al crear el cliente');
     }
+
+// FUNCIÓN: obtener
+// OBJETIVO: Devuelve los datos de un cliente por ID en formato JSON (incluye teléfonos)
 } elseif ($metodo === 'obtener') {
     verificarAutenticacion();
 
@@ -140,6 +137,9 @@ if ($metodo === 'index') {
     } else {
         respuestaJson('error', 'Cliente no encontrado');
     }
+
+// FUNCIÓN: actualizar
+// OBJETIVO: Actualiza los datos de un cliente existente; reemplaza teléfonos (elimina viejos, inserta nuevo)
 } elseif ($metodo === 'actualizar') {
     verificarAutenticacion();
 
@@ -147,7 +147,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
 
-    // Obtener datos del formulario
     $id = intval($_POST['id'] ?? 0);
     $cedula = trim($_POST['cedula'] ?? '');
     $nombres = trim($_POST['nombres'] ?? '');
@@ -156,7 +155,6 @@ if ($metodo === 'index') {
     $correo = trim($_POST['correo'] ?? '');
     $direccion = trim($_POST['direccion'] ?? '');
 
-    // Validar
     if ($id < 1) {
         respuestaJson('error', 'ID de cliente no valido');
     }
@@ -185,24 +183,11 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El correo electronico no es valido');
     }
 
-    // Verificar que la cedula no exista en otro cliente
     if ($clienteModel->cedulaExiste($cedula, $id)) {
         respuestaJson('error', 'Ya existe otro cliente con esa cedula');
     }
 
-    // Preparar datos para actualizar
-    $datos = [
-        'id' => $id,
-        'cedula' => $cedula,
-        'nombres' => $nombres,
-        'apellidos' => $apellidos,
-        'correo' => $correo,
-        'direccion' => $direccion
-    ];
-
-    // Actualizar cliente
-    if ($clienteModel->actualizarCliente($datos)) {
-        // Actualizar telefonos
+    if ($clienteModel->actualizarCliente($id, $cedula, $nombres, $apellidos, $correo, $direccion)) {
         $clienteModel->eliminarTelefonos($id);
         if (!empty($telefono)) {
             $clienteModel->insertarTelefono($id, $telefono, 'movil');
@@ -211,6 +196,9 @@ if ($metodo === 'index') {
     } else {
         respuestaJson('error', 'Error al actualizar el cliente');
     }
+
+// FUNCIÓN: eliminar
+// OBJETIVO: Elimina (soft-delete) un cliente por ID; previene si tiene cuentas por cobrar pendientes
 } elseif ($metodo === 'eliminar') {
     verificarAutenticacion();
 
@@ -224,12 +212,14 @@ if ($metodo === 'index') {
         respuestaJson('error', 'ID de cliente no valido');
     }
 
-    // Intentar eliminar
     if ($clienteModel->eliminarCliente($id)) {
         respuestaJson('exito', 'Cliente eliminado exitosamente');
     } else {
         respuestaJson('error', 'No se puede eliminar el cliente. Tiene cuentas por cobrar pendientes.');
     }
+
+// FUNCIÓN: 404
+// OBJETIVO: Muestra página de error 404 para método desconocido
 } else {
     require_once __DIR__ . '/../views/error404View.php';
 }

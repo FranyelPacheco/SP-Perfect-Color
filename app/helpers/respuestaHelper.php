@@ -1,25 +1,25 @@
 <?php
-// Archivo: respuestaHelper.php
-// Helper para estandarizar las respuestas JSON del servidor
+// ARCHIVO: respuestaHelper.php
+// OBJETIVO: Estandarizar las respuestas JSON devueltas por los controladores
 
 namespace App\Helpers;
 
+// FUNCIÓN: respuestaJson
+// OBJETIVO: Enviar una respuesta JSON estandarizada al cliente y finalizar la ejecución
+// NOTA: Incluye cabeceras anti-cache y soporta UTF-8
 function respuestaJson($estado, $mensaje, $datos = null)
 {
-    // Establecer el tipo de contenido como JSON con no-cache
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-cache, no-store, must-revalidate');
     header('Pragma: no-cache');
     header('Expires: 0');
-    
-    // Construir la estructura de respuesta estandarizada
+
     $respuesta = [
         'estado' => $estado,
         'mensaje' => $mensaje,
         'datos' => $datos
     ];
-    
-    // Enviar la respuesta y finalizar la ejecucion
+
     echo json_encode($respuesta, JSON_UNESCAPED_UNICODE);
     exit;
 }

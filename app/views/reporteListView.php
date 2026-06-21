@@ -1,5 +1,7 @@
-<!-- Archivo: reporteListView.php -->
-<!-- Vista de reportes con Bootstrap 5 -->
+<?php
+// VISTA: reporteListView.php
+// OBJETIVO: Panel de reportes con selección de tipo y exportación PDF/Excel
+?>
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0"><i class="bi bi-bar-chart-fill me-2 text-primary"></i>Reportes</h2>

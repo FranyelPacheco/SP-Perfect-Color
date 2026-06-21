@@ -1,5 +1,7 @@
-<!-- Archivo: presupuestoVerView.php -->
-<!-- Vista para ver el detalle de un presupuesto con Bootstrap 5 -->
+<?php
+// VISTA: presupuestoVerView.php
+// OBJETIVO: Detalle de un presupuesto con acciones de aprobar/rechazar
+?>
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0">Presupuesto #<?php echo $presupuesto['id_presupuesto']; ?></h2>

@@ -1,6 +1,7 @@
-<!-- Archivo: notaEntregaEditView.php -->
-<!-- Vista para editar items de una nota de entrega en espera -->
-
+<?php
+// VISTA: notaEntregaEditView.php
+// OBJETIVO: Edición de items de una nota de entrega en estado "en espera"
+?>
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0">Editar Nota de Entrega #<?php echo $nota['id_nota_entrega']; ?></h2>
     <a href="/SP%20Perfect%20Color/notaEntrega/ver?id=<?php echo $nota['id_nota_entrega']; ?>" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Volver</a>

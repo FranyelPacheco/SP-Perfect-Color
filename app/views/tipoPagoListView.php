@@ -1,3 +1,7 @@
+<?php
+// VISTA: tipoPagoListView.php
+// OBJETIVO: Listado y gestión de tipos de pago con modal
+?>
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0"><i class="bi bi-credit-card me-2 text-primary"></i>Tipos de Pago</h2>
     <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalTipoPago"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>

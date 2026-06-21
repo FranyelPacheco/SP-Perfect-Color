@@ -1,6 +1,4 @@
 <?php
-// Archivo: dashboardController.php
-// Controlador para el panel principal
 
 namespace App\Controllers;
 
@@ -11,20 +9,21 @@ use App\Models\CuentaPagarModel;
 use App\Models\CuentaCobrarModel;
 use function App\Helpers\verificarAutenticacion;
 
+// FUNCIÓN: index
+// OBJETIVO: Renderiza el panel principal con estadísticas (clientes, proveedores, stock, pagos del día, gráfica de ingresos)
+// NOTA: Se cargan 5 modelos para obtener los indicadores del dashboard
 if ($metodo === 'index') {
-    // Verificar que el usuario haya iniciado sesion
     verificarAutenticacion();
 
-    // Obtener estadisticas para el dashboard
     $clienteModel = new ClienteModel();
     $proveedorModel = new ProveedorModel();
     $inventarioModel = new InventarioModel();
     $cuentaPagarModel = new CuentaPagarModel();
     $cuentaCobrarModel = new CuentaCobrarModel();
 
-    $totalClientes = count($clienteModel->listarTodos());
-    $totalProveedores = count($proveedorModel->listarTodos());
-    $totalInsumos = count($inventarioModel->listarTodos());
+    $totalClientes = $clienteModel->contarTodos();
+    $totalProveedores = $proveedorModel->contarTodos();
+    $totalInsumos = $inventarioModel->contarTodos();
     $alertasStock = $inventarioModel->obtenerAlertasStockBajo();
 
     $pagosRealizadosHoy = $cuentaPagarModel->obtenerTotalPagosHoy();
@@ -32,11 +31,11 @@ if ($metodo === 'index') {
 
     $ingresosPorDia = $cuentaCobrarModel->obtenerPagosPorDia(7);
 
-    // Definir la vista de contenido que se cargara en la plantilla
     $contenidoVista = __DIR__ . '/../views/dashboardView.php';
 
-    // Cargar la plantilla base
     require_once __DIR__ . '/../views/plantillaBase.php';
+// FUNCIÓN: 404
+// OBJETIVO: Muestra página de error 404 para método desconocido
 } else {
     require_once __DIR__ . '/../views/error404View.php';
 }

@@ -1,6 +1,6 @@
 <?php
-// Archivo: ConexionBD.php
-// Clase para manejar la conexion a la base de datos con PDO (Singleton)
+// ARCHIVO: ConexionBD.php
+// OBJETIVO: Implementar el patrón Singleton para la conexión PDO a MySQL
 
 namespace App\Core;
 
@@ -11,18 +11,19 @@ class ConexionBD
     private static $instancia = null;
     private $conexion;
 
-    // Datos de conexion (ajustar segun configuracion de XAMPP)
     private $host = 'localhost';
     private $baseDatos = 'sp_perfect_color';
     private $usuario = 'root';
     private $clave = '';
     private $charset = 'utf8mb4';
 
-    // Constructor privado para evitar instancias externas
+    // FUNCIÓN: __construct (privado)
+    // OBJETIVO: Crear la conexión PDO con las opciones configuradas y el collation utf8mb4_spanish2_ci
+    // NOTA: El constructor es privado para evitar instancias externas (Singleton)
     private function __construct()
     {
         $dsn = "mysql:host={$this->host};dbname={$this->baseDatos};charset={$this->charset}";
-        
+
         $opciones = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -33,7 +34,8 @@ class ConexionBD
         $this->conexion->exec("SET NAMES 'utf8mb4' COLLATE 'utf8mb4_spanish2_ci'");
     }
 
-    // Obtener la unica instancia de la conexion
+    // FUNCIÓN: obtenerInstancia
+    // OBJETIVO: Devolver la única instancia de la conexión, creándola si aún no existe
     public static function obtenerInstancia()
     {
         if (self::$instancia === null) {
@@ -42,12 +44,14 @@ class ConexionBD
         return self::$instancia;
     }
 
-    // Obtener el objeto PDO para consultas
+    // FUNCIÓN: obtenerConexion
+    // OBJETIVO: Devolver el objeto PDO interno para realizar consultas
     public function obtenerConexion()
     {
         return $this->conexion;
     }
 
-    // Evitar clonacion del objeto
+    // FUNCIÓN: __clone (privado)
+    // OBJETIVO: Evitar que la instancia Singleton sea clonada
     private function __clone() {}
 }

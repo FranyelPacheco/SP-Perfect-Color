@@ -8,12 +8,16 @@ use function App\Helpers\verificarRolAdmin;
 
 $tipoPagoModel = new TipoPagoModel();
 
+// FUNCIÓN: index
+// OBJETIVO: Renderiza la vista de listado de tipos de pago
 if ($metodo === 'index') {
     verificarRolAdmin();
 
     $contenidoVista = __DIR__ . '/../views/tipoPagoListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
+// FUNCIÓN: listarAjax
+// OBJETIVO: Devuelve listado JSON de todos los tipos de pago para DataTable
 } elseif ($metodo === 'listarAjax') {
     verificarRolAdmin();
 
@@ -22,6 +26,9 @@ if ($metodo === 'index') {
         'tipos_pago' => $tipos
     ]);
 
+// FUNCIÓN: guardar
+// OBJETIVO: Crea un tipo de pago nuevo o reactiva uno inactivo con el mismo nombre
+// NOTA: Verifica existencia de tipo inactivo antes de insertar
 } elseif ($metodo === 'guardar') {
     verificarRolAdmin();
 
@@ -34,7 +41,6 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El nombre del tipo de pago es obligatorio');
     }
 
-    // Si existe un tipo de pago inactivo con el mismo nombre, reactivarlo
     $inactivoId = $tipoPagoModel->buscarInactivoPorNombre($nombre);
     if ($inactivoId) {
         if ($tipoPagoModel->actualizar($inactivoId, $nombre, 1)) {
@@ -50,6 +56,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al crear el tipo de pago');
     }
 
+// FUNCIÓN: obtener
+// OBJETIVO: Devuelve los datos de un tipo de pago por ID en formato JSON
 } elseif ($metodo === 'obtener') {
     verificarRolAdmin();
 
@@ -63,6 +71,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Tipo de pago no encontrado');
     }
 
+// FUNCIÓN: actualizar
+// OBJETIVO: Actualiza los datos de un tipo de pago existente
 } elseif ($metodo === 'actualizar') {
     verificarRolAdmin();
 
@@ -83,6 +93,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al actualizar el tipo de pago');
     }
 
+// FUNCIÓN: eliminar
+// OBJETIVO: Elimina (soft-delete) un tipo de pago por ID
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
 
@@ -99,6 +111,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al eliminar el tipo de pago');
     }
 
+// FUNCIÓN: toggleActivo
+// OBJETIVO: Alterna el estado activo/inactivo de un tipo de pago
 } elseif ($metodo === 'toggleActivo') {
     verificarRolAdmin();
 
@@ -115,6 +129,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al cambiar el estado');
     }
 
+// FUNCIÓN: 404
+// OBJETIVO: Muestra página de error 404 para método desconocido
 } else {
     require_once __DIR__ . '/../views/error404View.php';
 }

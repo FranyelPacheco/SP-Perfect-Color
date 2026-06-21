@@ -1,5 +1,7 @@
-<!-- Archivo: notaEntregaListView.php -->
-<!-- Vista para la lista de notas de entrega con Bootstrap 5 -->
+<?php
+// VISTA: notaEntregaListView.php
+// OBJETIVO: Listado de notas de entrega con DataTable
+?>
 
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">

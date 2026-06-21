@@ -1,5 +1,7 @@
-<!-- Archivo: presupuestoListView.php -->
-<!-- Vista para la lista de presupuestos con Bootstrap 5 -->
+<?php
+// VISTA: presupuestoListView.php
+// OBJETIVO: Listado de presupuestos con DataTable
+?>
 
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">

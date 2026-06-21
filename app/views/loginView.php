@@ -1,3 +1,7 @@
+<?php
+// VISTA: loginView.php
+// OBJETIVO: Formulario de inicio de sesión con diseño independiente
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>

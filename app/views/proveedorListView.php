@@ -1,5 +1,7 @@
-<!-- Archivo: proveedorListView.php -->
-<!-- Vista para la gestion de proveedores con Bootstrap 5 -->
+<?php
+// VISTA: proveedorListView.php
+// OBJETIVO: Listado y gestión de proveedores con modal de formulario
+?>
 
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">

@@ -1,6 +1,7 @@
-<!-- Archivo: dashboardView.php -->
-<!-- Vista del panel principal con Bootstrap 5 -->
-
+<?php
+// VISTA: dashboardView.php
+// OBJETIVO: Panel principal con estadísticas, alertas de stock, acceso rápido y gráfica de ingresos
+?>
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0 toolbar-title">Panel Principal</h2>
     <span class="text-muted small">Bienvenido, <?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? ''); ?></span>

@@ -1,5 +1,7 @@
-<!-- Archivo: error404View.php -->
-<!-- Vista de pagina no encontrada con Bootstrap 5 -->
+<?php
+// VISTA: error404View.php
+// OBJETIVO: Página 404 con diseño independiente para rutas no encontradas
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>

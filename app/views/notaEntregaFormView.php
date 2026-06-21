@@ -1,5 +1,7 @@
-<!-- Archivo: notaEntregaFormView.php -->
-<!-- Vista para crear nota de entrega desde presupuesto aprobado con Bootstrap 5 -->
+<?php
+// VISTA: notaEntregaFormView.php
+// OBJETIVO: Formulario para crear nota de entrega desde un presupuesto aprobado
+?>
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0">Nueva Nota de Entrega desde Presupuesto #<?php echo $presupuesto['id_presupuesto']; ?></h2>

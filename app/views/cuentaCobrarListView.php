@@ -1,6 +1,7 @@
-<!-- Archivo: cuentaCobrarListView.php -->
-<!-- Vista para la lista de cuentas por cobrar con Bootstrap 5 -->
-
+<?php
+// VISTA: cuentaCobrarListView.php
+// OBJETIVO: Lista de cuentas por cobrar con DataTable y buscador
+?>
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
