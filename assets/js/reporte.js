@@ -41,11 +41,36 @@ document.addEventListener('DOMContentLoaded', function() {
     resumen.style.display = 'none';
     document.getElementById('btnPDF').style.display = 'none';
     document.getElementById('btnExcel').style.display = 'none';
+    // Toggle filter groups segun tipo
+    var grupoCondicion = document.getElementById('grupoCondicion');
+    var grupoMetodo = document.getElementById('grupoMetodoPago');
+    var grupoEstado = document.getElementById('grupoEstadoCxc');
+    if (tipo === 'carteraCxc') {
+        if (grupoCondicion) grupoCondicion.style.display = 'none';
+        if (grupoMetodo) grupoMetodo.style.display = 'none';
+        if (grupoEstado) grupoEstado.style.display = 'block';
+    } else {
+        if (grupoCondicion) grupoCondicion.style.display = 'block';
+        if (grupoMetodo) grupoMetodo.style.display = 'block';
+        if (grupoEstado) grupoEstado.style.display = 'none';
+    }
+    // Ajustar fechaDesde segun el tipo (formato local, evita UTC offset)
+    var hoy = new Date();
+    var anio = hoy.getFullYear();
+    var mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    var dia = String(hoy.getDate()).padStart(2, '0');
+    if (tipo === 'ventas') {
+        fechaDesde.value = anio + '-' + mes + '-' + dia;
+    } else {
+        fechaDesde.value = anio + '-' + mes + '-01';
+    }
 }
 
     if (tipoReporte) {
         tipoReporte.addEventListener('change', cambiarEncabezado);
     }
+    // Ejecutar al cargar para sincronizar fechaDesde y filtros
+    cambiarEncabezado();
 
     if (btnGenerar) {
         btnGenerar.addEventListener('click', generarReporte);
@@ -63,6 +88,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         var url = '/SP%20Perfect%20Color/reporte/' + tipo + 'Ajax?desde=' + desde + '&hasta=' + hasta;
+        var idCliente = document.getElementById('filtroCliente').value;
+        var condicion = document.getElementById('filtroCondicion').value;
+        var idTipoPago = document.getElementById('filtroMetodoPago').value;
+        var estadoCxc = document.getElementById('filtroEstadoCxc').value;
+        if (idCliente) url += '&id_cliente=' + idCliente;
+        if (condicion) url += '&condicion=' + condicion;
+        if (idTipoPago) url += '&id_tipo_pago=' + idTipoPago;
+        if (estadoCxc) url += '&estado_cxc=' + estadoCxc;
 
         fetch(url)
             .then(function(r) { return r.json(); })
@@ -144,7 +177,16 @@ document.addEventListener('DOMContentLoaded', function() {
         var tipo = tipoReporte.value;
         var desde = fechaDesde.value;
         var hasta = fechaHasta.value;
-        window.location.href = '/SP%20Perfect%20Color/reporte/exportarPdfAjax?tipo=' + tipo + '&desde=' + desde + '&hasta=' + hasta;
+        var url = '/SP%20Perfect%20Color/reporte/exportarPdfAjax?tipo=' + tipo + '&desde=' + desde + '&hasta=' + hasta;
+        var idCliente = document.getElementById('filtroCliente').value;
+        var condicion = document.getElementById('filtroCondicion').value;
+        var idTipoPago = document.getElementById('filtroMetodoPago').value;
+        var estadoCxc = document.getElementById('filtroEstadoCxc').value;
+        if (idCliente) url += '&id_cliente=' + idCliente;
+        if (condicion) url += '&condicion=' + condicion;
+        if (idTipoPago) url += '&id_tipo_pago=' + idTipoPago;
+        if (estadoCxc) url += '&estado_cxc=' + estadoCxc;
+        window.location.href = url;
     });
 
     // 6. Exporta el reporte actual a Excel
@@ -152,6 +194,15 @@ document.addEventListener('DOMContentLoaded', function() {
         var tipo = tipoReporte.value;
         var desde = fechaDesde.value;
         var hasta = fechaHasta.value;
-        window.location.href = '/SP%20Perfect%20Color/reporte/exportarExcelAjax?tipo=' + tipo + '&desde=' + desde + '&hasta=' + hasta;
+        var url = '/SP%20Perfect%20Color/reporte/exportarExcelAjax?tipo=' + tipo + '&desde=' + desde + '&hasta=' + hasta;
+        var idCliente = document.getElementById('filtroCliente').value;
+        var condicion = document.getElementById('filtroCondicion').value;
+        var idTipoPago = document.getElementById('filtroMetodoPago').value;
+        var estadoCxc = document.getElementById('filtroEstadoCxc').value;
+        if (idCliente) url += '&id_cliente=' + idCliente;
+        if (condicion) url += '&condicion=' + condicion;
+        if (idTipoPago) url += '&id_tipo_pago=' + idTipoPago;
+        if (estadoCxc) url += '&estado_cxc=' + estadoCxc;
+        window.location.href = url;
     });
 });

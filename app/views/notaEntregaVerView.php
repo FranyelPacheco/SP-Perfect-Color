@@ -111,30 +111,6 @@
     </div>
 </div>
 
-<?php if ($nota['estado'] === 'pendiente'): ?>
-<div class="d-flex justify-content-end gap-2 mt-4">
-    <button class="btn btn-warning" onclick="cambiarEstado(<?php echo $nota['id_nota_entrega']; ?>, 'en_espera')"><i class="bi bi-pause-circle me-1"></i>Poner en Espera</button>
-</div>
-<?php elseif ($nota['estado'] === 'en_espera'): ?>
 <div class="d-flex justify-content-end gap-2 mt-4">
     <a href="/SP%20Perfect%20Color/notaEntrega/editar?id=<?php echo $nota['id_nota_entrega']; ?>" class="btn btn-primary"><i class="bi bi-pencil me-1"></i>Editar Items</a>
-    <button class="btn btn-success" onclick="cambiarEstado(<?php echo $nota['id_nota_entrega']; ?>, 'entregado')"><i class="bi bi-check-lg me-1"></i>Marcar como Entregado</button>
 </div>
-<?php endif; ?>
-
-<script>
-function cambiarEstado(id, estado) {
-    var mensajes = { 'en_espera': 'Poner esta nota de entrega en espera?', 'entregado': 'Marcar esta nota como entregada?' };
-    if (!confirm(mensajes[estado] || 'Cambiar estado a ' + estado + '?')) return;
-    var fd = new FormData();
-    fd.append('id', id);
-    fd.append('estado', estado);
-    fetch('/SP%20Perfect%20Color/notaEntrega/cambiarEstado', { method: 'POST', body: fd })
-    .then(function(r) { return r.json(); })
-    .then(function(res) {
-        if (res.estado === 'exito') { location.reload(); }
-        else { alert(res.mensaje); }
-    })
-    .catch(function(e) { console.error(e); alert('Error de conexion'); });
-}
-</script>

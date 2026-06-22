@@ -92,6 +92,13 @@ class CuentaPagarModel extends ModeloBase
         return $this->_ejecutarInsert();
     }
 
+    // FUNCIÓN: obtenerTotalPendiente
+    // OBJETIVO: Suma los saldos pendientes de todas las CxP activas
+    public function obtenerTotalPendiente(): string
+    {
+        return $this->_ejecutarTotalPendiente();
+    }
+
     // FUNCIÓN: eliminarCuenta
     // OBJETIVO: Desactiva una cuenta por pagar (soft delete)
     public function eliminarCuenta(int $id): bool
@@ -114,6 +121,17 @@ class CuentaPagarModel extends ModeloBase
         return $this->_ejecutarSearch();
     }
 
+    // FUNCIÓN: _ejecutarTotalPendiente
+    // OBJETIVO: Suma saldo_pendiente de cuentas por pagar con estado pendiente
+    private function _ejecutarTotalPendiente(): string
+    {
+        $consulta = "SELECT COALESCE(SUM(saldo_pendiente), 0) as total
+                     FROM cuentas_pagar
+                     WHERE activo = 1 AND estado = 'pendiente'";
+        $stmt = $this->conexion->query($consulta);
+        return $stmt->fetchColumn();
+    }
+
     // FUNCIÓN: obtenerTotalPagosHoy
     // OBJETIVO: Retorna la suma de todos los pagos realizados en el día de hoy
     // NOTA: Usado en el dashboard
@@ -126,11 +144,8 @@ class CuentaPagarModel extends ModeloBase
     // OBJETIVO: Calcula la suma de pagos realizados en la fecha actual
     private function _ejecutarTotalPagosHoy(): string|false
     {
-        $hoy = date('Y-m-d');
-        $consulta = "SELECT COALESCE(SUM(monto), 0) as total FROM pagos_realizados WHERE DATE(fecha) = :hoy";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':hoy', $hoy, PDO::PARAM_STR);
-        $stmt->execute();
+        $consulta = "SELECT COALESCE(SUM(monto), 0) as total FROM pagos_realizados WHERE DATE(fecha) = CURDATE()";
+        $stmt = $this->conexion->query($consulta);
         return $stmt->fetchColumn();
     }
 

@@ -101,8 +101,7 @@
 
     <div class="d-flex justify-content-end gap-2">
         <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i>Cancelar</a>
-        <button type="submit" name="accion" value="pendiente" class="btn btn-primary btn-lg"><i class="bi bi-check-lg me-2"></i>Crear Nota de Entrega</button>
-        <button type="submit" name="accion" value="en_espera" class="btn btn-warning btn-lg"><i class="bi bi-pause-circle me-2"></i>Poner en Espera</button>
+        <button type="submit" class="btn btn-success btn-lg"><i class="bi bi-check-lg me-2"></i>Crear Nota de Entrega</button>
     </div>
 </form>
 

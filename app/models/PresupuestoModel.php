@@ -179,7 +179,7 @@ class PresupuestoModel extends ModeloBase
     private function _ejecutarSelectDetalle(): array
     {
         $consulta = "SELECT pd.*, i.nombre as insumo_nombre, i.codigo as insumo_codigo,
-                            i.marca as insumo_marca
+                            i.marca as insumo_marca, i.stock_actual as stock_actual
                      FROM presupuesto_detalle pd
                      INNER JOIN insumos i ON pd.id_insumo = i.id_insumo
                      WHERE pd.id_presupuesto = :id_presupuesto";

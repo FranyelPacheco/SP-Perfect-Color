@@ -7,53 +7,63 @@
     <span class="text-muted small">Bienvenido, <?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? ''); ?></span>
 </div>
 
+<?php if ($_SESSION['usuario_rol'] === 1): ?>
 <div class="row g-3 mb-4">
-    <div class="col-6 col-md-4 col-xl-2">
+    <div class="col-6 col-md-4 col-xl">
         <div class="stat-card stat-teal">
             <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
             <div class="stat-label">Clientes</div>
             <div class="stat-value" data-valor="<?php echo $totalClientes; ?>">0</div>
         </div>
     </div>
-    <div class="col-6 col-md-4 col-xl-2">
+    <div class="col-6 col-md-4 col-xl">
         <div class="stat-card stat-blue">
             <div class="stat-icon"><i class="bi bi-truck"></i></div>
             <div class="stat-label">Proveedores</div>
             <div class="stat-value" data-valor="<?php echo $totalProveedores; ?>">0</div>
         </div>
     </div>
-    <div class="col-6 col-md-4 col-xl-2">
+    <div class="col-6 col-md-4 col-xl">
         <div class="stat-card stat-purple">
             <div class="stat-icon"><i class="bi bi-box-seam-fill"></i></div>
             <div class="stat-label">Insumos</div>
             <div class="stat-value" data-valor="<?php echo $totalInsumos; ?>">0</div>
         </div>
     </div>
-    <div class="col-6 col-md-4 col-xl-2">
+    <div class="col-6 col-md-4 col-xl">
         <div class="stat-card stat-orange">
             <div class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
             <div class="stat-label">Alertas Stock</div>
             <div class="stat-value" data-valor="<?php echo count($alertasStock); ?>">0</div>
         </div>
     </div>
-    <div class="col-6 col-md-4 col-xl-2">
+    <div class="col-6 col-md-4 col-xl">
         <div class="stat-card stat-green">
             <div class="stat-icon"><i class="bi bi-cash-coin"></i></div>
             <div class="stat-label">Ingresos Hoy</div>
             <div class="stat-value" data-valor="<?php echo $pagosRecibidosHoy; ?>" data-moneda="1">$ 0,00</div>
         </div>
     </div>
-    <div class="col-6 col-md-4 col-xl-2">
+    <div class="col-6 col-md-4 col-xl">
         <div class="stat-card stat-red">
             <div class="stat-icon"><i class="bi bi-credit-card-2-back-fill"></i></div>
             <div class="stat-label">Egresos Hoy</div>
             <div class="stat-value" data-valor="<?php echo $pagosRealizadosHoy; ?>" data-moneda="1">$ 0,00</div>
         </div>
     </div>
+    <div class="col-6 col-md-4 col-xl">
+        <div class="stat-card stat-info stat-ventas-mes">
+            <div class="stat-icon"><i class="bi bi-graph-up"></i></div>
+            <div class="stat-label">Ventas Mes</div>
+            <div class="stat-value" data-valor="<?php echo $ventasMes; ?>" data-moneda="1">$ 0,00</div>
+        </div>
+    </div>
 </div>
+<?php endif; ?>
 
+<?php if ($_SESSION['usuario_rol'] === 1): ?>
 <div class="row g-3">
-    <div class="col-lg-6">
+    <div class="col-lg-5">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header">
                 <h5 class="mb-0"><i class="bi bi-lightning-charge-fill me-2 text-warning"></i>Alertas de Stock Bajo</h5>
@@ -92,7 +102,67 @@
         </div>
     </div>
 
-    <div class="col-lg-6">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-trophy-fill me-2 text-warning"></i>Top 5 Más Vendidos (Hoy)</h5>
+            </div>
+            <div class="card-body p-0">
+                <?php if (empty($topProductos)): ?>
+                <div class="p-4 text-center text-muted">
+                    <i class="bi bi-cart-x fs-3 d-block mb-2"></i>
+                    <span>No hay ventas registradas hoy.</span>
+                </div>
+                <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Insumo</th>
+                                <th class="text-end">Vendido</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php $i = 1; foreach ($topProductos as $prod): ?>
+                            <tr>
+                                <td class="fw-bold text-warning"><?php echo $i++; ?></td>
+                                <td><?php echo htmlspecialchars($prod['nombre']); ?><br><small class="text-muted"><?php echo htmlspecialchars($prod['codigo']); ?></small></td>
+                                <td class="text-end fw-bold"><?php echo number_format($prod['total_vendido'], 2); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-star-fill me-2 text-warning"></i>Cliente del Mes</h5>
+            </div>
+            <div class="card-body text-center d-flex flex-column justify-content-center">
+                <?php if ($clienteTopMes && (float)$clienteTopMes['total_comprado'] > 0): ?>
+                <h6 class="fw-bold mb-1"><?php echo htmlspecialchars($clienteTopMes['nombres'] . ' ' . $clienteTopMes['apellidos']); ?></h6>
+                <small class="text-muted">Total comprado este mes</small>
+                <div class="fs-1 fw-bold text-success">$ <?php echo number_format((float)$clienteTopMes['total_comprado'], 2, ',', '.'); ?></div>
+                <?php else: ?>
+                <div class="text-muted">
+                    <i class="bi bi-emoji-neutral fs-3 d-block mb-2"></i>
+                    <span>Sin compras este mes</span>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<div class="row g-3 mt-2">
+    <div class="col-lg-12">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header">
                 <h5 class="mb-0"><i class="bi bi-info-circle-fill me-2 text-info"></i>Acceso Rápido</h5>
@@ -131,6 +201,7 @@
     </div>
 </div>
 
+<?php if ($_SESSION['usuario_rol'] === 1): ?>
 <div class="row g-3 mt-2">
     <div class="col-12">
         <div class="card border-0 shadow-sm">
@@ -152,3 +223,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+<?php endif; ?>

@@ -19,7 +19,7 @@
             </div>
             <div class="col-md-3">
                 <label for="fechaDesde" class="form-label">Desde</label>
-                <input type="date" id="fechaDesde" class="form-control" value="<?php echo date('Y-m-01'); ?>">
+                <input type="date" id="fechaDesde" class="form-control" value="<?php echo date("Y-m-d"); ?>">
             </div>
             <div class="col-md-3">
                 <label for="fechaHasta" class="form-label">Hasta</label>
@@ -27,7 +27,46 @@
             </div>
             <div class="col-md-3">
                 <button id="btnGenerarReporte" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Generar Reporte</button>
-                <div class="d-flex gap-2 mt-2">
+            </div>
+        </div>
+        <div class="row g-3 align-items-end mt-2">
+            <div class="col-md-3">
+                <label for="filtroCliente" class="form-label">Cliente</label>
+                <select id="filtroCliente" class="form-select">
+                    <option value="">Todos los clientes</option>
+                    <?php foreach ($clientes as $c): ?>
+                    <option value="<?php echo $c['id_cliente']; ?>"><?php echo htmlspecialchars($c['cedula'] . ' - ' . $c['nombres'] . ' ' . $c['apellidos']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-3" id="grupoCondicion">
+                <label for="filtroCondicion" class="form-label">Condición de Pago</label>
+                <select id="filtroCondicion" class="form-select">
+                    <option value="">Todas</option>
+                    <option value="contado">Contado</option>
+                    <option value="credito">Crédito</option>
+                </select>
+            </div>
+            <div class="col-md-3" id="grupoMetodoPago">
+                <label for="filtroMetodoPago" class="form-label">Método de Pago</label>
+                <select id="filtroMetodoPago" class="form-select">
+                    <option value="">Todos</option>
+                    <?php foreach ($tiposPago as $tp): ?>
+                    <option value="<?php echo $tp['id_tipo_pago']; ?>"><?php echo htmlspecialchars($tp['nombre']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-3" id="grupoEstadoCxc" style="display:none">
+                <label for="filtroEstadoCxc" class="form-label">Estado CxC</label>
+                <select id="filtroEstadoCxc" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="moroso">Moroso</option>
+                    <option value="pagado">Pagado</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <div class="d-flex gap-2">
                     <button id="btnPDF" class="btn btn-danger w-100" style="display:none;">
                         <i class="bi bi-filetype-pdf me-1"></i>PDF
                     </button>

@@ -8,8 +8,7 @@ use App\Models\CuentaCobrarModel;
 use App\Models\TipoPagoModel;
 use App\Models\BancoModel;
 use function App\Helpers\respuestaJson;
-use function App\Helpers\verificarAutenticacion;
-use function App\Helpers\verificarRolVendedor;
+use function App\Helpers\verificarRolAdmin;
 use \PDOException;
 
 $cuentaCobrarModel = new CuentaCobrarModel();
@@ -17,7 +16,7 @@ $cuentaCobrarModel = new CuentaCobrarModel();
 // FUNCIÓN: index
 // OBJETIVO: Renderiza la vista del listado de cuentas por cobrar
 if ($metodo === 'index') {
-    verificarAutenticacion();
+    verificarRolAdmin();
     
     $contenidoVista = __DIR__ . '/../views/cuentaCobrarListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
@@ -25,7 +24,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: listarAjax
 // OBJETIVO: Obtiene el listado completo de cuentas por cobrar en JSON
 } elseif ($metodo === 'listarAjax') {
-    verificarAutenticacion();
+    verificarRolAdmin();
     
     $cuentas = $cuentaCobrarModel->listarTodas();
     
@@ -36,7 +35,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: buscarAjax
 // OBJETIVO: Busca cuentas por cobrar por término de búsqueda o devuelve todas
 } elseif ($metodo === 'buscarAjax') {
-    verificarAutenticacion();
+    verificarRolAdmin();
     
     $termino = trim($_GET['termino'] ?? '');
     
@@ -53,7 +52,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: ver
 // OBJETIVO: Renderiza la vista de detalle de una cuenta con sus pagos recibidos
 } elseif ($metodo === 'ver') {
-    verificarAutenticacion();
+    verificarRolAdmin();
     
     $id = intval($_GET['id'] ?? 0);
     
@@ -79,7 +78,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: registrarPago
 // OBJETIVO: Registra un pago recibido con validación de banco/referencia para transferencia o pago móvil
 } elseif ($metodo === 'registrarPago') {
-    verificarRolVendedor();
+    verificarRolAdmin();
     
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         respuestaJson('error', 'Metodo no permitido');
@@ -124,7 +123,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: obtenerDatosPagoAjax
 // OBJETIVO: Obtiene tipos de pago y bancos para el modal de registro de pago
 } elseif ($metodo === 'obtenerDatosPagoAjax') {
-    verificarAutenticacion();
+    verificarRolAdmin();
     
     $tiposPago = (new TipoPagoModel())->listarTodos();
     $bancos = (new BancoModel())->listarTodos();
@@ -137,7 +136,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: eliminar
 // OBJETIVO: Eliminación lógica de una cuenta por cobrar (soft-delete)
 } elseif ($metodo === 'eliminar') {
-    verificarRolVendedor();
+    verificarRolAdmin();
     
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         respuestaJson('error', 'Metodo no permitido');

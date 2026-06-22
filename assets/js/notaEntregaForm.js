@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 insumo_codigo: item.insumo_codigo,
                 insumo_nombre: item.insumo_nombre,
                 insumo_marca: item.insumo_marca || '',
+                stock_actual: parseFloat(item.stock_actual) || 0,
                 cantidad: parseFloat(item.cantidad),
                 precio_unitario: parseFloat(item.precio_unitario),
                 subtotal: parseFloat(item.subtotal)
@@ -45,8 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (formularioNotaEntrega) {
         formularioNotaEntrega.addEventListener('submit', function(evento) {
             evento.preventDefault();
-            var accion = evento.submitter ? evento.submitter.value : 'pendiente';
-            guardarNotaEntrega(accion);
+            guardarNotaEntrega();
         });
     }
 
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fila.innerHTML = 
                 '<td>' + item.insumo_codigo + '</td>' +
                 '<td>' + item.insumo_nombre + '</td>' +
-                '<td>N/A</td>' +
+                '<td>' + item.stock_actual.toFixed(2) + '</td>' +
                 '<td><input type="number" class="cantidad-input" value="' + item.cantidad + '" min="0.01" step="0.01" data-indice="' + indice + '"></td>' +
                 '<td><input type="number" class="precio-input" value="' + item.precio_unitario + '" min="0.01" step="0.01" data-indice="' + indice + '"></td>' +
                 '<td>$ ' + formatearMoneda(item.subtotal) + '</td>' +
@@ -187,8 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
         totalNota.textContent = '$ ' + formatearMoneda(total);
     }
 
-    function guardarNotaEntrega(accion) {
-        accion = accion || 'pendiente';
+    function guardarNotaEntrega() {
         try {
             if (!clienteNota) {
                 mostrarError('Error interno: campo cliente no encontrado');
@@ -216,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('id_presupuesto', presupuestoInput ? presupuestoInput.value : '');
             var condPago = condicionPagoSelect ? condicionPagoSelect.value : 'contado';
             formData.append('condicion_pago', condPago);
-            formData.append('estado', accion);
+            formData.append('estado', 'entregado');
 
             var tipoPagoInput = document.getElementById('tipoPago');
             // Tipo de pago obligatorio cuando es contado

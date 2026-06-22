@@ -22,6 +22,7 @@ class NotaEntregaModel extends ModeloBase
     private array $detalle;
     private string $termino;
     private int $notaId;
+    private int $topLimite;
 
     // FUNCIÓN: Constructor
     // OBJETIVO: Inicializa la conexión a la BD
@@ -158,8 +159,8 @@ class NotaEntregaModel extends ModeloBase
     private function _ejecutarSelectDetalle(): array
     {
         $consulta = "SELECT ned.*, i.nombre as insumo_nombre, i.codigo as insumo_codigo,
-                            i.marca as insumo_marca, i.id_insumo as id_insumo,
-                            pd.id_insumo as pd_id_insumo
+                            i.marca as insumo_marca, i.stock_actual as stock_actual,
+                            i.id_insumo as id_insumo, pd.id_insumo as pd_id_insumo
                      FROM nota_entrega_detalle ned
                      INNER JOIN presupuesto_detalle pd ON ned.id_presupuesto_detalle = pd.id_presupuesto_detalle
                      INNER JOIN insumos i ON pd.id_insumo = i.id_insumo
@@ -180,7 +181,7 @@ class NotaEntregaModel extends ModeloBase
 
             $this->_validarStock();
 
-            $estadoNota = !empty($this->estado) ? $this->estado : 'pendiente';
+            $estadoNota = 'entregado';
             $condicionPagoVal = !empty($this->condicionPago) ? $this->condicionPago : 'contado';
 
             $consulta = "INSERT INTO notas_entrega (id_cliente, id_usuario, fecha, total, estado, condicion_pago, id_tipo_pago, id_presupuesto) 
@@ -231,7 +232,7 @@ class NotaEntregaModel extends ModeloBase
 
     // FUNCIÓN: _ejecutarActualizarDetalle
     // OBJETIVO: Reemplaza el detalle de la nota: restaura stock viejo, elimina detalle, verifica stock, inserta nuevo y descuenta
-    // NOTA: Transacción que recalcula el total de la nota
+    // NOTA: Soporta items nuevos (sin id_presupuesto_detalle) creando presupuesto_detalle on-the-fly
     private function _ejecutarActualizarDetalle(): bool
     {
         try {
@@ -254,6 +255,13 @@ class NotaEntregaModel extends ModeloBase
             $stmtEliminar->bindValue(':id_nota_entrega', $this->id, PDO::PARAM_INT);
             $stmtEliminar->execute();
 
+            $consultaPresupuestoId = "SELECT id_presupuesto FROM notas_entrega WHERE id_nota_entrega = :id";
+            $stmtPresupuestoId = $this->conexion->prepare($consultaPresupuestoId);
+            $stmtPresupuestoId->bindValue(':id', $this->id, PDO::PARAM_INT);
+            $stmtPresupuestoId->execute();
+            $notaData = $stmtPresupuestoId->fetch();
+            $idPresupuesto = $notaData ? (int)$notaData['id_presupuesto'] : 0;
+
             $total = 0;
             $consultaDetalle = "INSERT INTO nota_entrega_detalle (id_nota_entrega, id_presupuesto_detalle, cantidad, precio_unitario, subtotal) 
                                 VALUES (:id_nota_entrega, :id_presupuesto_detalle, :cantidad, :precio_unitario, :subtotal)";
@@ -265,29 +273,78 @@ class NotaEntregaModel extends ModeloBase
                                   WHERE pd.id_presupuesto_detalle = :pd_id";
             $stmtDescontar = $this->conexion->prepare($consultaDescontar);
 
+            $consultaInsertPresupuestoDetalle = "INSERT INTO presupuesto_detalle (id_presupuesto, id_insumo, cantidad, precio_unitario, subtotal) 
+                                                  VALUES (:id_presupuesto, :id_insumo, :cantidad, :precio_unitario, :subtotal)";
+            $stmtInsertPresupuestoDetalle = $this->conexion->prepare($consultaInsertPresupuestoDetalle);
+
+            $consultaStockDirecto = "SELECT stock_actual FROM insumos WHERE id_insumo = :id_insumo AND activo = 1 FOR UPDATE";
+            $stmtStockDirecto = $this->conexion->prepare($consultaStockDirecto);
+
+            $consultaDescontarDirecto = "UPDATE insumos SET stock_actual = stock_actual - :cantidad WHERE id_insumo = :id_insumo";
+            $stmtDescontarDirecto = $this->conexion->prepare($consultaDescontarDirecto);
+
             foreach ($this->detalle as $item) {
-                $consultaStock = "SELECT i.stock_actual FROM insumos i
-                                  INNER JOIN presupuesto_detalle pd ON pd.id_insumo = i.id_insumo
-                                  WHERE pd.id_presupuesto_detalle = :pd_id AND i.activo = 1";
-                $stmtStock = $this->conexion->prepare($consultaStock);
-                $stmtStock->bindValue(':pd_id', $item['id_presupuesto_detalle'], PDO::PARAM_INT);
-                $stmtStock->execute();
-                $insumo = $stmtStock->fetch();
+                $esNuevo = empty($item['id_presupuesto_detalle']) || (int)$item['id_presupuesto_detalle'] === 0;
 
-                if (!$insumo || $insumo['stock_actual'] < $item['cantidad']) {
-                    throw new PDOException('Stock insuficiente para el item ID: ' . $item['id_presupuesto_detalle']);
+                if ($esNuevo) {
+                    $idInsumo = (int)($item['id_insumo'] ?? 0);
+                    if ($idInsumo < 1) {
+                        throw new PDOException('Item nuevo sin insumo valido');
+                    }
+
+                    $stmtStockDirecto->bindValue(':id_insumo', $idInsumo, PDO::PARAM_INT);
+                    $stmtStockDirecto->execute();
+                    $insumo = $stmtStockDirecto->fetch();
+
+                    if (!$insumo || (float)$insumo['stock_actual'] < (float)$item['cantidad']) {
+                        throw new PDOException('Stock insuficiente para el insumo ID: ' . $idInsumo);
+                    }
+
+                    $stmtInsertPresupuestoDetalle->bindValue(':id_presupuesto', $idPresupuesto, PDO::PARAM_INT);
+                    $stmtInsertPresupuestoDetalle->bindValue(':id_insumo', $idInsumo, PDO::PARAM_INT);
+                    $stmtInsertPresupuestoDetalle->bindValue(':cantidad', $item['cantidad']);
+                    $stmtInsertPresupuestoDetalle->bindValue(':precio_unitario', $item['precio_unitario']);
+                    $stmtInsertPresupuestoDetalle->bindValue(':subtotal', $item['subtotal']);
+                    $stmtInsertPresupuestoDetalle->execute();
+
+                    $nuevoId = (int)$this->conexion->lastInsertId();
+
+                    $stmtDetalle->bindValue(':id_nota_entrega', $this->id, PDO::PARAM_INT);
+                    $stmtDetalle->bindValue(':id_presupuesto_detalle', $nuevoId, PDO::PARAM_INT);
+                    $stmtDetalle->bindValue(':cantidad', $item['cantidad']);
+                    $stmtDetalle->bindValue(':precio_unitario', $item['precio_unitario']);
+                    $stmtDetalle->bindValue(':subtotal', $item['subtotal']);
+                    $stmtDetalle->execute();
+
+                    $stmtDescontarDirecto->bindValue(':cantidad', $item['cantidad']);
+                    $stmtDescontarDirecto->bindValue(':id_insumo', $idInsumo, PDO::PARAM_INT);
+                    $stmtDescontarDirecto->execute();
+                } else {
+                    $pdId = (int)$item['id_presupuesto_detalle'];
+
+                    $consultaStock = "SELECT i.stock_actual FROM insumos i
+                                      INNER JOIN presupuesto_detalle pd ON pd.id_insumo = i.id_insumo
+                                      WHERE pd.id_presupuesto_detalle = :pd_id AND i.activo = 1";
+                    $stmtStock = $this->conexion->prepare($consultaStock);
+                    $stmtStock->bindValue(':pd_id', $pdId, PDO::PARAM_INT);
+                    $stmtStock->execute();
+                    $insumo = $stmtStock->fetch();
+
+                    if (!$insumo || $insumo['stock_actual'] < $item['cantidad']) {
+                        throw new PDOException('Stock insuficiente para el item ID: ' . $pdId);
+                    }
+
+                    $stmtDetalle->bindValue(':id_nota_entrega', $this->id, PDO::PARAM_INT);
+                    $stmtDetalle->bindValue(':id_presupuesto_detalle', $pdId, PDO::PARAM_INT);
+                    $stmtDetalle->bindValue(':cantidad', $item['cantidad']);
+                    $stmtDetalle->bindValue(':precio_unitario', $item['precio_unitario']);
+                    $stmtDetalle->bindValue(':subtotal', $item['subtotal']);
+                    $stmtDetalle->execute();
+
+                    $stmtDescontar->bindValue(':cantidad', $item['cantidad']);
+                    $stmtDescontar->bindValue(':pd_id', $pdId, PDO::PARAM_INT);
+                    $stmtDescontar->execute();
                 }
-
-                $stmtDetalle->bindValue(':id_nota_entrega', $this->id, PDO::PARAM_INT);
-                $stmtDetalle->bindValue(':id_presupuesto_detalle', $item['id_presupuesto_detalle'], PDO::PARAM_INT);
-                $stmtDetalle->bindValue(':cantidad', $item['cantidad']);
-                $stmtDetalle->bindValue(':precio_unitario', $item['precio_unitario']);
-                $stmtDetalle->bindValue(':subtotal', $item['subtotal']);
-                $stmtDetalle->execute();
-
-                $stmtDescontar->bindValue(':cantidad', $item['cantidad']);
-                $stmtDescontar->bindValue(':pd_id', $item['id_presupuesto_detalle'], PDO::PARAM_INT);
-                $stmtDescontar->execute();
 
                 $total += $item['subtotal'];
             }
@@ -423,5 +480,78 @@ class NotaEntregaModel extends ModeloBase
         $stmt->bindValue(':monto', $this->total);
         $stmt->bindValue(':referencia', $this->referencia, empty($this->referencia) ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->execute();
+    }
+
+    // FUNCIÓN: obtenerVentasMes
+    // OBJETIVO: Retorna la suma total de notas de entrega en el mes actual
+    public function obtenerVentasMes(): string
+    {
+        return $this->_ejecutarVentasMes();
+    }
+
+    // FUNCIÓN: obtenerTopProductos
+    // OBJETIVO: Retorna los N productos más vendidos del día de hoy
+    public function obtenerTopProductos(int $limite = 5): array
+    {
+        $this->topLimite = $limite;
+        return $this->_ejecutarTopProductos();
+    }
+
+    // FUNCIÓN: obtenerClienteTopMes
+    // OBJETIVO: Retorna el cliente con mayor monto comprado en el mes actual
+    public function obtenerClienteTopMes(): array|false
+    {
+        return $this->_ejecutarClienteTopMes();
+    }
+
+    // FUNCIÓN: _ejecutarVentasMes
+    // OBJETIVO: Suma el total de notas de entrega activas del mes en curso
+    private function _ejecutarVentasMes(): string
+    {
+        $consulta = "SELECT COALESCE(SUM(total), 0) as total
+                     FROM notas_entrega
+                     WHERE activo = 1
+                       AND MONTH(fecha) = MONTH(CURDATE())
+                       AND YEAR(fecha) = YEAR(CURDATE())";
+        $stmt = $this->conexion->query($consulta);
+        return $stmt->fetchColumn();
+    }
+
+    // FUNCIÓN: _ejecutarTopProductos
+    // OBJETIVO: Agrupa por insumo la cantidad vendida del día, ordena y limita
+    private function _ejecutarTopProductos(): array
+    {
+        $consulta = "SELECT i.id_insumo, i.codigo, i.nombre, i.marca,
+                            SUM(ned.cantidad) as total_vendido
+                     FROM nota_entrega_detalle ned
+                     INNER JOIN presupuesto_detalle pd ON ned.id_presupuesto_detalle = pd.id_presupuesto_detalle
+                     INNER JOIN insumos i ON pd.id_insumo = i.id_insumo
+                     INNER JOIN notas_entrega ne ON ned.id_nota_entrega = ne.id_nota_entrega
+                     WHERE DATE(ne.fecha) = CURDATE() AND ne.activo = 1
+                     GROUP BY i.id_insumo
+                     ORDER BY total_vendido DESC
+                     LIMIT :limite";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindValue(':limite', $this->topLimite, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    // FUNCIÓN: _ejecutarClienteTopMes
+    // OBJETIVO: Busca el cliente con mayor suma de total comprado en el mes
+    private function _ejecutarClienteTopMes(): array|false
+    {
+        $consulta = "SELECT c.id_cliente, c.cedula, c.nombres, c.apellidos,
+                            COALESCE(SUM(ne.total), 0) as total_comprado
+                     FROM notas_entrega ne
+                     INNER JOIN clientes c ON ne.id_cliente = c.id_cliente
+                     WHERE ne.activo = 1
+                       AND MONTH(ne.fecha) = MONTH(CURDATE())
+                       AND YEAR(ne.fecha) = YEAR(CURDATE())
+                     GROUP BY c.id_cliente
+                     ORDER BY total_comprado DESC
+                     LIMIT 1";
+        $stmt = $this->conexion->query($consulta);
+        return $stmt->fetch();
     }
 }

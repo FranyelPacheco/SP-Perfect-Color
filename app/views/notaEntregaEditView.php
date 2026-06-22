@@ -1,6 +1,6 @@
 <?php
 // VISTA: notaEntregaEditView.php
-// OBJETIVO: Edición de items de una nota de entrega en estado "en espera"
+// OBJETIVO: Edición de items de una nota de entrega
 ?>
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0">Editar Nota de Entrega #<?php echo $nota['id_nota_entrega']; ?></h2>
@@ -69,11 +69,37 @@
 
     <div id="mensajeErrorEdit" class="alert alert-danger d-none"></div>
 
-    <div class="d-flex justify-content-end gap-2">
-        <a href="/SP%20Perfect%20Color/notaEntrega/ver?id=<?php echo $nota['id_nota_entrega']; ?>" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i>Cancelar</a>
-        <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-floppy me-2"></i>Guardar Cambios</button>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <button type="button" id="btnAgregarInsumo" class="btn btn-success"><i class="bi bi-plus-lg me-1"></i>Agregar Insumo</button>
+        <div class="d-flex gap-2">
+            <a href="/SP%20Perfect%20Color/notaEntrega/ver?id=<?php echo $nota['id_nota_entrega']; ?>" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i>Cancelar</a>
+            <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-floppy me-2"></i>Guardar Cambios</button>
+        </div>
     </div>
 </form>
+
+<!-- Modal para buscar y agregar insumos -->
+<div class="modal fade" id="modalAgregarInsumo" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-search me-2"></i>Agregar Insumo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" id="busquedaInsumoModal" class="form-control form-control-lg" placeholder="Buscar insumo por nombre o codigo...">
+                </div>
+                <div id="resultadosInsumoModal" class="list-group">
+                    <div class="text-muted p-2">Escriba al menos 1 caracter para buscar</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 var notaDetalleExistente = <?php echo json_encode($detalle); ?>;

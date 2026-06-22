@@ -95,6 +95,20 @@ class CuentaCobrarModel extends ModeloBase
         return $this->_ejecutarPagosPorDia();
     }
 
+    // FUNCIÓN: obtenerTotalPendiente
+    // OBJETIVO: Suma los saldos pendientes de todas las CxC activas no pagadas
+    public function obtenerTotalPendiente(): string
+    {
+        return $this->_ejecutarTotalPendiente();
+    }
+
+    // FUNCIÓN: obtenerCantidadVencidas
+    // OBJETIVO: Cuenta las CxC cuya fecha de vencimiento ya pasó y no han sido pagadas
+    public function obtenerCantidadVencidas(): int
+    {
+        return $this->_ejecutarCantidadVencidas();
+    }
+
     // FUNCIÓN: eliminarCuenta
     // OBJETIVO: Desactiva una cuenta por cobrar (soft delete)
     public function eliminarCuenta(int $id): bool
@@ -223,11 +237,8 @@ class CuentaCobrarModel extends ModeloBase
     // OBJETIVO: Calcula la suma de pagos recibidos en la fecha actual
     private function _ejecutarTotalPagosHoy(): string|false
     {
-        $hoy = date('Y-m-d');
-        $consulta = "SELECT COALESCE(SUM(monto), 0) as total FROM pagos_recibidos WHERE DATE(fecha) = :hoy";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':hoy', $hoy, PDO::PARAM_STR);
-        $stmt->execute();
+        $consulta = "SELECT COALESCE(SUM(monto), 0) as total FROM pagos_recibidos WHERE DATE(fecha) = CURDATE()";
+        $stmt = $this->conexion->query($consulta);
         return $stmt->fetchColumn();
     }
 
@@ -254,6 +265,31 @@ class CuentaCobrarModel extends ModeloBase
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         return $stmt->execute();
+    }
+
+    // FUNCIÓN: _ejecutarTotalPendiente
+    // OBJETIVO: Suma saldo_pendiente de cuentas activas cuyo estado no sea pagado
+    private function _ejecutarTotalPendiente(): string
+    {
+        $consulta = "SELECT COALESCE(SUM(saldo_pendiente), 0) as total
+                     FROM cuentas_cobrar
+                     WHERE activo = 1 AND estado IN ('pendiente', 'moroso')";
+        $stmt = $this->conexion->query($consulta);
+        return $stmt->fetchColumn();
+    }
+
+    // FUNCIÓN: _ejecutarCantidadVencidas
+    // OBJETIVO: Cuenta CxC activas, no pagadas, con fecha vencimiento anterior a hoy
+    private function _ejecutarCantidadVencidas(): int
+    {
+        $consulta = "SELECT COUNT(*) as total
+                     FROM cuentas_cobrar
+                     WHERE activo = 1
+                       AND estado <> 'pagado'
+                       AND fecha_vencimiento IS NOT NULL
+                       AND fecha_vencimiento < CURDATE()";
+        $stmt = $this->conexion->query($consulta);
+        return (int)$stmt->fetchColumn();
     }
 
     // FUNCIÓN: _ejecutarSearch

@@ -199,6 +199,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var valores = document.querySelectorAll('.stat-value[data-valor]');
     valores.forEach(function(el) {
         var valorFinal = parseFloat(el.getAttribute('data-valor')) || 0;
-        animarContador(el, valorFinal, 800);
+        animarContador(el, valorFinal, 2000);
     });
 });
