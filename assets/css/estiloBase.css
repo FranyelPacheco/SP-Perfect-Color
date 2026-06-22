@@ -411,6 +411,9 @@ main.flex-grow-1 {
 .stat-card.stat-orange { background: linear-gradient(135deg, #E65100, #FB8C00); }
 .stat-card.stat-purple { background: linear-gradient(135deg, #6A1B9A, #AB47BC); }
 .stat-card.stat-red { background: linear-gradient(135deg, #C62828, #E53935); }
+.stat-card.stat-info { background: linear-gradient(135deg, #0288D1, #29B6F6); }
+.stat-card.stat-danger { background: linear-gradient(135deg, #D84315, #FF7043); }
+.stat-card.stat-secondary { background: linear-gradient(135deg, #37474F, #78909C); }
 
 /* ============================================================
    BUTTONS
@@ -833,14 +836,12 @@ textarea.form-control {
 .saldo-pendiente-positivo { color: #e53935; font-weight: 600; }
 .saldo-pendiente-cero { color: #2E7D32; font-weight: 600; }
 
-.estado-pendiente,
 .estado-pagado,
 .estado-moroso,
 .estado-aprobado,
 .estado-rechazado,
 .estado-convertido,
-.estado-entregado,
-.estado-en_espera {
+.estado-entregado {
   display: inline-block;
   padding: 3px 12px;
   border-radius: 20px;
@@ -849,14 +850,12 @@ textarea.form-control {
   letter-spacing: 0.02em;
 }
 
-.estado-pendiente { background: #FFF3CD; color: #856404; }
 .estado-pagado,
 .estado-entregado { background: #D4EDDA; color: #155724; }
 .estado-moroso,
 .estado-rechazado { background: #F8D7DA; color: #721C24; }
 .estado-aprobado { background: #CCE5FF; color: #004085; }
 .estado-convertido { background: #E2E3F5; color: #383D41; }
-.estado-en_espera { background: #FFF3CD; color: #856404; }
 
 /* ============================================================
    PERFIL USUARIO (vendedor)

@@ -95,7 +95,7 @@ if ($metodo === 'index') {
     $tipoPagoId = !empty($_POST['id_tipo_pago']) ? intval($_POST['id_tipo_pago']) : null;
     $bancoId = !empty($_POST['id_banco']) ? intval($_POST['id_banco']) : null;
     $referencia = trim($_POST['referencia'] ?? '');
-    $estadoNota = $_POST['estado'] ?? 'pendiente';
+    $estadoNota = 'entregado';
     $fechaVencimiento = $_POST['fecha_vencimiento'] ?? '';
     $items = json_decode($_POST['items'] ?? '[]', true);
     
@@ -266,38 +266,8 @@ if ($metodo === 'index') {
     respuestaJson('exito', 'Bancos obtenidos', [
         'bancos' => $bancos
     ]);
-
-// FUNCIÓN: cambiarEstado
-// OBJETIVO: Cambia el estado de una nota de entrega (en_espera/pendiente/entregado)
-} elseif ($metodo === 'cambiarEstado') {
-    verificarRolVendedor();
-    
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
-    
-    $id = intval($_POST['id'] ?? 0);
-    $estado = $_POST['estado'] ?? '';
-    
-    if ($id < 1 || !in_array($estado, ['en_espera', 'pendiente', 'entregado'])) {
-        respuestaJson('error', 'Datos invalidos');
-    }
-    
-    $nota = $notaEntregaModel->buscarPorId($id);
-    if (!$nota) {
-        respuestaJson('error', 'Nota de entrega no encontrada');
-    }
-    
-    try {
-        $notaEntregaModel->cambiarEstado($id, $estado);
-        respuestaJson('exito', 'Estado actualizado a: ' . $estado);
-    } catch (\Throwable $e) {
-        error_log('ERROR al cambiar estado de nota: ' . $e->getMessage());
-        respuestaJson('error', 'Error al actualizar el estado');
-    }
-
 // FUNCIÓN: editar
-// OBJETIVO: Renderiza el formulario de edición para una nota en espera
+// OBJETIVO: Renderiza el formulario de edición de items de una nota de entrega
 } elseif ($metodo === 'editar') {
     verificarRolVendedor();
 
@@ -308,7 +278,7 @@ if ($metodo === 'index') {
     }
 
     $nota = $notaEntregaModel->buscarPorId($id);
-    if (!$nota || $nota['estado'] !== 'en_espera') {
+    if (!$nota) {
         header('Location: /SP%20Perfect%20Color/notaEntrega');
         exit;
     }
@@ -321,7 +291,7 @@ if ($metodo === 'index') {
     require_once __DIR__ . '/../views/plantillaBase.php';
 
 // FUNCIÓN: actualizar
-// OBJETIVO: Guarda los cambios de items de una nota de entrega en estado en_espera
+// OBJETIVO: Guarda los cambios de items de una nota de entrega
 } elseif ($metodo === 'actualizar') {
     verificarRolVendedor();
 
@@ -337,8 +307,8 @@ if ($metodo === 'index') {
     }
 
     $nota = $notaEntregaModel->buscarPorId($id);
-    if (!$nota || $nota['estado'] !== 'en_espera') {
-        respuestaJson('error', 'Solo se pueden editar notas en espera');
+    if (!$nota) {
+        respuestaJson('error', 'Nota de entrega no encontrada');
     }
 
     if (empty($items)) {
@@ -348,16 +318,25 @@ if ($metodo === 'index') {
     $detalle = [];
     foreach ($items as $item) {
         $presupuestoDetalleId = intval($item['id_presupuesto_detalle'] ?? 0);
+        $esNuevo = $presupuestoDetalleId === 0;
+        $idInsumo = $esNuevo ? intval($item['id_insumo'] ?? 0) : 0;
         $cantidad = floatval($item['cantidad'] ?? 0);
         $precioUnitario = floatval($item['precio_unitario'] ?? 0);
         $subtotal = $cantidad * $precioUnitario;
 
-        if ($presupuestoDetalleId < 1 || $cantidad <= 0 || $precioUnitario <= 0) {
+        if ($cantidad <= 0 || $precioUnitario <= 0) {
             respuestaJson('error', 'Datos invalidos en uno de los items');
+        }
+        if (!$esNuevo && $presupuestoDetalleId < 1) {
+            respuestaJson('error', 'Datos invalidos en uno de los items');
+        }
+        if ($esNuevo && $idInsumo < 1) {
+            respuestaJson('error', 'Item nuevo sin insumo valido');
         }
 
         $detalle[] = [
             'id_presupuesto_detalle' => $presupuestoDetalleId,
+            'id_insumo' => $idInsumo,
             'cantidad' => $cantidad,
             'precio_unitario' => $precioUnitario,
             'subtotal' => $subtotal

@@ -187,7 +187,7 @@ CREATE TABLE `notas_entrega` (
   `id_presupuesto` int(11) NOT NULL,
   `fecha` datetime NOT NULL,
   `total` decimal(10,2) NOT NULL DEFAULT 0.00,
-  `estado` enum('pendiente','entregado','en_espera') NOT NULL DEFAULT 'pendiente',
+  `estado` enum('entregado') NOT NULL DEFAULT 'entregado',
   `condicion_pago` enum('contado','credito') NOT NULL DEFAULT 'contado',
   `id_tipo_pago` int(11) DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()

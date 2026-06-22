@@ -13,16 +13,20 @@ use App\Models\ReporteModel;
 // FUNCIÓN: generarPDF
 // OBJETIVO: Construir una tabla HTML con los datos del reporte y descargarla como PDF (A4 horizontal)
 // NOTA: Soporta dos tipos de reporte: 'ventas' (Notas de Entrega) y 'carteraCxc' (Cuentas por Cobrar)
-function generarPDF($tipo, $desde, $hasta)
+function generarPDF($tipo, $desde, $hasta, $filtros = [])
 {
     $modelo = new ReporteModel();
+    $idCliente = $filtros['id_cliente'] ?? null;
+    $condicion = $filtros['condicion'] ?? null;
+    $idTipoPago = $filtros['id_tipo_pago'] ?? null;
+    $estadoCxc = $filtros['estado_cxc'] ?? null;
 
     if ($tipo === 'ventas') {
-        $datos = $modelo->ventasPorRango($desde, $hasta);
+        $datos = $modelo->ventasPorRango($desde, $hasta, $idCliente, $condicion, $idTipoPago);
         $titulo = 'Reporte de Notas de Entrega';
         $encabezados = ['Fecha', 'Cliente', 'Cedula', 'Total', 'Metodo Pago', 'Estado'];
     } else {
-        $datos = $modelo->carteraCxc($desde, $hasta);
+        $datos = $modelo->carteraCxc($desde, $hasta, $idCliente, $estadoCxc);
         $titulo = 'Reporte de Cuentas por Cobrar Pendientes';
         $encabezados = ['Cliente', 'Cedula', 'Monto Total', 'Saldo Pendiente', 'Vencimiento', 'Estado'];
     }
@@ -70,15 +74,19 @@ function generarPDF($tipo, $desde, $hasta)
 // FUNCIÓN: generarExcel
 // OBJETIVO: Construir un archivo XLSX con los datos del reporte y forzar su descarga en el navegador
 // NOTA: Usa OpenSpout Writer; los encabezados y datos varían según el tipo de reporte
-function generarExcel($tipo, $desde, $hasta)
+function generarExcel($tipo, $desde, $hasta, $filtros = [])
 {
     $modelo = new ReporteModel();
+    $idCliente = $filtros['id_cliente'] ?? null;
+    $condicion = $filtros['condicion'] ?? null;
+    $idTipoPago = $filtros['id_tipo_pago'] ?? null;
+    $estadoCxc = $filtros['estado_cxc'] ?? null;
 
     if ($tipo === 'ventas') {
-        $datos = $modelo->ventasPorRango($desde, $hasta);
+        $datos = $modelo->ventasPorRango($desde, $hasta, $idCliente, $condicion, $idTipoPago);
         $encabezados = ['Fecha', 'Cliente', 'Cedula', 'Total', 'Metodo Pago', 'Estado'];
     } else {
-        $datos = $modelo->carteraCxc($desde, $hasta);
+        $datos = $modelo->carteraCxc($desde, $hasta, $idCliente, $estadoCxc);
         $encabezados = ['Cliente', 'Cedula', 'Monto Total', 'Saldo Pendiente', 'Vencimiento', 'Estado'];
     }
 

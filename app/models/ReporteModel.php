@@ -19,13 +19,13 @@ class ReporteModel extends ModeloBase
     }
 
     // FUNCIÓN: ventasPorRango
-    // OBJETIVO: Obtiene todas las notas de entrega activas en un rango de fechas
-    public function ventasPorRango(string $desde, string $hasta): array
+    // OBJETIVO: Obtiene todas las notas de entrega activas en un rango de fechas, con filtros opcionales
+    public function ventasPorRango(string $desde, string $hasta, ?int $idCliente = null, ?string $condicion = null, ?int $idTipoPago = null): array
     {
         $this->desde = $desde;
         $this->hasta = $hasta;
         $this->_validarRangoFechas();
-        return $this->_ejecutarVentasPorRango();
+        return $this->_ejecutarVentasPorRango($idCliente, $condicion, $idTipoPago);
     }
 
     // FUNCIÓN: totalVentasPorTipoPago
@@ -49,13 +49,13 @@ class ReporteModel extends ModeloBase
     }
 
     // FUNCIÓN: carteraCxc
-    // OBJETIVO: Obtiene cuentas por cobrar pendientes/morosas en un rango de fechas
-    public function carteraCxc(string $desde, string $hasta): array
+    // OBJETIVO: Obtiene cuentas por cobrar en un rango de fechas, con filtros opcionales
+    public function carteraCxc(string $desde, string $hasta, ?int $idCliente = null, ?string $estado = null): array
     {
         $this->desde = $desde;
         $this->hasta = $hasta;
         $this->_validarRangoFechas();
-        return $this->_ejecutarCarteraCxc();
+        return $this->_ejecutarCarteraCxc($idCliente, $estado);
     }
 
     // FUNCIÓN: _validarRangoFechas
@@ -71,8 +71,25 @@ class ReporteModel extends ModeloBase
         }
     }
 
-    private function _ejecutarVentasPorRango(): array
+    private function _ejecutarVentasPorRango(?int $idCliente = null, ?string $condicion = null, ?int $idTipoPago = null): array
     {
+        $condiciones = ["ne.activo = 1", "DATE(ne.fecha) BETWEEN :desde AND :hasta"];
+        $params = [':desde' => $this->desde, ':hasta' => $this->hasta];
+
+        if ($idCliente !== null) {
+            $condiciones[] = "ne.id_cliente = :id_cliente";
+            $params[':id_cliente'] = $idCliente;
+        }
+        if ($condicion !== null) {
+            $condiciones[] = "ne.condicion_pago = :condicion";
+            $params[':condicion'] = $condicion;
+        }
+        if ($idTipoPago !== null) {
+            $condiciones[] = "ne.id_tipo_pago = :id_tipo_pago";
+            $params[':id_tipo_pago'] = $idTipoPago;
+        }
+
+        $where = implode(' AND ', $condiciones);
         $consulta = "SELECT ne.*,
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
@@ -82,12 +99,10 @@ class ReporteModel extends ModeloBase
                      INNER JOIN clientes c ON ne.id_cliente = c.id_cliente
                      INNER JOIN usuarios u ON ne.id_usuario = u.id_usuario
                      LEFT JOIN tipo_pago tp ON ne.id_tipo_pago = tp.id_tipo_pago
-                     WHERE ne.activo = 1 AND DATE(ne.fecha) BETWEEN :desde AND :hasta
+                     WHERE $where
                      ORDER BY ne.fecha DESC, ne.id_nota_entrega DESC";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':desde', $this->desde, PDO::PARAM_STR);
-        $stmt->bindParam(':hasta', $this->hasta, PDO::PARAM_STR);
-        $stmt->execute();
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
 
@@ -120,8 +135,23 @@ class ReporteModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-    private function _ejecutarCarteraCxc(): array
+    private function _ejecutarCarteraCxc(?int $idCliente = null, ?string $estado = null): array
     {
+        $condiciones = ["cc.activo = 1", "DATE(cc.created_at) BETWEEN :desde AND :hasta"];
+        $params = [':desde' => $this->desde, ':hasta' => $this->hasta];
+
+        if ($idCliente !== null) {
+            $condiciones[] = "cc.id_cliente = :id_cliente";
+            $params[':id_cliente'] = $idCliente;
+        }
+        if ($estado !== null) {
+            $condiciones[] = "cc.estado = :estado";
+            $params[':estado'] = $estado;
+        } else {
+            $condiciones[] = "cc.estado IN ('pendiente', 'moroso')";
+        }
+
+        $where = implode(' AND ', $condiciones);
         $consulta = "SELECT cc.*,
                         CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                         c.cedula as cliente_cedula,
@@ -130,14 +160,10 @@ class ReporteModel extends ModeloBase
                  FROM cuentas_cobrar cc
                  INNER JOIN clientes c ON cc.id_cliente = c.id_cliente
                  LEFT JOIN notas_entrega ne ON cc.id_nota_entrega = ne.id_nota_entrega
-                 WHERE cc.activo = 1
-                   AND cc.estado IN ('pendiente', 'moroso')
-                   AND DATE(cc.created_at) BETWEEN :desde AND :hasta
+                 WHERE $where
                  ORDER BY cc.estado ASC, cc.fecha_vencimiento ASC";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':desde', $this->desde, PDO::PARAM_STR);
-        $stmt->bindParam(':hasta', $this->hasta, PDO::PARAM_STR);
-        $stmt->execute();
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
 }

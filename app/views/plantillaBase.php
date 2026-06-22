@@ -68,7 +68,9 @@
                         <?php endif; ?>
                         <li class="nav-item"><a href="/SP%20Perfect%20Color/presupuesto" class="nav-link<?php echo ($controlador === 'presupuesto') ? ' active' : ''; ?>"><i class="bi bi-file-earmark-text-fill"></i>Presupuestos</a></li>
                         <li class="nav-item"><a href="/SP%20Perfect%20Color/notaEntrega" class="nav-link<?php echo ($controlador === 'notaEntrega') ? ' active' : ''; ?>"><i class="bi bi-receipt-cutoff"></i>Notas de Entrega</a></li>
+                        <?php if ($_SESSION['usuario_rol'] === 1): ?>
                         <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaCobrar" class="nav-link<?php echo ($controlador === 'cuentaCobrar') ? ' active' : ''; ?>"><i class="bi bi-cash-coin"></i>Cuentas por Cobrar</a></li>
+                        <?php endif; ?>
                         <?php if ($_SESSION['usuario_rol'] === 1): ?>
                         <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaPagar" class="nav-link<?php echo ($controlador === 'cuentaPagar') ? ' active' : ''; ?>"><i class="bi bi-credit-card-2-back-fill"></i>Cuentas por Pagar</a></li>
                         <?php endif; ?>
@@ -114,7 +116,9 @@
                 <?php endif; ?>
                 <li class="nav-item"><a href="/SP%20Perfect%20Color/presupuesto" class="nav-link<?php echo ($controlador === 'presupuesto') ? ' active' : ''; ?>"><i class="bi bi-file-earmark-text-fill"></i>Presupuestos</a></li>
                 <li class="nav-item"><a href="/SP%20Perfect%20Color/notaEntrega" class="nav-link<?php echo ($controlador === 'notaEntrega') ? ' active' : ''; ?>"><i class="bi bi-receipt-cutoff"></i>Notas de Entrega</a></li>
+                <?php if ($_SESSION['usuario_rol'] === 1): ?>
                 <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaCobrar" class="nav-link<?php echo ($controlador === 'cuentaCobrar') ? ' active' : ''; ?>"><i class="bi bi-cash-coin"></i>Cuentas por Cobrar</a></li>
+                <?php endif; ?>
                 <?php if ($_SESSION['usuario_rol'] === 1): ?>
                 <li class="nav-item"><a href="/SP%20Perfect%20Color/cuentaPagar" class="nav-link<?php echo ($controlador === 'cuentaPagar') ? ' active' : ''; ?>"><i class="bi bi-credit-card-2-back-fill"></i>Cuentas por Pagar</a></li>
                 <?php endif; ?>
