@@ -21,7 +21,6 @@
                         <th>Cliente</th>
                         <th>Cedula</th>
                         <th>Total</th>
-                        <th>Estado</th>
                         <th>Pago</th>
                         <th>Vendedor</th>
                         <th>Acciones</th>

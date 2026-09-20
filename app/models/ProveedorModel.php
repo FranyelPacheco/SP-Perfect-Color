@@ -201,7 +201,7 @@ class ProveedorModel extends ModeloBase
                             GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubros,
                             GROUP_CONCAT(DISTINCT rp.id_rubro SEPARATOR ',') as rubros_id
                      FROM proveedores p
-                     LEFT JOIN telf_proveedor tp ON tp.id_proveedor = p.id_proveedor
+                     LEFT JOIN telefono_proveedor tp ON tp.id_proveedor = p.id_proveedor
                      LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
                      LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
                      WHERE p.activo = 1
@@ -218,7 +218,7 @@ class ProveedorModel extends ModeloBase
                             GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubros,
                             GROUP_CONCAT(DISTINCT rp.id_rubro SEPARATOR ',') as rubros_id
                      FROM proveedores p
-                     LEFT JOIN telf_proveedor tp ON tp.id_proveedor = p.id_proveedor
+                     LEFT JOIN telefono_proveedor tp ON tp.id_proveedor = p.id_proveedor
                      LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
                      LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
                      WHERE p.id_proveedor = :id AND p.activo = 1
@@ -300,7 +300,7 @@ class ProveedorModel extends ModeloBase
                             GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubros,
                             GROUP_CONCAT(DISTINCT rp.id_rubro SEPARATOR ',') as rubros_id
                      FROM proveedores p
-                     LEFT JOIN telf_proveedor tp ON tp.id_proveedor = p.id_proveedor
+                     LEFT JOIN telefono_proveedor tp ON tp.id_proveedor = p.id_proveedor
                      LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
                      LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
                      WHERE p.activo = 1 AND (p.nombre_empresa LIKE :termino1
@@ -316,7 +316,7 @@ class ProveedorModel extends ModeloBase
 
     private function _ejecutarInsertTelefono(): bool
     {
-        $consulta = "INSERT INTO telf_proveedor (id_proveedor, telefono, tipo) VALUES (:id_proveedor, :telefono, :tipo)";
+        $consulta = "INSERT INTO telefono_proveedor (id_proveedor, telefono, tipo) VALUES (:id_proveedor, :telefono, :tipo)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id_proveedor', $this->proveedorId, PDO::PARAM_INT);
         $stmt->bindParam(':telefono', $this->telefono, PDO::PARAM_STR);
@@ -326,7 +326,7 @@ class ProveedorModel extends ModeloBase
 
     private function _ejecutarDeleteTelefonos(): bool
     {
-        $consulta = "DELETE FROM telf_proveedor WHERE id_proveedor = :id_proveedor";
+        $consulta = "DELETE FROM telefono_proveedor WHERE id_proveedor = :id_proveedor";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id_proveedor', $this->proveedorId, PDO::PARAM_INT);
         return $stmt->execute();

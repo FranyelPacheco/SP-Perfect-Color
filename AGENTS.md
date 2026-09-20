@@ -242,3 +242,221 @@ Las FK tenían nombres inconsistentes con las PKs que referenciaban. Ej: `cuenta
 - **`app/controllers/frontController.php`**: Agregados `'banco'` y `'tipoPago'` a `$titulosPagina`
 - **`app/views/plantillaBase.php`**: Sidebar desktop: `<li class="nav-item dropdown-hover">` con submenú hover (Bancos / Tipos de Pago). Sidebar móvil: sublista anidada dentro del mismo `<li>`
 - **`assets/css/estiloBase.css`**: Estilos para `.dropdown-hover` (posición absoluta a la derecha del sidebar, visible en hover, sombra, animación)
+
+---
+
+## Sesión — Normalización BD: registro_cliente + estado_presupuesto (ENUM a tabla maestra)
+
+### 1. `fecha_registro` movida a tabla `registro_cliente`
+- **BD**: Creada tabla `registro_cliente` (`id_registro_cliente` PK AUTO_INCREMENT, `id_cliente` INT FK, `fecha_registro` DATETIME). Eliminada columna `fecha_registro` de la tabla `clientes`.
+- **`app/models/ClienteModel.php`**:
+  - `_ejecutarSelectAll`, `_ejecutarSelectById`, `_ejecutarSearch`: Incluyen `LEFT JOIN registro_cliente rc ON rc.id_cliente = c.id_cliente` seleccionando `rc.fecha_registro`. Las vistas reciben la fecha sin romper compatibilidad.
+  - `_ejecutarInsert`: Inserta automáticamente en `registro_cliente` tras insertar el cliente nuevo.
+  - `_ejecutarUpdate`: Asegura existencia del registro de fecha en `registro_cliente` si el cliente fue reactivado.
+
+### 2. ENUMs > 2 opciones: `presupuestos.estado` → `estado_presupuesto`
+- **Auditoría de ENUMs en la BD**:
+  - `presupuestos.estado` (4 opciones: `pendiente`, `aprobado`, `rechazado`, `convertido`) → Convertida en tabla maestra.
+  - `cuentas_cobrar.estado` → Normalizada a 2 opciones (`'pendiente'`, `'pagado'`).
+  - `cuentas_pagar.estado`, `notas_entrega.condicion_pago`, `insumos.tipo_inventario` (2 opciones) y `notas_entrega.estado` (1 opción) se preservaron como ENUM.
+- **BD**:
+  - Creada tabla `estado_presupuesto` (`id_estado_presupuesto` PK AUTO_INCREMENT, `nombre` VARCHAR(50) UNIQUE) con seeds: `1 = pendiente`, `2 = aprobado`, `3 = rechazado`, `4 = convertido`.
+  - En `presupuestos`: eliminada columna `estado`, agregada columna `id_estado_presupuesto` INT con FK `fk_presupuesto_estado` a `estado_presupuesto(id_estado_presupuesto)`.
+- **`app/models/EstadoPresupuestoModel.php`**: Creado nuevo modelo con `listarTodos()`, `buscarPorId()`, `buscarPorNombre()`.
+- **`app/models/PresupuestoModel.php`**:
+  - `_ejecutarSelectAll`, `_ejecutarSelectById`, `_ejecutarSearch`: Incorporan `INNER JOIN estado_presupuesto ep ON p.id_estado_presupuesto = ep.id_estado_presupuesto` y devuelven `ep.nombre as estado`, garantizando total compatibilidad con vistas y DataTables JS.
+  - `cambiarEstado(int $id, string|int $estado)`: Mapea transparentemente strings (`'pendiente'`, `'aprobado'`, etc.) al ID correspondiente y actualiza `id_estado_presupuesto`.
+  - `_ejecutarInsert`: Inserta con `id_estado_presupuesto = 1` ('pendiente').
+- **`app/models/NotaEntregaModel.php`**:
+  - `_cambiarEstadoPresupuesto`: Actualiza `id_estado_presupuesto = 4` ('convertido').
+- **`app/core/sp_perfect_color.sql`**: Dump y esquema actualizado con las nuevas tablas, datos, índices, auto-increments y restricciones foráneas.
+
+---
+
+## Sesión — Renombrado telefono_proveedor + Eliminación notas_entrega.estado + Auditoría subtotal
+
+### 1. Renombrado `telf_proveedor` → `telefono_proveedor`
+- **BD**:
+  - `RENAME TABLE telf_proveedor TO telefono_proveedor;`
+  - `ALTER TABLE telefono_proveedor CHANGE id_telf_proveedor id_telefono_proveedor INT(11) NOT NULL AUTO_INCREMENT;`
+  - Clave foránea actualizada: `fk_telefono_proveedor_proveedor` apuntando a `proveedores(id_proveedor)`.
+- **`app/models/ProveedorModel.php`**: Reemplazadas todas las consultas SQL (`_ejecutarSelectAll`, `_ejecutarSelectById`, `_ejecutarSearch`, `_ejecutarInsertTelefono`, `_ejecutarDeleteTelefonos`) para apuntar a `telefono_proveedor`.
+- **`app/models/CuentaPagarModel.php`**: Subconsulta en `_ejecutarSelectById` actualizada para usar `telefono_proveedor`.
+- **`app/core/sp_perfect_color.sql`**: Tabla, campos, volcado, índices, auto_increment y constraints actualizados a `telefono_proveedor` e `id_telefono_proveedor`.
+
+### 2. Eliminación de columna redundante `notas_entrega.estado`
+- **BD**: `ALTER TABLE notas_entrega DROP COLUMN estado;`
+- **`app/models/NotaEntregaModel.php`**:
+  - Eliminada propiedad `$estado`.
+  - Eliminado parámetro `$estado` de `crearNotaEntrega()`.
+  - Eliminado método público `cambiarEstado()` y privado `_ejecutarUpdateEstado()`.
+  - Removido campo `:estado` del `INSERT INTO notas_entrega`.
+- **`app/controllers/notaEntregaController.php`**: Removida variable `$estadoNota` y su argumento en la invocación de `crearNotaEntrega()`.
+- **`assets/js/notaEntregaForm.js`**: Removido `formData.append('estado', 'entregado');`.
+- **`app/views/notaEntregaListView.php`**: Eliminado `<th>Estado</th>` (conteo reducido a 8 columnas).
+- **`assets/js/notaEntrega.js`**: Eliminada columna `{ data: 'estado', ... }` del arreglo `columns` de DataTables (conteo reducido a 8 columnas exactas).
+- **`app/views/notaEntregaVerView.php`**: Removido bloque visual que mostraba el estado de la nota de entrega.
+- **`app/core/sp_perfect_color.sql`**: Removida columna `estado` del DDL y de los INSERTs de `notas_entrega`.
+
+### 3. Auditoría de campo `*.subtotal`
+- Se evaluaron las columnas `subtotal` en `presupuesto_detalle` y `nota_entrega_detalle`.
+- Aunque conceptualmente es un atributo derivable (`cantidad * precio_unitario`), se mantiene intacto en base de datos y modelos ya que:
+  1. Es estándar en sistemas de facturación y presupuestos para preservar inmutabilidad histórica frente a cambios en redondeo.
+  2. Su presencia es esperada por múltiples componentes de formulario (`notaEntregaEdit.js`, `notaEntregaForm.js`, `presupuestoForm.js`), controladores y vistas de detalle.
+  3. No afecta negativamente a los reportes ni al desempeño, garantizando que el sistema siga funcionando con total regularidad.
+
+### 4. Diagrama `modelo_relacional.svg`
+- Diagrama regenerado desde la base de datos viva:
+  - Refleja `telefono_proveedor` con `id_telefono_proveedor`.
+  - Refleja `notas_entrega` con sus 9 columnas actuales (sin `estado`), reajustando altura del nodo y conectores.
+  - **Optimización de conectores y enrutamiento ortogonal**:
+    - Eliminadas al 100% las líneas colineales superpuestas (`0` colisiones colineales).
+    - Entradas escalonadas (*staggered pins*) en `clientes.id_cliente` (desfases de $\pm 4\text{px}$) y `proveedores.id_proveedor` (desfases de $\pm 5\text{px}$), evitando que múltiples relaciones compartan el mismo trazo horizontal de aproximación.
+    - Separación de corredores verticales con holguras de $25\text{px}$ a $55\text{px}$.
+    - Desacoplamiento del cruce de `pagos_realizados` y `pagos_recibidos` hacia `tipo_pago` y `banco` (separados por canal independiente de $20\text{px}$).
+    - Cruces perpendiculares reducidos al mínimo topológico inevitable (de 8 a 6 intersecciones a 90°).
+
+---
+
+## Sesión — Generación del Modelo Entidad-Relación (`diagrama_mer.svg`)
+
+### Generación de `diagrama_mer.svg` (Notación Chen)
+- Generado en formato SVG puro (`diagrama_mer.svg`, $4200 \times 2700\text{px}$) con fondo blanco, trazos ortogonales a 90° ("cuadradas") y tipografía monospace nítida.
+- **Entidades representadas (18 entidades)**:
+  - **Fuertes (rectángulo simple)**: `roles`, `usuarios`, `clientes`, `presupuestos`, `estado_presupuesto`, `notas_entrega`, `cuentas_cobrar`, `tipo_pago`, `banco`, `insumos`, `proveedores`, `cuentas_pagar`, `rubro`.
+  - **Débiles (doble rectángulo)**: `telefono_cliente`, `registro_cliente`, `telefono_proveedor`, `pagos_recibidos`, `pagos_realizados`.
+- **Relaciones (21 rombos ampliados y legibles)**:
+  - Rombo simple para relaciones estándar (`tienen`, `registra`, `clasifica`, `solicita`, `procede`, `genera`, `forma`, `destino`, `posee`, `pertenece`, `efectua`).
+  - Rombo doble para relaciones identificadoras hacia entidades débiles (`tiene`, `registrado`, `posee`, `abona`).
+  - Dimensiones de rombos ampliadas ($w = 110\text{--}185\text{px}, h = 48\text{--}66\text{px}$) para albergar con total holgura los títulos y subtítulos sin que los vértices toquen las letras.
+  - **4 Tablas Relacionales/Asociativas con atributos propios y subetiquetas explícitas**:
+    1. `contiene` (`presupuesto_detalle`): <ins>`id`</ins>, `cantidad`, `precio_unitario`, `subtotal`.
+    2. `despacha` (`nota_entrega_detalle`): <ins>`id`</ins>, `cantidad`, `precio_unitario`, `subtotal`.
+    3. `suministran` (`insumo_proveedor`): <ins>`id`</ins>.
+    4. `maneja_rubro` (`rubro_proveedor`): <ins>`id`</ins>.
+    - Título y subtítulo en alta legibilidad (`font-size: 12.5px` en negrita para el verbo y `9.5px` para el nombre de la tabla).
+- **Simetría Geométrica y Reacomodo Estético (98 elipses correspondientes a las 22 tablas del MR)**:
+  - Dispersión rediseñada bajo estricta simetría bilateral, radial y por cuadrantes (abanicos regulares, pares equidistantes respecto a los ejes de cada entidad).
+  - Radios estandarizados proporcionalmente al texto para uniformidad visual.
+- **Verificación algorítmica de geometría y despeje**:
+  - `0` colisiones entre formas (las 98 elipses, 18 rectángulos y 21 rombos guardan márgenes de seguridad completos).
+  - `0` intersecciones entre líneas de relación y elipses de atributos.
+  - `0` cortes entre líneas de relación y rectángulos de entidades.
+  - `0` superposiciones colineales de líneas entre relaciones distintas.
+  - Cardinalidades (1:1, 1:N, N:1, N:M) señaladas de forma limpia en los extremos de conexión.
+
+---
+
+## Sesión — Mejoras Responsive + Módulo Dinámico de Roles y Permisos (22 Tablas Preservadas)
+
+### 1. Mejoras Responsive y UI/UX
+- **Menú Lateral Móvil (Aside / Offcanvas)**:
+  - **Problema corregido**: El aside móvil (`.offcanvas.sidebar-offcanvas`) heredaba el color azul predeterminado de Bootstrap (`#0d6efd`), perdiendo contraste sobre el fondo oscuro, y el texto quedaba pegado a los iconos sin separación.
+  - **Cambios**:
+    - `app/views/plantillaBase.php`: Se agregó la clase `.sidebar` al offcanvas (`<div class="offcanvas sidebar sidebar-offcanvas ...">`) y separación explícita `me-2` en los iconos.
+    - `assets/css/estiloBase.css`: Se unificaron los selectores (`.sidebar .nav-link, .sidebar-offcanvas .nav-link`) con texto blanco semitransparente (`rgba(255,255,255,0.75)` y `#fff` en hover/active), `gap: 0.75rem` e iconos con ancho fijo (`width: 1.35rem`).
+    - Submenú *Config. de Pago* en móvil estilizado con sangría y fondo sutil integrado.
+- **Espaciado y Prevención de Colisión de Botones**:
+  - `assets/css/estiloBase.css`:
+    - Regla global `.table td .btn + .btn, .table td .btn + a.btn, .table td a.btn + .btn, .table td a.btn + a.btn { margin-left: 0.35rem; }`.
+    - Alineación vertical centrada `.table td { vertical-align: middle; }` y `white-space: nowrap;` en la última columna (`Acciones`) para evitar quiebres y amontonamiento.
+    - En pantallas pequeñas (`@media (max-width: 576px)`): las barras de herramientas y buscadores con ancho fijo (`width: 220px/250px`) pasan a `width: 100%` con distribución en columna y botones expandibles sin desborde.
+    - Adaptación responsive de controles DataTables (`dataTables_length`, `dataTables_filter`, `dataTables_paginate`) para dispositivos móviles (`@media (max-width: 768px)`).
+
+### 2. Módulo de Roles y Permisos Dinámicos (Sin Tabla Intermedia)
+- **Base de Datos (Se mantienen exactamente las 22 tablas)**:
+  - `ALTER TABLE roles ADD COLUMN activo TINYINT(1) NOT NULL DEFAULT 1 AFTER nombre;`
+  - `ALTER TABLE roles ADD COLUMN modulos TEXT NULL AFTER activo;`
+  - Dump `app/core/sp_perfect_color.sql` actualizado con las nuevas columnas y seeds:
+    - Rol 1 (Administrador): `activo = 1`, acceso total a todos los módulos.
+    - Rol 2 (Vendedor): `activo = 1`, acceso a `dashboard,cliente,presupuesto,notaEntrega,reporte`.
+- **Backend**:
+  - `app/models/RolModel.php`: Creado con arquitectura encapsulada (métodos públicos delegando a privados `_`): `listarTodos()`, `listarActivos()`, `buscarPorId()`, `insertarRol()`, `actualizarRol()`, `toggleActivo()` (con bloqueo de protección para Administrador ID 1), `nombreExiste()`, `buscarInactivoPorNombre()`.
+  - `app/models/UsuarioModel.php`: `_ejecutarSelectByCorreo()` ahora recupera `rol_activo` y `rol_modulos`. `listarRoles()` retorna roles con `activo = 1`.
+  - `app/helpers/sesionHelper.php`:
+    - `tienePermiso(string $modulo): bool`: Verifica si el usuario es Admin o si el módulo está en su lista autorizada.
+    - `verificarPermiso(string $modulo)`: Bloqueo dinámico por módulo.
+    - `verificarRolAdmin()` y `verificarAcceso()` ahora consultan `tienePermiso($moduloActual)` según la URL, permitiendo que nuevos roles creados por el Administrador accedan a los módulos autorizados sin romper ningún controlador existente.
+  - `app/controllers/loginController.php`: Valida que el rol asignado al usuario esté activo antes de iniciar sesión. Carga `$_SESSION['usuario_modulos']`.
+  - `app/controllers/usuarioController.php`: Incorpora endpoints AJAX para roles: `listarRolesAjax`, `obtenerRol`, `guardarRol`, `actualizarRol` y `toggleRol`.
+- **Frontend / Vistas**:
+  - `app/views/plantillaBase.php`: Enlaces del sidebar (desktop y móvil) condicionados con `\App\Helpers\tienePermiso('modulo')`. Si un nuevo rol tiene acceso a Inventario o Proveedores, aparecerán dinámicamente en su menú.
+  - `app/views/usuarioListView.php`: Interfaz con pestañas Nav-Pills (**Usuarios** y **Roles y Permisos**).
+    - Modal de rol con selección de nombre, estado y matriz visual de checkboxes con los 11 módulos del sistema (incluyendo advertencia de seguridad para el módulo `usuario`).
+  - `assets/js/usuario.js`: Soporte para DataTables `#tablaRoles`, creación y edición de roles, guardado AJAX y toggle de habilitación/deshabilitación con modal de confirmación.- **Correcciones Específicas de la Sesión**:
+  - **Offcanvas móvil**: Se eliminó la clase `.sidebar` del contenedor `#offcanvasSidebar` (la cual creaba un div residual de 260px desplazando el contenido) y se aplicaron reglas con `-webkit-text-fill-color: #ffffff !important` y `color: #ffffff !important` asegurando letras 100% blancas sobre el fondo oscuro en móviles. Se incorporó además cache buster `?v=filemtime` en los estilos.
+  - **DataTables Responsive Anti-deformación**: Se añadieron bibliotecas CDN oficiales de DataTables Responsive (`responsive.bootstrap5.min.js`, `responsive.bootstrap5.min.css`) y estilos con `overflow-x: auto !important`, `min-width: 680px/820px` y `white-space: nowrap !important` en `estiloBase.css`. Las tablas ya no se comprimen ni parten textos verticalmente en pantallas estrechas.
+  - **Toolbars Móviles**: En pantallas `<576px`, los contenedores de búsqueda y botón nuevo pasan a `flex-direction: column` con ancho al 100%, eliminando amontonamientos y colisiones.
+  - **Modal de confirmación**: Se modificó `confirmarConModal` en `assets/js/utilidades.js` para usar `.innerHTML`, permitiendo el renderizado correcto de avisos y textos de advertencia en HTML.
+  - **Acceso a Usuarios y Roles**: Se agregó enlace directo en los menús de navegación móvil y de escritorio bajo Reportes condicionado por `tienePermiso('usuario')`.
+
+---
+
+## Sesión — Correcciones y Mejoras Progresivas del Sistema (4 Fases Probadas)
+
+### 1. Fase 1: Enrutamiento, Títulos y Estado Activo del Sidebar (UI/UX)
+- **`app/controllers/frontController.php`**: Mapeo canónico `$mapeoControladores` para asociar URLs en minúsculas al controlador correcto (`notaentrega` -> `notaEntrega`, etc.). Búsqueda de `$titulosPagina` normalizada con `strtolower` para que las pestañas del navegador muestren el título exacto del módulo en vez del título genérico.
+- **`app/views/plantillaBase.php`**: Creada variable `$ctrlLower = strtolower($controlador ?? '');`. Normalizadas las clases `.active` tanto en el menú móvil como en el desktop. Agregado resaltado para el dropdown "Config. de Pago" al visitar `banco`, `tipoPago` o `configPago`.
+- **`app/controllers/usuarioController.php` & `app/views/usuarioListView.php`**: Eliminado el `echo "<script>..."` previo al `<!DOCTYPE html>`. Las variables globales JS se trasladaron limpiamente al inicio de `usuarioListView.php`.
+
+### 2. Fase 2: Autenticación, Manejo de Sesiones y Permisos RBAC
+- **`app/helpers/sesionHelper.php`**:
+  - `verificarAutenticacion()` ahora redirige a `/SP%20Perfect%20Color/login` en solicitudes HTTP ordinarias y devuelve JSON solo si es AJAX.
+  - `tienePermiso()` normaliza a minúsculas (`strtolower`) los módulos autorizados, evitando falsos negativos por diferencias de casing.
+- **`app/controllers/loginController.php`**: Se añadió `session_regenerate_id(true);` tras validar exitosamente las credenciales contra Session Fixation.
+- **`app/controllers/clienteController.php`**: Protegidas todas las acciones con `verificarPermiso('cliente')` y `eliminar` con `verificarRolAdmin()`.
+- **`app/controllers/presupuestoController.php`**: Protegidas todas las acciones con `verificarPermiso('presupuesto')`.
+- **`app/controllers/reporteController.php`**: Protegidas las 5 acciones con `verificarPermiso('reporte')`.
+
+### 3. Fase 3: Lógica Contable y Negocio (Sincronización CxC y Redondeo)
+- **`app/models/NotaEntregaModel.php`**: En `_ejecutarActualizarDetalle()`, si la nota editada tiene una cuenta por cobrar vinculada (`cuentas_cobrar`), se sincroniza automáticamente su `monto_total` y se actualiza el `saldo_pendiente` sumando la diferencia (`$nuevoTotal - $totalViejo`), actualizando el estado según corresponda.
+- **`app/models/CuentaCobrarModel.php` & `app/models/CuentaPagarModel.php`**: En `_ejecutarRegistrarPago()`, se aplica `round($nuevoSaldo, 2)` con umbral épsilon `<= 0.001` para fijar el saldo en 0 exacto y estado `'pagado'`, eliminando residuos infinitesimales de punto flotante en PHP.
+
+### 4. Fase 4: Exportación de Reportes y Validación/Seguridad en Vistas
+- **`app/helpers/exportarReporteHelper.php`**: En reportes de ventas, sustituida la columna inexistente `'Estado'` por `'Condicion'` (`$fila['condicion_pago']`) tanto en PDF como en Excel, y sanitizadas las salidas del PDF con `htmlspecialchars()`.
+- **`app/views/presupuestoFormView.php`**: Agregada la etiqueta de apertura `<thead>` faltante en `#tablaItemsPresupuesto`.
+- **`app/views/notaEntregaVerView.php` & `app/views/presupuestoVerView.php`**: Escapados los datos dinámicos con `htmlspecialchars(..., ENT_QUOTES, 'UTF-8')`.
+
+### 5. Eliminación Lógica de Roles (Soft-Delete)
+- **`app/models/RolModel.php`**:
+  - `_ejecutarSelectAll()`: Agregado filtro `WHERE r.activo = 1` para que los roles con borrado lógico ya no se muestren en la interfaz (igual al comportamiento de usuarios, clientes, etc.).
+  - `eliminarRol(int $id)` y `_ejecutarDelete()`:
+    - Protege el rol Administrador (`id_rol = 1`).
+    - Valida que no tenga usuarios activos asignados (`SELECT COUNT(*) FROM usuarios WHERE id_rol = :id AND activo = 1`), arrojando mensaje explicativo si los tiene.
+    - Aplica borrado lógico (`UPDATE roles SET activo = 0 WHERE id_rol = :id`), manteniendo la integridad referencial y las claves foráneas en la base de datos sin borrar filas físicas.
+  - `_ejecutarCheckNombre()`: Agregado `AND activo = 1` para no generar conflicto de unicidad con roles inactivos.
+  - `buscarInactivoPorNombre()`: Permite detectar y reactivar un rol previamente desactivado en caso de volverlo a registrar.
+- **`app/controllers/usuarioController.php`**: Endpoint AJAX `eliminarRol` con verificación de permisos de usuario (`tienePermiso('usuario')`), protección contra el rol raíz 1 y captura de excepciones.
+- **`assets/js/usuario.js`**:
+  - Botón rojo con ícono de papelera (`.btn-eliminar-rol`) en cada fila de rol excepto Administrador (que muestra badge "Raíz").
+  - Función `eliminarRol()`: valida si el rol tiene usuarios activos asignados mostrando advertencia explicativa; si no tiene usuarios, solicita confirmación con modal descriptivo indicando que el rol será desactivado y no volverá a mostrarse, enviando la petición a `usuario/eliminarRol` y refrescando la tabla.
+- **`assets/js/utilidades.js`**: Guard en `confirmarConModal` para verificar `typeof callback === 'function'` antes de invocarlo.
+
+### 6. Normalización de Roles y Módulos a 24 Tablas (1FN / Relación N:M)
+- **Base de Datos**:
+  - Creada tabla maestra `modulos` (`id_modulo` PK AUTO_INCREMENT, `codigo` VARCHAR(50) UNIQUE NOT NULL, `nombre` VARCHAR(50) NOT NULL, `descripcion` VARCHAR(255) NULL) con 12 módulos.
+  - Creada tabla intermedia `rol_modulo` (`id_rol_modulo` PK AUTO_INCREMENT, `id_rol` INT(11) FK, `id_modulo` INT(11) FK, UNIQUE `uk_rol_modulo`, con `ON DELETE CASCADE ON UPDATE CASCADE`).
+  - Eliminada columna no atómica `modulos TEXT` de la tabla `roles` (cumplimiento estricto de la Primera Forma Normal - 1FN).
+  - Migrados los permisos existentes sin pérdida de información (19 asignaciones en `rol_modulo`).
+  - Actualizado `app/core/sp_perfect_color.sql` con la nueva definición de 24 tablas, sus volcados, índices y restricciones foráneas.
+- **Modelos**:
+  - `app/models/ModuloModel.php`: Creado modelo con encapsulamiento privado/público (`listarTodos`, `buscarPorId`, `buscarPorCodigo`, `obtenerIdsPorCodigos`).
+  - `app/models/RolModel.php`: Actualizado para gestionar inserciones y actualizaciones atómicas en `rol_modulo` mediante transacciones PDO con `_sincronizarModulos()`, y consultas con subconsulta `GROUP_CONCAT(m.codigo)` para máxima compatibilidad y cero fricción hacia el frontend.
+  - `app/models/UsuarioModel.php`: `buscarPorCorreo` obtiene `rol_modulos` a través de la unión relacional de `rol_modulo` y `modulos`.
+- **Sincronización Total de Diagramas (24 Tablas)**:
+  - `modelo_relacional.svg`: Incorporadas las tablas `modulos` y `rol_modulo`, ajustada la tabla `roles` a 4 columnas sin `modulos`, y trazadas las 2 relaciones foráneas `fk_rol_modulo_rol` y `fk_rol_modulo_modulo`. Paridad 100% (24 tablas y todas sus columnas auditadas contra la BD).
+  - `diagrama_mer.svg`: Incorporada la entidad `modulos` con sus 4 atributos, la relación asociativa `posee_modulo (rol_modulo)` con cardinalidades N:M, actualizados los atributos de `Roles` a 4 elipses, e incorporados los atributos de la tabla intermedia `rol_modulo` (`id_rol_modulo` PK subrayada, `id_rol (FK)` punteada, `id_modulo (FK)` punteada). Paridad total: 24 tablas de la BD con sus 24 claves primarias y atributos completos representados en el diagrama MER.
+
+### 7. Recreación del Diagrama de Clases UML (diagrama_clases.svg)
+- **Eliminación de Acoplamiento a BD**: Removido `# conexion: PDO` de los atributos de todos los modelos.
+- **Sincronización Total de Atributos y Métodos (16 Clases)**:
+  - `FrontController`: Atributos tipados (`controlador: string`, `metodo: string`, `parametros: array`, `mapeoControladores: array`, `titulosPagina: array`) y métodos de despacho.
+  - 14 Modelos: Auditados al 100% mediante introspección PHP, incorporando métodos de búsqueda AJAX (`buscarClientes`, `buscarProveedores`, etc.), filtros, getters de reportes y eliminación de métodos/atributos desactualizados (como `estado` en notas de entrega).
+  - `ConexionBD`: Patrón Singleton con 7 atributos y métodos de conexión PDO.
+- **Trazado de Arquitectura en 3 Niveles (2980 x 1380 px)**:
+  - Nivel 1: `FrontController` en la parte superior con buses ortogonales hacia los 14 modelos.
+  - Nivel 2: 14 modelos distribuidos en un único nivel horizontal simétrico y cajas con ancho expandido a 186px sin solapamientos.
+  - Nivel 3: `ConexionBD` en la parte inferior recibiendo las conexiones de acceso a base de datos desde los 14 modelos.
+
+
+

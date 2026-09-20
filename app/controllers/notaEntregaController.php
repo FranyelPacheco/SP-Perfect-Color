@@ -95,7 +95,6 @@ if ($metodo === 'index') {
     $tipoPagoId = !empty($_POST['id_tipo_pago']) ? intval($_POST['id_tipo_pago']) : null;
     $bancoId = !empty($_POST['id_banco']) ? intval($_POST['id_banco']) : null;
     $referencia = trim($_POST['referencia'] ?? '');
-    $estadoNota = 'entregado';
     $fechaVencimiento = $_POST['fecha_vencimiento'] ?? '';
     $items = json_decode($_POST['items'] ?? '[]', true);
     
@@ -157,7 +156,6 @@ if ($metodo === 'index') {
             (int)$_SESSION['id_usuario'],
             $total,
             $presupuestoId,
-            $estadoNota,
             $condicionPago,
             $detalle,
             $tipoPagoId,

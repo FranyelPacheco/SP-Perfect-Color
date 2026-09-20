@@ -20,37 +20,31 @@
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Cliente:</small>
-                <span><?php echo $nota['cliente_nombre']; ?></span>
+                <span><?php echo htmlspecialchars($nota['cliente_nombre'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Cedula:</small>
-                <span><?php echo $nota['cliente_cedula']; ?></span>
+                <span><?php echo htmlspecialchars($nota['cliente_cedula'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Vendedor:</small>
-                <span><?php echo $nota['usuario_nombre']; ?></span>
+                <span><?php echo htmlspecialchars($nota['usuario_nombre'] ?? ''); ?></span>
             </div>
             <?php if (!empty($nota['cliente_direccion'])): ?>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Direccion:</small>
-                <span><?php echo $nota['cliente_direccion']; ?></span>
+                <span><?php echo htmlspecialchars($nota['cliente_direccion']); ?></span>
             </div>
             <?php endif; ?>
             <?php if (!empty($nota['cliente_telefonos'])): ?>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Telefono:</small>
-                <span><?php echo $nota['cliente_telefonos']; ?></span>
+                <span><?php echo htmlspecialchars($nota['cliente_telefonos']); ?></span>
             </div>
             <?php endif; ?>
             <div class="col-md-4 col-6">
-                <small class="text-muted d-block">Estado:</small>
-                <span class="estado-<?php echo $nota['estado']; ?>">
-                    <?php echo ucfirst(str_replace('_', ' ', $nota['estado'])); ?>
-                </span>
-            </div>
-            <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Total:</small>
-                <span class="fw-bold fs-5">$ <?php echo number_format($nota['total'], 2, ',', '.'); ?></span>
+                <span class="fw-bold fs-5">$ <?php echo number_format((float)$nota['total'], 2, ',', '.'); ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Condicion de Pago:</small>
@@ -58,7 +52,7 @@
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Tipo de Pago:</small>
-                <span><?php echo $nota['tipo_pago_nombre'] ?? '-'; ?></span>
+                <span><?php echo htmlspecialchars($nota['tipo_pago_nombre'] ?? '-'); ?></span>
             </div>
         </div>
 

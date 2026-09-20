@@ -76,13 +76,13 @@
                 </div>
                 <?php else: ?>
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover table-dashboard mb-0">
                         <thead>
                             <tr>
                                 <th>Código</th>
                                 <th>Insumo</th>
-                                <th>Stock Actual</th>
-                                <th>Stock Mínimo</th>
+                                <th class="text-center">Stock Actual</th>
+                                <th class="text-center">Stock Mínimo</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -90,8 +90,8 @@
                             <tr>
                                 <td><?php echo htmlspecialchars($alerta['codigo']); ?></td>
                                 <td><?php echo htmlspecialchars($alerta['nombre']); ?></td>
-                                <td class="text-danger fw-bold"><?php echo number_format($alerta['stock_actual'], 2); ?></td>
-                                <td><?php echo number_format($alerta['stock_minimo'], 2); ?></td>
+                                <td class="text-center text-danger fw-bold"><?php echo number_format($alerta['stock_actual'], 2); ?></td>
+                                <td class="text-center"><?php echo number_format($alerta['stock_minimo'], 2); ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -115,7 +115,7 @@
                 </div>
                 <?php else: ?>
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover table-dashboard mb-0">
                         <thead>
                             <tr>
                                 <th>#</th>

@@ -46,10 +46,18 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Usuario inactivo. Contacte al administrador');
     }
 
+    if (isset($usuario['rol_activo']) && (int)$usuario['rol_activo'] === 0) {
+        respuestaJson('error', 'Su rol asignado se encuentra deshabilitado. Contacte al administrador');
+    }
+
+    session_regenerate_id(true);
+
     $_SESSION['id_usuario'] = $usuario['id_usuario'];
     $_SESSION['usuario_nombre'] = $usuario['nombre'];
     $_SESSION['usuario_correo'] = $usuario['correo'];
-    $_SESSION['usuario_rol'] = $usuario['id_rol'];
+    $_SESSION['usuario_rol'] = (int)$usuario['id_rol'];
+    $_SESSION['usuario_rol_nombre'] = $usuario['rol_nombre'] ?? '';
+    $_SESSION['usuario_modulos'] = $usuario['rol_modulos'] ?? '';
 
     respuestaJson('exito', 'Inicio de sesion exitoso', [
         'redirect' => '/SP%20Perfect%20Color/dashboard'

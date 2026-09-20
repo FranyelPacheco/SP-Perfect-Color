@@ -6,6 +6,7 @@ use App\Models\ClienteModel;
 use App\Models\TipoPagoModel;
 use function App\Helpers\respuestaJson;
 use function App\Helpers\verificarAutenticacion;
+use function App\Helpers\verificarPermiso;
 use function App\Helpers\generarPDF;
 use function App\Helpers\generarExcel;
 use function App\Helpers\validarFecha;
@@ -15,7 +16,7 @@ $reporteModel = new ReporteModel();
 // FUNCIÓN: index
 // OBJETIVO: Renderiza la página principal de reportes con selector de tipo, rango de fechas y filtros
 if ($metodo === 'index') {
-    verificarAutenticacion();
+    verificarPermiso('reporte');
 
     $clienteModel = new ClienteModel();
     $tipoPagoModel = new TipoPagoModel();
@@ -28,7 +29,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: ventasAjax
 // OBJETIVO: Devuelve JSON con las notas de entrega (ventas) filtradas por rango de fechas y filtros adicionales
 } elseif ($metodo === 'ventasAjax') {
-    verificarAutenticacion();
+    verificarPermiso('reporte');
 
     $desde = $_GET['desde'] ?? date('Y-m-01');
     $hasta = $_GET['hasta'] ?? date('Y-m-d');
@@ -54,7 +55,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: carteraCxcAjax
 // OBJETIVO: Devuelve JSON con las cuentas por cobrar filtradas por rango de fechas y filtros adicionales
 } elseif ($metodo === 'carteraCxcAjax') {
-    verificarAutenticacion();
+    verificarPermiso('reporte');
 
     $desde = $_GET['desde'] ?? date('Y-m-01');
     $hasta = $_GET['hasta'] ?? date('Y-m-d');
@@ -80,7 +81,7 @@ if ($metodo === 'index') {
 // OBJETIVO: Genera y descarga un archivo PDF del reporte seleccionado (ventas o carteraCxc)
 // NOTA: Usa window.location.href desde el cliente porque la respuesta es binaria; Dompdf renderiza en horizontal
 } elseif ($metodo === 'exportarPdfAjax') {
-    verificarAutenticacion();
+    verificarPermiso('reporte');
     $tipo = $_GET['tipo'] ?? '';
     $desde = $_GET['desde'] ?? date('Y-m-01');
     $hasta = $_GET['hasta'] ?? date('Y-m-d');
@@ -104,7 +105,7 @@ if ($metodo === 'index') {
 // OBJETIVO: Genera y descarga un archivo Excel (XLSX) del reporte seleccionado (ventas o carteraCxc)
 // NOTA: Usa OpenSpout Writer; la descarga se maneja desde el servidor con headers adecuados
 } elseif ($metodo === 'exportarExcelAjax') {
-    verificarAutenticacion();
+    verificarPermiso('reporte');
     $tipo = $_GET['tipo'] ?? '';
     $desde = $_GET['desde'] ?? date('Y-m-01');
     $hasta = $_GET['hasta'] ?? date('Y-m-d');

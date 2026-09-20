@@ -20,32 +20,32 @@
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Cliente:</small>
-                <span><?php echo $presupuesto['cliente_nombre']; ?></span>
+                <span><?php echo htmlspecialchars($presupuesto['cliente_nombre'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Cedula:</small>
-                <span><?php echo $presupuesto['cliente_cedula']; ?></span>
+                <span><?php echo htmlspecialchars($presupuesto['cliente_cedula'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Vendedor:</small>
-                <span><?php echo $presupuesto['usuario_nombre']; ?></span>
+                <span><?php echo htmlspecialchars($presupuesto['usuario_nombre'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Estado:</small>
-                <span class="estado-<?php echo $presupuesto['estado']; ?>">
-                    <?php echo ucfirst($presupuesto['estado']); ?>
+                <span class="estado-<?php echo htmlspecialchars($presupuesto['estado'] ?? ''); ?>">
+                    <?php echo ucfirst($presupuesto['estado'] ?? ''); ?>
                 </span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Total:</small>
-                <span class="fw-bold fs-5">$ <?php echo number_format($presupuesto['total'], 2, ',', '.'); ?></span>
+                <span class="fw-bold fs-5">$ <?php echo number_format((float)$presupuesto['total'], 2, ',', '.'); ?></span>
             </div>
         </div>
 
         <?php if (!empty($presupuesto['observaciones'])): ?>
         <div class="mt-3 pt-3 border-top">
             <small class="text-muted d-block mb-1">Observaciones:</small>
-            <p class="mb-0"><?php echo $presupuesto['observaciones']; ?></p>
+            <p class="mb-0"><?php echo htmlspecialchars($presupuesto['observaciones']); ?></p>
         </div>
         <?php endif; ?>
     </div>

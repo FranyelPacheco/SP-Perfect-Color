@@ -14,6 +14,7 @@ class PresupuestoModel extends ModeloBase
     private float $total;
     private string $observaciones;
     private string $estado;
+    private int $idEstadoPresupuesto;
     private array $detalle;
     private string $termino;
 
@@ -68,13 +69,23 @@ class PresupuestoModel extends ModeloBase
 
     // FUNCIÓN: cambiarEstado
     // OBJETIVO: Cambia el estado de un presupuesto (pendiente, aprobado, rechazado, convertido)
-    public function cambiarEstado(int $id, string $estado): bool
+    public function cambiarEstado(int $id, string|int $estado): bool
     {
         if ($id <= 0) {
             throw new PDOException('ID no válido');
         }
         $this->id = $id;
-        $this->estado = $estado;
+        $map = [
+            'pendiente' => 1,
+            'aprobado' => 2,
+            'rechazado' => 3,
+            'convertido' => 4,
+        ];
+        if (is_numeric($estado)) {
+            $this->idEstadoPresupuesto = (int)$estado;
+        } else {
+            $this->idEstadoPresupuesto = $map[strtolower(trim((string)$estado))] ?? 1;
+        }
         return $this->_ejecutarUpdateEstado();
     }
 
@@ -102,13 +113,14 @@ class PresupuestoModel extends ModeloBase
     // OBJETIVO: Ejecuta la consulta que lista todos los presupuestos activos
     private function _ejecutarSelectAll(): array
     {
-        $consulta = "SELECT p.*, 
+        $consulta = "SELECT p.*, ep.nombre as estado,
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
                             u.nombre as usuario_nombre
                      FROM presupuestos p 
                      INNER JOIN clientes c ON p.id_cliente = c.id_cliente
                      INNER JOIN usuarios u ON p.id_usuario = u.id_usuario
+                     INNER JOIN estado_presupuesto ep ON p.id_estado_presupuesto = ep.id_estado_presupuesto
                      WHERE p.activo = 1
                      ORDER BY p.fecha DESC, p.id_presupuesto DESC";
         $stmt = $this->conexion->query($consulta);
@@ -119,13 +131,14 @@ class PresupuestoModel extends ModeloBase
     // OBJETIVO: Ejecuta la búsqueda de un presupuesto por ID
     private function _ejecutarSelectById(): array|false
     {
-        $consulta = "SELECT p.*, 
+        $consulta = "SELECT p.*, ep.nombre as estado,
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
                             u.nombre as usuario_nombre
                      FROM presupuestos p 
                      INNER JOIN clientes c ON p.id_cliente = c.id_cliente
                      INNER JOIN usuarios u ON p.id_usuario = u.id_usuario
+                     INNER JOIN estado_presupuesto ep ON p.id_estado_presupuesto = ep.id_estado_presupuesto
                      WHERE p.id_presupuesto = :id AND p.activo = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
@@ -141,8 +154,8 @@ class PresupuestoModel extends ModeloBase
         try {
             $this->conexion->beginTransaction();
 
-            $consulta = "INSERT INTO presupuestos (id_cliente, id_usuario, fecha, total, estado, observaciones) 
-                         VALUES (:id_cliente, :id_usuario, NOW(), :total, 'pendiente', :observaciones)";
+            $consulta = "INSERT INTO presupuestos (id_cliente, id_usuario, fecha, total, id_estado_presupuesto, observaciones) 
+                         VALUES (:id_cliente, :id_usuario, NOW(), :total, 1, :observaciones)";
             $stmt = $this->conexion->prepare($consulta);
             $stmt->bindParam(':id_cliente', $this->idCliente, PDO::PARAM_INT);
             $stmt->bindParam(':id_usuario', $this->idUsuario, PDO::PARAM_INT);
@@ -193,9 +206,9 @@ class PresupuestoModel extends ModeloBase
     // OBJETIVO: Ejecuta el UPDATE del estado del presupuesto
     private function _ejecutarUpdateEstado(): bool
     {
-        $consulta = "UPDATE presupuestos SET estado = :estado WHERE id_presupuesto = :id";
+        $consulta = "UPDATE presupuestos SET id_estado_presupuesto = :id_estado_presupuesto WHERE id_presupuesto = :id";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':estado', $this->estado, PDO::PARAM_STR);
+        $stmt->bindParam(':id_estado_presupuesto', $this->idEstadoPresupuesto, PDO::PARAM_INT);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         return $stmt->execute();
     }
@@ -226,8 +239,13 @@ class PresupuestoModel extends ModeloBase
         }
 
         if (!empty($this->estado)) {
-            $condiciones[] = "p.estado = :estado";
-            $parametros[':estado'] = $this->estado;
+            if (is_numeric($this->estado)) {
+                $condiciones[] = "p.id_estado_presupuesto = :estado";
+                $parametros[':estado'] = (int)$this->estado;
+            } else {
+                $condiciones[] = "ep.nombre = :estado";
+                $parametros[':estado'] = $this->estado;
+            }
         }
 
         $condiciones[] = "p.activo = 1";
@@ -237,20 +255,21 @@ class PresupuestoModel extends ModeloBase
             $where = 'WHERE ' . implode(' AND ', $condiciones);
         }
 
-        $consulta = "SELECT p.*, 
+        $consulta = "SELECT p.*, ep.nombre as estado,
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
                             u.nombre as usuario_nombre
                      FROM presupuestos p 
                      INNER JOIN clientes c ON p.id_cliente = c.id_cliente
                      INNER JOIN usuarios u ON p.id_usuario = u.id_usuario
+                     INNER JOIN estado_presupuesto ep ON p.id_estado_presupuesto = ep.id_estado_presupuesto
                      {$where}
                      ORDER BY p.fecha DESC, p.id_presupuesto DESC";
 
         $stmt = $this->conexion->prepare($consulta);
 
         foreach ($parametros as $clave => $valor) {
-            $stmt->bindValue($clave, $valor, PDO::PARAM_STR);
+            $stmt->bindValue($clave, $valor, is_int($valor) ? PDO::PARAM_INT : PDO::PARAM_STR);
         }
 
         $stmt->execute();

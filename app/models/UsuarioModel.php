@@ -36,7 +36,15 @@ class UsuarioModel extends ModeloBase
     // OBJETIVO: Ejecuta la consulta de búsqueda por correo
     private function _ejecutarSelectByCorreo(): array|false
     {
-        $consulta = "SELECT * FROM usuarios WHERE correo = :correo AND activo = 1 LIMIT 1";
+        $consulta = "SELECT u.*, r.nombre as rol_nombre, r.activo as rol_activo,
+                            (SELECT GROUP_CONCAT(m.codigo SEPARATOR ',') 
+                             FROM rol_modulo rm 
+                             JOIN modulos m ON rm.id_modulo = m.id_modulo 
+                             WHERE rm.id_rol = r.id_rol) as rol_modulos 
+                     FROM usuarios u 
+                     INNER JOIN roles r ON u.id_rol = r.id_rol 
+                     WHERE u.correo = :correo AND u.activo = 1 
+                     LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
         $stmt->execute();
@@ -83,17 +91,17 @@ class UsuarioModel extends ModeloBase
     }
 
     // FUNCIÓN: listarRoles
-    // OBJETIVO: Retorna todos los roles disponibles en el sistema
+    // OBJETIVO: Retorna los roles activos disponibles para asignación a usuarios
     public function listarRoles(): array
     {
         return $this->_ejecutarSelectRoles();
     }
 
     // FUNCIÓN: _ejecutarSelectRoles
-    // OBJETIVO: Ejecuta la consulta de roles ordenados por ID
+    // OBJETIVO: Ejecuta la consulta de roles activos ordenados por ID
     private function _ejecutarSelectRoles(): array
     {
-        $consulta = "SELECT * FROM roles ORDER BY id_rol ASC";
+        $consulta = "SELECT * FROM roles WHERE activo = 1 ORDER BY id_rol ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
     }

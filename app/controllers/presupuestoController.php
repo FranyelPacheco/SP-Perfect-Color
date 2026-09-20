@@ -9,6 +9,7 @@ use App\Models\ClienteModel;
 use App\Models\InventarioModel;
 use function App\Helpers\respuestaJson;
 use function App\Helpers\verificarAutenticacion;
+use function App\Helpers\verificarPermiso;
 use function App\Helpers\verificarRolVendedor;
 use function App\Helpers\validarRequerido;
 use \PDOException;
@@ -20,7 +21,7 @@ $inventarioModel = new InventarioModel();
 // FUNCIÓN: index
 // OBJETIVO: Renderiza la vista del listado de presupuestos
 if ($metodo === 'index') {
-    verificarAutenticacion();
+    verificarPermiso('presupuesto');
     
     $contenidoVista = __DIR__ . '/../views/presupuestoListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
@@ -28,7 +29,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: listarAjax
 // OBJETIVO: Obtiene el listado completo de presupuestos en JSON
 } elseif ($metodo === 'listarAjax') {
-    verificarAutenticacion();
+    verificarPermiso('presupuesto');
     
     $presupuestos = $presupuestoModel->listarTodos();
     
@@ -39,7 +40,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: buscarAjax
 // OBJETIVO: Busca presupuestos por cliente o estado
 } elseif ($metodo === 'buscarAjax') {
-    verificarAutenticacion();
+    verificarPermiso('presupuesto');
     
     $termino = trim($_GET['termino'] ?? '');
     $estado = trim($_GET['estado'] ?? '');
@@ -53,17 +54,18 @@ if ($metodo === 'index') {
 // FUNCIÓN: nuevo
 // OBJETIVO: Renderiza el formulario para crear un nuevo presupuesto
 } elseif ($metodo === 'nuevo') {
+    verificarPermiso('presupuesto');
     verificarRolVendedor();
     
     $pageTitle = 'SP Perfect Color - Nuevo Presupuesto';
-    $pageDescription = 'Crear un nuevo presupuesto o cotizaciÃ³n - SP Perfect Color';
+    $pageDescription = 'Crear un nuevo presupuesto o cotización - SP Perfect Color';
     $contenidoVista = __DIR__ . '/../views/presupuestoFormView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
 // FUNCIÓN: obtenerInsumosAjax
 // OBJETIVO: Obtiene los insumos disponibles para el formulario de presupuesto
 } elseif ($metodo === 'obtenerInsumosAjax') {
-    verificarAutenticacion();
+    verificarPermiso('presupuesto');
     
     $insumos = $inventarioModel->listarTodos();
     
@@ -74,7 +76,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: obtenerClientesAjax
 // OBJETIVO: Obtiene los clientes disponibles para el formulario de presupuesto
 } elseif ($metodo === 'obtenerClientesAjax') {
-    verificarAutenticacion();
+    verificarPermiso('presupuesto');
     
     $clientes = $clienteModel->listarTodos();
     
@@ -141,7 +143,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: ver
 // OBJETIVO: Renderiza la vista de detalle de un presupuesto con sus items
 } elseif ($metodo === 'ver') {
-    verificarAutenticacion();
+    verificarPermiso('presupuesto');
     
     $id = intval($_GET['id'] ?? 0);
     

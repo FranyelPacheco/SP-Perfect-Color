@@ -44,13 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     },
                     {
-                        data: 'estado',
-                        render: function(data) {
-                            if (!data) return '';
-                            return '<span class="estado-entregado">Entregado</span>';
-                        }
-                    },
-                    {
                         data: null,
                         render: function(data, type, row) {
                             if (!row) return '';

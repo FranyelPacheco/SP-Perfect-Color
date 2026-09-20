@@ -10,20 +10,38 @@ class frontController
     private $metodo;
     private $parametros;
 
+    private $mapeoControladores = [
+        'dashboard'    => 'dashboard',
+        'cliente'      => 'cliente',
+        'proveedor'    => 'proveedor',
+        'inventario'   => 'inventario',
+        'presupuesto'  => 'presupuesto',
+        'notaentrega'  => 'notaEntrega',
+        'cuentacobrar' => 'cuentaCobrar',
+        'cuentapagar'  => 'cuentaPagar',
+        'usuario'      => 'usuario',
+        'login'        => 'login',
+        'banco'        => 'banco',
+        'tipopago'     => 'tipoPago',
+        'reporte'      => 'reporte',
+        'configpago'   => 'configPago',
+    ];
+
     private $titulosPagina = [
         'dashboard'    => ['Panel de Control', 'Resumen general del sistema de gestión administrativa en SP Perfect Color'],
         'cliente'      => ['Clientes', 'Gestión de clientes - SP Perfect Color'],
         'proveedor'    => ['Proveedores', 'Gestión de proveedores - SP Perfect Color'],
         'inventario'   => ['Inventario', 'Control de inventario y existencias - SP Perfect Color'],
         'presupuesto'  => ['Presupuestos', 'Gestión de presupuestos y cotizaciones - SP Perfect Color'],
-        'notaEntrega'  => ['Notas de Entrega', 'Gestión de notas de entrega - SP Perfect Color'],
-        'cuentaCobrar' => ['Cuentas por Cobrar', 'Gestión de cuentas por cobrar - SP Perfect Color'],
-        'cuentaPagar'  => ['Cuentas por Pagar', 'Gestión de cuentas por pagar - SP Perfect Color'],
+        'notaentrega'  => ['Notas de Entrega', 'Gestión de notas de entrega - SP Perfect Color'],
+        'cuentacobrar' => ['Cuentas por Cobrar', 'Gestión de cuentas por cobrar - SP Perfect Color'],
+        'cuentapagar'  => ['Cuentas por Pagar', 'Gestión de cuentas por pagar - SP Perfect Color'],
         'usuario'      => ['Usuarios', 'Gestión de usuarios - SP Perfect Color'],
         'login'        => ['Iniciar Sesión', 'Inicio de sesión - SP Perfect Color'],
         'banco'        => ['Bancos', 'Gestión de bancos - SP Perfect Color'],
-        'tipoPago'     => ['Tipos de Pago', 'Gestión de tipos de pago - SP Perfect Color'],
+        'tipopago'     => ['Tipos de Pago', 'Gestión de tipos de pago - SP Perfect Color'],
         'reporte'      => ['Reportes', 'Reportes de ventas, ingresos y egresos - SP Perfect Color'],
+        'configpago'   => ['Config. de Pago', 'Configuración de bancos y tipos de pago - SP Perfect Color'],
     ];
 
     public function __construct()
@@ -33,7 +51,11 @@ class frontController
         $partes = explode('/', $url);
 
         $controladorRaw = !empty($partes[0]) ? strtolower($partes[0]) : 'login';
-        $this->controlador = preg_match('/^[a-z]+$/', $controladorRaw) ? $controladorRaw : 'login';
+        if (isset($this->mapeoControladores[$controladorRaw])) {
+            $this->controlador = $this->mapeoControladores[$controladorRaw];
+        } else {
+            $this->controlador = preg_match('/^[a-z]+$/', $controladorRaw) ? $controladorRaw : 'login';
+        }
         $this->metodo = !empty($partes[1]) ? $partes[1] : 'index';
         $this->parametros = array_slice($partes, 2);
 
@@ -50,9 +72,10 @@ class frontController
         $tituloDefecto = 'SP Perfect Color - Sistema de Gestión';
         $descripcionDefecto = 'Sistema de gestión administrativa para SP Perfect Color';
 
-        if (isset($this->titulosPagina[$this->controlador])) {
-            $pageTitle = 'SP Perfect Color - ' . $this->titulosPagina[$this->controlador][0];
-            $pageDescription = $this->titulosPagina[$this->controlador][1];
+        $claveTitulo = strtolower($this->controlador);
+        if (isset($this->titulosPagina[$claveTitulo])) {
+            $pageTitle = 'SP Perfect Color - ' . $this->titulosPagina[$claveTitulo][0];
+            $pageDescription = $this->titulosPagina[$claveTitulo][1];
         } else {
             $pageTitle = $tituloDefecto;
             $pageDescription = $descripcionDefecto;
