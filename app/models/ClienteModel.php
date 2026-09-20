@@ -166,8 +166,9 @@ class ClienteModel extends ModeloBase
 
     private function _ejecutarSelectAll(): array
     {
-        $consulta = "SELECT c.*, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
+        $consulta = "SELECT c.*, rc.fecha_registro, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
                      FROM clientes c
+                     LEFT JOIN registro_cliente rc ON rc.id_cliente = c.id_cliente
                      LEFT JOIN telefono_cliente tc ON tc.id_cliente = c.id_cliente
                      WHERE c.activo = 1
                      GROUP BY c.id_cliente
@@ -178,8 +179,9 @@ class ClienteModel extends ModeloBase
 
     private function _ejecutarSelectById(): array|false
     {
-        $consulta = "SELECT c.*, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
+        $consulta = "SELECT c.*, rc.fecha_registro, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
                      FROM clientes c
+                     LEFT JOIN registro_cliente rc ON rc.id_cliente = c.id_cliente
                      LEFT JOIN telefono_cliente tc ON tc.id_cliente = c.id_cliente
                      WHERE c.id_cliente = :id AND c.activo = 1
                      GROUP BY c.id_cliente LIMIT 1";
@@ -199,7 +201,13 @@ class ClienteModel extends ModeloBase
         $stmt->bindParam(':apellidos', $this->apellidos, PDO::PARAM_STR);
         $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
         $stmt->bindParam(':direccion', $this->direccion, PDO::PARAM_STR);
-        if ($stmt->execute()) return (int)$this->conexion->lastInsertId();
+        if ($stmt->execute()) {
+            $idCliente = (int)$this->conexion->lastInsertId();
+            $stmtReg = $this->conexion->prepare("INSERT INTO registro_cliente (id_cliente, fecha_registro) VALUES (:id_cliente, NOW())");
+            $stmtReg->bindParam(':id_cliente', $idCliente, PDO::PARAM_INT);
+            $stmtReg->execute();
+            return $idCliente;
+        }
         return false;
     }
 
@@ -216,7 +224,18 @@ class ClienteModel extends ModeloBase
         $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
         $stmt->bindParam(':direccion', $this->direccion, PDO::PARAM_STR);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
-        return $stmt->execute();
+        $ok = $stmt->execute();
+        if ($ok) {
+            $stmtCheck = $this->conexion->prepare("SELECT COUNT(*) as c FROM registro_cliente WHERE id_cliente = :id");
+            $stmtCheck->bindParam(':id', $this->id, PDO::PARAM_INT);
+            $stmtCheck->execute();
+            if ((int)$stmtCheck->fetch()['c'] === 0) {
+                $stmtReg = $this->conexion->prepare("INSERT INTO registro_cliente (id_cliente, fecha_registro) VALUES (:id, NOW())");
+                $stmtReg->bindParam(':id', $this->id, PDO::PARAM_INT);
+                $stmtReg->execute();
+            }
+        }
+        return $ok;
     }
 
     private function _ejecutarDelete(): bool
@@ -273,8 +292,9 @@ class ClienteModel extends ModeloBase
     private function _ejecutarSearch(): array
     {
         $terminoLike = '%' . $this->termino . '%';
-        $consulta = "SELECT c.*, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
+        $consulta = "SELECT c.*, rc.fecha_registro, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
                      FROM clientes c
+                     LEFT JOIN registro_cliente rc ON rc.id_cliente = c.id_cliente
                      LEFT JOIN telefono_cliente tc ON tc.id_cliente = c.id_cliente
                      WHERE c.activo = 1 AND (c.nombres LIKE :termino1
                          OR c.apellidos LIKE :termino2

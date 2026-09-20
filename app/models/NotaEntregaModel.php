@@ -13,7 +13,6 @@ class NotaEntregaModel extends ModeloBase
     private int $idUsuario;
     private float $total;
     private int $idPresupuesto;
-    private string $estado;
     private string $condicionPago;
     private ?int $idTipoPago;
     private ?int $idBanco;
@@ -63,13 +62,12 @@ class NotaEntregaModel extends ModeloBase
     // FUNCIÓN: crearNotaEntrega
     // OBJETIVO: Crea una nota de entrega a partir de un presupuesto, descuenta stock y genera cuenta/pago
     // NOTA: Usa transacción; si es crédito crea cuenta por cobrar, si es contado registra pago
-    public function crearNotaEntrega(int $idCliente, int $idUsuario, float $total, int $idPresupuesto, string $estado, string $condicionPago, array $detalle, ?int $idTipoPago = null, ?int $idBanco = null, ?string $referencia = null, ?string $fechaVencimiento = null): int
+    public function crearNotaEntrega(int $idCliente, int $idUsuario, float $total, int $idPresupuesto, string $condicionPago, array $detalle, ?int $idTipoPago = null, ?int $idBanco = null, ?string $referencia = null, ?string $fechaVencimiento = null): int
     {
         $this->idCliente = $idCliente;
         $this->idUsuario = $idUsuario;
         $this->total = $total;
         $this->idPresupuesto = $idPresupuesto;
-        $this->estado = $estado;
         $this->condicionPago = $condicionPago;
         $this->detalle = $detalle;
         $this->idTipoPago = $idTipoPago;
@@ -77,18 +75,6 @@ class NotaEntregaModel extends ModeloBase
         $this->referencia = $referencia;
         $this->fechaVencimiento = $fechaVencimiento;
         return $this->_ejecutarCrearNota();
-    }
-
-    // FUNCIÓN: cambiarEstado
-    // OBJETIVO: Cambia el estado de una nota de entrega
-    public function cambiarEstado(int $id, string $estado): bool
-    {
-        if ($id <= 0) {
-            throw new PDOException('ID no válido');
-        }
-        $this->id = $id;
-        $this->estado = $estado;
-        return $this->_ejecutarUpdateEstado();
     }
 
     // FUNCIÓN: actualizarDetalleNota
@@ -181,16 +167,14 @@ class NotaEntregaModel extends ModeloBase
 
             $this->_validarStock();
 
-            $estadoNota = 'entregado';
             $condicionPagoVal = !empty($this->condicionPago) ? $this->condicionPago : 'contado';
 
-            $consulta = "INSERT INTO notas_entrega (id_cliente, id_usuario, fecha, total, estado, condicion_pago, id_tipo_pago, id_presupuesto) 
-                          VALUES (:id_cliente, :id_usuario, NOW(), :total, :estado, :condicion_pago, :id_tipo_pago, :id_presupuesto)";
+            $consulta = "INSERT INTO notas_entrega (id_cliente, id_usuario, fecha, total, condicion_pago, id_tipo_pago, id_presupuesto) 
+                          VALUES (:id_cliente, :id_usuario, NOW(), :total, :condicion_pago, :id_tipo_pago, :id_presupuesto)";
             $stmt = $this->conexion->prepare($consulta);
             $stmt->bindValue(':id_cliente', $this->idCliente, PDO::PARAM_INT);
             $stmt->bindValue(':id_usuario', $this->idUsuario, PDO::PARAM_INT);
             $stmt->bindValue(':total', $this->total);
-            $stmt->bindValue(':estado', $estadoNota, PDO::PARAM_STR);
             $stmt->bindValue(':condicion_pago', $condicionPagoVal, PDO::PARAM_STR);
             $stmt->bindValue(':id_tipo_pago', $this->idTipoPago, empty($this->idTipoPago) ? PDO::PARAM_NULL : PDO::PARAM_INT);
             $stmt->bindValue(':id_presupuesto', $this->idPresupuesto, PDO::PARAM_INT);
@@ -217,17 +201,6 @@ class NotaEntregaModel extends ModeloBase
             $this->conexion->rollback();
             throw $e;
         }
-    }
-
-    // FUNCIÓN: _ejecutarUpdateEstado
-    // OBJETIVO: Ejecuta el UPDATE del estado de la nota de entrega
-    private function _ejecutarUpdateEstado(): bool
-    {
-        $consulta = "UPDATE notas_entrega SET estado = :estado WHERE id_nota_entrega = :id AND activo = 1";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':estado', $this->estado, PDO::PARAM_STR);
-        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
-        return $stmt->execute();
     }
 
     // FUNCIÓN: _ejecutarActualizarDetalle
@@ -355,6 +328,37 @@ class NotaEntregaModel extends ModeloBase
             $stmtTotal->bindValue(':id', $this->id, PDO::PARAM_INT);
             $stmtTotal->execute();
 
+            // Sincronizar cuenta por cobrar si existe
+            $consultaCxc = "SELECT id_cuenta_cobrar, monto_total, saldo_pendiente FROM cuentas_cobrar WHERE id_nota_entrega = :id AND activo = 1";
+            $stmtCxc = $this->conexion->prepare($consultaCxc);
+            $stmtCxc->bindValue(':id', $this->id, PDO::PARAM_INT);
+            $stmtCxc->execute();
+            $cxc = $stmtCxc->fetch();
+
+            if ($cxc) {
+                $totalViejo = (float)$cxc['monto_total'];
+                $saldoViejo = (float)$cxc['saldo_pendiente'];
+                $diferencia = (float)$total - $totalViejo;
+                $nuevoSaldo = round($saldoViejo + $diferencia, 2);
+
+                if ($nuevoSaldo <= 0.001) {
+                    $nuevoSaldo = 0;
+                    $nuevoEstado = 'pagado';
+                } else {
+                    $nuevoEstado = 'pendiente';
+                }
+
+                $consultaUpdCxc = "UPDATE cuentas_cobrar 
+                                   SET monto_total = :monto_total, saldo_pendiente = :saldo_pendiente, estado = :estado 
+                                   WHERE id_cuenta_cobrar = :id_cxc";
+                $stmtUpdCxc = $this->conexion->prepare($consultaUpdCxc);
+                $stmtUpdCxc->bindValue(':monto_total', $total);
+                $stmtUpdCxc->bindValue(':saldo_pendiente', $nuevoSaldo);
+                $stmtUpdCxc->bindValue(':estado', $nuevoEstado);
+                $stmtUpdCxc->bindValue(':id_cxc', $cxc['id_cuenta_cobrar'], PDO::PARAM_INT);
+                $stmtUpdCxc->execute();
+            }
+
             $this->conexion->commit();
             return true;
         } catch (PDOException $e) {
@@ -441,7 +445,7 @@ class NotaEntregaModel extends ModeloBase
     // OBJETIVO: Marca el presupuesto como 'convertido' al generar la nota de entrega
     private function _cambiarEstadoPresupuesto(): void
     {
-        $consulta = "UPDATE presupuestos SET estado = 'convertido' WHERE id_presupuesto = :id";
+        $consulta = "UPDATE presupuestos SET id_estado_presupuesto = 4 WHERE id_presupuesto = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindValue(':id', $this->idPresupuesto, PDO::PARAM_INT);
         $stmt->execute();

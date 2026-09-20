@@ -56,17 +56,16 @@ CREATE TABLE `clientes` (
   `nombres` varchar(100) NOT NULL,
   `apellidos` varchar(100) NOT NULL,
   `correo` varchar(100) DEFAULT NULL,
-  `direccion` text DEFAULT NULL,
-  `fecha_registro` datetime NOT NULL DEFAULT current_timestamp()
+  `direccion` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 
 --
 -- Volcado de datos para la tabla `clientes`
 --
 
-INSERT INTO `clientes` (`id_cliente`, `activo`, `cedula`, `nombres`, `apellidos`, `correo`, `direccion`, `fecha_registro`) VALUES
-(6, 1, '28679228', 'Franyel David', 'Pacheco', 'pachecos@ejemplo.com', 'Av. Vargas', '2026-05-30 21:44:06'),
-(13, 1, '29679229', 'Pepe', 'Aguilar', 'gvuyv76@gmail.com', 'Aqui vivo', '2026-06-16 21:43:22');
+INSERT INTO `clientes` (`id_cliente`, `activo`, `cedula`, `nombres`, `apellidos`, `correo`, `direccion`) VALUES
+(6, 1, '28679228', 'Franyel David', 'Pacheco', 'pachecos@ejemplo.com', 'Av. Vargas'),
+(13, 1, '29679229', 'Pepe', 'Aguilar', 'gvuyv76@gmail.com', 'Aqui vivo');
 
 -- --------------------------------------------------------
 
@@ -82,7 +81,7 @@ CREATE TABLE `cuentas_cobrar` (
   `monto_total` decimal(10,2) NOT NULL,
   `saldo_pendiente` decimal(10,2) NOT NULL,
   `fecha_vencimiento` datetime DEFAULT NULL,
-  `estado` enum('pendiente','pagado','moroso') NOT NULL DEFAULT 'pendiente',
+  `estado` enum('pendiente','pagado') NOT NULL DEFAULT 'pendiente',
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 
@@ -121,6 +120,27 @@ INSERT INTO `cuentas_pagar` (`id_cuenta_pagar`, `activo`, `id_proveedor`, `monto
 (2, 1, 4, 10.00, 0.00, '2026-06-18 00:00:00', 'pagado', '2026-06-16 20:54:11'),
 (3, 1, 4, 15.00, 0.00, '2026-06-30 00:00:00', 'pagado', '2026-06-16 20:54:39'),
 (4, 1, 5, 44214.00, 0.00, '2026-06-30 00:00:00', 'pagado', '2026-06-16 23:10:30');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `estado_presupuesto`
+--
+
+CREATE TABLE `estado_presupuesto` (
+  `id_estado_presupuesto` int(11) NOT NULL,
+  `nombre` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+
+--
+-- Volcado de datos para la tabla `estado_presupuesto`
+--
+
+INSERT INTO `estado_presupuesto` (`id_estado_presupuesto`, `nombre`) VALUES
+(1, 'pendiente'),
+(2, 'aprobado'),
+(3, 'rechazado'),
+(4, 'convertido');
 
 -- --------------------------------------------------------
 
@@ -176,6 +196,37 @@ INSERT INTO `insumo_proveedor` (`id_insumo_proveedor`, `id_insumo`, `id_proveedo
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `modulos`
+--
+
+CREATE TABLE `modulos` (
+  `id_modulo` int(11) NOT NULL,
+  `codigo` varchar(50) NOT NULL,
+  `nombre` varchar(50) NOT NULL,
+  `descripcion` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+
+--
+-- Volcado de datos para la tabla `modulos`
+--
+
+INSERT INTO `modulos` (`id_modulo`, `codigo`, `nombre`, `descripcion`) VALUES
+(1, 'dashboard', 'Dashboard', 'Panel principal y estadísticas'),
+(2, 'cliente', 'Clientes', 'Gestión de clientes y contactos'),
+(3, 'proveedor', 'Proveedores', 'Gestión de proveedores y rubros'),
+(4, 'inventario', 'Inventario', 'Catálogo de insumos y stock'),
+(5, 'presupuesto', 'Presupuestos', 'Cotizaciones y presupuestos'),
+(6, 'notaEntrega', 'Notas de Entrega', 'Ventas y entregas de productos'),
+(7, 'cuentaCobrar', 'Cuentas por Cobrar', 'Cobranzas y pagos de clientes'),
+(8, 'cuentaPagar', 'Cuentas por Pagar', 'Pagos a proveedores'),
+(9, 'banco', 'Bancos', 'Catálogo de entidades bancarias'),
+(10, 'tipoPago', 'Tipos de Pago', 'Formas y métodos de pago'),
+(11, 'reporte', 'Reportes', 'Reportes y exportaciones PDF/Excel'),
+(12, 'usuario', 'Usuarios y Roles', 'Administración de usuarios, roles y permisos');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `notas_entrega`
 --
 
@@ -187,7 +238,6 @@ CREATE TABLE `notas_entrega` (
   `id_presupuesto` int(11) NOT NULL,
   `fecha` datetime NOT NULL,
   `total` decimal(10,2) NOT NULL DEFAULT 0.00,
-  `estado` enum('entregado') NOT NULL DEFAULT 'entregado',
   `condicion_pago` enum('contado','credito') NOT NULL DEFAULT 'contado',
   `id_tipo_pago` int(11) DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
@@ -197,16 +247,16 @@ CREATE TABLE `notas_entrega` (
 -- Volcado de datos para la tabla `notas_entrega`
 --
 
-INSERT INTO `notas_entrega` (`id_nota_entrega`, `activo`, `id_cliente`, `id_usuario`, `id_presupuesto`, `fecha`, `total`, `estado`, `condicion_pago`, `id_tipo_pago`, `created_at`) VALUES
-(1, 1, 6, 2, 1, '2026-06-16 20:50:23', 45.00, 'entregado', 'contado', NULL, '2026-06-16 20:50:23'),
-(2, 1, 13, 2, 2, '2026-06-16 21:51:01', 99.00, 'pendiente', 'credito', 3, '2026-06-16 21:51:01'),
-(3, 1, 13, 2, 5, '2026-06-16 21:56:30', 297.00, 'pendiente', 'contado', 3, '2026-06-16 21:56:30'),
-(4, 1, 6, 2, 6, '2026-06-16 22:09:44', 33.00, 'pendiente', 'credito', 3, '2026-06-16 22:09:44'),
-(5, 1, 6, 2, 7, '2026-06-16 23:08:21', 33.00, 'pendiente', 'contado', NULL, '2026-06-16 23:08:21'),
-(6, 1, 13, 2, 8, '2026-06-16 23:09:07', 33.00, 'entregado', 'contado', 3, '2026-06-16 23:09:07'),
-(7, 1, 6, 2, 9, '2026-06-16 23:10:15', 15.00, 'pendiente', 'contado', NULL, '2026-06-16 23:10:15'),
-(8, 1, 6, 2, 10, '2026-06-16 23:13:04', 15.00, 'pendiente', 'credito', NULL, '2026-06-16 23:13:04'),
-(9, 1, 6, 2, 11, '2026-06-16 23:19:44', 33.00, 'pendiente', 'contado', 1, '2026-06-16 23:19:44');
+INSERT INTO `notas_entrega` (`id_nota_entrega`, `activo`, `id_cliente`, `id_usuario`, `id_presupuesto`, `fecha`, `total`, `condicion_pago`, `id_tipo_pago`, `created_at`) VALUES
+(1, 1, 6, 2, 1, '2026-06-16 20:50:23', 45.00, 'contado', NULL, '2026-06-16 20:50:23'),
+(2, 1, 13, 2, 2, '2026-06-16 21:51:01', 99.00, 'credito', 3, '2026-06-16 21:51:01'),
+(3, 1, 13, 2, 5, '2026-06-16 21:56:30', 297.00, 'contado', 3, '2026-06-16 21:56:30'),
+(4, 1, 6, 2, 6, '2026-06-16 22:09:44', 33.00, 'credito', 3, '2026-06-16 22:09:44'),
+(5, 1, 6, 2, 7, '2026-06-16 23:08:21', 33.00, 'contado', NULL, '2026-06-16 23:08:21'),
+(6, 1, 13, 2, 8, '2026-06-16 23:09:07', 33.00, 'contado', 3, '2026-06-16 23:09:07'),
+(7, 1, 6, 2, 9, '2026-06-16 23:10:15', 15.00, 'contado', NULL, '2026-06-16 23:10:15'),
+(8, 1, 6, 2, 10, '2026-06-16 23:13:04', 15.00, 'credito', NULL, '2026-06-16 23:13:04'),
+(9, 1, 6, 2, 11, '2026-06-16 23:19:44', 33.00, 'contado', 1, '2026-06-16 23:19:44');
 
 -- --------------------------------------------------------
 
@@ -309,7 +359,7 @@ CREATE TABLE `presupuestos` (
   `id_usuario` int(11) NOT NULL,
   `fecha` datetime NOT NULL,
   `total` decimal(10,2) NOT NULL DEFAULT 0.00,
-  `estado` enum('pendiente','aprobado','rechazado','convertido') NOT NULL DEFAULT 'pendiente',
+  `id_estado_presupuesto` int(11) NOT NULL DEFAULT 1,
   `observaciones` text DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
@@ -318,18 +368,18 @@ CREATE TABLE `presupuestos` (
 -- Volcado de datos para la tabla `presupuestos`
 --
 
-INSERT INTO `presupuestos` (`id_presupuesto`, `activo`, `id_cliente`, `id_usuario`, `fecha`, `total`, `estado`, `observaciones`, `created_at`) VALUES
-(1, 0, 6, 2, '2026-06-16 20:50:01', 45.00, 'convertido', 'Compra', '2026-06-16 20:50:01'),
-(2, 1, 13, 2, '2026-06-16 21:47:26', 99.00, 'convertido', '', '2026-06-16 21:47:26'),
-(3, 0, 6, 2, '2026-06-16 21:52:01', 15.00, 'rechazado', '', '2026-06-16 21:52:01'),
-(4, 0, 6, 2, '2026-06-16 21:52:19', 297.00, 'rechazado', '', '2026-06-16 21:52:19'),
-(5, 1, 13, 2, '2026-06-16 21:52:33', 297.00, 'convertido', '', '2026-06-16 21:52:33'),
-(6, 1, 6, 2, '2026-06-16 22:09:08', 33.00, 'convertido', '', '2026-06-16 22:09:08'),
-(7, 1, 6, 2, '2026-06-16 23:08:09', 33.00, 'convertido', '', '2026-06-16 23:08:09'),
-(8, 1, 13, 2, '2026-06-16 23:08:42', 33.00, 'convertido', '', '2026-06-16 23:08:42'),
-(9, 0, 6, 2, '2026-06-16 23:09:58', 15.00, 'convertido', '', '2026-06-16 23:09:58'),
-(10, 1, 6, 2, '2026-06-16 23:12:47', 15.00, 'convertido', '', '2026-06-16 23:12:47'),
-(11, 1, 6, 2, '2026-06-16 23:19:34', 33.00, 'convertido', '', '2026-06-16 23:19:34');
+INSERT INTO `presupuestos` (`id_presupuesto`, `activo`, `id_cliente`, `id_usuario`, `fecha`, `total`, `id_estado_presupuesto`, `observaciones`, `created_at`) VALUES
+(1, 0, 6, 2, '2026-06-16 20:50:01', 45.00, 4, 'Compra', '2026-06-16 20:50:01'),
+(2, 1, 13, 2, '2026-06-16 21:47:26', 99.00, 4, '', '2026-06-16 21:47:26'),
+(3, 0, 6, 2, '2026-06-16 21:52:01', 15.00, 3, '', '2026-06-16 21:52:01'),
+(4, 0, 6, 2, '2026-06-16 21:52:19', 297.00, 3, '', '2026-06-16 21:52:19'),
+(5, 1, 13, 2, '2026-06-16 21:52:33', 297.00, 4, '', '2026-06-16 21:52:33'),
+(6, 1, 6, 2, '2026-06-16 22:09:08', 33.00, 4, '', '2026-06-16 22:09:08'),
+(7, 1, 6, 2, '2026-06-16 23:08:09', 33.00, 4, '', '2026-06-16 23:08:09'),
+(8, 1, 13, 2, '2026-06-16 23:08:42', 33.00, 4, '', '2026-06-16 23:08:42'),
+(9, 0, 6, 2, '2026-06-16 23:09:58', 15.00, 4, '', '2026-06-16 23:09:58'),
+(10, 1, 6, 2, '2026-06-16 23:12:47', 15.00, 4, '', '2026-06-16 23:12:47'),
+(11, 1, 6, 2, '2026-06-16 23:19:34', 33.00, 4, '', '2026-06-16 23:19:34');
 
 -- --------------------------------------------------------
 
@@ -366,6 +416,26 @@ INSERT INTO `presupuesto_detalle` (`id_presupuesto_detalle`, `id_presupuesto`, `
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `registro_cliente`
+--
+
+CREATE TABLE `registro_cliente` (
+  `id_registro_cliente` int(11) NOT NULL,
+  `id_cliente` int(11) NOT NULL,
+  `fecha_registro` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+
+--
+-- Volcado de datos para la tabla `registro_cliente`
+--
+
+INSERT INTO `registro_cliente` (`id_registro_cliente`, `id_cliente`, `fecha_registro`) VALUES
+(1, 6, '2026-05-30 21:44:06'),
+(2, 13, '2026-06-16 21:43:22');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `proveedores`
 --
 
@@ -398,6 +468,7 @@ INSERT INTO `proveedores` (`id_proveedor`, `activo`, `rif`, `nombre_empresa`, `d
 CREATE TABLE `roles` (
   `id_rol` int(11) NOT NULL,
   `nombre` varchar(50) NOT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 
@@ -405,9 +476,44 @@ CREATE TABLE `roles` (
 -- Volcado de datos para la tabla `roles`
 --
 
-INSERT INTO `roles` (`id_rol`, `nombre`, `created_at`) VALUES
-(1, 'Administrador', '2026-05-06 22:27:00'),
-(2, 'Vendedor', '2026-05-06 22:27:00');
+INSERT INTO `roles` (`id_rol`, `nombre`, `activo`, `created_at`) VALUES
+(1, 'Administrador', 1, '2026-05-06 22:27:00'),
+(2, 'Vendedor', 1, '2026-05-06 22:27:00');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `rol_modulo`
+--
+
+CREATE TABLE `rol_modulo` (
+  `id_rol_modulo` int(11) NOT NULL,
+  `id_rol` int(11) NOT NULL,
+  `id_modulo` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+
+--
+-- Volcado de datos para la tabla `rol_modulo`
+--
+
+INSERT INTO `rol_modulo` (`id_rol_modulo`, `id_rol`, `id_modulo`) VALUES
+(1, 1, 1),
+(2, 1, 2),
+(3, 1, 3),
+(4, 1, 4),
+(5, 1, 5),
+(6, 1, 6),
+(7, 1, 7),
+(8, 1, 8),
+(9, 1, 9),
+(10, 1, 10),
+(11, 1, 11),
+(12, 1, 12),
+(13, 2, 1),
+(14, 2, 2),
+(15, 2, 5),
+(16, 2, 6),
+(17, 2, 11);
 
 -- --------------------------------------------------------
 
@@ -474,21 +580,21 @@ INSERT INTO `telefono_cliente` (`id_telefono_cliente`, `id_cliente`, `telefono`,
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `telf_proveedor`
+-- Estructura de tabla para la tabla `telefono_proveedor`
 --
 
-CREATE TABLE `telf_proveedor` (
-  `id_telf_proveedor` int(11) NOT NULL,
+CREATE TABLE `telefono_proveedor` (
+  `id_telefono_proveedor` int(11) NOT NULL,
   `id_proveedor` int(11) NOT NULL,
   `telefono` varchar(20) NOT NULL,
   `tipo` varchar(30) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 
 --
--- Volcado de datos para la tabla `telf_proveedor`
+-- Volcado de datos para la tabla `telefono_proveedor`
 --
 
-INSERT INTO `telf_proveedor` (`id_telf_proveedor`, `id_proveedor`, `telefono`, `tipo`) VALUES
+INSERT INTO `telefono_proveedor` (`id_telefono_proveedor`, `id_proveedor`, `telefono`, `tipo`) VALUES
 (2, 4, '04245544659', 'movil'),
 (3, 5, '04245544666', 'movil'),
 (5, 6, '04245544955', 'movil');
@@ -571,6 +677,13 @@ ALTER TABLE `cuentas_cobrar`
 ALTER TABLE `cuentas_pagar`
   ADD PRIMARY KEY (`id_cuenta_pagar`),
   ADD KEY `id_proveedor` (`id_proveedor`);
+--
+-- Indices de la tabla `estado_presupuesto`
+--
+ALTER TABLE `estado_presupuesto`
+  ADD PRIMARY KEY (`id_estado_presupuesto`),
+  ADD UNIQUE KEY `nombre` (`nombre`);
+
 
 --
 -- Indices de la tabla `insumos`
@@ -586,6 +699,13 @@ ALTER TABLE `insumo_proveedor`
   ADD PRIMARY KEY (`id_insumo_proveedor`),
   ADD UNIQUE KEY `insumo_proveedor_unique` (`id_insumo`,`id_proveedor`),
   ADD KEY `id_proveedor` (`id_proveedor`);
+
+--
+-- Indices de la tabla `modulos`
+--
+ALTER TABLE `modulos`
+  ADD PRIMARY KEY (`id_modulo`),
+  ADD UNIQUE KEY `uk_modulo_codigo` (`codigo`);
 
 --
 -- Indices de la tabla `notas_entrega`
@@ -629,7 +749,8 @@ ALTER TABLE `pagos_recibidos`
 ALTER TABLE `presupuestos`
   ADD PRIMARY KEY (`id_presupuesto`),
   ADD KEY `id_cliente` (`id_cliente`),
-  ADD KEY `id_usuario` (`id_usuario`);
+  ADD KEY `id_usuario` (`id_usuario`),
+  ADD KEY `id_estado_presupuesto` (`id_estado_presupuesto`);
 
 --
 -- Indices de la tabla `presupuesto_detalle`
@@ -638,6 +759,13 @@ ALTER TABLE `presupuesto_detalle`
   ADD PRIMARY KEY (`id_presupuesto_detalle`),
   ADD KEY `id_presupuesto` (`id_presupuesto`),
   ADD KEY `id_insumo` (`id_insumo`);
+--
+-- Indices de la tabla `registro_cliente`
+--
+ALTER TABLE `registro_cliente`
+  ADD PRIMARY KEY (`id_registro_cliente`),
+  ADD KEY `id_cliente` (`id_cliente`);
+
 
 --
 -- Indices de la tabla `proveedores`
@@ -652,6 +780,14 @@ ALTER TABLE `proveedores`
 ALTER TABLE `roles`
   ADD PRIMARY KEY (`id_rol`),
   ADD UNIQUE KEY `nombre` (`nombre`);
+
+--
+-- Indices de la tabla `rol_modulo`
+--
+ALTER TABLE `rol_modulo`
+  ADD PRIMARY KEY (`id_rol_modulo`),
+  ADD UNIQUE KEY `uk_rol_modulo` (`id_rol`, `id_modulo`),
+  ADD KEY `fk_rol_modulo_modulo` (`id_modulo`);
 
 --
 -- Indices de la tabla `rubro`
@@ -677,10 +813,10 @@ ALTER TABLE `telefono_cliente`
   ADD KEY `id_cliente` (`id_cliente`);
 
 --
--- Indices de la tabla `telf_proveedor`
+-- Indices de la tabla `telefono_proveedor`
 --
-ALTER TABLE `telf_proveedor`
-  ADD PRIMARY KEY (`id_telf_proveedor`),
+ALTER TABLE `telefono_proveedor`
+  ADD PRIMARY KEY (`id_telefono_proveedor`),
   ADD KEY `id_proveedor` (`id_proveedor`);
 
 --
@@ -725,6 +861,12 @@ ALTER TABLE `cuentas_cobrar`
 --
 ALTER TABLE `cuentas_pagar`
   MODIFY `id_cuenta_pagar` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+--
+-- AUTO_INCREMENT de la tabla `estado_presupuesto`
+--
+ALTER TABLE `estado_presupuesto`
+  MODIFY `id_estado_presupuesto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
 
 --
 -- AUTO_INCREMENT de la tabla `insumos`
@@ -737,6 +879,12 @@ ALTER TABLE `insumos`
 --
 ALTER TABLE `insumo_proveedor`
   MODIFY `id_insumo_proveedor` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT de la tabla `modulos`
+--
+ALTER TABLE `modulos`
+  MODIFY `id_modulo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT de la tabla `notas_entrega`
@@ -773,6 +921,12 @@ ALTER TABLE `presupuestos`
 --
 ALTER TABLE `presupuesto_detalle`
   MODIFY `id_presupuesto_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+--
+-- AUTO_INCREMENT de la tabla `registro_cliente`
+--
+ALTER TABLE `registro_cliente`
+  MODIFY `id_registro_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
 
 --
 -- AUTO_INCREMENT de la tabla `proveedores`
@@ -785,6 +939,12 @@ ALTER TABLE `proveedores`
 --
 ALTER TABLE `roles`
   MODIFY `id_rol` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT de la tabla `rol_modulo`
+--
+ALTER TABLE `rol_modulo`
+  MODIFY `id_rol_modulo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT de la tabla `rubro`
@@ -805,10 +965,10 @@ ALTER TABLE `telefono_cliente`
   MODIFY `id_telefono_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- AUTO_INCREMENT de la tabla `telf_proveedor`
+-- AUTO_INCREMENT de la tabla `telefono_proveedor`
 --
-ALTER TABLE `telf_proveedor`
-  MODIFY `id_telf_proveedor` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+ALTER TABLE `telefono_proveedor`
+  MODIFY `id_telefono_proveedor` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `tipo_pago`
@@ -883,6 +1043,7 @@ ALTER TABLE `pagos_recibidos`
 --
 ALTER TABLE `presupuestos`
   ADD CONSTRAINT `fk_presupuesto_cliente` FOREIGN KEY (`id_cliente`) REFERENCES `clientes` (`id_cliente`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_presupuesto_estado` FOREIGN KEY (`id_estado_presupuesto`) REFERENCES `estado_presupuesto` (`id_estado_presupuesto`) ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_presupuesto_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`) ON UPDATE CASCADE;
 
 --
@@ -891,6 +1052,19 @@ ALTER TABLE `presupuestos`
 ALTER TABLE `presupuesto_detalle`
   ADD CONSTRAINT `fk_pres_detalle_insumo` FOREIGN KEY (`id_insumo`) REFERENCES `insumos` (`id_insumo`) ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_pres_detalle_presupuesto` FOREIGN KEY (`id_presupuesto`) REFERENCES `presupuestos` (`id_presupuesto`) ON DELETE CASCADE ON UPDATE CASCADE;
+--
+-- Filtros para la tabla `registro_cliente`
+--
+ALTER TABLE `registro_cliente`
+  ADD CONSTRAINT `fk_registro_cliente_cliente` FOREIGN KEY (`id_cliente`) REFERENCES `clientes` (`id_cliente`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+--
+-- Filtros para la tabla `rol_modulo`
+--
+ALTER TABLE `rol_modulo`
+  ADD CONSTRAINT `fk_rol_modulo_modulo` FOREIGN KEY (`id_modulo`) REFERENCES `modulos` (`id_modulo`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_rol_modulo_rol` FOREIGN KEY (`id_rol`) REFERENCES `roles` (`id_rol`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Filtros para la tabla `rubro_proveedor`
@@ -906,10 +1080,10 @@ ALTER TABLE `telefono_cliente`
   ADD CONSTRAINT `fk_telf_cliente_cliente` FOREIGN KEY (`id_cliente`) REFERENCES `clientes` (`id_cliente`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Filtros para la tabla `telf_proveedor`
+-- Filtros para la tabla `telefono_proveedor`
 --
-ALTER TABLE `telf_proveedor`
-  ADD CONSTRAINT `fk_telf_proveedor_proveedor` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedores` (`id_proveedor`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `telefono_proveedor`
+  ADD CONSTRAINT `fk_telefono_proveedor_proveedor` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedores` (`id_proveedor`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Filtros para la tabla `usuarios`

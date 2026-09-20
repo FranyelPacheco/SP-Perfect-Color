@@ -215,7 +215,6 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('id_presupuesto', presupuestoInput ? presupuestoInput.value : '');
             var condPago = condicionPagoSelect ? condicionPagoSelect.value : 'contado';
             formData.append('condicion_pago', condPago);
-            formData.append('estado', 'entregado');
 
             var tipoPagoInput = document.getElementById('tipoPago');
             // Tipo de pago obligatorio cuando es contado

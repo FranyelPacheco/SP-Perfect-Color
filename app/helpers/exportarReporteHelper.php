@@ -24,7 +24,7 @@ function generarPDF($tipo, $desde, $hasta, $filtros = [])
     if ($tipo === 'ventas') {
         $datos = $modelo->ventasPorRango($desde, $hasta, $idCliente, $condicion, $idTipoPago);
         $titulo = 'Reporte de Notas de Entrega';
-        $encabezados = ['Fecha', 'Cliente', 'Cedula', 'Total', 'Metodo Pago', 'Estado'];
+        $encabezados = ['Fecha', 'Cliente', 'Cedula', 'Total', 'Metodo Pago', 'Condicion'];
     } else {
         $datos = $modelo->carteraCxc($desde, $hasta, $idCliente, $estadoCxc);
         $titulo = 'Reporte de Cuentas por Cobrar Pendientes';
@@ -45,18 +45,18 @@ function generarPDF($tipo, $desde, $hasta, $filtros = [])
         $html .= '<tr>';
         if ($tipo === 'ventas') {
             $html .= '<td>' . $fila['fecha'] . '</td>';
-            $html .= '<td>' . ($fila['cliente_nombre'] ?? '-') . '</td>';
-            $html .= '<td>' . ($fila['cliente_cedula'] ?? '-') . '</td>';
-            $html .= '<td>$ ' . number_format($fila['total'], 2) . '</td>';
-            $html .= '<td>' . ($fila['tipo_pago_nombre'] ?? '-') . '</td>';
-            $html .= '<td>' . $fila['estado'] . '</td>';
+            $html .= '<td>' . htmlspecialchars($fila['cliente_nombre'] ?? '-') . '</td>';
+            $html .= '<td>' . htmlspecialchars($fila['cliente_cedula'] ?? '-') . '</td>';
+            $html .= '<td>$ ' . number_format((float)$fila['total'], 2) . '</td>';
+            $html .= '<td>' . htmlspecialchars($fila['tipo_pago_nombre'] ?? '-') . '</td>';
+            $html .= '<td>' . ucfirst($fila['condicion_pago'] ?? '-') . '</td>';
         } else {
-            $html .= '<td>' . ($fila['cliente_nombre'] ?? '-') . '</td>';
-            $html .= '<td>' . ($fila['cliente_cedula'] ?? '-') . '</td>';
-            $html .= '<td>$ ' . number_format($fila['monto_total'], 2) . '</td>';
-            $html .= '<td>$ ' . number_format($fila['saldo_pendiente'], 2) . '</td>';
+            $html .= '<td>' . htmlspecialchars($fila['cliente_nombre'] ?? '-') . '</td>';
+            $html .= '<td>' . htmlspecialchars($fila['cliente_cedula'] ?? '-') . '</td>';
+            $html .= '<td>$ ' . number_format((float)$fila['monto_total'], 2) . '</td>';
+            $html .= '<td>$ ' . number_format((float)$fila['saldo_pendiente'], 2) . '</td>';
             $html .= '<td>' . ($fila['fecha_vencimiento'] ?? '-') . '</td>';
-            $html .= '<td>' . $fila['estado'] . '</td>';
+            $html .= '<td>' . ucfirst($fila['estado'] ?? '-') . '</td>';
         }
         $html .= '</tr>';
     }
@@ -84,7 +84,7 @@ function generarExcel($tipo, $desde, $hasta, $filtros = [])
 
     if ($tipo === 'ventas') {
         $datos = $modelo->ventasPorRango($desde, $hasta, $idCliente, $condicion, $idTipoPago);
-        $encabezados = ['Fecha', 'Cliente', 'Cedula', 'Total', 'Metodo Pago', 'Estado'];
+        $encabezados = ['Fecha', 'Cliente', 'Cedula', 'Total', 'Metodo Pago', 'Condicion'];
     } else {
         $datos = $modelo->carteraCxc($desde, $hasta, $idCliente, $estadoCxc);
         $encabezados = ['Cliente', 'Cedula', 'Monto Total', 'Saldo Pendiente', 'Vencimiento', 'Estado'];
@@ -102,7 +102,7 @@ function generarExcel($tipo, $desde, $hasta, $filtros = [])
                 $fila['cliente_cedula'] ?? '-',
                 floatval($fila['total']),
                 $fila['tipo_pago_nombre'] ?? '-',
-                $fila['estado']
+                ucfirst($fila['condicion_pago'] ?? '-')
             ]));
         } else {
             $writer->addRow(Row::fromValues([
@@ -111,7 +111,7 @@ function generarExcel($tipo, $desde, $hasta, $filtros = [])
                 floatval($fila['monto_total']),
                 floatval($fila['saldo_pendiente']),
                 $fila['fecha_vencimiento'] ?? '-',
-                $fila['estado']
+                ucfirst($fila['estado'] ?? '-')
             ]));
         }
     }

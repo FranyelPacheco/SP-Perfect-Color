@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Models\ClienteModel;
 use function App\Helpers\respuestaJson;
 use function App\Helpers\verificarAutenticacion;
+use function App\Helpers\verificarPermiso;
 use function App\Helpers\verificarRolAdmin;
 use function App\Helpers\validarRequerido;
 use function App\Helpers\validarCedula;
@@ -16,7 +17,7 @@ $clienteModel = new ClienteModel();
 // FUNCIÓN: index
 // OBJETIVO: Renderiza la vista de listado de clientes con datos precargados
 if ($metodo === 'index') {
-    verificarAutenticacion();
+    verificarPermiso('cliente');
 
     $clientes = $clienteModel->listarTodos();
 
@@ -26,7 +27,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: listarAjax
 // OBJETIVO: Devuelve listado JSON de todos los clientes para DataTable
 } elseif ($metodo === 'listarAjax') {
-    verificarAutenticacion();
+    verificarPermiso('cliente');
 
     $clientes = $clienteModel->listarTodos();
 
@@ -37,7 +38,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: buscarAjax
 // OBJETIVO: Busca clientes por término de búsqueda (cédula, nombre, apellido) y devuelve JSON
 } elseif ($metodo === 'buscarAjax') {
-    verificarAutenticacion();
+    verificarPermiso('cliente');
 
     $termino = trim($_GET['termino'] ?? '');
 
@@ -55,7 +56,7 @@ if ($metodo === 'index') {
 // OBJETIVO: Crea un cliente nuevo o reactiva uno inactivo con la misma cédula; incluye validaciones de campos
 // NOTA: El teléfono se guarda en tabla separada (telefono_cliente); verifica unicidad de cédula antes de insertar
 } elseif ($metodo === 'guardar') {
-    verificarAutenticacion();
+    verificarPermiso('cliente');
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         respuestaJson('error', 'Metodo no permitido');
@@ -122,7 +123,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: obtener
 // OBJETIVO: Devuelve los datos de un cliente por ID en formato JSON (incluye teléfonos)
 } elseif ($metodo === 'obtener') {
-    verificarAutenticacion();
+    verificarPermiso('cliente');
 
     $id = intval($_GET['id'] ?? 0);
 
@@ -141,7 +142,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: actualizar
 // OBJETIVO: Actualiza los datos de un cliente existente; reemplaza teléfonos (elimina viejos, inserta nuevo)
 } elseif ($metodo === 'actualizar') {
-    verificarAutenticacion();
+    verificarPermiso('cliente');
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         respuestaJson('error', 'Metodo no permitido');
@@ -200,7 +201,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: eliminar
 // OBJETIVO: Elimina (soft-delete) un cliente por ID; previene si tiene cuentas por cobrar pendientes
 } elseif ($metodo === 'eliminar') {
-    verificarAutenticacion();
+    verificarRolAdmin();
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         respuestaJson('error', 'Metodo no permitido');

@@ -48,14 +48,16 @@ function confirmarConModal(titulo, mensaje, callback, claseBoton) {
     var modal = document.getElementById('modalConfirmacion');
     if (!modal) return;
     document.getElementById('modalConfirmacionTitulo').textContent = titulo;
-    document.getElementById('modalConfirmacionCuerpo').textContent = mensaje;
+    document.getElementById('modalConfirmacionCuerpo').innerHTML = mensaje;
     var btn = document.getElementById('modalConfirmacionBtn');
     btn.className = 'btn ' + claseBoton;
     var nuevoBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(nuevoBtn, btn);
     nuevoBtn.addEventListener('click', function() {
         bootstrap.Modal.getInstance(modal).hide();
-        callback();
+        if (typeof callback === 'function') {
+            callback();
+        }
     });
     bootstrap.Modal.getOrCreateInstance(modal).show();
 }

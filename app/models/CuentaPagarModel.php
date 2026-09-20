@@ -167,7 +167,7 @@ class CuentaPagarModel extends ModeloBase
     private function _ejecutarSelectById(): array|false
     {
         $consulta = "SELECT cp.*, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif,
-                            (SELECT GROUP_CONCAT(tp.telefono SEPARATOR ', ') FROM telf_proveedor tp WHERE tp.id_proveedor = p.id_proveedor) as proveedor_telefonos
+                            (SELECT GROUP_CONCAT(tp.telefono SEPARATOR ', ') FROM telefono_proveedor tp WHERE tp.id_proveedor = p.id_proveedor) as proveedor_telefonos
                      FROM cuentas_pagar cp 
                      INNER JOIN proveedores p ON cp.id_proveedor = p.id_proveedor
                      WHERE cp.id_cuenta_pagar = :id AND cp.activo = 1";
@@ -221,8 +221,13 @@ class CuentaPagarModel extends ModeloBase
             $stmt->bindValue(':referencia', $this->referencia, $this->referencia === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmt->execute();
 
-            $nuevoSaldo = $cuenta['saldo_pendiente'] - $this->monto;
-            $nuevoEstado = ($nuevoSaldo <= 0) ? 'pagado' : 'pendiente';
+            $nuevoSaldo = round($cuenta['saldo_pendiente'] - $this->monto, 2);
+            if ($nuevoSaldo <= 0.001) {
+                $nuevoSaldo = 0;
+                $nuevoEstado = 'pagado';
+            } else {
+                $nuevoEstado = 'pendiente';
+            }
 
             $consulta = "UPDATE cuentas_pagar SET saldo_pendiente = :saldo, estado = :estado WHERE id_cuenta_pagar = :id";
             $stmt = $this->conexion->prepare($consulta);

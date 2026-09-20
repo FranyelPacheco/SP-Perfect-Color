@@ -214,8 +214,13 @@ class CuentaCobrarModel extends ModeloBase
             $stmtPago->bindValue(':referencia', $this->referencia, $this->referencia === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmtPago->execute();
 
-            $nuevoSaldo = $cuenta['saldo_pendiente'] - $this->monto;
-            $nuevoEstado = ($nuevoSaldo <= 0) ? 'pagado' : 'pendiente';
+            $nuevoSaldo = round($cuenta['saldo_pendiente'] - $this->monto, 2);
+            if ($nuevoSaldo <= 0.001) {
+                $nuevoSaldo = 0;
+                $nuevoEstado = 'pagado';
+            } else {
+                $nuevoEstado = 'pendiente';
+            }
 
             $consultaActualizar = "UPDATE cuentas_cobrar SET saldo_pendiente = :saldo, estado = :estado WHERE id_cuenta_cobrar = :id";
             $stmtActualizar = $this->conexion->prepare($consultaActualizar);
