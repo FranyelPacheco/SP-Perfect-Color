@@ -1,7 +1,6 @@
 // Archivo: inventario.js
 // Manejo de la vista de gestion de inventario
 
-
 document.addEventListener('DOMContentLoaded', function() {
     // Referencias a elementos del DOM
     const busquedaInsumos = document.getElementById('busquedaInsumos');
@@ -14,14 +13,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const insumoId = document.getElementById('insumoId');
     const codigoInsumo = document.getElementById('codigoInsumo');
     const nombreInsumo = document.getElementById('nombreInsumo');
-    const marcaInsumo = document.getElementById('marcaInsumo');
+    const tipoProductoInsumo = document.getElementById('tipoProductoInsumo');
     const rubroInsumo = document.getElementById('rubroInsumo');
     const unidadMedidaInsumo = document.getElementById('unidadMedidaInsumo');
     const stockActualInsumo = document.getElementById('stockActualInsumo');
     const stockMinimoInsumo = document.getElementById('stockMinimoInsumo');
     const precioVentaInsumo = document.getElementById('precioVentaInsumo');
     const precioCompraInsumo = document.getElementById('precioCompraInsumo');
-    const fechaVencimientoInsumo = null; // removed in v2
     const proveedorInsumo = document.getElementById('proveedorInsumo');
     const mensajeError = document.getElementById('mensajeErrorInsumo');
     const alertasStockBajo = document.getElementById('alertasStockBajo');
@@ -30,6 +28,44 @@ document.addEventListener('DOMContentLoaded', function() {
     let proveedoresGlobal = [];
     let rubrosGlobal = [];
     const esAdmin = document.getElementById('btnNuevoInsumo') !== null;
+
+    // Ajusta la unidad de medida según el tipo de producto
+    function ajustarUnidadSegunTipo(unidadPrevia) {
+        if (!tipoProductoInsumo || !unidadMedidaInsumo) return;
+        const tipoVal = String(tipoProductoInsumo.value);
+        if (tipoVal === '1') {
+            // Base solo puede ser galón
+            unidadMedidaInsumo.innerHTML = '<option value="Galon">Galón</option>';
+            unidadMedidaInsumo.value = 'Galon';
+        } else {
+            // Simple: Unidad o KG
+            unidadMedidaInsumo.innerHTML = '<option value="Unidad">Unidad</option><option value="KG">KG</option>';
+            if (unidadPrevia && (unidadPrevia === 'Unidad' || unidadPrevia === 'KG')) {
+                unidadMedidaInsumo.value = unidadPrevia;
+            } else {
+                unidadMedidaInsumo.value = 'Unidad';
+            }
+        }
+    }
+
+    if (tipoProductoInsumo) {
+        tipoProductoInsumo.addEventListener('change', function() {
+            ajustarUnidadSegunTipo();
+        });
+    }
+
+    // Restringir inputs de stock a solo números enteros
+    [stockActualInsumo, stockMinimoInsumo].forEach(function(input) {
+        if (!input) return;
+        input.addEventListener('keydown', function(e) {
+            if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-') {
+                e.preventDefault();
+            }
+        });
+        input.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    });
 
     // Cargar lista de insumos al iniciar
     cargarInsumos();
@@ -42,16 +78,15 @@ document.addEventListener('DOMContentLoaded', function() {
             codigoInsumo.value = '';
             codigoInsumo.disabled = false;
             nombreInsumo.value = '';
-            marcaInsumo.value = '';
+            if (tipoProductoInsumo) tipoProductoInsumo.value = '2';
             rubroInsumo.value = '';
             rubroInsumo.disabled = false;
             if (rubrosGlobal.length) llenarSelectRubros(rubrosGlobal);
-            unidadMedidaInsumo.value = '';
+            ajustarUnidadSegunTipo();
             stockActualInsumo.value = '0';
             stockMinimoInsumo.value = '5';
             precioVentaInsumo.value = '0';
             precioCompraInsumo.value = '0';
-            // fecha_vencimiento removed in v2
             proveedorInsumo.value = '';
             mensajeError.classList.add('d-none');
             bootstrap.Modal.getOrCreateInstance(modalInsumo).show();
@@ -63,6 +98,8 @@ document.addEventListener('DOMContentLoaded', function() {
         btnCerrarModal.addEventListener('click', function() {
             bootstrap.Modal.getInstance(modalInsumo).hide();
         });
+    }
+    if (btnCancelar) {
         btnCancelar.addEventListener('click', function() {
             bootstrap.Modal.getInstance(modalInsumo).hide();
         });
@@ -87,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Funcion para cargar la lista de insumos
     async function cargarInsumos() {
         try {
-            const respuesta = await fetch('inventario/listarAjax');
+            const respuesta = await fetch('/SP%20Perfect%20Color/inventario/listarAjax');
             const resultado = await respuesta.json();
 
             if (resultado.estado === 'exito') {
@@ -111,78 +148,114 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Muestra los insumos en la tabla usando API DataTables
+    // Muestra los insumos en la tabla usando API DataTables con columns explicitas
     function mostrarInsumos(insumos) {
         if (!$.fn.DataTable.isDataTable('#tablaInsumos')) {
+            var columnsDef = [
+                { data: 'codigo' },
+                { data: 'nombre' },
+                {
+                    data: null,
+                    render: function(data, type, row) {
+                        if (!row) return '';
+                        var tipoId = parseInt(row.id_tipo_producto);
+                        var tipoNom = row.tipo_producto_nombre || (tipoId === 1 ? 'Base' : (tipoId === 3 ? 'Preparado' : 'Simple'));
+                        var badgeClass = 'badge-tipo-simple';
+                        var iconClass = 'bi-box-seam';
+                        if (tipoId === 1 || tipoNom.toLowerCase() === 'base') {
+                            badgeClass = 'badge-tipo-base';
+                            iconClass = 'bi-droplet-half';
+                        } else if (tipoId === 3 || tipoNom.toLowerCase() === 'preparado') {
+                            badgeClass = 'badge-tipo-preparado';
+                            iconClass = 'bi-palette-fill';
+                        }
+                        return '<span class="' + badgeClass + '"><i class="bi ' + iconClass + ' me-1"></i>' + tipoNom + '</span>';
+                    }
+                },
+                {
+                    data: 'rubro_nombre',
+                    render: function(d) { return d || '-'; }
+                },
+                {
+                    data: null,
+                    render: function(data, type, row) {
+                        if (!row) return '';
+                        var stockStyle = parseFloat(row.stock_actual) <= parseFloat(row.stock_minimo) ? 'stock-bajo' : 'stock-normal';
+                        return '<span class="' + stockStyle + '">' + formatearMoneda(row.stock_actual) + '</span>';
+                    }
+                },
+                {
+                    data: 'precio_venta',
+                    render: function(d) { return d != null ? formatearMoneda(d) : '0,00'; }
+                },
+                {
+                    data: 'proveedores_nombre',
+                    render: function(d) { return d || '-'; }
+                }
+            ];
+
+            if (esAdmin) {
+                columnsDef.push({
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    render: function(data, type, row) {
+                        if (!row) return '';
+                        var nom = (row.nombre || '').replace(/"/g, '&quot;');
+                        return '<div class="d-flex gap-2">' +
+                            '<button class="btn btn-sm btn-warning btn-editar-insumo" data-id="' + row.id_insumo + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
+                            '<button class="btn btn-sm btn-danger btn-eliminar-insumo" data-id="' + row.id_insumo + '" data-nombre="' + nom + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>' +
+                            '</div>';
+                    }
+                });
+            }
+
             $('#tablaInsumos').DataTable({
                 dom: 'lrtip',
-                language: window.DATATABLES_SPANISH
+                language: window.DATATABLES_SPANISH,
+                columns: columnsDef
             });
         }
 
         var table = $('#tablaInsumos').DataTable();
         table.clear();
 
-        insumos.forEach(function(insumo) {
-            var acciones = '';
-            if (esAdmin) {
-                acciones = '<div class="d-flex gap-2">' +
-                    '<button class="btn btn-sm btn-warning btn-editar-insumo" data-id="' + insumo.id_insumo + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
-                    '<button class="btn btn-sm btn-danger btn-eliminar-insumo" data-id="' + insumo.id_insumo + '" data-nombre="' + insumo.nombre.replace(/"/g, '&quot;') + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>' +
-                    '</div>';
-            }
-
-            var stockStyle = parseFloat(insumo.stock_actual) <= parseFloat(insumo.stock_minimo) ? 'stock-bajo' : 'stock-normal';
-            var stockHtml = '<span class="' + stockStyle + '">' + formatearMoneda(insumo.stock_actual) + '</span>';
-
-            var row = [
-                insumo.codigo,
-                insumo.nombre,
-                insumo.marca || '-',
-                insumo.rubro_nombre || '-',
-                stockHtml,
-                formatearMoneda(insumo.precio_venta),
-                insumo.proveedores_nombre || '-'
-            ];
-
-            if (esAdmin) {
-                row.push(acciones);
-            }
-
-            table.row.add(row);
-        });
+        if (Array.isArray(insumos)) {
+            insumos.forEach(function(insumo) {
+                table.row.add(insumo);
+            });
+        }
 
         table.draw();
     }
 
-    // Delegated events for action buttons
-    document.getElementById('tablaInsumos').addEventListener('click', function(e) {
-        var btn = e.target.closest('.btn-editar-insumo');
-        if (btn) {
-            var id = parseInt(btn.dataset.id);
-            if (isNaN(id)) {
-                console.error('btn.dataset.id no es un numero:', btn.dataset.id, btn.outerHTML);
-                mostrarNotificacion('Error: ID de insumo invalido (' + btn.dataset.id + ')', 'error');
-                return;
-            }
+    // Delegacion de eventos robusta para botones de accion
+    $(document).on('click', '.btn-editar-insumo', function(e) {
+        e.preventDefault();
+        var tip = bootstrap.Tooltip.getInstance(this);
+        if (tip) tip.hide();
+        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+        if (!isNaN(id)) {
             abrirModalEditar(id);
-            return;
+        } else {
+            console.error('ID de insumo invalido:', $(this).attr('data-id'));
         }
-        btn = e.target.closest('.btn-eliminar-insumo');
-        if (btn) {
-            var id = parseInt(btn.dataset.id);
-            if (isNaN(id)) {
-                console.error('btn.dataset.id no es un numero:', btn.dataset.id, btn.outerHTML);
-                mostrarNotificacion('Error: ID de insumo invalido', 'error');
-                return;
-            }
-            eliminarInsumo(id, btn.dataset.nombre);
-            return;
+    });
+
+    $(document).on('click', '.btn-eliminar-insumo', function(e) {
+        e.preventDefault();
+        var tip = bootstrap.Tooltip.getInstance(this);
+        if (tip) tip.hide();
+        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+        var nombre = $(this).attr('data-nombre') || 'este insumo';
+        if (!isNaN(id)) {
+            eliminarInsumo(id, nombre);
         }
     });
 
     // Muestra las alertas de stock bajo
     function mostrarAlertas(alertas) {
+        if (!alertasStockBajo || !contenidoAlertas) return;
         alertasStockBajo.classList.remove('d-none');
         contenidoAlertas.innerHTML = '';
 
@@ -226,17 +299,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return [];
         }
         try {
-            const respuesta = await fetch('inventario/obtenerRubrosPorProveedorAjax?id_proveedor=' + proveedorId);
+            const respuesta = await fetch('/SP%20Perfect%20Color/inventario/obtenerRubrosPorProveedorAjax?id_proveedor=' + proveedorId);
             const resultado = await respuesta.json();
             if (resultado.estado === 'exito') {
-                const rubros = resultado.datos.rubros;
-                if (rubros.length === 0) {
-                    llenarSelectRubros(rubrosGlobal);
-                } else {
-                    llenarSelectRubros(rubros);
-                }
-                rubroInsumo.disabled = false;
-                return rubros;
+                llenarSelectRubros(resultado.datos.rubros);
+                return resultado.datos.rubros;
             }
         } catch (error) {
             console.error('Error al cargar rubros por proveedor:', error);
@@ -244,7 +311,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return [];
     }
 
-    // Cuando cambia el proveedor, filtrar rubros
     if (proveedorInsumo) {
         proveedorInsumo.addEventListener('change', async function() {
             const rubros = await cargarRubrosPorProveedor(this.value);
@@ -261,7 +327,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Abre el modal en modo edicion
     async function abrirModalEditar(id) {
         try {
-            const respuesta = await fetch('inventario/obtener?id=' + id);
+            const respuesta = await fetch('/SP%20Perfect%20Color/inventario/obtener?id=' + id);
             const resultado = await respuesta.json();
 
             if (resultado.estado === 'exito') {
@@ -272,10 +338,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 codigoInsumo.value = insumo.codigo;
                 codigoInsumo.disabled = true;
                 nombreInsumo.value = insumo.nombre;
-                marcaInsumo.value = insumo.marca || '';
-                unidadMedidaInsumo.value = insumo.unidad_medida || '';
-                stockActualInsumo.value = insumo.stock_actual;
-                stockMinimoInsumo.value = insumo.stock_minimo;
+                if (tipoProductoInsumo) tipoProductoInsumo.value = insumo.id_tipo_producto || '2';
+                ajustarUnidadSegunTipo(insumo.unidad_medida);
+                stockActualInsumo.value = Math.round(parseFloat(insumo.stock_actual) || 0);
+                stockMinimoInsumo.value = Math.round(parseFloat(insumo.stock_minimo) || 0);
                 precioVentaInsumo.value = insumo.precio_venta;
                 precioCompraInsumo.value = insumo.precio_compra;
                 proveedorInsumo.value = insumo.proveedores_id || '';
@@ -321,7 +387,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const url = esEdicion ? 'inventario/actualizar' : 'inventario/guardar';
+        const stockActual = parseInt(stockActualInsumo.value, 10);
+        const stockMinimo = parseInt(stockMinimoInsumo.value, 10);
+        if (isNaN(stockActual) || stockActual < 0) {
+            mostrarError('El stock actual debe ser un número entero no negativo');
+            return;
+        }
+        if (isNaN(stockMinimo) || stockMinimo < 0) {
+            mostrarError('El stock mínimo debe ser un número entero no negativo');
+            return;
+        }
+
+        const url = esEdicion ? '/SP%20Perfect%20Color/inventario/actualizar' : '/SP%20Perfect%20Color/inventario/guardar';
         const formData = new FormData(formularioInsumo);
 
         if (esEdicion) {
@@ -355,31 +432,19 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmarConModal('Eliminar', 'Esta seguro de eliminar el insumo ' + nombre + '?', function() {
             const formData = new FormData();
             formData.append('id', id);
-            fetch('inventario/eliminar', { method: 'POST', body: formData })
+            fetch('/SP%20Perfect%20Color/inventario/eliminar', { method: 'POST', body: formData })
                 .then(function(r) { return r.json(); })
                 .then(function(resultado) {
                     if (resultado.estado === 'exito') {
                         cargarInsumos();
-                        if (typeof mostrarNotificacion === 'function') {
-                            mostrarNotificacion(resultado.mensaje, 'exito');
-                        } else {
-                            alert(resultado.mensaje);
-                        }
+                        mostrarNotificacion(resultado.mensaje, 'exito');
                     } else {
-                        if (typeof mostrarNotificacion === 'function') {
-                            mostrarNotificacion(resultado.mensaje, 'error');
-                        } else {
-                            alert(resultado.mensaje);
-                        }
+                        mostrarNotificacion(resultado.mensaje, 'error');
                     }
                 })
                 .catch(function(error) {
                     console.error('Error al eliminar insumo:', error);
-                    if (typeof mostrarNotificacion === 'function') {
-                        mostrarNotificacion('Error de conexion al eliminar el insumo', 'error');
-                    } else {
-                        alert('Error de conexion al eliminar el insumo');
-                    }
+                    mostrarNotificacion('Error de conexion al eliminar el insumo', 'error');
                 });
         });
     }
@@ -393,7 +458,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-// Muestra un mensaje de error en el modal
+    // Muestra un mensaje de error en el modal
     function mostrarError(mensaje) {
         mensajeError.textContent = mensaje;
         mensajeError.classList.remove('d-none');

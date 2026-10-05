@@ -93,6 +93,7 @@ class ComposerStaticInit3c4bb4384e72a8f31732a329e62d104e
         'c7fff7bcce9bf6348d57403ef3649345' => __DIR__ . '/../..' . '/app/helpers/sesionHelper.php',
         '1ffeed6c318ec463ef9889799b01bbcc' => __DIR__ . '/../..' . '/app/helpers/validacionHelper.php',
         '18af80daf9c3093072776adbaad8a03f' => __DIR__ . '/../..' . '/app/helpers/exportarReporteHelper.php',
+        'eed550882a9e3d1675e22039a1838733' => __DIR__ . '/../..' . '/app/helpers/correoHelper.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -100,6 +101,10 @@ class ComposerStaticInit3c4bb4384e72a8f31732a329e62d104e
         array (
             'Svg\\' => 4,
             'Sabberworm\\CSS\\' => 15,
+        ),
+        'P' =>
+        array (
+            'PHPMailer\\PHPMailer\\' => 20,
         ),
         'O' =>
         array (
@@ -131,6 +136,10 @@ class ComposerStaticInit3c4bb4384e72a8f31732a329e62d104e
         'Sabberworm\\CSS\\' =>
         array (
             0 => __DIR__ . '/..' . '/sabberworm/php-css-parser/src',
+        ),
+        'PHPMailer\\PHPMailer\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
         ),
         'OpenSpout\\' =>
         array (

@@ -169,12 +169,14 @@ document.addEventListener('DOMContentLoaded', function() {
         table.draw();
     }
 
-    document.getElementById('tablaCuentasPagar').addEventListener('click', function(e) {
-        var btn = e.target.closest('.btn-eliminar-cxp');
-        if (btn) {
-            confirmarConModal('Eliminar', 'Esta seguro de eliminar esta cuenta por pagar?', function() {
+    $(document).on('click', '.btn-eliminar-cxp', function(e) {
+        e.preventDefault();
+        var tip = bootstrap.Tooltip.getInstance(this);
+        if (tip) tip.hide();
+        var id = $(this).attr('data-id') || $(this).data('id');
+        confirmarConModal('Eliminar', 'Esta seguro de eliminar esta cuenta por pagar?', function() {
             var fd = new FormData();
-            fd.append('id', btn.dataset.id);
+            fd.append('id', id);
             fetch('/SP%20Perfect%20Color/cuentaPagar/eliminar', { method: 'POST', body: fd })
             .then(function(r) { return r.json(); })
             .then(function(res) {
@@ -182,9 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 else { mostrarNotificacion(res.mensaje, 'error'); }
             })
             .catch(function() { mostrarNotificacion('Error de conexion', 'error'); });
-            });
-            return;
-        }
+        });
     });
 
     // Enlazar busqueda manual a DataTables

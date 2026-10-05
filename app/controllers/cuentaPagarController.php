@@ -4,15 +4,19 @@
 
 namespace App\Controllers;
 
-use App\Models\CuentaPagarModel;
-use App\Models\ProveedorModel;
-use App\Models\TipoPagoModel;
-use App\Models\BancoModel;
-use function App\Helpers\respuestaJson;
-use function App\Helpers\verificarAutenticacion;
-use function App\Helpers\verificarAcceso;
-use function App\Helpers\verificarRolAdmin;
-use \PDOException;
+use PDOException;
+use App\Models\{
+    CuentaPagarModel,
+    ProveedorModel,
+    TipoPagoModel,
+    BancoModel
+};
+use function App\Helpers\{
+    respuestaJson,
+    verificarAutenticacion,
+    verificarAcceso,
+    verificarRolAdmin
+};
 
 $cuentaPagarModel = new CuentaPagarModel();
 $proveedorModel = new ProveedorModel();

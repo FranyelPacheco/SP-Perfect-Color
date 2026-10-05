@@ -31,7 +31,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 id_presupuesto_detalle: item.id_presupuesto_detalle,
                 insumo_codigo: item.insumo_codigo,
                 insumo_nombre: item.insumo_nombre,
-                insumo_marca: item.insumo_marca || '',
                 stock_actual: parseFloat(item.stock_actual) || 0,
                 cantidad: parseFloat(item.cantidad),
                 precio_unitario: parseFloat(item.precio_unitario),

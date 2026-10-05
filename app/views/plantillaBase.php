@@ -131,11 +131,7 @@ $ctrlLower = strtolower($controlador ?? '');
                     </ul>
                 </nav>
                 <div class="sidebar-user">
-                    <?php if (\App\Helpers\tienePermiso('usuario')): ?>
-                    <a href="/SP%20Perfect%20Color/usuario" class="user-name"><i class="bi bi-person-circle me-1"></i><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></a>
-                    <?php else: ?>
-                    <span class="user-name"><i class="bi bi-person-circle me-1"></i><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></span>
-                    <?php endif; ?>
+                    <a href="/SP%20Perfect%20Color/perfil" class="user-name" title="Ver mi perfil"><i class="bi bi-person-circle me-1"></i><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></a>
                     <a href="/SP%20Perfect%20Color/login/salir" class="logout-link"><i class="bi bi-box-arrow-left me-1"></i>Cerrar Sesión</a>
                 </div>
             </div>
@@ -195,11 +191,7 @@ $ctrlLower = strtolower($controlador ?? '');
                 <?php endif; ?>
             </ul>
             <div class="sidebar-user">
-                <?php if (\App\Helpers\tienePermiso('usuario')): ?>
-                <a href="/SP%20Perfect%20Color/usuario" class="user-name"><i class="bi bi-person-circle me-1"></i><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></a>
-                <?php else: ?>
-                <span class="user-name"><i class="bi bi-person-circle me-1"></i><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></span>
-                <?php endif; ?>
+                <a href="/SP%20Perfect%20Color/perfil" class="user-name" title="Ver mi perfil"><i class="bi bi-person-circle me-1"></i><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></a>
                 <a href="/SP%20Perfect%20Color/login/salir" class="logout-link"><i class="bi bi-box-arrow-left me-1"></i>Cerrar Sesión</a>
             </div>
         </nav>

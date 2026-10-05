@@ -5,13 +5,15 @@
 namespace App\Controllers;
 
 use App\Models\InventarioModel;
-use function App\Helpers\respuestaJson;
-use function App\Helpers\verificarAutenticacion;
-use function App\Helpers\verificarAcceso;
-use function App\Helpers\verificarRolAdmin;
-use function App\Helpers\validarRequerido;
-use function App\Helpers\validarDecimalPositivo;
-use function App\Helpers\validarFecha;
+use function App\Helpers\{
+    respuestaJson,
+    verificarAutenticacion,
+    verificarAcceso,
+    verificarRolAdmin,
+    validarRequerido,
+    validarDecimalPositivo,
+    validarFecha
+};
 
 $inventarioModel = new InventarioModel();
 
@@ -24,7 +26,7 @@ if ($metodo === 'index') {
     require_once __DIR__ . '/../views/plantillaBase.php';
 
 // FUNCIÓN: listarAjax
-// OBJETIVO: Obtiene insumos, proveedores, alertas de stock bajo y rubros en JSON
+// OBJETIVO: Obtiene productos, proveedores, alertas de stock bajo, rubros y tipos de producto en JSON
 } elseif ($metodo === 'listarAjax') {
     verificarAcceso([1]);
     
@@ -32,12 +34,14 @@ if ($metodo === 'index') {
     $proveedores = $inventarioModel->listarProveedoresActivos();
     $alertas = $inventarioModel->obtenerAlertasStockBajo();
     $rubros = $inventarioModel->listarRubrosActivos();
+    $tiposProducto = $inventarioModel->listarTiposProducto();
     
     respuestaJson('exito', 'Insumos obtenidos correctamente', [
         'insumos' => $insumos,
         'proveedores' => $proveedores,
         'alertas' => $alertas,
-        'rubros' => $rubros
+        'rubros' => $rubros,
+        'tipos_producto' => $tiposProducto
     ]);
 
 // FUNCIÓN: buscarAjax
@@ -68,14 +72,35 @@ if ($metodo === 'index') {
     
     $codigo = strtoupper(trim($_POST['codigo'] ?? ''));
     $nombre = trim($_POST['nombre'] ?? '');
-    $marca = trim($_POST['marca'] ?? '');
     $unidadMedida = trim($_POST['unidad_medida'] ?? '');
-    $stockActual = floatval($_POST['stock_actual'] ?? 0);
-    $stockMinimo = floatval($_POST['stock_minimo'] ?? 5);
+    $stockActualRaw = $_POST['stock_actual'] ?? '0';
+    $stockMinimoRaw = $_POST['stock_minimo'] ?? '0';
     $precioVenta = floatval($_POST['precio_venta'] ?? 0);
     $precioCompra = floatval($_POST['precio_compra'] ?? 0);
     $proveedorId = !empty($_POST['id_proveedor']) ? intval($_POST['id_proveedor']) : null;
     $rubroId = !empty($_POST['id_rubro']) ? intval($_POST['id_rubro']) : null;
+    $idTipoProducto = !empty($_POST['id_tipo_producto']) ? intval($_POST['id_tipo_producto']) : 2;
+
+    if ($idTipoProducto !== 1 && $idTipoProducto !== 2) {
+        respuestaJson('error', 'Tipo de producto no valido (solo Base o Simple)');
+    }
+
+    if ($idTipoProducto === 1) {
+        $unidadMedida = 'Galon';
+    } else {
+        if (!in_array($unidadMedida, ['Unidad', 'KG'], true)) {
+            respuestaJson('error', 'Para productos simples la unidad de medida debe ser Unidad o KG');
+        }
+    }
+
+    if (!is_numeric($stockActualRaw) || floor((float)$stockActualRaw) != (float)$stockActualRaw || (float)$stockActualRaw < 0) {
+        respuestaJson('error', 'El stock actual debe ser un numero entero no negativo');
+    }
+    if (!is_numeric($stockMinimoRaw) || floor((float)$stockMinimoRaw) != (float)$stockMinimoRaw || (float)$stockMinimoRaw < 0) {
+        respuestaJson('error', 'El stock minimo debe ser un numero entero no negativo');
+    }
+    $stockActual = (float)intval($stockActualRaw);
+    $stockMinimo = (float)intval($stockMinimoRaw);
     
     if (!validarRequerido($codigo)) {
         respuestaJson('error', 'El codigo es obligatorio');
@@ -95,7 +120,7 @@ if ($metodo === 'index') {
     
     $inactivoId = $inventarioModel->buscarInactivoPorCodigo($codigo);
     if ($inactivoId) {
-        if ($inventarioModel->actualizarInsumo($inactivoId, $codigo, $nombre, $marca, $rubroId, $unidadMedida, $stockActual, $stockMinimo, $precioVenta, $precioCompra)) {
+        if ($inventarioModel->actualizarInsumo($inactivoId, $codigo, $nombre, $rubroId, $unidadMedida, $stockActual, $stockMinimo, $precioVenta, $precioCompra, $idTipoProducto)) {
             $inventarioModel->eliminarProveedoresDeInsumo($inactivoId);
             if ($proveedorId) {
                 $inventarioModel->asignarProveedorAInsumo($inactivoId, $proveedorId);
@@ -106,7 +131,7 @@ if ($metodo === 'index') {
         }
     }
     
-    $nuevoId = $inventarioModel->insertarInsumo($codigo, $nombre, $marca, $rubroId, $unidadMedida, $stockActual, $stockMinimo, $precioVenta, $precioCompra);
+    $nuevoId = $inventarioModel->insertarInsumo($codigo, $nombre, $rubroId, $unidadMedida, $stockActual, $stockMinimo, $precioVenta, $precioCompra, $idTipoProducto);
     if ($nuevoId) {
         if ($proveedorId) {
             $inventarioModel->asignarProveedorAInsumo($nuevoId, $proveedorId);
@@ -147,14 +172,35 @@ if ($metodo === 'index') {
     $id = intval($_POST['id'] ?? 0);
     $codigo = strtoupper(trim($_POST['codigo'] ?? ''));
     $nombre = trim($_POST['nombre'] ?? '');
-    $marca = trim($_POST['marca'] ?? '');
     $rubroId = !empty($_POST['id_rubro']) ? intval($_POST['id_rubro']) : null;
     $unidadMedida = trim($_POST['unidad_medida'] ?? '');
-    $stockActual = floatval($_POST['stock_actual'] ?? 0);
-    $stockMinimo = floatval($_POST['stock_minimo'] ?? 5);
+    $stockActualRaw = $_POST['stock_actual'] ?? '0';
+    $stockMinimoRaw = $_POST['stock_minimo'] ?? '0';
     $precioVenta = floatval($_POST['precio_venta'] ?? 0);
     $precioCompra = floatval($_POST['precio_compra'] ?? 0);
     $proveedorId = !empty($_POST['id_proveedor']) ? intval($_POST['id_proveedor']) : null;
+    $idTipoProducto = !empty($_POST['id_tipo_producto']) ? intval($_POST['id_tipo_producto']) : 2;
+
+    if ($idTipoProducto !== 1 && $idTipoProducto !== 2) {
+        respuestaJson('error', 'Tipo de producto no valido (solo Base o Simple)');
+    }
+
+    if ($idTipoProducto === 1) {
+        $unidadMedida = 'Galon';
+    } else {
+        if (!in_array($unidadMedida, ['Unidad', 'KG'], true)) {
+            respuestaJson('error', 'Para productos simples la unidad de medida debe ser Unidad o KG');
+        }
+    }
+
+    if (!is_numeric($stockActualRaw) || floor((float)$stockActualRaw) != (float)$stockActualRaw || (float)$stockActualRaw < 0) {
+        respuestaJson('error', 'El stock actual debe ser un numero entero no negativo');
+    }
+    if (!is_numeric($stockMinimoRaw) || floor((float)$stockMinimoRaw) != (float)$stockMinimoRaw || (float)$stockMinimoRaw < 0) {
+        respuestaJson('error', 'El stock minimo debe ser un numero entero no negativo');
+    }
+    $stockActual = (float)intval($stockActualRaw);
+    $stockMinimo = (float)intval($stockMinimoRaw);
     
     if ($id < 1) {
         respuestaJson('error', 'ID de insumo no valido');
@@ -176,7 +222,7 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Ya existe otro insumo con ese codigo');
     }
     
-    if ($inventarioModel->actualizarInsumo($id, $codigo, $nombre, $marca, $rubroId, $unidadMedida, $stockActual, $stockMinimo, $precioVenta, $precioCompra)) {
+    if ($inventarioModel->actualizarInsumo($id, $codigo, $nombre, $rubroId, $unidadMedida, $stockActual, $stockMinimo, $precioVenta, $precioCompra, $idTipoProducto)) {
         $inventarioModel->eliminarProveedoresDeInsumo($id);
         if ($proveedorId) {
             $inventarioModel->asignarProveedorAInsumo($id, $proveedorId);

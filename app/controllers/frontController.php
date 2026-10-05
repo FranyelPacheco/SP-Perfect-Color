@@ -25,6 +25,7 @@ class frontController
         'tipopago'     => 'tipoPago',
         'reporte'      => 'reporte',
         'configpago'   => 'configPago',
+        'perfil'       => 'perfil',
     ];
 
     private $titulosPagina = [
@@ -37,6 +38,7 @@ class frontController
         'cuentacobrar' => ['Cuentas por Cobrar', 'Gestión de cuentas por cobrar - SP Perfect Color'],
         'cuentapagar'  => ['Cuentas por Pagar', 'Gestión de cuentas por pagar - SP Perfect Color'],
         'usuario'      => ['Usuarios', 'Gestión de usuarios - SP Perfect Color'],
+        'perfil'       => ['Mi Perfil', 'Gestión de perfil personal y seguridad - SP Perfect Color'],
         'login'        => ['Iniciar Sesión', 'Inicio de sesión - SP Perfect Color'],
         'banco'        => ['Bancos', 'Gestión de bancos - SP Perfect Color'],
         'tipopago'     => ['Tipos de Pago', 'Gestión de tipos de pago - SP Perfect Color'],

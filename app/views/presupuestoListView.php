@@ -16,7 +16,7 @@
                     <option value="rechazado">Rechazados</option>
                     <option value="convertido">Convertidos</option>
                 </select>
-                <button type="button" class="btn btn-primary" onclick="location.href='presupuesto/nuevo'">
+                <button type="button" class="btn btn-primary" onclick="location.href='/SP%20Perfect%20Color/presupuesto/nuevo'">
                     <i class="bi bi-plus-lg me-2"></i>Nuevo
                 </button>
             </div>

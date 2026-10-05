@@ -85,7 +85,7 @@ class ReporteModel extends ModeloBase
             $params[':condicion'] = $condicion;
         }
         if ($idTipoPago !== null) {
-            $condiciones[] = "ne.id_tipo_pago = :id_tipo_pago";
+            $condiciones[] = "pr.id_tipo_pago = :id_tipo_pago";
             $params[':id_tipo_pago'] = $idTipoPago;
         }
 
@@ -94,11 +94,13 @@ class ReporteModel extends ModeloBase
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
                             u.nombre as usuario_nombre,
-                            tp.nombre as tipo_pago_nombre
+                            COALESCE(tp.nombre, CASE WHEN ne.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre
                      FROM notas_entrega ne
                      INNER JOIN clientes c ON ne.id_cliente = c.id_cliente
                      INNER JOIN usuarios u ON ne.id_usuario = u.id_usuario
-                     LEFT JOIN tipo_pago tp ON ne.id_tipo_pago = tp.id_tipo_pago
+                     LEFT JOIN cuentas_cobrar cc ON cc.id_nota_entrega = ne.id_nota_entrega
+                     LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
+                     LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
                      WHERE $where
                      ORDER BY ne.fecha DESC, ne.id_nota_entrega DESC";
         $stmt = $this->conexion->prepare($consulta);
@@ -122,11 +124,13 @@ class ReporteModel extends ModeloBase
 
     private function _ejecutarTotalVentasPorMetodoPago(): array
     {
-        $consulta = "SELECT COALESCE(tp.nombre, 'sin_asignar') as metodo, COUNT(*) as cantidad, SUM(ne.total) as total
-                     FROM notas_entrega ne
-                     LEFT JOIN tipo_pago tp ON ne.id_tipo_pago = tp.id_tipo_pago
+        $consulta = "SELECT COALESCE(tp.nombre, 'sin_asignar') as metodo, COUNT(*) as cantidad, SUM(pr.monto) as total
+                     FROM pagos_recibidos pr
+                     INNER JOIN cuentas_cobrar cc ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
+                     INNER JOIN notas_entrega ne ON cc.id_nota_entrega = ne.id_nota_entrega
+                     LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
                      WHERE ne.activo = 1 AND DATE(ne.fecha) BETWEEN :desde AND :hasta AND ne.condicion_pago = 'contado'
-                     GROUP BY ne.id_tipo_pago
+                     GROUP BY pr.id_tipo_pago
                      ORDER BY total DESC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':desde', $this->desde, PDO::PARAM_STR);

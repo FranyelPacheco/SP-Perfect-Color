@@ -2,16 +2,20 @@
 
 namespace App\Controllers;
 
-use App\Models\NotaEntregaModel;
-use App\Models\PresupuestoModel;
-use App\Models\ClienteModel;
-use App\Models\InventarioModel;
-use App\Models\TipoPagoModel;
-use App\Models\BancoModel;
-use function App\Helpers\respuestaJson;
-use function App\Helpers\verificarAutenticacion;
-use function App\Helpers\verificarRolVendedor;
-use \PDOException;
+use PDOException;
+use App\Models\{
+    NotaEntregaModel,
+    PresupuestoModel,
+    ClienteModel,
+    InventarioModel,
+    TipoPagoModel,
+    BancoModel
+};
+use function App\Helpers\{
+    respuestaJson,
+    verificarAutenticacion,
+    verificarRolVendedor
+};
 
 $notaEntregaModel = new NotaEntregaModel();
 $presupuestoModel = new PresupuestoModel();
@@ -89,22 +93,31 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
     
-    $clienteId = intval($_POST['id_cliente'] ?? 0);
     $presupuestoId = intval($_POST['id_presupuesto'] ?? 0);
+    if ($presupuestoId < 1) {
+        respuestaJson('error', 'Debe seleccionar un presupuesto');
+    }
+
+    $presupuesto = $presupuestoModel->buscarPorId($presupuestoId);
+    if (!$presupuesto) {
+        respuestaJson('error', 'Presupuesto asociado no encontrado');
+    }
+
+    // Tomar id_cliente directamente del presupuesto
+    $clienteId = intval($presupuesto['id_cliente'] ?? 0);
+    if ($clienteId < 1) {
+        $clienteId = intval($_POST['id_cliente'] ?? 0);
+    }
+    if ($clienteId < 1) {
+        respuestaJson('error', 'No se pudo identificar el cliente del presupuesto');
+    }
+
     $condicionPago = $_POST['condicion_pago'] ?? 'contado';
     $tipoPagoId = !empty($_POST['id_tipo_pago']) ? intval($_POST['id_tipo_pago']) : null;
     $bancoId = !empty($_POST['id_banco']) ? intval($_POST['id_banco']) : null;
     $referencia = trim($_POST['referencia'] ?? '');
     $fechaVencimiento = $_POST['fecha_vencimiento'] ?? '';
     $items = json_decode($_POST['items'] ?? '[]', true);
-    
-    if ($clienteId < 1) {
-        respuestaJson('error', 'Debe seleccionar un cliente');
-    }
-    
-    if ($presupuestoId < 1) {
-        respuestaJson('error', 'Debe seleccionar un presupuesto');
-    }
     
     if (empty($items)) {
         respuestaJson('error', 'Debe agregar al menos un item');

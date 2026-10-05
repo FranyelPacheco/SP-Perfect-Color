@@ -25,7 +25,7 @@
                     <tr>
                         <th>Codigo</th>
                         <th>Nombre</th>
-                        <th>Marca</th>
+                        <th>Tipo</th>
                         <th>Rubro</th>
                         <th>Stock</th>
                         <th>P. Venta</th>
@@ -54,33 +54,29 @@
                     <input type="hidden" id="insumoId" name="id" value="">
 
                     <div class="row g-3 mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="codigoInsumo" class="form-label">Codigo</label>
-                            <input type="text" id="codigoInsumo" name="codigo" class="form-control" required placeholder="Codigo unico del insumo">
+                            <input type="text" id="codigoInsumo" name="codigo" class="form-control" required placeholder="Codigo unico">
                         </div>
-                        <div class="col-md-6">
-                            <label for="nombreInsumo" class="form-label">Nombre del Insumo</label>
-                            <input type="text" id="nombreInsumo" name="nombre" class="form-control" required placeholder="Ingrese el nombre del insumo">
+                        <div class="col-md-5">
+                            <label for="nombreInsumo" class="form-label">Nombre del Insumo / Producto</label>
+                            <input type="text" id="nombreInsumo" name="nombre" class="form-control" required placeholder="Ingrese el nombre">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="tipoProductoInsumo" class="form-label">Tipo</label>
+                            <select id="tipoProductoInsumo" name="id_tipo_producto" class="form-select" required>
+                                <option value="2">Simple (Venta directa)</option>
+                                <option value="1">Base (Tinte/Colorimetría)</option>
+                            </select>
                         </div>
                     </div>
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label for="marcaInsumo" class="form-label">Marca</label>
-                            <input type="text" id="marcaInsumo" name="marca" class="form-control" placeholder="Ingrese la marca">
-                        </div>
-                        <div class="col-md-6">
                             <label for="unidadMedidaInsumo" class="form-label">Unidad de Medida</label>
-                            <select id="unidadMedidaInsumo" name="unidad_medida" class="form-select">
-                                <option value="">Seleccione...</option>
+                            <select id="unidadMedidaInsumo" name="unidad_medida" class="form-select" required>
                                 <option value="Unidad">Unidad</option>
-                                <option value="Litro">Litro</option>
-                                <option value="Galon">Galon</option>
-                                <option value="Kilogramo">Kilogramo</option>
-                                <option value="Gramo">Gramo</option>
-                                <option value="Metro">Metro</option>
-                                <option value="Caja">Caja</option>
-                                <option value="Paquete">Paquete</option>
+                                <option value="KG">KG</option>
                             </select>
                         </div>
                     </div>
@@ -88,11 +84,11 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-4">
                             <label for="stockActualInsumo" class="form-label">Stock Actual</label>
-                            <input type="number" id="stockActualInsumo" name="stock_actual" class="form-control" step="0.01" min="0" value="0">
+                            <input type="number" id="stockActualInsumo" name="stock_actual" class="form-control" step="1" min="0" value="0">
                         </div>
                         <div class="col-md-4">
                             <label for="stockMinimoInsumo" class="form-label">Stock Minimo</label>
-                            <input type="number" id="stockMinimoInsumo" name="stock_minimo" class="form-control" step="0.01" min="0" value="5">
+                            <input type="number" id="stockMinimoInsumo" name="stock_minimo" class="form-control" step="1" min="0" value="5">
                         </div>
                     </div>
 
@@ -134,4 +130,4 @@
 </div>
 <?php endif; ?>
 
-<script src="/SP%20Perfect%20Color/assets/js/inventario.js?v=2"></script>
+<script src="/SP%20Perfect%20Color/assets/js/inventario.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/inventario.js'); ?>"></script>

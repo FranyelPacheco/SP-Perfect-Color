@@ -4,16 +4,21 @@
 
 namespace App\Controllers;
 
-use App\Models\UsuarioModel;
-use App\Models\RolModel;
-use function App\Helpers\respuestaJson;
-use function App\Helpers\verificarAutenticacion;
-use function App\Helpers\verificarRolAdmin;
-use function App\Helpers\tienePermiso;
-use function App\Helpers\verificarPermiso;
-use function App\Helpers\validarRequerido;
-use function App\Helpers\validarCorreo;
-use function App\Helpers\verificarPropietario;
+use App\Models\{
+    UsuarioModel,
+    RolModel
+};
+use function App\Helpers\{
+    respuestaJson,
+    verificarAutenticacion,
+    verificarRolAdmin,
+    tienePermiso,
+    verificarPermiso,
+    validarRequerido,
+    validarCorreo,
+    verificarPropietario,
+    enviarCredencialesUsuario
+};
 
 $usuarioModel = new UsuarioModel();
 $rolModel = new RolModel();
@@ -31,20 +36,18 @@ if ($metodo === 'index') {
         }
     }
 
-    $puedeGestionar = tienePermiso('usuario');
-
-    if ($puedeGestionar) {
-        $usuarios = $usuarioModel->listarTodos();
-        $roles = $rolModel->listarActivos();
-        $todosRoles = $rolModel->listarTodos();
-    } else {
-        $usuarios = [];
-        $roles = [];
-        $todosRoles = [];
+    if (!tienePermiso('usuario')) {
+        header('Location: /SP%20Perfect%20Color/perfil');
+        exit;
     }
 
-    $pageTitle = $puedeGestionar ? 'SP Perfect Color - Gestión de Usuarios y Roles' : 'SP Perfect Color - Mi Perfil';
-    $pageDescription = 'Gestión de perfil, usuarios y roles del sistema - SP Perfect Color';
+    $puedeGestionar = true;
+    $usuarios = $usuarioModel->listarTodos();
+    $roles = $rolModel->listarActivos();
+    $todosRoles = $rolModel->listarTodos();
+
+    $pageTitle = 'SP Perfect Color - Gestión de Usuarios y Roles';
+    $pageDescription = 'Gestión de usuarios y roles del sistema - SP Perfect Color';
     $contenidoVista = __DIR__ . '/../views/usuarioListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
     exit;
@@ -106,6 +109,7 @@ if ($metodo === 'index') {
     }
 
     if ($usuarioModel->insertarUsuario($nombre, $correo, $passwordHash, $id_rol, 1)) {
+        enviarCredencialesUsuario($correo, $nombre, $clave);
         respuestaJson('exito', 'Usuario creado exitosamente');
     } else {
         respuestaJson('error', 'Error al crear el usuario');

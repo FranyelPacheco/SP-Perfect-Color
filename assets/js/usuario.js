@@ -97,23 +97,30 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        // Delegación de eventos para botones de acción de usuario
-        var tablaUsuariosEl = document.getElementById('tablaUsuarios');
-        if (tablaUsuariosEl) {
-            tablaUsuariosEl.addEventListener('click', function (e) {
-                var btn = e.target.closest('.btn-editar-usuario');
-                if (btn) { abrirModalEditarUsuario(parseInt(btn.dataset.id)); return; }
-                btn = e.target.closest('.btn-eliminar-usuario');
-                if (btn) { eliminarUsuario(parseInt(btn.dataset.id), btn.dataset.nombre); return; }
-            });
-        }
+        // Delegación de eventos robusta para botones de acción de usuario
+        $(document).on('click', '.btn-editar-usuario', function (e) {
+            e.preventDefault();
+            var tip = bootstrap.Tooltip.getInstance(this);
+            if (tip) tip.hide();
+            var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+            if (!isNaN(id)) abrirModalEditarUsuario(id);
+        });
+
+        $(document).on('click', '.btn-eliminar-usuario', function (e) {
+            e.preventDefault();
+            var tip = bootstrap.Tooltip.getInstance(this);
+            if (tip) tip.hide();
+            var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+            var nombre = $(this).attr('data-nombre') || 'este usuario';
+            if (!isNaN(id)) eliminarUsuario(id, nombre);
+        });
 
         cargarUsuarios();
     }
 
     async function cargarUsuarios() {
         try {
-            var res = await fetch('usuario/listarAjax');
+            var res = await fetch('/SP%20Perfect%20Color/usuario/listarAjax');
             var json = await res.json();
             if (json.estado !== 'exito') {
                 console.error('Error al listar usuarios:', json.mensaje);
@@ -202,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function abrirModalEditarUsuario(id) {
         try {
-            var res = await fetch('usuario/obtener?id=' + id);
+            var res = await fetch('/SP%20Perfect%20Color/usuario/obtener?id=' + id);
             var json = await res.json();
             if (json.estado !== 'exito') {
                 if (typeof mostrarNotificacion === 'function') mostrarNotificacion(json.mensaje, 'error');
@@ -254,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         var id = document.getElementById('usuarioId').value;
         var esEdicion = id !== '';
-        var url = esEdicion ? 'usuario/actualizar' : 'usuario/guardar';
+        var url = esEdicion ? '/SP%20Perfect%20Color/usuario/actualizar' : '/SP%20Perfect%20Color/usuario/guardar';
 
         var nombre = document.getElementById('nombreUsuario').value.trim();
         var correo = document.getElementById('correoUsuario').value.trim();
@@ -317,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function () {
         confirmarConModal('Eliminar Usuario', '¿Está seguro de eliminar al usuario ' + nombre + '?', function () {
             var fd = new FormData();
             fd.append('id', id);
-            fetch('usuario/eliminar', { method: 'POST', body: fd })
+            fetch('/SP%20Perfect%20Color/usuario/eliminar', { method: 'POST', body: fd })
                 .then(function (r) { return r.json(); })
                 .then(function (json) {
                     if (json.estado === 'exito') {
@@ -360,38 +367,40 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        // Delegación de eventos para la tabla de roles
-        var tablaRolesEl = document.getElementById('tablaRoles');
-        if (tablaRolesEl) {
-            tablaRolesEl.addEventListener('click', function (e) {
-                var btnEdit = e.target.closest('.btn-editar-rol');
-                if (btnEdit) { abrirModalEditarRol(parseInt(btnEdit.dataset.id)); return; }
+        // Delegación de eventos robusta para la tabla de roles
+        $(document).on('click', '.btn-editar-rol', function (e) {
+            e.preventDefault();
+            var tip = bootstrap.Tooltip.getInstance(this);
+            if (tip) tip.hide();
+            var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+            if (!isNaN(id)) abrirModalEditarRol(id);
+        });
 
-                var btnToggle = e.target.closest('.btn-toggle-rol');
-                if (btnToggle) {
-                    var id = parseInt(btnToggle.dataset.id);
-                    var activoActual = parseInt(btnToggle.dataset.activo);
-                    toggleRol(id, activoActual);
-                    return;
-                }
+        $(document).on('click', '.btn-toggle-rol', function (e) {
+            e.preventDefault();
+            var tip = bootstrap.Tooltip.getInstance(this);
+            if (tip) tip.hide();
+            var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+            var activoActual = parseInt($(this).attr('data-activo') || $(this).data('activo'));
+            if (!isNaN(id)) toggleRol(id, activoActual);
+        });
 
-                var btnEliminar = e.target.closest('.btn-eliminar-rol');
-                if (btnEliminar) {
-                    var id = parseInt(btnEliminar.dataset.id);
-                    var nombre = btnEliminar.dataset.nombre;
-                    var totalUsuarios = parseInt(btnEliminar.dataset.usuarios) || 0;
-                    eliminarRol(id, nombre, totalUsuarios);
-                    return;
-                }
-            });
-        }
+        $(document).on('click', '.btn-eliminar-rol', function (e) {
+            e.preventDefault();
+            var tip = bootstrap.Tooltip.getInstance(this);
+            if (tip) tip.hide();
+            var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+            var nombre = $(this).attr('data-nombre') || 'este rol';
+            var totalUsuarios = parseInt($(this).attr('data-usuarios') || $(this).data('usuarios')) || 0;
+            if (!isNaN(id)) eliminarRol(id, nombre, totalUsuarios);
+        });
 
         cargarRoles();
     }
 
     async function cargarRoles() {
         try {
-            var res = await fetch('usuario/listarRolesAjax');
+            var res = await fetch('/SP%20Perfect%20Color/usuario/listarRolesAjax');
             var json = await res.json();
             if (json.estado !== 'exito') {
                 console.error('Error al listar roles:', json.mensaje);
@@ -490,7 +499,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function abrirModalEditarRol(id) {
         try {
-            var res = await fetch('usuario/obtenerRol?id=' + id);
+            var res = await fetch('/SP%20Perfect%20Color/usuario/obtenerRol?id=' + id);
             var json = await res.json();
             if (json.estado !== 'exito') {
                 if (typeof mostrarNotificacion === 'function') mostrarNotificacion(json.mensaje, 'error');
@@ -539,7 +548,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         var id = document.getElementById('rolId').value;
         var esEdicion = id !== '';
-        var url = esEdicion ? 'usuario/actualizarRol' : 'usuario/guardarRol';
+        var url = esEdicion ? '/SP%20Perfect%20Color/usuario/actualizarRol' : '/SP%20Perfect%20Color/usuario/guardarRol';
 
         var nombre = document.getElementById('nombreRol').value.trim();
         if (!nombre) {
@@ -598,7 +607,7 @@ document.addEventListener('DOMContentLoaded', function () {
             fd.append('id', id);
             fd.append('activo', nuevoEstado);
 
-            fetch('usuario/toggleRol', { method: 'POST', body: fd })
+            fetch('/SP%20Perfect%20Color/usuario/toggleRol', { method: 'POST', body: fd })
                 .then(function (r) { return r.json(); })
                 .then(function (json) {
                     if (json.estado === 'exito') {
@@ -641,7 +650,7 @@ document.addEventListener('DOMContentLoaded', function () {
             var fd = new FormData();
             fd.append('id', id);
 
-            fetch('usuario/eliminarRol', { method: 'POST', body: fd })
+            fetch('/SP%20Perfect%20Color/usuario/eliminarRol', { method: 'POST', body: fd })
                 .then(function (r) { return r.json(); })
                 .then(function (json) {
                     if (json.estado === 'exito') {

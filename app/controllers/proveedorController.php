@@ -5,14 +5,16 @@
 namespace App\Controllers;
 
 use App\Models\ProveedorModel;
-use function App\Helpers\respuestaJson;
-use function App\Helpers\verificarAutenticacion;
-use function App\Helpers\verificarAcceso;
-use function App\Helpers\verificarRolAdmin;
-use function App\Helpers\validarRequerido;
-use function App\Helpers\validarRIF;
-use function App\Helpers\validarTelefono;
-use function App\Helpers\validarCorreo;
+use function App\Helpers\{
+    respuestaJson,
+    verificarAutenticacion,
+    verificarAcceso,
+    verificarRolAdmin,
+    validarRequerido,
+    validarRIF,
+    validarTelefono,
+    validarCorreo
+};
 
 $proveedorModel = new ProveedorModel();
 

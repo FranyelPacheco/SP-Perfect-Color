@@ -1,7 +1,6 @@
 // Archivo: proveedor.js
 // Manejo de la vista de gestion de proveedores
 
-
 var rubrosDisponibles = [];
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -26,12 +25,15 @@ document.addEventListener('DOMContentLoaded', function() {
     var esAdmin = document.getElementById('btnNuevoProveedor') !== null;
 
     // Cargar rubros disponibles
-    fetch('inventario/listarRubrosAjax')
+    fetch('/SP%20Perfect%20Color/inventario/listarRubrosAjax')
         .then(function(r) { return r.json(); })
         .then(function(res) {
             if (res.estado === 'exito') {
                 rubrosDisponibles = res.datos.rubros;
             }
+        })
+        .catch(function(e) {
+            console.error('Error al cargar rubros:', e);
         });
 
     cargarProveedores();
@@ -60,6 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function resetRubrosContainer(valores) {
+        if (!rubrosContainer) return;
         rubrosContainer.innerHTML = '';
         if (valores && valores.length) {
             valores.forEach(function(v) { rubrosContainer.appendChild(crearItemRubro(v)); });
@@ -89,6 +92,8 @@ document.addEventListener('DOMContentLoaded', function() {
         btnCerrarModal.addEventListener('click', function() {
             bootstrap.Modal.getInstance(modalProveedor).hide();
         });
+    }
+    if (btnCancelar) {
         btnCancelar.addEventListener('click', function() {
             bootstrap.Modal.getInstance(modalProveedor).hide();
         });
@@ -153,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function cargarProveedores() {
         try {
-            const respuesta = await fetch('proveedor/listarAjax');
+            const respuesta = await fetch('/SP%20Perfect%20Color/proveedor/listarAjax');
             const resultado = await respuesta.json();
 
             if (resultado.estado === 'exito') {
@@ -166,53 +171,87 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function mostrarProveedores(proveedores) {
         if (!$.fn.DataTable.isDataTable('#tablaProveedores')) {
+            var columnsDef = [
+                { data: 'rif' },
+                { data: 'nombre_empresa' },
+                {
+                    data: 'contacto',
+                    render: function(d) { return d || '-'; }
+                },
+                {
+                    data: 'telefonos',
+                    render: function(d) { return d || '-'; }
+                },
+                {
+                    data: 'correo',
+                    render: function(d) { return d || '-'; }
+                },
+                {
+                    data: 'rubros',
+                    render: function(d) { return d || '-'; }
+                }
+            ];
+
+            if (esAdmin) {
+                columnsDef.push({
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    render: function(data, type, row) {
+                        if (!row) return '';
+                        var nom = (row.nombre_empresa || '').replace(/"/g, '&quot;');
+                        return '<div class="d-flex gap-2">' +
+                            '<button class="btn btn-sm btn-warning btn-editar-proveedor" data-id="' + row.id_proveedor + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
+                            '<button class="btn btn-sm btn-danger btn-eliminar-proveedor" data-id="' + row.id_proveedor + '" data-nombre="' + nom + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>' +
+                            '</div>';
+                    }
+                });
+            }
+
             $('#tablaProveedores').DataTable({
                 dom: 'lrtip',
-                language: window.DATATABLES_SPANISH
+                language: window.DATATABLES_SPANISH,
+                columns: columnsDef
             });
         }
 
         var table = $('#tablaProveedores').DataTable();
         table.clear();
 
-        proveedores.forEach(function(proveedor) {
-            var acciones = '';
-            if (esAdmin) {
-                acciones = '<div class="d-flex gap-2">' +
-                    '<button class="btn btn-sm btn-warning btn-editar-proveedor" data-id="' + proveedor.id_proveedor + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
-                    '<button class="btn btn-sm btn-danger btn-eliminar-proveedor" data-id="' + proveedor.id_proveedor + '" data-nombre="' + proveedor.nombre_empresa.replace(/"/g, '&quot;') + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>' +
-                    '</div>';
-            }
-
-            var row = [
-                proveedor.rif,
-                proveedor.nombre_empresa,
-                proveedor.contacto || '-',
-                proveedor.telefonos || '-',
-                proveedor.correo || '-',
-                proveedor.rubros || '-'
-            ];
-
-            if (esAdmin) {
-                row.push(acciones);
-            }
-
-            table.row.add(row);
-        });
+        if (Array.isArray(proveedores)) {
+            proveedores.forEach(function(proveedor) {
+                table.row.add(proveedor);
+            });
+        }
 
         table.draw();
     }
 
-    document.getElementById('tablaProveedores').addEventListener('click', function(e) {
-        var btn = e.target.closest('.btn-editar-proveedor');
-        if (btn) { abrirModalEditar(parseInt(btn.dataset.id)); return; }
-        btn = e.target.closest('.btn-eliminar-proveedor');
-        if (btn) { eliminarProveedor(parseInt(btn.dataset.id), btn.dataset.nombre); return; }
+    // Delegacion de eventos robusta para botones de accion
+    $(document).on('click', '.btn-editar-proveedor', function(e) {
+        e.preventDefault();
+        var tip = bootstrap.Tooltip.getInstance(this);
+        if (tip) tip.hide();
+        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+        if (!isNaN(id)) {
+            abrirModalEditar(id);
+        }
+    });
+
+    $(document).on('click', '.btn-eliminar-proveedor', function(e) {
+        e.preventDefault();
+        var tip = bootstrap.Tooltip.getInstance(this);
+        if (tip) tip.hide();
+        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+        var nombre = $(this).attr('data-nombre') || 'este proveedor';
+        if (!isNaN(id)) {
+            eliminarProveedor(id, nombre);
+        }
     });
 
     async function abrirModalEditar(id) {
         try {
-            const respuesta = await fetch('proveedor/obtener?id=' + id);
+            const respuesta = await fetch('/SP%20Perfect%20Color/proveedor/obtener?id=' + id);
             const resultado = await respuesta.json();
 
             if (resultado.estado === 'exito') {
@@ -262,14 +301,19 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (telefonoProveedor.value.trim() && telefonoProveedor.value.trim().length !== 11) {
-            mostrarError('El telefono debe tener 11 digitos');
+        const selectsRubros = rubrosContainer.querySelectorAll('select[name="rubros[]"]');
+        let rubroSeleccionado = false;
+        selectsRubros.forEach(function(select) {
+            if (select.value) rubroSeleccionado = true;
+        });
+
+        if (!rubroSeleccionado) {
+            mostrarError('Debe seleccionar al menos un rubro');
             return;
         }
 
-        const url = esEdicion ? 'proveedor/actualizar' : 'proveedor/guardar';
+        const url = esEdicion ? '/SP%20Perfect%20Color/proveedor/actualizar' : '/SP%20Perfect%20Color/proveedor/guardar';
         const formData = new FormData(formularioProveedor);
-        formData.set('rif', rif);
 
         if (esEdicion) {
             formData.set('id', id);
@@ -300,32 +344,24 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmarConModal('Eliminar', 'Esta seguro de eliminar al proveedor ' + nombre + '?', function() {
             const formData = new FormData();
             formData.append('id', id);
-            fetch('proveedor/eliminar', { method: 'POST', body: formData })
-                .then(function(r) { return r.json(); })
-                .then(function(resultado) {
-                    if (resultado.estado === 'exito') {
-                        cargarProveedores();
-                        if (typeof mostrarNotificacion === 'function') {
-                            mostrarNotificacion(resultado.mensaje, 'exito');
-                        } else {
-                            alert(resultado.mensaje);
-                        }
-                    } else {
-                        if (typeof mostrarNotificacion === 'function') {
-                            mostrarNotificacion(resultado.mensaje, 'error');
-                        } else {
-                            alert(resultado.mensaje);
-                        }
-                    }
-                })
-                .catch(function(error) {
-                    console.error('Error al eliminar proveedor:', error);
-                    if (typeof mostrarNotificacion === 'function') {
-                        mostrarNotificacion('Error de conexion al eliminar el proveedor', 'error');
-                    } else {
-                        alert('Error de conexion al eliminar el proveedor');
-                    }
-                });
+
+            fetch('/SP%20Perfect%20Color/proveedor/eliminar', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(respuesta) { return respuesta.json(); })
+            .then(function(resultado) {
+                if (resultado.estado === 'exito') {
+                    cargarProveedores();
+                    mostrarNotificacion(resultado.mensaje, 'exito');
+                } else {
+                    mostrarNotificacion(resultado.mensaje, 'error');
+                }
+            })
+            .catch(function(error) {
+                console.error('Error al eliminar proveedor:', error);
+                mostrarNotificacion('Error de conexion al eliminar el proveedor', 'error');
+            });
         });
     }
 

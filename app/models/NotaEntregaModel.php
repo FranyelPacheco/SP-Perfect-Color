@@ -3,8 +3,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use \PDO;
-use \PDOException;
+use PDO, PDOException;
 
 class NotaEntregaModel extends ModeloBase
 {
@@ -106,11 +105,13 @@ class NotaEntregaModel extends ModeloBase
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
                             u.nombre as usuario_nombre,
-                            tp.nombre as tipo_pago_nombre
+                            COALESCE(tp.nombre, CASE WHEN ne.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre
                      FROM notas_entrega ne 
                      INNER JOIN clientes c ON ne.id_cliente = c.id_cliente
                      INNER JOIN usuarios u ON ne.id_usuario = u.id_usuario
-                     LEFT JOIN tipo_pago tp ON ne.id_tipo_pago = tp.id_tipo_pago
+                     LEFT JOIN cuentas_cobrar cc ON cc.id_nota_entrega = ne.id_nota_entrega
+                     LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
+                     LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
                      WHERE ne.activo = 1
                      ORDER BY ne.fecha DESC, ne.id_nota_entrega DESC";
         $stmt = $this->conexion->query($consulta);
@@ -118,7 +119,7 @@ class NotaEntregaModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarSelectById
-    // OBJETIVO: Ejecuta la búsqueda de una nota por ID con datos del cliente y tipo de pago
+    // OBJETIVO: Ejecuta la búsqueda de una nota por ID con datos del cliente y tipo de pago desde pagos_recibidos
     private function _ejecutarSelectById(): array|false
     {
         $consulta = "SELECT ne.*, 
@@ -127,11 +128,13 @@ class NotaEntregaModel extends ModeloBase
                             c.direccion as cliente_direccion,
                             (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
                             u.nombre as usuario_nombre,
-                            tp.nombre as tipo_pago_nombre
+                            COALESCE(tp.nombre, CASE WHEN ne.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre
                      FROM notas_entrega ne 
                      INNER JOIN clientes c ON ne.id_cliente = c.id_cliente
                      INNER JOIN usuarios u ON ne.id_usuario = u.id_usuario
-                     LEFT JOIN tipo_pago tp ON ne.id_tipo_pago = tp.id_tipo_pago
+                     LEFT JOIN cuentas_cobrar cc ON cc.id_nota_entrega = ne.id_nota_entrega
+                     LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
+                     LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
                      WHERE ne.id_nota_entrega = :id AND ne.activo = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
@@ -140,17 +143,28 @@ class NotaEntregaModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarSelectDetalle
-    // OBJETIVO: Obtiene las líneas de detalle de la nota con datos del insumo
-    // NOTA: Hace JOIN con presupuesto_detalle para obtener el id_insumo
+    // OBJETIVO: Obtiene las líneas de detalle de la nota a partir del presupuesto asociado
+    // NOTA: Consulta presupuesto_detalle y sus items de composición
     private function _ejecutarSelectDetalle(): array
     {
-        $consulta = "SELECT ned.*, i.nombre as insumo_nombre, i.codigo as insumo_codigo,
-                            i.marca as insumo_marca, i.stock_actual as stock_actual,
-                            i.id_insumo as id_insumo, pd.id_insumo as pd_id_insumo
-                     FROM nota_entrega_detalle ned
-                     INNER JOIN presupuesto_detalle pd ON ned.id_presupuesto_detalle = pd.id_presupuesto_detalle
-                     INNER JOIN insumos i ON pd.id_insumo = i.id_insumo
-                     WHERE ned.id_nota_entrega = :id_nota_entrega";
+        $consulta = "SELECT pd.id_presupuesto_detalle,
+                            ne.id_nota_entrega,
+                            pd.id_presupuesto,
+                            pd.descripcion as insumo_nombre,
+                            pd.cantidad,
+                            pd.precio_unitario,
+                            pd.subtotal,
+                            COALESCE(p.codigo, 'PREP') as insumo_codigo,
+                            COALESCE(p.stock_actual, 0) as stock_actual,
+                            ic.id_producto as id_insumo,
+                            ic.id_producto as id_producto,
+                            ic.fraccion_128,
+                            ic.cantidad_consumida
+                     FROM notas_entrega ne
+                     INNER JOIN presupuesto_detalle pd ON ne.id_presupuesto = pd.id_presupuesto
+                     LEFT JOIN item_composicion ic ON pd.id_presupuesto_detalle = ic.id_presupuesto_detalle
+                     LEFT JOIN productos p ON ic.id_producto = p.id_producto
+                     WHERE ne.id_nota_entrega = :id_nota_entrega";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id_nota_entrega', $this->id, PDO::PARAM_INT);
         $stmt->execute();
@@ -169,14 +183,13 @@ class NotaEntregaModel extends ModeloBase
 
             $condicionPagoVal = !empty($this->condicionPago) ? $this->condicionPago : 'contado';
 
-            $consulta = "INSERT INTO notas_entrega (id_cliente, id_usuario, fecha, total, condicion_pago, id_tipo_pago, id_presupuesto) 
-                          VALUES (:id_cliente, :id_usuario, NOW(), :total, :condicion_pago, :id_tipo_pago, :id_presupuesto)";
+            $consulta = "INSERT INTO notas_entrega (id_cliente, id_usuario, fecha, total, condicion_pago, id_presupuesto) 
+                          VALUES (:id_cliente, :id_usuario, NOW(), :total, :condicion_pago, :id_presupuesto)";
             $stmt = $this->conexion->prepare($consulta);
             $stmt->bindValue(':id_cliente', $this->idCliente, PDO::PARAM_INT);
             $stmt->bindValue(':id_usuario', $this->idUsuario, PDO::PARAM_INT);
             $stmt->bindValue(':total', $this->total);
             $stmt->bindValue(':condicion_pago', $condicionPagoVal, PDO::PARAM_STR);
-            $stmt->bindValue(':id_tipo_pago', $this->idTipoPago, empty($this->idTipoPago) ? PDO::PARAM_NULL : PDO::PARAM_INT);
             $stmt->bindValue(':id_presupuesto', $this->idPresupuesto, PDO::PARAM_INT);
             $stmt->execute();
 
@@ -190,7 +203,7 @@ class NotaEntregaModel extends ModeloBase
                     $this->fechaVencimiento = !empty($this->fechaVencimiento) ? $this->fechaVencimiento : date('Y-m-d', strtotime('+10 days'));
                     $this->_crearCuentaCobrar();
                 } else {
-                    $this->_registrarPagoContado();
+                    $this->_crearYPagardeInmediatoContado();
                 }
             }
 
@@ -213,20 +226,15 @@ class NotaEntregaModel extends ModeloBase
 
             $detalleAnterior = $this->_ejecutarSelectDetalle();
             foreach ($detalleAnterior as $item) {
-                $consultaRestaurar = "UPDATE insumos i
-                                      INNER JOIN presupuesto_detalle pd ON pd.id_insumo = i.id_insumo
-                                      SET i.stock_actual = i.stock_actual + :cantidad
-                                      WHERE pd.id_presupuesto_detalle = :pd_id";
+                $consultaRestaurar = "UPDATE productos p
+                                      INNER JOIN item_composicion ic ON ic.id_producto = p.id_producto
+                                      SET p.stock_actual = p.stock_actual + (ic.cantidad_consumida * :factor)
+                                      WHERE ic.id_presupuesto_detalle = :pd_id";
                 $stmtRestaurar = $this->conexion->prepare($consultaRestaurar);
-                $stmtRestaurar->bindValue(':cantidad', $item['cantidad']);
+                $stmtRestaurar->bindValue(':factor', $item['cantidad']);
                 $stmtRestaurar->bindValue(':pd_id', $item['id_presupuesto_detalle'], PDO::PARAM_INT);
                 $stmtRestaurar->execute();
             }
-
-            $consultaEliminar = "DELETE FROM nota_entrega_detalle WHERE id_nota_entrega = :id_nota_entrega";
-            $stmtEliminar = $this->conexion->prepare($consultaEliminar);
-            $stmtEliminar->bindValue(':id_nota_entrega', $this->id, PDO::PARAM_INT);
-            $stmtEliminar->execute();
 
             $consultaPresupuestoId = "SELECT id_presupuesto FROM notas_entrega WHERE id_nota_entrega = :id";
             $stmtPresupuestoId = $this->conexion->prepare($consultaPresupuestoId);
@@ -235,89 +243,61 @@ class NotaEntregaModel extends ModeloBase
             $notaData = $stmtPresupuestoId->fetch();
             $idPresupuesto = $notaData ? (int)$notaData['id_presupuesto'] : 0;
 
+            if ($idPresupuesto < 1) {
+                throw new PDOException('Presupuesto asociado no encontrado');
+            }
+
+            // Eliminar detalles previos de presupuesto_detalle (los item_composicion se eliminan por CASCADE)
+            $consultaEliminar = "DELETE FROM presupuesto_detalle WHERE id_presupuesto = :id_presupuesto";
+            $stmtEliminar = $this->conexion->prepare($consultaEliminar);
+            $stmtEliminar->bindValue(':id_presupuesto', $idPresupuesto, PDO::PARAM_INT);
+            $stmtEliminar->execute();
+
             $total = 0;
-            $consultaDetalle = "INSERT INTO nota_entrega_detalle (id_nota_entrega, id_presupuesto_detalle, cantidad, precio_unitario, subtotal) 
-                                VALUES (:id_nota_entrega, :id_presupuesto_detalle, :cantidad, :precio_unitario, :subtotal)";
-            $stmtDetalle = $this->conexion->prepare($consultaDetalle);
-
-            $consultaDescontar = "UPDATE insumos i
-                                  INNER JOIN presupuesto_detalle pd ON pd.id_insumo = i.id_insumo
-                                  SET i.stock_actual = i.stock_actual - :cantidad
-                                  WHERE pd.id_presupuesto_detalle = :pd_id";
-            $stmtDescontar = $this->conexion->prepare($consultaDescontar);
-
-            $consultaInsertPresupuestoDetalle = "INSERT INTO presupuesto_detalle (id_presupuesto, id_insumo, cantidad, precio_unitario, subtotal) 
-                                                  VALUES (:id_presupuesto, :id_insumo, :cantidad, :precio_unitario, :subtotal)";
+            $consultaInsertPresupuestoDetalle = "INSERT INTO presupuesto_detalle (id_presupuesto, descripcion, cantidad, precio_unitario, subtotal) 
+                                                  VALUES (:id_presupuesto, :descripcion, :cantidad, :precio_unitario, :subtotal)";
             $stmtInsertPresupuestoDetalle = $this->conexion->prepare($consultaInsertPresupuestoDetalle);
 
-            $consultaStockDirecto = "SELECT stock_actual FROM insumos WHERE id_insumo = :id_insumo AND activo = 1 FOR UPDATE";
+            $consultaInsertItemComp = "INSERT INTO item_composicion (id_presupuesto_detalle, id_producto, fraccion_128, cantidad_consumida)
+                                       VALUES (:id_presupuesto_detalle, :id_producto, 0, 1.0000)";
+            $stmtInsertItemComp = $this->conexion->prepare($consultaInsertItemComp);
+
+            $consultaStockDirecto = "SELECT nombre, stock_actual FROM productos WHERE id_producto = :id_producto AND activo = 1 FOR UPDATE";
             $stmtStockDirecto = $this->conexion->prepare($consultaStockDirecto);
 
-            $consultaDescontarDirecto = "UPDATE insumos SET stock_actual = stock_actual - :cantidad WHERE id_insumo = :id_insumo";
+            $consultaDescontarDirecto = "UPDATE productos SET stock_actual = stock_actual - :cantidad WHERE id_producto = :id_producto";
             $stmtDescontarDirecto = $this->conexion->prepare($consultaDescontarDirecto);
 
             foreach ($this->detalle as $item) {
-                $esNuevo = empty($item['id_presupuesto_detalle']) || (int)$item['id_presupuesto_detalle'] === 0;
-
-                if ($esNuevo) {
-                    $idInsumo = (int)($item['id_insumo'] ?? 0);
-                    if ($idInsumo < 1) {
-                        throw new PDOException('Item nuevo sin insumo valido');
-                    }
-
-                    $stmtStockDirecto->bindValue(':id_insumo', $idInsumo, PDO::PARAM_INT);
-                    $stmtStockDirecto->execute();
-                    $insumo = $stmtStockDirecto->fetch();
-
-                    if (!$insumo || (float)$insumo['stock_actual'] < (float)$item['cantidad']) {
-                        throw new PDOException('Stock insuficiente para el insumo ID: ' . $idInsumo);
-                    }
-
-                    $stmtInsertPresupuestoDetalle->bindValue(':id_presupuesto', $idPresupuesto, PDO::PARAM_INT);
-                    $stmtInsertPresupuestoDetalle->bindValue(':id_insumo', $idInsumo, PDO::PARAM_INT);
-                    $stmtInsertPresupuestoDetalle->bindValue(':cantidad', $item['cantidad']);
-                    $stmtInsertPresupuestoDetalle->bindValue(':precio_unitario', $item['precio_unitario']);
-                    $stmtInsertPresupuestoDetalle->bindValue(':subtotal', $item['subtotal']);
-                    $stmtInsertPresupuestoDetalle->execute();
-
-                    $nuevoId = (int)$this->conexion->lastInsertId();
-
-                    $stmtDetalle->bindValue(':id_nota_entrega', $this->id, PDO::PARAM_INT);
-                    $stmtDetalle->bindValue(':id_presupuesto_detalle', $nuevoId, PDO::PARAM_INT);
-                    $stmtDetalle->bindValue(':cantidad', $item['cantidad']);
-                    $stmtDetalle->bindValue(':precio_unitario', $item['precio_unitario']);
-                    $stmtDetalle->bindValue(':subtotal', $item['subtotal']);
-                    $stmtDetalle->execute();
-
-                    $stmtDescontarDirecto->bindValue(':cantidad', $item['cantidad']);
-                    $stmtDescontarDirecto->bindValue(':id_insumo', $idInsumo, PDO::PARAM_INT);
-                    $stmtDescontarDirecto->execute();
-                } else {
-                    $pdId = (int)$item['id_presupuesto_detalle'];
-
-                    $consultaStock = "SELECT i.stock_actual FROM insumos i
-                                      INNER JOIN presupuesto_detalle pd ON pd.id_insumo = i.id_insumo
-                                      WHERE pd.id_presupuesto_detalle = :pd_id AND i.activo = 1";
-                    $stmtStock = $this->conexion->prepare($consultaStock);
-                    $stmtStock->bindValue(':pd_id', $pdId, PDO::PARAM_INT);
-                    $stmtStock->execute();
-                    $insumo = $stmtStock->fetch();
-
-                    if (!$insumo || $insumo['stock_actual'] < $item['cantidad']) {
-                        throw new PDOException('Stock insuficiente para el item ID: ' . $pdId);
-                    }
-
-                    $stmtDetalle->bindValue(':id_nota_entrega', $this->id, PDO::PARAM_INT);
-                    $stmtDetalle->bindValue(':id_presupuesto_detalle', $pdId, PDO::PARAM_INT);
-                    $stmtDetalle->bindValue(':cantidad', $item['cantidad']);
-                    $stmtDetalle->bindValue(':precio_unitario', $item['precio_unitario']);
-                    $stmtDetalle->bindValue(':subtotal', $item['subtotal']);
-                    $stmtDetalle->execute();
-
-                    $stmtDescontar->bindValue(':cantidad', $item['cantidad']);
-                    $stmtDescontar->bindValue(':pd_id', $pdId, PDO::PARAM_INT);
-                    $stmtDescontar->execute();
+                $idInsumo = (int)($item['id_producto'] ?? $item['id_insumo'] ?? 0);
+                if ($idInsumo < 1) {
+                    throw new PDOException('Item sin producto valido');
                 }
+
+                $stmtStockDirecto->bindValue(':id_producto', $idInsumo, PDO::PARAM_INT);
+                $stmtStockDirecto->execute();
+                $insumo = $stmtStockDirecto->fetch();
+
+                if (!$insumo || (float)$insumo['stock_actual'] < (float)$item['cantidad']) {
+                    throw new PDOException('Stock insuficiente para el producto: ' . ($insumo['nombre'] ?? $idInsumo));
+                }
+
+                $stmtInsertPresupuestoDetalle->bindValue(':id_presupuesto', $idPresupuesto, PDO::PARAM_INT);
+                $stmtInsertPresupuestoDetalle->bindValue(':descripcion', $insumo['nombre'] ?? 'Producto');
+                $stmtInsertPresupuestoDetalle->bindValue(':cantidad', $item['cantidad']);
+                $stmtInsertPresupuestoDetalle->bindValue(':precio_unitario', $item['precio_unitario']);
+                $stmtInsertPresupuestoDetalle->bindValue(':subtotal', $item['subtotal']);
+                $stmtInsertPresupuestoDetalle->execute();
+
+                $nuevoId = (int)$this->conexion->lastInsertId();
+
+                $stmtInsertItemComp->bindValue(':id_presupuesto_detalle', $nuevoId, PDO::PARAM_INT);
+                $stmtInsertItemComp->bindValue(':id_producto', $idInsumo, PDO::PARAM_INT);
+                $stmtInsertItemComp->execute();
+
+                $stmtDescontarDirecto->bindValue(':cantidad', $item['cantidad']);
+                $stmtDescontarDirecto->bindValue(':id_producto', $idInsumo, PDO::PARAM_INT);
+                $stmtDescontarDirecto->execute();
 
                 $total += $item['subtotal'];
             }
@@ -376,11 +356,13 @@ class NotaEntregaModel extends ModeloBase
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
                             u.nombre as usuario_nombre,
-                            tp.nombre as tipo_pago_nombre
+                            COALESCE(tp.nombre, CASE WHEN ne.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre
                      FROM notas_entrega ne 
                      INNER JOIN clientes c ON ne.id_cliente = c.id_cliente
                      INNER JOIN usuarios u ON ne.id_usuario = u.id_usuario
-                     LEFT JOIN tipo_pago tp ON ne.id_tipo_pago = tp.id_tipo_pago
+                     LEFT JOIN cuentas_cobrar cc ON cc.id_nota_entrega = ne.id_nota_entrega
+                     LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
+                     LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
                      WHERE ne.activo = 1 AND (c.nombres LIKE :termino1 
                          OR c.apellidos LIKE :termino2 
                          OR c.cedula LIKE :termino3) 
@@ -394,48 +376,50 @@ class NotaEntregaModel extends ModeloBase
     }
 
     // FUNCIÓN: _validarStock
-    // OBJETIVO: Verifica que todos los items tengan stock suficiente antes de crear la nota
+    // OBJETIVO: Verifica que todos los insumos de composición tengan stock suficiente antes de crear la nota
     // NOTA: Usa FOR UPDATE para bloquear filas dentro de la transacción
     private function _validarStock(): void
     {
         foreach ($this->detalle as $item) {
-            $consulta = "SELECT i.stock_actual FROM insumos i
-                         INNER JOIN presupuesto_detalle pd ON pd.id_insumo = i.id_insumo
-                         WHERE pd.id_presupuesto_detalle = :pd_id AND i.activo = 1 FOR UPDATE";
-            $stmt = $this->conexion->prepare($consulta);
-            $stmt->bindValue(':pd_id', $item['id_presupuesto_detalle'], PDO::PARAM_INT);
-            $stmt->execute();
-            $insumo = $stmt->fetch();
+            $pdId = (int)$item['id_presupuesto_detalle'];
+            $cantMultiplicador = (float)$item['cantidad'];
 
-            if (!$insumo || (float)$insumo['stock_actual'] < (float)$item['cantidad']) {
-                throw new PDOException('Stock insuficiente para el item ID: ' . $item['id_presupuesto_detalle']);
+            // Obtener todos los componentes del item en presupuesto_detalle
+            $consultaComp = "SELECT ic.id_producto, ic.cantidad_consumida, p.nombre, p.stock_actual
+                             FROM item_composicion ic
+                             INNER JOIN productos p ON ic.id_producto = p.id_producto
+                             WHERE ic.id_presupuesto_detalle = :pd_id AND p.activo = 1 FOR UPDATE";
+            $stmtComp = $this->conexion->prepare($consultaComp);
+            $stmtComp->bindValue(':pd_id', $pdId, PDO::PARAM_INT);
+            $stmtComp->execute();
+            $componentes = $stmtComp->fetchAll();
+
+            if (empty($componentes)) {
+                throw new PDOException('No se encontraron insumos de composición para el item ID: ' . $pdId);
+            }
+
+            foreach ($componentes as $comp) {
+                // Cantidad requerida total = cantidad_consumida unitaria * cantidad solicitada
+                $requerido = (float)$comp['cantidad_consumida'] * $cantMultiplicador;
+                if ((float)$comp['stock_actual'] < $requerido) {
+                    throw new PDOException('Stock insuficiente para el insumo ' . $comp['nombre'] . ' (Disponible: ' . $comp['stock_actual'] . ', Requerido: ' . $requerido . ')');
+                }
             }
         }
     }
 
     // FUNCIÓN: _insertarDetalleYDescontarStock
-    // OBJETIVO: Inserta el detalle en nota_entrega_detalle y descuenta el stock de cada insumo
+    // OBJETIVO: Descuenta el stock físico de cada producto mediante item_composicion a partir del presupuesto
     private function _insertarDetalleYDescontarStock(): void
     {
-        $consultaDetalle = "INSERT INTO nota_entrega_detalle (id_nota_entrega, id_presupuesto_detalle, cantidad, precio_unitario, subtotal) 
-                            VALUES (:id_nota_entrega, :id_presupuesto_detalle, :cantidad, :precio_unitario, :subtotal)";
-        $stmtDetalle = $this->conexion->prepare($consultaDetalle);
-
-        $consultaDescontar = "UPDATE insumos i
-                              INNER JOIN presupuesto_detalle pd ON pd.id_insumo = i.id_insumo
-                              SET i.stock_actual = i.stock_actual - :cantidad
-                              WHERE pd.id_presupuesto_detalle = :pd_id";
+        $consultaDescontar = "UPDATE productos p
+                              INNER JOIN item_composicion ic ON ic.id_producto = p.id_producto
+                              SET p.stock_actual = p.stock_actual - (ic.cantidad_consumida * :factor)
+                              WHERE ic.id_presupuesto_detalle = :pd_id";
         $stmtDescontar = $this->conexion->prepare($consultaDescontar);
 
         foreach ($this->detalle as $item) {
-            $stmtDetalle->bindValue(':id_nota_entrega', $this->notaId, PDO::PARAM_INT);
-            $stmtDetalle->bindValue(':id_presupuesto_detalle', $item['id_presupuesto_detalle'], PDO::PARAM_INT);
-            $stmtDetalle->bindValue(':cantidad', $item['cantidad']);
-            $stmtDetalle->bindValue(':precio_unitario', $item['precio_unitario']);
-            $stmtDetalle->bindValue(':subtotal', $item['subtotal']);
-            $stmtDetalle->execute();
-
-            $stmtDescontar->bindValue(':cantidad', $item['cantidad']);
+            $stmtDescontar->bindValue(':factor', $item['cantidad']);
             $stmtDescontar->bindValue(':pd_id', $item['id_presupuesto_detalle'], PDO::PARAM_INT);
             $stmtDescontar->execute();
         }
@@ -453,9 +437,19 @@ class NotaEntregaModel extends ModeloBase
 
     // FUNCIÓN: _crearCuentaCobrar
     // OBJETIVO: Crea una cuenta por cobrar cuando la condición de pago es crédito
-    // NOTA: El saldo pendiente se inicializa igual al monto total
+    // NOTA: El saldo pendiente se inicializa igual al monto total y el id_cliente se toma de la nota de entrega
     private function _crearCuentaCobrar(): void
     {
+        if ($this->idCliente <= 0 && $this->notaId > 0) {
+            $stmtCli = $this->conexion->prepare("SELECT id_cliente FROM notas_entrega WHERE id_nota_entrega = :nid");
+            $stmtCli->bindValue(':nid', $this->notaId, PDO::PARAM_INT);
+            $stmtCli->execute();
+            $cliRow = $stmtCli->fetch();
+            if ($cliRow && !empty($cliRow['id_cliente'])) {
+                $this->idCliente = (int)$cliRow['id_cliente'];
+            }
+        }
+
         $consulta = "INSERT INTO cuentas_cobrar (id_cliente, id_nota_entrega, monto_total, saldo_pendiente, fecha_vencimiento, estado, activo) 
                      VALUES (:id_cliente, :id_nota_entrega, :monto_total, :saldo_pendiente, :fecha_vencimiento, 'pendiente', 1)";
         $stmt = $this->conexion->prepare($consulta);
@@ -470,20 +464,42 @@ class NotaEntregaModel extends ModeloBase
         }
     }
 
-    // FUNCIÓN: _registrarPagoContado
-    // OBJETIVO: Registra el pago de contado en la tabla pagos_recibidos
-    // NOTA: id_cuenta_cobrar es NULL porque no hay cuenta asociada en pagos de contado directos
-    private function _registrarPagoContado(): void
+    // FUNCIÓN: _crearYPagardeInmediatoContado
+    // OBJETIVO: Crea la cuenta por cobrar para la venta de contado y registra su pago completo de inmediato (cadena lineal notas_entrega -> cuentas_cobrar -> pagos_recibidos)
+    private function _crearYPagardeInmediatoContado(): void
     {
+        if ($this->idCliente <= 0 && $this->notaId > 0) {
+            $stmtCli = $this->conexion->prepare("SELECT id_cliente FROM notas_entrega WHERE id_nota_entrega = :nid");
+            $stmtCli->bindValue(':nid', $this->notaId, PDO::PARAM_INT);
+            $stmtCli->execute();
+            $cliRow = $stmtCli->fetch();
+            if ($cliRow && !empty($cliRow['id_cliente'])) {
+                $this->idCliente = (int)$cliRow['id_cliente'];
+            }
+        }
+
+        // 1. Crear cuenta por cobrar ya saldada (monto total = total, saldo pendiente = 0, estado = 'pagado')
+        $consultaCxc = "INSERT INTO cuentas_cobrar (id_cliente, id_nota_entrega, monto_total, saldo_pendiente, fecha_vencimiento, estado, activo) 
+                        VALUES (:id_cliente, :id_nota_entrega, :monto_total, 0, NOW(), 'pagado', 1)";
+        $stmtCxc = $this->conexion->prepare($consultaCxc);
+        $stmtCxc->bindValue(':id_cliente', $this->idCliente, PDO::PARAM_INT);
+        $stmtCxc->bindValue(':id_nota_entrega', $this->notaId, PDO::PARAM_INT);
+        $stmtCxc->bindValue(':monto_total', $this->total);
+        $stmtCxc->execute();
+
+        $idCuentaCobrar = (int)$this->conexion->lastInsertId();
+
+        // 2. Registrar el pago de contado apuntando a la cuenta por cobrar creada
         $tipoPagoVal = $this->idTipoPago ?? 1;
-        $consulta = "INSERT INTO pagos_recibidos (id_cuenta_cobrar, id_tipo_pago, id_banco, monto, fecha, referencia) 
-                     VALUES (NULL, :id_tipo_pago, :id_banco, :monto, NOW(), :referencia)";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindValue(':id_tipo_pago', $tipoPagoVal, PDO::PARAM_INT);
-        $stmt->bindValue(':id_banco', $this->idBanco, empty($this->idBanco) ? PDO::PARAM_NULL : PDO::PARAM_INT);
-        $stmt->bindValue(':monto', $this->total);
-        $stmt->bindValue(':referencia', $this->referencia, empty($this->referencia) ? PDO::PARAM_NULL : PDO::PARAM_STR);
-        $stmt->execute();
+        $consultaPago = "INSERT INTO pagos_recibidos (id_cuenta_cobrar, id_tipo_pago, id_banco, monto, fecha, referencia) 
+                         VALUES (:id_cuenta_cobrar, :id_tipo_pago, :id_banco, :monto, NOW(), :referencia)";
+        $stmtPago = $this->conexion->prepare($consultaPago);
+        $stmtPago->bindValue(':id_cuenta_cobrar', $idCuentaCobrar, PDO::PARAM_INT);
+        $stmtPago->bindValue(':id_tipo_pago', $tipoPagoVal, PDO::PARAM_INT);
+        $stmtPago->bindValue(':id_banco', $this->idBanco, empty($this->idBanco) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmtPago->bindValue(':monto', $this->total);
+        $stmtPago->bindValue(':referencia', $this->referencia, empty($this->referencia) ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmtPago->execute();
     }
 
     // FUNCIÓN: obtenerVentasMes
@@ -522,17 +538,17 @@ class NotaEntregaModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarTopProductos
-    // OBJETIVO: Agrupa por insumo la cantidad vendida del día, ordena y limita
+    // OBJETIVO: Agrupa por producto la cantidad consumida del día, ordena y limita
     private function _ejecutarTopProductos(): array
     {
-        $consulta = "SELECT i.id_insumo, i.codigo, i.nombre, i.marca,
-                            SUM(ned.cantidad) as total_vendido
-                     FROM nota_entrega_detalle ned
-                     INNER JOIN presupuesto_detalle pd ON ned.id_presupuesto_detalle = pd.id_presupuesto_detalle
-                     INNER JOIN insumos i ON pd.id_insumo = i.id_insumo
-                     INNER JOIN notas_entrega ne ON ned.id_nota_entrega = ne.id_nota_entrega
+        $consulta = "SELECT p.id_producto, p.id_producto as id_insumo, p.codigo, p.nombre,
+                            SUM(pd.cantidad * ic.cantidad_consumida) as total_vendido
+                     FROM notas_entrega ne
+                     INNER JOIN presupuesto_detalle pd ON ne.id_presupuesto = pd.id_presupuesto
+                     INNER JOIN item_composicion ic ON pd.id_presupuesto_detalle = ic.id_presupuesto_detalle
+                     INNER JOIN productos p ON ic.id_producto = p.id_producto
                      WHERE DATE(ne.fecha) = CURDATE() AND ne.activo = 1
-                     GROUP BY i.id_insumo
+                     GROUP BY p.id_producto
                      ORDER BY total_vendido DESC
                      LIMIT :limite";
         $stmt = $this->conexion->prepare($consulta);

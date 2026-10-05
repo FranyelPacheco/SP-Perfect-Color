@@ -8,7 +8,7 @@
     var PUEDE_GESTIONAR = <?php echo json_encode($puedeGestionar ?? false); ?>;
 </script>
 <div class="row justify-content-center">
-    <div class="col-12<?php echo $puedeGestionar ? ' col-lg-11' : ' col-md-8 col-lg-6'; ?>">
+    <div class="col-12 col-lg-11">
 
         <?php if ($puedeGestionar): ?>
         <!-- Pestañas de navegación entre Usuarios y Roles -->
@@ -87,41 +87,6 @@
             </div>
         </div>
         <?php endif; ?>
-
-        <?php if (!$puedeGestionar): ?>
-        <!-- Vista de Perfil para usuarios sin privilegios administrativos -->
-        <div id="perfilVendedor" class="card border-0 shadow-sm mb-4">
-            <div class="card-body p-4 text-center">
-                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm"
-                     style="width: 80px; height: 80px; font-size: 2rem; font-weight: 600;">
-                    <?php echo strtoupper(substr($_SESSION['usuario_nombre'] ?? 'U', 0, 1)); ?>
-                </div>
-                <h4 class="mb-1"><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></h4>
-                <p class="text-muted mb-3"><?php echo htmlspecialchars($_SESSION['usuario_correo'] ?? 'Correo no disponible'); ?></p>
-                <span class="badge bg-secondary fs-6 mb-3"><?php echo htmlspecialchars($_SESSION['usuario_rol_nombre'] ?? 'Usuario'); ?></span>
-
-                <hr class="my-4">
-
-                <div class="text-start mb-3">
-                    <label class="text-muted small text-uppercase fw-semibold mb-1">Nombre Completo</label>
-                    <p class="fw-medium fs-5 mb-0"><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? ''); ?></p>
-                </div>
-                <div class="text-start mb-3">
-                    <label class="text-muted small text-uppercase fw-semibold mb-1">Correo Electrónico</label>
-                    <p class="fw-medium fs-5 mb-0"><?php echo htmlspecialchars($_SESSION['usuario_correo'] ?? 'No disponible'); ?></p>
-                </div>
-                <div class="text-start mb-4">
-                    <label class="text-muted small text-uppercase fw-semibold mb-1">Rol</label>
-                    <p class="fw-medium fs-5 mb-0"><?php echo htmlspecialchars($_SESSION['usuario_rol_nombre'] ?? 'Usuario'); ?></p>
-                </div>
-
-                <button id="btnEditarPerfil" class="btn btn-primary w-100 py-2">
-                    <i class="bi bi-pencil-square me-2"></i>Editar Mi Perfil
-                </button>
-            </div>
-        </div>
-        <?php endif; ?>
-
     </div>
 </div>
 

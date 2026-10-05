@@ -3,8 +3,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use PDO;
-use PDOException;
+use PDO, PDOException;
 
 class CuentaPagarModel extends ModeloBase
 {

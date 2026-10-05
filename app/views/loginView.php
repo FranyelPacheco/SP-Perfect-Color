@@ -77,6 +77,10 @@
                         </div>
                     </div>
 
+                    <div class="d-flex justify-content-end mb-3">
+                        <a href="#" class="small text-decoration-none text-muted" data-bs-toggle="modal" data-bs-target="#modalRecuperarClave">¿Olvidó su contraseña?</a>
+                    </div>
+
                     <div id="mensajeError" class="alert alert-danger d-none"></div>
 
                     <button type="submit" id="btnLogin" class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2">
@@ -89,6 +93,39 @@
             </div>
             <div class="card-footer text-center border-0 py-3">
                 <small class="text-muted">&copy; <?php echo date('Y'); ?> SP Perfect Color</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA RECUPERAR CONTRASEÑA -->
+    <div class="modal fade" id="modalRecuperarClave" tabindex="-1" aria-labelledby="modalRecuperarLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-dark text-white border-0">
+                    <h5 class="modal-title fs-6 text-white" id="modalRecuperarLabel"><i class="bi bi-shield-lock-fill me-2"></i>Recuperar Contraseña</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">Ingrese el correo electrónico registrado en su cuenta. Le enviaremos un enlace seguro para restablecer su clave.</p>
+                    <form id="formRecuperarClave" novalidate>
+                        <div class="mb-3">
+                            <label for="correoRecuperar" class="form-label fw-semibold">Correo Electrónico</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                                <input type="email" id="correoRecuperar" name="correo" class="form-control" placeholder="correo@ejemplo.com" required>
+                            </div>
+                        </div>
+
+                        <div id="alertaRecuperar" class="alert d-none mb-3"></div>
+
+                        <button type="submit" id="btnEnviarRecuperar" class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2">
+                            <span class="btn-texto">Enviar Instrucciones</span>
+                            <div class="spinner-border spinner-border-sm d-none" role="status">
+                                <span class="visually-hidden">Enviando...</span>
+                            </div>
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

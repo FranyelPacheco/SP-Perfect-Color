@@ -17,20 +17,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    document.getElementById('tablaBancos').addEventListener('click', function(e) {
-        var btn = e.target.closest('.btn-editar-banco');
-        if (btn) { abrirModalEditar(parseInt(btn.dataset.id)); return; }
-        btn = e.target.closest('.btn-toggle-banco');
-        if (btn) {
-            var id = parseInt(btn.dataset.id);
-            var activo = parseInt(btn.dataset.activo);
-            var titulo = activo ? 'Deshabilitar' : 'Habilitar';
-            var msg = activo ? 'Esta seguro de deshabilitar este banco?' : 'Esta seguro de habilitar este banco?';
-            confirmarConModal(titulo, msg, function() {
-                toggleBancoEstado(id);
-            });
-            return;
-        }
+    $(document).on('click', '.btn-editar-banco', function(e) {
+        e.preventDefault();
+        var tip = bootstrap.Tooltip.getInstance(this);
+        if (tip) tip.hide();
+        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+        if (!isNaN(id)) abrirModalEditar(id);
+    });
+
+    $(document).on('click', '.btn-toggle-banco', function(e) {
+        e.preventDefault();
+        var tip = bootstrap.Tooltip.getInstance(this);
+        if (tip) tip.hide();
+        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+        var activo = parseInt($(this).attr('data-activo') || $(this).data('activo'));
+        var titulo = activo ? 'Deshabilitar' : 'Habilitar';
+        var msg = activo ? 'Esta seguro de deshabilitar este banco?' : 'Esta seguro de habilitar este banco?';
+        confirmarConModal(titulo, msg, function() {
+            toggleBancoEstado(id);
+        });
     });
 
     if (modal) {

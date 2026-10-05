@@ -3,14 +3,16 @@
 namespace App\Controllers;
 
 use App\Models\ClienteModel;
-use function App\Helpers\respuestaJson;
-use function App\Helpers\verificarAutenticacion;
-use function App\Helpers\verificarPermiso;
-use function App\Helpers\verificarRolAdmin;
-use function App\Helpers\validarRequerido;
-use function App\Helpers\validarCedula;
-use function App\Helpers\validarTelefono;
-use function App\Helpers\validarCorreo;
+use function App\Helpers\{
+    respuestaJson,
+    verificarAutenticacion,
+    verificarPermiso,
+    verificarRolAdmin,
+    validarRequerido,
+    validarCedula,
+    validarTelefono,
+    validarCorreo
+};
 
 $clienteModel = new ClienteModel();
 

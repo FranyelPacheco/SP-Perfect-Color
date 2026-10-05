@@ -2,12 +2,14 @@
 
 namespace App\Controllers;
 
-use App\Models\ClienteModel;
-use App\Models\ProveedorModel;
-use App\Models\InventarioModel;
-use App\Models\CuentaPagarModel;
-use App\Models\CuentaCobrarModel;
-use App\Models\NotaEntregaModel;
+use App\Models\{
+    ClienteModel,
+    ProveedorModel,
+    InventarioModel,
+    CuentaPagarModel,
+    CuentaCobrarModel,
+    NotaEntregaModel
+};
 use function App\Helpers\verificarAutenticacion;
 
 // FUNCIÓN: index
