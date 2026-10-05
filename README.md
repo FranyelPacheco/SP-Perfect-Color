@@ -399,12 +399,10 @@ return [
 ## Equipo y Créditos
 
 * **Franyel Pacheco**
-* **Javier Nieto**
 * **Jermaine Gonzalez**
 * **Luis Delgado**
-* **Sebastián Valera**
 
-* **Tutora Académica:** Ing. Paola Ruggiero
+* **Tutora Académica:** Ing. Alexis Dorante
 * **Tutora Externa:** Lic. Nellyser Sánchez
 
 **Proyecto Socio-Tecnológico — Programa Nacional de Formación en Informática (PNFI)**  
