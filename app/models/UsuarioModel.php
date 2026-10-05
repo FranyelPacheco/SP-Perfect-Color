@@ -70,6 +70,33 @@ class UsuarioModel extends ModeloBase
         return $stmt->fetch();
     }
 
+    // FUNCIÓN: buscarConRolPorId
+    // OBJETIVO: Busca un usuario activo por su ID incluyendo el nombre del rol y módulos asociados
+    public function buscarConRolPorId(int $id): array|false
+    {
+        $this->id = $id;
+        return $this->_ejecutarSelectConRolById();
+    }
+
+    // FUNCIÓN: _ejecutarSelectConRolById
+    // OBJETIVO: Ejecuta la consulta con JOIN a roles para datos de perfil
+    private function _ejecutarSelectConRolById(): array|false
+    {
+        $consulta = "SELECT u.*, r.nombre as rol_nombre,
+                            (SELECT GROUP_CONCAT(m.codigo SEPARATOR ',') 
+                             FROM rol_modulo rm 
+                             JOIN modulos m ON rm.id_modulo = m.id_modulo 
+                             WHERE rm.id_rol = r.id_rol) as rol_modulos 
+                     FROM usuarios u 
+                     INNER JOIN roles r ON u.id_rol = r.id_rol 
+                     WHERE u.id_usuario = :id AND u.activo = 1 
+                     LIMIT 1";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch();
+    }
+
     // FUNCIÓN: listarTodos
     // OBJETIVO: Obtiene todos los usuarios activos con el nombre del rol asociado
     public function listarTodos(): array

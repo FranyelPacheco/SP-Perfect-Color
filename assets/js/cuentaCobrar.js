@@ -7,12 +7,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     cargarCuentas();
 
-    document.getElementById('tablaCuentas').addEventListener('click', function(e) {
-        var btn = e.target.closest('.btn-eliminar-cxc');
-        if (btn) {
-            confirmarConModal('Eliminar', 'Esta seguro de eliminar esta cuenta por cobrar?', function() {
+    $(document).on('click', '.btn-eliminar-cxc', function(e) {
+        e.preventDefault();
+        var tip = bootstrap.Tooltip.getInstance(this);
+        if (tip) tip.hide();
+        var id = $(this).attr('data-id') || $(this).data('id');
+        confirmarConModal('Eliminar', 'Esta seguro de eliminar esta cuenta por cobrar?', function() {
             var fd = new FormData();
-            fd.append('id', btn.dataset.id);
+            fd.append('id', id);
             fetch('/SP%20Perfect%20Color/cuentaCobrar/eliminar', { method: 'POST', body: fd })
             .then(function(r) { return r.json(); })
             .then(function(res) {
@@ -20,9 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 else { mostrarNotificacion(res.mensaje, 'error'); }
             })
             .catch(function() { mostrarNotificacion('Error de conexion', 'error'); });
-            });
-            return;
-        }
+        });
     });
 
     if (busquedaCuentas) {

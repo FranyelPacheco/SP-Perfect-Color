@@ -102,4 +102,4 @@
 </div>
 <?php endif; ?>
 
-<script src="/SP%20Perfect%20Color/assets/js/proveedor.js"></script>
+<script src="/SP%20Perfect%20Color/assets/js/proveedor.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/proveedor.js'); ?>"></script>

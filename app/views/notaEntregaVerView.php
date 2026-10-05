@@ -76,7 +76,6 @@
                     <tr>
                         <th>Codigo</th>
                         <th>Insumo</th>
-                        <th>Marca</th>
                         <th>Cantidad</th>
                         <th>Precio Unit.</th>
                         <th>Subtotal</th>
@@ -87,7 +86,6 @@
                     <tr>
                         <td><?php echo $item['insumo_codigo']; ?></td>
                         <td><?php echo $item['insumo_nombre']; ?></td>
-                        <td><?php echo $item['insumo_marca'] ?: '-'; ?></td>
                         <td><?php echo number_format($item['cantidad'], 2, ',', '.'); ?></td>
                         <td>$ <?php echo number_format($item['precio_unitario'], 2, ',', '.'); ?></td>
                         <td>$ <?php echo number_format($item['subtotal'], 2, ',', '.'); ?></td>
@@ -96,7 +94,7 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="5" class="text-end fw-bold">Total:</td>
+                        <td colspan="4" class="text-end fw-bold">Total:</td>
                         <td class="fw-bold">$ <?php echo number_format($nota['total'], 2, ',', '.'); ?></td>
                     </tr>
                 </tfoot>

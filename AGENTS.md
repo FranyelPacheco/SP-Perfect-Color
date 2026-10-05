@@ -1,5 +1,74 @@
 # Session Summary
 
+## Cadena Lineal de Ventas y Cobros (Cero Ciclos: `notas_entrega` $\to$ `cuentas_cobrar` $\to$ `pagos_recibidos`)
+
+### Contexto & Problema de Negocio
+- La coexistencia de `cuentas_cobrar.id_nota_entrega` junto con `pagos_recibidos.id_nota_entrega` y `pagos_recibidos.id_cuenta_cobrar` formaba un ciclo/bucle cerrado triangular (`notas_entrega` $\leftrightarrow$ `pagos_recibidos` $\leftrightarrow$ `cuentas_cobrar`).
+- Se implementó la **Opción A** contable estándar: unificar todo el flujo de cobros a través de `cuentas_cobrar`.
+- El sistema soporta ambas modalidades de venta sin bucles:
+  - **A Crédito:** Crea `cuentas_cobrar` con `estado = 'pendiente'` y saldo pendiente. Los pagos posteriores entran a `pagos_recibidos` vinculados a la cuenta.
+  - **De Contado:** Crea la cuenta en `cuentas_cobrar` y en la misma transacción la cancela de inmediato (`saldo_pendiente = 0`, `estado = 'pagado'`), registrando su pago completo en `pagos_recibidos` vinculado a esa cuenta por cobrar.
+
+### Cambios realizados en Base de Datos & SQL Dump
+1. **Modificación en `pagos_recibidos`:**
+   - Eliminada la columna `id_nota_entrega` y su clave foránea `fk_pr_nota_entrega`.
+   - `pagos_recibidos` ahora referencia **única y exclusivamente** a `cuentas_cobrar` (`id_cuenta_cobrar`).
+2. **Estructura Lineal Limpia:**
+   - Cadena de flujo: `notas_entrega` (1) $\to$ (N) `cuentas_cobrar` (1) $\to$ (N) `pagos_recibidos`.
+   - Cero ciclos, cero redundancias y sin valores nulos condicionales en las claves de transacción.
+3. **Actualizado diagrama SVG (`modelo_relacional.svg`):**
+   - Eliminada la flecha cíclica `rel_pagos_recibidos_notas_entrega_id_nota_entrega`.
+   - `pagos_recibidos` actualizada a 7 filas.
+   - Conectores de `id_tipo_pago` e `id_banco` realineados. Total: 24 tablas y 25 relaciones perfectamente balanceadas.
+4. **Dump oficial:** `app/core/sp_perfect_color.sql` exportado con la estructura final.
+
+### Cambios en Código (Modelos y Consultas)
+- **`app/models/NotaEntregaModel.php`**:
+  - `_crearYPagardeInmediatoContado()`: Al registrar venta de contado, inserta en `cuentas_cobrar` con `saldo_pendiente = 0` y `estado = 'pagado'`, y de inmediato inserta en `pagos_recibidos` asociando `id_cuenta_cobrar`.
+  - `_ejecutarSelectAll()`, `_ejecutarSelectById()`, `_ejecutarSearch()`: Consultas actualizadas haciendo `LEFT JOIN cuentas_cobrar cc ON cc.id_nota_entrega = ne.id_nota_entrega LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago`.
+- **`app/models/ReporteModel.php`**:
+  - Consultas de reportes de ventas y métodos de pago actualizadas con la cadena lineal `notas_entrega` $\to$ `cuentas_cobrar` $\to$ `pagos_recibidos`.
+
+---
+
+## Normalización de Catálogo: Productos, Tipos y Mezclas (Colorimetría)
+
+### Contexto & Problema de Negocio
+- **SP Perfect Color** comercializa dos naturalezas de artículos:
+  1. **Artículos simples de reventa directa:** Brochas, tirros, lijas, pulituras, pegas, herramientas.
+  2. **Insumos y tintes base para formulación de colores:** Tintes concentrados (negro, blanco, colores primarios, químicos) medidos en fracciones de galón ($1/2, 1/4, 1/8, \dots, 1/128$).
+  3. **Pinturas preparadas:** Mezclas creadas a solicitud del cliente combinando hasta 6 tintes base.
+- Anteriormente la tabla se llamaba `insumos` con stock en `DECIMAL(10,2)` y sin distinción de naturaleza ni soporte para descomposición de mezclas.
+
+### Cambios realizados en Base de Datos & SQL Dump
+1. **Creada tabla maestra `tipo_producto`:**
+   - `id_tipo_producto` (PK AUTO_INCREMENT), `nombre` (VARCHAR UNIQUE), `descripcion`, `activo`.
+   - Seeds: `1 = Base`, `2 = Simple`, `3 = Preparado`.
+2. **Renombrada tabla `insumos` $\rightarrow$ `productos`:**
+   - PK `id_insumo` $\rightarrow$ `id_producto`.
+   - Agregada columna `id_tipo_producto` (FK a `tipo_producto`, default 2).
+   - Precisión ampliada: `stock_actual` y `stock_minimo` de `DECIMAL(10,2)` a `DECIMAL(12,4)` para soportar con exactitud fracciones de galón (hasta $1/128 = 0.0078125$).
+3. **Renombrada tabla `insumo_proveedor` $\rightarrow$ `producto_proveedor`:**
+   - PK `id_insumo_proveedor` $\rightarrow$ `id_producto_proveedor`, FK `id_insumo` $\rightarrow$ `id_producto`.
+4. **Cadena Lineal BOM sin ciclos (`presupuestos` $\to$ `presupuesto_detalle` $\to$ `item_composicion` $\to$ `productos`):**
+   - **`presupuesto_detalle`:** Desacoplado del inventario físico. Representa el ítem comercial que adquiere el cliente (`id_presupuesto_detalle`, `id_presupuesto`, `descripcion`, `cantidad`, `precio_unitario`, `subtotal`). Se eliminó `id_producto` evitando ciclos relacionales o valores NULL.
+   - **`item_composicion`:** Tabla de composición (BOM - Bill of Materials). Representa los insumos físicos consumidos del inventario (`id_item_composicion`, `id_presupuesto_detalle`, `id_producto`, `fraccion_128`, `cantidad_consumida`). Tanto productos de reventa (1 insumo, `fraccion_128 = 0`) como fórmulas preparadas (1 a N bases concentradas, `fraccion_128 > 0`) se registran con el mismo esquema uniforme.
+5. **Eliminada tabla redundante `nota_entrega_detalle` (Opción 2 - Cero ciclos):**
+   - Se eliminó el rombo/ciclo entre `presupuestos`, `presupuesto_detalle`, `nota_entrega_detalle` y `notas_entrega`.
+   - `notas_entrega` registra el despacho/cobro directo del presupuesto (`id_presupuesto`).
+   - El detalle de los ítems y consumos de inventario se lee directamente de `presupuesto_detalle` e `item_composicion`.
+6. **Actualizado dump oficial:** `app/core/sp_perfect_color.sql` reexportado en UTF-8 con exactamente 24 tablas limpias sin redundancias ni ciclos.
+
+### Cambios en Código (Modelos, Controladores y Vistas)
+- **`app/models/InventarioModel.php`**: Actualizado a `productos`, `producto_proveedor`, soporte de `id_tipo_producto`, `listarTiposProducto()`, `listarBases()` y aliases de compatibilidad (`id_producto as id_insumo`).
+- **`app/models/PresupuestoModel.php`**: Consultas actualizadas a `id_producto` y JOIN con `productos`.
+- **`app/models/NotaEntregaModel.php`**: Consultas de detalle y descuentos de stock actualizados a `id_producto` y `productos`.
+- **`app/controllers/inventarioController.php`**: Maneja `id_tipo_producto` en `guardar`, `actualizar` y retorna `tipos_producto` en `listarAjax`.
+- **`app/views/inventarioListView.php`**: Agregada columna "Tipo" a la tabla y campo `<select id="tipoProductoInsumo">` en el modal.
+- **`assets/js/inventario.js`**: Soporte en DataTables para mostrar badge de tipo (Base, Simple, Preparado) y carga/edición del tipo en el modal.
+
+---
+
 ## Cuentas por Pagar — DataTable column count fix
 
 ### Problem
@@ -457,6 +526,153 @@ Las FK tenían nombres inconsistentes con las PKs que referenciaban. Ej: `cuenta
   - Nivel 1: `FrontController` en la parte superior con buses ortogonales hacia los 14 modelos.
   - Nivel 2: 14 modelos distribuidos en un único nivel horizontal simétrico y cajas con ancho expandido a 186px sin solapamientos.
   - Nivel 3: `ConexionBD` en la parte inferior recibiendo las conexiones de acceso a base de datos desde los 14 modelos.
+
+---
+
+### 8. Limpieza de Acentos en BD & Corrección Integral de Botones en DataTables
+
+#### Contexto & Solicitud del Usuario
+- **"No pongas nombres con acentos"**: Eliminar tildes/acentos de todos los datos en la base de datos (clientes, proveedores, productos, presupuestos, notas de entrega, roles, módulos y usuarios).
+- **"revisa los botones del datatable porque no me quieren agarrar"**: Los botones de acción en las tablas (editar, eliminar, aprobar, rechazar, toggle) no respondían consistentemente al hacer clic.
+
+#### Causas Raíz Identificadas & Solucionadas
+1. **Rutas Relativas en llamadas AJAX (`fetch`)**:
+   - En `inventario.js`, `cliente.js`, `proveedor.js`, `presupuesto.js` y `usuario.js`, las llamadas AJAX se realizaban con rutas relativas (`inventario/obtener`, `cliente/eliminar`, `inventario/listarRubrosAjax` desde `/proveedor/`).
+   - Al navegar a subrutas o tener trailing slashes en la URL, las rutas relativas producían errores 404 (ej. `/proveedor/inventario/listarRubrosAjax`).
+   - **Solución**: Se normalizaron todas las peticiones a rutas canónicas absolutas con prefijo `/SP%20Perfect%20Color/...`.
+2. **Interferencia de Eventos por Íconos y Tooltips Bootstrap**:
+   - Al hacer clic sobre los íconos `<i class="bi ...">` o si el Tooltip de Bootstrap 5 permanecía activo, el evento de clic no se propagaba adecuadamente al botón o retenía el foco.
+   - **Solución**:
+     - Se añadió regla CSS en `assets/css/estiloBase.css` con `pointer-events: none;` para todos los elementos hijos dentro de los botones de acción en tablas.
+     - En todos los scripts se implementó `var tip = bootstrap.Tooltip.getInstance(this); if (tip) tip.hide();` al ejecutar un clic.
+3. **Delegación de Eventos en DataTables**:
+   - Se migró la delegación de eventos nativa a la delegación canónica con jQuery `$(document).on('click', '.btn-...', function() { ... })`. Esto garantiza que los botones sigan respondiendo tras paginaciones, búsquedas o redibujados de tabla.
+4. **Estandarización de `columns: [...]` en DataTables**:
+   - Se adaptaron `cliente.js`, `inventario.js` y `proveedor.js` al patrón de definición explícita de `columns: [...]` y llenado con `table.row.add(objeto)` para evitar advertencias de desajuste de columnas.
+5. **Cache-Busting Dinámico en Scripts de Vistas**:
+   - En `clienteListView.php`, `inventarioListView.php`, `proveedorListView.php` y `presupuestoListView.php` se implementó `?v=<?php echo filemtime(...); ?>` para forzar a los navegadores a cargar los archivos JS actualizados.
+
+#### Limpieza de Acentos en BD & Actualización de Dump
+- Se ejecutó un proceso de saneamiento en MySQL para sustituir todas las vocales con tildes (`á, é, í, ó, ú, Á, É, Í, Ó, Ú`) en todas las columnas de texto de las 24 tablas.
+- Se re-exportó el volcado SQL oficial `app/core/sp_perfect_color.sql` en UTF-8 con collation `utf8mb4_spanish2_ci`.
+
+---
+
+### 9. Desacoplamiento de Preparados (Mezclas) hacia Presupuestos & Sincronización del SVG
+
+#### Cambios Realizados en Base de Datos & SQL Dump
+1. **Limpieza de `tipo_producto`**:
+   - Eliminado seed `3 = Preparado`. El catálogo de inventario solo admite artículos que existen con stock físico: `1 = Base` (materia prima/tintes) y `2 = Simple` (reventa/ferretería).
+   - Los productos asignados a tipo 3 se reasignaron a tipo 2.
+2. **Reestructuración de `mezcla_detalle`**:
+   - Se eliminó la autorreferencia extraña a `productos` (`id_producto`).
+   - Columna `id_producto` reemplazada por `id_presupuesto_detalle` (FK a `presupuesto_detalle(id_presupuesto_detalle)` con `ON DELETE CASCADE ON UPDATE CASCADE`).
+   - Se mantiene `id_producto_base` (FK a `productos(id_producto)`).
+3. **Flexibilización de `presupuesto_detalle`**:
+   - Columna `id_producto` ajustada a `NULL` permitido para cuando una línea del presupuesto sea una pintura formulada en sitio.
+   - `PresupuestoModel.php` y `NotaEntregaModel.php` actualizados con `LEFT JOIN productos` y `COALESCE` para que no se oculten líneas de preparados.
+4. **Dump oficial actualizado**: `app/core/sp_perfect_color.sql` reexportado en UTF-8 con todas las restricciones referenciales.
+
+---
+
+## Sesión — Reversión de Opción 2 (Restauración de Presupuesto Detalle)
+
+### Contexto & Acción
+- A solicitud del usuario ("deshaz los cambios que te acabo de pedir"), se revirtieron completamente las modificaciones de la Opción 2.
+- El proyecto y la base de datos volvieron a la arquitectura previa estable con `presupuesto_detalle`.
+
+### Cambios Revertidos & Estado Actual
+1. **Base de Datos MySQL (`sp_perfect_color`):**
+   - Restaurada tabla `presupuesto_detalle` con FKs a `presupuestos` y `productos` (`id_producto NULL` permitido).
+   - Restaurada tabla `mezcla_detalle` vinculada a `presupuesto_detalle` (`id_presupuesto_detalle` FK) y a `productos` (`id_producto_base` FK).
+   - Restaurada tabla `nota_entrega_detalle` con FK a `presupuesto_detalle` (`id_presupuesto_detalle`).
+   - Eliminadas tablas `presupuesto_producto` y `presupuesto_preparado`.
+   - Re-exportado dump oficial `app/core/sp_perfect_color.sql` en UTF-8.
+2. **Código PHP:**
+   - `PresupuestoModel.php`: Revertidos `_ejecutarInsert()` y `_ejecutarSelectDetalle()` a `presupuesto_detalle`.
+   - `NotaEntregaModel.php`: Revertidos `_ejecutarSelectDetalle()`, `_validarStock()`, `_insertarDetalleYDescontarStock()`, `_ejecutarActualizarDetalle()` y `_ejecutarTopProductos()` a `presupuesto_detalle`.
+   - `notaEntregaController.php`: Revertido a `id_presupuesto_detalle`.
+3. **Diagrama Relacional SVG (`modelo_relacional.svg`):**
+   - Restaurado a la distribución previa: `presupuesto_detalle` (`x=450, y=380`), `estado_presupuesto` (`x=450, y=560`), `mezcla_detalle` (`x=760, y=720`), con conexiones ortogonales y balance de tags 100% verificado.
+
+---
+
+## Sesión: Correcciones en BD/SVG, Inventario y Presupuesto (Preparación de Mezclas)
+
+### 1. Correcciones en BD y SVG (`modelo_relacional.svg`)
+- **Separación visual de `usuarios` y `modulos`:**
+  - `table_modulos` desplazada verticalmente a $Y=275$ ($X=1030, Y=275, W=230, H=110$).
+  - Despejado completamente el solapamiento con `table_usuarios` (que finaliza en $Y=244.5$), dejando 30.5 px libres arriba y 35 px libres abajo hacia `table_productos`.
+  - Relación `rel_rol_modulo_modulos_id_modulo` alineada ortogonalmente a la nueva coordenada $Y=309.25$.
+- **Representación de `id_cliente` en Notas de Entrega y Cuentas por Cobrar:**
+  - En `table_notas_entrega`: Agregadas columnas `id_cliente` (INT 11 FK) e `id_usuario` (INT 11 FK), renombrada columna `fecha_emision` $\to$ `fecha` (DATETIME).
+  - En `table_cuentas_cobrar`: Agregada columna `id_cliente` (INT 11 FK).
+  - Relaciones conectadas y alineadas en el SVG.
+  - Balance estricto de etiquetas `<g>` verificado: 75 aperturas y 75 cierres (`Final depth: 0`).
+- **Garantía en el código backend:**
+  - `notaEntregaController.php`: Al guardar la nota, `$clienteId` se obtiene y valida directamente del presupuesto asociado (`$presupuesto['id_cliente']`).
+  - `NotaEntregaModel.php`: `_crearCuentaCobrar()` garantiza que `id_cliente` se tome de la nota de entrega.
+
+### 2. Correcciones en Módulo Inventario
+- **Quitar opción "Preparado":**
+  - En [`app/views/inventarioListView.php`](file:///c:/xampp/htdocs/SP%20Perfect%20Color/app/views/inventarioListView.php), eliminada opción `Preparado` del `<select id="tipoProductoInsumo">`. El catálogo ahora solo permite registrar `Base` (ID 1) o `Simple` (ID 2).
+  - En [`app/controllers/inventarioController.php`](file:///c:/xampp/htdocs/SP%20Perfect%20Color/app/controllers/inventarioController.php), validado que `id_tipo_producto` solo sea 1 o 2.
+- **Stock en números enteros:**
+  - En la vista: `step="1"` y `min="0"` en inputs `stockActualInsumo` y `stockMinimoInsumo`.
+  - En [`assets/js/inventario.js`](file:///c:/xampp/htdocs/SP%20Perfect%20Color/assets/js/inventario.js): interceptor `keydown` y limpieza `input` para restringir entrada a caracteres estrictamente numéricos (sin `.`, `,`, `e`, `-`). Validación en `guardarInsumo` que sean enteros $\ge 0$.
+  - En el controlador: validación PHP con `floor($stock) == $stock` para asegurar enteros.
+- **Validación de unidades de medida:**
+  - Si Tipo es **Base**: unidad de medida bloqueada/fijada a **Galón** (`Galon`).
+  - Si Tipo es **Simple**: selector dinámico restringido a **Unidad** o **KG**.
+  - Validación espejo en `inventarioController.php`.
+
+### 3. Correcciones en Módulo Presupuesto (Preparación de Pinturas y Mezclas)
+- **Quitar preparados del catálogo interactivo:**
+  - En [`app/views/presupuestoFormView.php`](file:///c:/xampp/htdocs/SP%20Perfect%20Color/app/views/presupuestoFormView.php): eliminado botón de filtro "Preparados" (solo quedan "Todos", "Bases" y "Simples").
+  - En [`assets/js/presupuestoForm.js`](file:///c:/xampp/htdocs/SP%20Perfect%20Color/assets/js/presupuestoForm.js): exclusión de productos tipo 3 al cargar insumos disponibles.
+- **Formulación y mezcla de pinturas en "Items del Presupuesto":**
+  - Agregado botón destacado `<button id="btnModalPrepararMezcla" class="btn btn-sm btn-success"><i class="bi bi-palette-fill me-1"></i>Preparar Mezcla</button>`.
+  - Creado modal `#modalPrepararMezcla` para formulación interactiva:
+    - **Nombre/Identificación del color** (ej: "Azul Marino Metalizado #102").
+    - **Presentación/Tamaño comercial a vender**: 1 Galón, 1/2 Galón, 1/4 Galón, 1/8 Galón, 1/16 Galón, 1/32 Galón, 1/64 Galón, 1/128 Galón.
+    - **Cantidad de envases a vender**.
+    - **Tabla dinámica de tintes base**: permite seleccionar hasta 6 bases concentradas con sus fracciones ($1/2, 1/4, 1/8, \dots, 1/128$ o fracción personalizada de 128avos) y calcula el consumo unitario en galones.
+    - **Cálculo de costos y precio de venta**: suma costos de las bases y permite establecer el precio de venta unitario por envase.
+  - Al agregar la mezcla: se inserta en `itemsPresupuesto` con badge `[Preparado]`, desglose de bases y su subtotal.
+  - Envío al backend con array `mezclas` estructurado para registrar en `presupuesto_detalle` e `item_composicion`.
+  - En [`PresupuestoModel.php`](file:///c:/xampp/htdocs/SP%20Perfect%20Color/app/models/PresupuestoModel.php): ajustada `cantidad_consumida = 1.0000` en productos simples para evitar multiplicación al cuadrado al descargar stock en notas de entrega.
+
+---
+
+## Sesión: SessionTrait, PHPMailer (SMTP), Perfil de Usuario y Cambio Seguro de Contraseña
+
+### 1. Trait de Sesiones (`SessionTrait`) y Helper Adaptador
+- **`app/traits/SessionTrait.php`**: Creado trait `App\Traits\SessionTrait` para encapsular la gestión centralizada de sesiones, autenticación y verificación de roles/permisos.
+- **`app/helpers/sesionHelper.php`**: Implementa la clase `SesionManager` que usa `SessionTrait`, y todas las funciones procedurales (`verificarAutenticacion`, `tienePermiso`, `verificarPermiso`, etc.) delegan en la instancia del trait para garantizar 100% de compatibilidad retrospectiva.
+- **`app/controllers/loginController.php`**: Refactorizado para usar `obtenerSesionManager()->iniciarSesion($usuario)` y `cerrarSesion()`.
+
+### 2. PHPMailer y Servicio SMTP
+- **`composer.json`**: Agregado `phpmailer/phpmailer: ^7.1` y `"app/helpers/correoHelper.php"` en `autoload.files`.
+- **`app/config/correoConfig.php`**: Configuración de credenciales y servidor SMTP con soporte de variables de entorno.
+- **`app/helpers/correoHelper.php`**: Funciones `enviarCorreo()`, `plantillaBaseCorreo()` y `enviarRecuperacionClave()` con diseño responsive corporativo de SP Perfect Color.
+- **Flujo de Recuperación en Login**:
+  - `loginView.php`: Agregado enlace y modal `modalRecuperarClave`.
+  - `login.js`: Envío asíncrono con fetch a `login/recuperarClave`.
+  - `loginController.php`: Endpoints `recuperarClave`, `restablecer` y `guardarNuevaClave` con tokens temporales firmados con HMAC SHA-256.
+  - `restablecerClaveView.php`: Vista independiente para ingreso de nueva contraseña.
+
+### 3. Módulo Dedicado de "Mi Perfil" (`/perfil`) y Cambio Seguro de Contraseña
+- **`app/controllers/perfilController.php`**: Creado controlador para la gestión de perfil y cambio de clave.
+  - `actualizarDatos`: Actualiza nombre y correo de la cuenta activa.
+  - `cambiarClave`: Solicita y valida la **contraseña actual** mediante `password_verify()` antes de autorizar la nueva contraseña.
+- **`app/views/perfilView.php`**: Vista con tarjeta informativa de usuario (avatar, rol, módulos con acceso, estado) y formularios separados para datos personales y contraseña.
+- **`assets/js/perfil.js`**: Validación en cliente y peticiones asíncronas vía fetch con feedback visual.
+- **`app/models/UsuarioModel.php`**: Agregado `buscarConRolPorId()` y su método privado encapsulado `_ejecutarSelectConRolById()`.
+- **`app/controllers/frontController.php`**: Mapeada la ruta `perfil` en controladores y títulos de página.
+- **`app/views/plantillaBase.php`**: Enlaces del usuario en el sidebar (móvil y desktop) actualizados a `/SP%20Perfect%20Color/perfil`.
+- **`app/controllers/usuarioController.php`**: Usuarios sin permisos para gestionar usuarios son redirigidos automáticamente a `/perfil`.
+
+
 
 
 

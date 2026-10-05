@@ -92,4 +92,5 @@ return array(
     'c7fff7bcce9bf6348d57403ef3649345' => $baseDir . '/app/helpers/sesionHelper.php',
     '1ffeed6c318ec463ef9889799b01bbcc' => $baseDir . '/app/helpers/validacionHelper.php',
     '18af80daf9c3093072776adbaad8a03f' => $baseDir . '/app/helpers/exportarReporteHelper.php',
+    'eed550882a9e3d1675e22039a1838733' => $baseDir . '/app/helpers/correoHelper.php',
 );

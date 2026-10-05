@@ -1,121 +1,342 @@
 # SP Perfect Color - Sistema de Gestión Administrativa
 
-Sistema de información para la gestión integral de procesos administrativos de la empresa **SP Perfect Color**, ubicada en Barquisimeto, Estado Lara. La empresa se especializa en la comercialización de pintura automotriz, tintes, químicos, herramientas y productos de ferretería.
+![PHP 8.2](https://img.shields.io/badge/PHP-8.2%2B-777BB4?style=for-the-badge&logo=php&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Bootstrap 5](https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
+![DataTables](https://img.shields.io/badge/DataTables-1.13-000000?style=for-the-badge&logo=datatable&logoColor=white)
+![PHPMailer](https://img.shields.io/badge/PHPMailer-7.1-EA4335?style=for-the-badge&logo=gmail&logoColor=white)
+![Dompdf](https://img.shields.io/badge/Dompdf-3.1-FF6B6B?style=for-the-badge&logo=adobeacrobatreader&logoColor=white)
+![OpenSpout](https://img.shields.io/badge/OpenSpout-4.25-217346?style=for-the-badge&logo=microsoftexcel&logoColor=white)
+
+Sistema integral de gestión administrativa para la empresa **SP Perfect Color** (Barquisimeto, Estado Lara). Especializada en la comercialización de pinturas automotrices, formulación colorimétrica de tintes concentrados, insumos químicos, herramientas de acabado y ferretería técnica.
+
+---
+
+## Índice
+1. [Características Principales](#características-principales)
+2. [Arquitectura y Buenas Prácticas](#arquitectura-y-buenas-prácticas)
+3. [Tecnologías Utilizadas](#tecnologías-utilizadas)
+4. [Estructura del Proyecto](#estructura-del-proyecto)
+5. [Módulos del Sistema](#módulos-del-sistema)
+6. [Flujo de Procesos y Modelo de Datos](#flujo-de-procesos-y-modelo-de-datos)
+7. [Requisitos del Entorno](#requisitos-del-entorno)
+8. [Guía de Instalación y Configuración](#guía-de-instalación-y-configuración)
+9. [Configuración SMTP (PHPMailer)](#configuración-smtp-phpmailer)
+10. [Convenciones de Código](#convenciones-de-código)
+11. [Equipo y Créditos](#equipo-y-créditos)
+
+---
+
+## Características Principales
+
+* **Autenticación y Seguridad Integral:** Control de acceso basado en roles y permisos por módulo, cifrado seguro con `password_hash()` (Bcrypt), y protección contra ataques de fijación de sesión mediante regeneración de identificadores.
+* **Uso de Traits en POO:** Lógica de sesiones, autenticación y permisos encapsulada horizontalmente en `SessionTrait` y centralizada en `AppTrait`.
+* **Servicio de Correo SMTP con PHPMailer:** Notificaciones automatizadas, recuperación segura de contraseñas mediante tokens temporales firmados con HMAC SHA-256, avisos de seguridad al modificar contraseñas y bienvenida con credenciales a nuevos usuarios.
+* **Módulo Dedicado de "Mi Perfil":** Consulta independiente de datos personales, permisos asignados y cambio de contraseña con validación obligatoria de la clave actual.
+* **Formulación Colorimétrica y BOM (Bill of Materials):** Preparación interactiva de pinturas personalizadas combinando hasta 6 tintes base concentrados medidos con precisión decimal (12,4) en fracciones de galón (hasta $1/128$).
+* **Cadena Lineal de Ventas y Cobros (Cero Ciclos):** Flujo financiero libre de dependencias cíclicas (`notas_entrega` $\to$ `cuentas_cobrar` $\to$ `pagos_recibidos`).
+* **Reactivación Automática de Soft-Delete:** Recuperación transparente de registros inactivos al reingresar claves únicas duplicadas (cédula, RIF, código, correo o nombre).
+* **Exportación de Reportes Ejecutivos:** Descarga directa de notas de entrega y cartera de cuentas por cobrar en PDF horizontal (Dompdf) y Excel XLSX (OpenSpout).
+
+---
+
+## Arquitectura y Buenas Prácticas
+
+El sistema está construido bajo un patrón arquitectónico limpio, desacoplado y sin frameworks pesados, aplicando estándares modernos de la comunidad PHP:
+
+```
+Petición HTTP
+     │
+     ▼
+[index.php] ───► [frontController] ───► Valida Ruta y Mapeo
+                         │
+        ┌────────────────┼────────────────┬────────────────┐
+        ▼                ▼                ▼                ▼
+[SessionTrait]   [perfilController] [notaEntrega...]  [Controladores...]
+   (Permisos)            │                │
+        │                ▼                ▼
+        │         [UsuarioModel]   [Modelos Base] ──► _ejecutarQuery() (PDO)
+        │                │                │                   │
+        └───────────────►├────────────────┴───────────────────┘
+                         ▼
+             [Vistas / JSON API (fetch)]
+```
+
+### 1. Gestión de Sesiones mediante Traits (`App\Traits`)
+Toda la lógica de control de sesiones se encuentra desacoplada en:
+- `App\Traits\SessionTrait`: Métodos de autenticación, verificación de módulos (`tienePermiso`), roles (`verificarRolAdmin`), datos de sesión y utilidades de propietario.
+- `App\Traits\AppTrait`: Trait agregador maestro que centraliza todos los traits del sistema.
+- `App\Helpers\SesionManager`: Fachada/adaptador que hereda de `AppTrait`, permitiendo que los controladores y funciones helpers consuman el trait sin acoplamiento rígido ni rotura de código previo.
+
+### 2. Estándar de Importaciones PSR-12 (`Group Use Declarations`)
+Se sustituyeron las listas largas de sentencias `use` individuales por bloques limpios y categorizados:
+
+```php
+use PDOException;
+
+use App\Models\{
+    NotaEntregaModel,
+    PresupuestoModel,
+    ClienteModel,
+    InventarioModel,
+    TipoPagoModel,
+    BancoModel
+};
+
+use function App\Helpers\{
+    respuestaJson,
+    verificarAutenticacion,
+    verificarRolVendedor
+};
+```
+
+### 3. Encapsulamiento Estricto en Modelos (`ModeloBase`)
+Los 11 modelos del sistema aplican encapsulamiento operativo:
+- Los métodos públicos definen la firma, tipado estricto e hidratación de propiedades.
+- La ejecución en base de datos delega en métodos privados con prefijo `_ejecutar` (`_ejecutarSelectAll`, `_ejecutarInsert`, etc.), garantizando transaccionalidad y consultas preparadas con PDO.
+
+### 4. Flujo Financiero sin Redundancias Cíclicas
+Para garantizar la integridad referencial y cumplir con principios contables:
+- **Ventas de Contado:** Crean la cuenta por cobrar en estado cancelado (`saldo_pendiente = 0`, `estado = 'pagado'`) y registran de inmediato el pago en `pagos_recibidos` vinculado a esa cuenta.
+- **Ventas a Crédito:** Crean la cuenta por cobrar en estado `pendiente` con su fecha de vencimiento. Los cobros posteriores se abonan a `pagos_recibidos` referenciando dicha cuenta.
+- **Resultado:** Cero claves foráneas cíclicas y consistencia absoluta en reportes de ingresos.
 
 ---
 
 ## Tecnologías Utilizadas
 
-- **Frontend:** HTML5, CSS3, JavaScript (Vanilla), Bootstrap 5.3, DataTables 1.13
-- **Backend:** PHP 8.2
-- **Base de Datos:** MySQL (PDO)
-- **Servidor:** Apache (XAMPP)
-- **Librerías:** AJAX (fetch API), Composer (autoload PSR-4)
-- **Sin frameworks**
+### Backend
+- **PHP:** 8.2+ con tipado estricto (`declare(strict_types=1)`).
+- **Gestión de Paquetes:** Composer con autoloader PSR-4 (`App\` $\to$ `app/`).
+- **Librerías Externas:**
+  - `phpmailer/phpmailer: ^7.1` — Envíos de correos vía SMTP.
+  - `dompdf/dompdf: ^3.1` — Generación de comprobantes y reportes en PDF.
+  - `openspout/openspout: ^4.25` — Exportación de grandes volúmenes a Excel XLSX.
+
+### Base de Datos
+- **Motor:** MySQL 8.0+ / MariaDB 10.4+.
+- **Driver:** PDO con emulación de consultas preparadas desactivada (`ATTR_EMULATE_PREPARES => false`).
+- **Collation:** `utf8mb4_spanish2_ci` uniforme en la base de datos y en las 24 tablas.
+
+### Frontend
+- **Framework CSS:** Bootstrap 5.3.3.
+- **Iconografía:** Bootstrap Icons 1.11.3.
+- **Tablas Dinámicas:** DataTables 1.13 con soporte responsive y lenguaje español unificado (`window.DATATABLES_SPANISH`).
+- **Gráficas:** Chart.js 4.4 para visualización de finanzas en el dashboard.
+- **JavaScript:** Vanilla JS moderno (ES6+) con peticiones asíncronas vía `fetch` API.
 
 ---
 
 ## Estructura del Proyecto
 
 ```
-raiz/
+c:/xampp/htdocs/SP Perfect Color/
 ├── app/
-│   ├── controllers/       # Controladores (lógica de negocio)
-│   ├── models/            # Modelos (acceso a base de datos)
-│   ├── views/             # Vistas (interfaz de usuario)
-│   ├── helpers/           # Funciones auxiliares (validación, sesiones, respuestas)
-│   └── core/              # Configuración central (conexión BD + SQL)
-│       └── sp_perfect_color.sql   # Esquema completo de la BD
+│   ├── config/
+│   │   └── correoConfig.php          # Configuración del servidor SMTP
+│   ├── controllers/                  # Controladores procedimentales
+│   │   ├── bancoController.php
+│   │   ├── clienteController.php
+│   │   ├── configPagoController.php  # Módulo combinado (Bancos + Tipos de Pago)
+│   │   ├── cuentaCobrarController.php
+│   │   ├── cuentaPagarController.php
+│   │   ├── dashboardController.php
+│   │   ├── frontController.php       # Enrutador principal y metadatos SEO
+│   │   ├── inventarioController.php
+│   │   ├── loginController.php       # Autenticación y recuperación de clave
+│   │   ├── notaEntregaController.php
+│   │   ├── perfilController.php      # Gestión de perfil y contraseña propia
+│   │   ├── presupuestoController.php
+│   │   ├── proveedorController.php
+│   │   ├── reporteController.php
+│   │   ├── tipoPagoController.php
+│   │   └── usuarioController.php     # Gestión de usuarios y roles
+│   ├── core/
+│   │   ├── conexionBD.php            # Singleton de conexión PDO
+│   │   └── sp_perfect_color.sql      # Esquema oficial (24 tablas normalizadas)
+│   ├── helpers/                      # Funciones auxiliares globales
+│   │   ├── correoHelper.php          # Servicio de correo y plantillas HTML
+│   │   ├── exportarReporteHelper.php # Exportadores PDF y Excel
+│   │   ├── respuestaHelper.php       # Respuestas estándar JSON
+│   │   ├── sesionHelper.php          # Adaptador global para SessionTrait
+│   │   └── validacionHelper.php      # Validaciones (RIF, cédula, correo, etc.)
+│   ├── models/                       # Modelos de datos con encapsulamiento
+│   │   ├── BancoModel.php
+│   │   ├── ClienteModel.php
+│   │   ├── CuentaCobrarModel.php
+│   │   ├── CuentaPagarModel.php
+│   │   ├── EstadoPresupuestoModel.php
+│   │   ├── InventarioModel.php
+│   │   ├── ModeloBase.php            # Clase base con conexión PDO
+│   │   ├── ModuloModel.php
+│   │   ├── NotaEntregaModel.php
+│   │   ├── PresupuestoModel.php
+│   │   ├── ProveedorModel.php
+│   │   ├── ReporteModel.php
+│   │   ├── RolModel.php
+│   │   ├── TipoPagoModel.php
+│   │   └── UsuarioModel.php
+│   ├── traits/                       # Traits de composición POO
+│   │   ├── AppTrait.php              # Trait maestro agregador
+│   │   └── SessionTrait.php          # Trait centralizado de sesiones y permisos
+│   └── views/                        # Vistas Blade-less en PHP / HTML5
+│       ├── clienteListView.php
+│       ├── configPagoListView.php
+│       ├── cuentaCobrarListView.php
+│       ├── cuentaPagarListView.php
+│       ├── dashboardView.php
+│       ├── inventarioListView.php
+│       ├── loginView.php
+│       ├── notaEntregaFormView.php
+│       ├── notaEntregaListView.php
+│       ├── perfilView.php            # Vista de perfil de usuario
+│       ├── plantillaBase.php         # Layout base con sidebar responsive
+│       ├── presupuestoFormView.php   # Formulario con formulador de mezclas
+│       ├── presupuestoListView.php
+│       ├── proveedorListView.php
+│       ├── reporteListView.php
+│       ├── restablecerClaveView.php  # Vista de ingreso de nueva clave por token
+│       └── usuarioListView.php       # Gestión administrativa de usuarios y roles
 ├── assets/
-│   ├── css/               # Hojas de estilo (estiloBase.css)
-│   ├── js/                # Scripts JavaScript por módulo
-│   └── images/            # Logo webp, imágenes
-├── vendor/                # Dependencias de Composer
-├── composer.json          # Configuración de Composer
-├── index.php              # Punto de entrada (front controller)
-├── .htaccess              # Configuración de Apache (seguridad + rewrite)
-├── robots.txt             # Bloqueo de rastreo (sistema interno)
-├── progress.md            # Estado actual del proyecto
-└── README.md              # Este archivo
+│   ├── css/
+│   │   └── estiloBase.css            # Estilos corporativos, sidebar y variables
+│   ├── js/                           # Scripts modulares por funcionalidad
+│   │   ├── cliente.js
+│   │   ├── login.js
+│   │   ├── perfil.js                 # Manejador AJAX de perfil y seguridad
+│   │   ├── presupuestoForm.js        # Lógica de colorimetría y formulación
+│   │   ├── reporte.js
+│   │   ├── utilidades.js             # Notificaciones, modales y animaciones
+│   │   └── ...
+│   └── images/
+│       └── logo.webp                 # Isotipo corporativo
+├── vendor/                           # Paquetes Composer
+├── composer.json                     # Definición de dependencias y autoload
+├── index.php                         # Punto de entrada de la aplicación
+├── AGENTS.md                         # Bitácora técnica y registro de cambios
+└── README.md                         # Documentación general del proyecto
 ```
 
 ---
 
-## Convenciones de Código
+## Módulos del Sistema
 
-### Nombrado de Archivos
-
-| Tipo | Formato | Ejemplo |
-|------|---------|---------|
-| Controlador | `nombreController.php` | `clienteController.php` |
-| Vista | `nombreView.php` | `clienteListView.php` |
-| Modelo | `NombreModel.php` | `ClienteModel.php` |
-| Helper | `nombreHelper.php` | `validacionHelper.php` |
-| JavaScript | `nombre.js` | `cliente.js` |
-| CSS | `nombre.css` | `estiloBase.css` |
-
-### Nombrado de Funciones
-
-Todas las funciones usan el formato `verboSustantivo()`:
-
-- `validarCedula()` - Validar datos
-- `obtenerClientes()` - Obtener registros
-- `calcularTotal()` - Calcular valores
-- `mostrarAlerta()` - Mostrar interfaz
-- `enviarFormulario()` - Enviar datos
+| Módulo | Descripción Funcional | Clave URL |
+|---|---|:---:|
+| **Dashboard** | Resumen ejecutivo con contadores animados, accesos directos, balance del día y gráfico de ingresos vía Chart.js. | `/dashboard` |
+| **Clientes** | Registro de clientes con cédula única (V/E), historial y múltiples teléfonos en tabla puente. | `/cliente` |
+| **Proveedores** | Directorio de proveedores con validación de RIF (J/V/E/G), teléfonos y asignación de rubros. | `/proveedor` |
+| **Inventario** | Control de existencias diferenciando artículos simples de reventa y tintes base concentrados para formulación. | `/inventario` |
+| **Presupuestos** | Cotizaciones comerciales con soporte para productos físicos y formulador interactivo de mezclas de color. | `/presupuesto` |
+| **Notas de Entrega** | Despacho y facturación de presupuestos aprobados con descuento automático de inventario físico. | `/notaEntrega` |
+| **Cuentas por Cobrar** | Gestión de cartera a crédito, control de saldos y registro de pagos parciales o totales. | `/cuentaCobrar` |
+| **Cuentas por Pagar** | Control de compromisos con proveedores, fechas de vencimiento y registro de amortizaciones. | `/cuentaPagar` |
+| **Config. de Pago** | Administración unificada de entidades bancarias e instrumentos de cobro (Efectivo, Pago Móvil, etc.). | `/configPago` |
+| **Usuarios y Roles** | Administración centralizada de cuentas de usuario y asignación granular de módulos permitidos por rol. | `/usuario` |
+| **Mi Perfil** | Consulta personal de perfil, edición de datos propios y cambio seguro de contraseña. | `/perfil` |
+| **Reportes** | Auditoría y análisis financiero de ventas y cartera pendiente con exportación a PDF y XLSX. | `/reporte` |
+| **Autenticación** | Inicio de sesión, cierre seguro y recuperación de contraseñas olvidadas vía correo SMTP. | `/login` |
 
 ---
 
-## Requisitos del Sistema
+## Flujo de Procesos y Modelo de Datos
 
-### Software Necesario
+### Cadena Comercial y Ciclo de Inventario
+```
+[Catálogo de Insumos / Tintes Base]
+                 │
+                 ▼
+[Presupuesto: Formulación de Mezcla o Producto Simple]
+                 │
+           (Aprobación)
+                 │
+                 ▼
+[Nota de Entrega: Descuenta Stock Físico (BOM)]
+                 │
+        ┌────────┴────────┐
+        ▼                 ▼
+   (De Contado)      (A Crédito)
+        │                 │
+  (Cancela CxC)     [Cuenta por Cobrar: Pendiente]
+        │                 │
+        ▼                 ▼
+[Pagos Recibidos: Referencia id_cuenta_cobrar]
+```
 
-- **XAMPP** (Apache + MySQL + PHP 8.0 o superior)
-- **Composer** (para autoload)
-- Navegador web moderno (Chrome, Firefox, Edge, Opera)
-
-### Extensiones PHP requeridas
-
-- `pdo_mysql`
-- `mbstring`
-- `curl`
-- `openssl`
+### Tablas Oficiales en Base de Datos (24 Tablas)
+1. `banco` — Catálogo de entidades bancarias.
+2. `clientes` — Registro de clientes naturales o jurídicos.
+3. `cuentas_cobrar` — Deudas activas de clientes derivadas de notas de entrega.
+4. `cuentas_pagar` — Compromisos financieros con proveedores.
+5. `estado_presupuesto` — Estados parametrizados (Pendiente, Aprobado, Rechazado).
+6. `item_composicion` — Desglose de insumos consumidos por fórmula colorimétrica (BOM).
+7. `modulos` — Módulos del sistema para control de acceso.
+8. `notas_entrega` — Despacho y cobro directo del presupuesto.
+9. `pagos_realizados` — Egresos aplicados a cuentas por pagar.
+10. `pagos_recibidos` — Cobros aplicados exclusivamente a cuentas por cobrar.
+11. `presupuesto_detalle` — Ítems comerciales que componen una cotización.
+12. `presupuestos` — Cabecera de presupuestos cotizados.
+13. `producto_proveedor` — Relación N:M de proveedores y productos suministrados.
+14. `productos` — Catálogo maestro (stock en precisión decimal 12,4).
+15. `proveedores` — Registro de proveedores comerciales.
+16. `rol_modulo` — Matriz de permisos de módulos autorizados por rol.
+17. `roles` — Roles de usuario (Administrador, Vendedor, etc.).
+18. `rubro` — Clasificación de ramos de proveedores.
+19. `rubro_proveedor` — Tabla puente de proveedores y sus rubros.
+20. `telefono_cliente` — Múltiples números telefónicos por cliente.
+21. `telefono_proveedor` — Múltiples números telefónicos por proveedor.
+22. `tipo_pago` — Métodos de pago (Efectivo, Pago Móvil, Transferencia, etc.).
+23. `tipo_producto` — Naturaleza del producto (1: Base, 2: Simple).
+24. `usuarios` — Usuarios autenticables con clave hasheada.
 
 ---
 
-## Instalación
+## Requisitos del Entorno
 
-### Paso 1: Clonar el repositorio
+* **Servidor Web:** Apache 2.4+ con módulo `mod_rewrite` habilitado.
+* **PHP:** Versión 8.2 o superior.
+* **Extensiones PHP Requeridas:**
+  - `pdo_mysql`
+  - `mbstring`
+  - `openssl`
+  - `gd`
+  - `zip`
+  - `curl`
+* **Base de Datos:** MySQL 8.0+ o MariaDB 10.4+.
+* **Gestor de Dependencias:** Composer 2.x.
+* **Navegador:** Cualquier navegador moderno con soporte para ES6 (Chrome, Firefox, Edge, Safari).
 
+---
+
+## Guía de Instalación y Configuración
+
+### 1. Clonar el repositorio
+Ubica la raíz del servidor web (por ejemplo, en XAMPP `C:\xampp\htdocs\`):
 ```bash
 cd C:\xampp\htdocs
-git clone [URL_DEL_REPOSITORIO] "SP Perfect Color"
+git clone https://github.com/FranyelPacheco/SP-Perfect-Color.git "SP Perfect Color"
+cd "SP Perfect Color"
 ```
 
-### Paso 2: Instalar dependencias con Composer
-
+### 2. Instalar dependencias con Composer
 ```bash
-cd "SP Perfect Color"
 composer install
 composer dump-autoload
 ```
 
-### Paso 3: Configurar la base de datos
+### 3. Crear e importar la Base de Datos
+1. Abre tu gestor MySQL (phpMyAdmin o MySQL Workbench).
+2. Crea una base de datos con cotejamiento `utf8mb4_spanish2_ci`:
+   ```sql
+   CREATE DATABASE sp_perfect_color CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish2_ci;
+   ```
+3. Importa el archivo oficial de esquema y seeds:
+   ```bash
+   mysql -u root -p sp_perfect_color < app/core/sp_perfect_color.sql
+   ```
 
-1. Abrir phpMyAdmin: `http://localhost/phpmyadmin`
-2. Crear una base de datos nueva llamada `sp_perfect_color` (utf8_general_ci)
-3. Seleccionar la base de datos `sp_perfect_color`
-4. Ir a la pestaña **Importar**
-5. Seleccionar el archivo `app/core/sp_perfect_color.sql`
-6. Asegurarse de que el charset sea `utf-8`
-7. Hacer clic en **Continuar**
-
-> **Importante:** El SQL incluye `DROP TABLE IF EXISTS` al inicio, por lo que se puede reimportar sin errores. Si usas phpMyAdmin, verifica que no haya saltos de línea extraños al copiar/pegar — usa siempre el archivo `.sql` directamente.
-
-### Paso 4: Configurar la conexión
-
-Editar `app/core/ConexionBD.php` si es necesario:
-
+### 4. Configurar la Conexión a Base de Datos
+Verifica o edita las credenciales en [`app/core/conexionBD.php`](file:///c:/xampp/htdocs/SP%20Perfect%20Color/app/core/conexionBD.php):
 ```php
 private $host = 'localhost';
 private $baseDatos = 'sp_perfect_color';
@@ -123,253 +344,68 @@ private $usuario = 'root';
 private $clave = '';
 ```
 
-### Paso 5: Verificar permisos de escritura (logs)
-
-Asegúrate de que PHP pueda escribir en los logs si es necesario:
-
-```bash
-mkdir C:\xampp\php\logs 2>nul
-```
-
-### Paso 6: Acceder al sistema
-
+### 5. Acceso al Sistema
+Abre en tu navegador la URL:
 ```
 http://localhost/SP%20Perfect%20Color/login
 ```
 
-**Credenciales por defecto:**
-- Correo: `admin@perfectcolor.com`
-- Clave: `admin123`
+**Credenciales iniciales de prueba:**
+- **Usuario:** `admin@perfectcolor.com`
+- **Contraseña:** `admin123`
 
 ---
 
-## Módulos del Sistema
+## Configuración SMTP (PHPMailer)
 
-### 1. Autenticación y Usuarios
-- Inicio de sesión con roles (Administrador / Vendedor)
-- CRUD de usuarios (solo Administrador)
-- Activación/desactivación de usuarios
-- Cambio de clave (admin puede cambiar clave de cualquier usuario; vendedor solo su propia)
-- Login con diseño glassmorphism, iconos en inputs, toggle de contraseña, spinner de carga y animación shake en errores
+El sistema envía correos corporativos utilizando el servidor SMTP configurado en [`app/config/correoConfig.php`](file:///c:/xampp/htdocs/SP%20Perfect%20Color/app/config/correoConfig.php).
 
-### 2. Clientes
-- Registro de clientes con cédula única
-- Múltiples teléfonos por cliente (bridge table)
-- Búsqueda por cédula, nombre o apellido
-- Edición y eliminación de registros
-
-### 3. Proveedores
-- Registro de proveedores con RIF único (reactivación automática al reinsertar)
-- Múltiples teléfonos y rubros por proveedor (bridge tables)
-- Solo el Administrador puede modificar registros
-
-### 4. Inventario de Insumos
-- Control de stock de productos
-- Alertas de stock bajo (por debajo del mínimo)
-- Registro de precios de venta y compra
-- Múltiples proveedores por insumo (bridge table)
-- Reactivación automática al reinsertar código ya existente
-- **Rubro se hereda del proveedor:** al seleccionar un proveedor, el rubro se auto-carga. Si el proveedor tiene 1 rubro, se bloquea y auto-selecciona; si tiene varios, se filtran; si tiene 0, se muestran todos
-
-### 5. Presupuestos
-- Creación de presupuestos con múltiples items
-- Cálculo automático de totales
-- Cambio de estados: Pendiente, Aprobado, Rechazado, Convertido
-- Búsqueda y filtrado por estado
-
-### 6. Notas de Entrega
-- Creación desde presupuestos aprobados
-- Descuento automático de inventario
-- Validación de stock disponible
-- Estados: Pendiente, Entregado, En Espera (con botones de cambio rápido en tabla y detalle)
-- Edición de items cuando la nota está en espera (agregar/quitar insumos, actualiza stock)
-- Pago a crédito genera CxC con vencimiento a 10 días por defecto
-- Pago a contado registra ingreso automático en `pagos_recibidos`
-- Método de pago seleccionable (Efectivo, Transferencia, Pago Móvil, Punto de Venta, Divisas)
-- Botón "Poner en Espera" al crear la nota directamente
-
-### 7. Cuentas por Cobrar
-- Registro automático al crear nota a crédito
-- Registro de pagos parciales o totales
-- Historial de pagos por cuenta
-- Eliminación lógica de cuentas
-- Vencimiento a 10 días por defecto
-- Dashboard muestra Ingresos del día
-
-### 8. Cuentas por Pagar
-- Registro de deudas con proveedores
-- Registro de pagos realizados (solo Administrador)
-- Control de saldos pendientes
-- Eliminación lógica de cuentas
-- Dashboard muestra Egresos del día
-
-### 9. Config. de Pago
-- Unifica Bancos y Tipos de Pago en una sola vista
-- Dos cards lado a lado con sus DataTables y modales independientes
-- Reactivación automática al reinsertar nombre ya existente (inactivo)
-
-### 10. Usuarios
-- CRUD con roles Administrador/Vendedor
-- Cambio de clave (admin a cualquiera, vendedor solo propia)
-- Reactivación automática al reinsertar correo ya existente
-
-### 11. Reportes
-- Reporte de Ventas (notas de entrega) por rango de fechas
-- Reporte de Ingresos (pagos recibidos + contado directo) por rango de fechas
-- Reporte de Egresos (pagos realizados) por rango de fechas
-- Resumen con total de registros y monto acumulado
-- **Desglose por Tipo de Pago**: Ventas separa contado vs crédito; Ingresos separa contado directo vs crédito cobrado
-- **Desglose por Método de Pago**: Muestra desglose de Efectivo, Transferencia, Pago Móvil, Punto de Venta, Divisas
-- Enlace en el sidebar (accesible para todos los roles)
-
----
-
-## Roles del Sistema
-
-### Administrador
-- Acceso total a todos los módulos
-- Gestión de usuarios
-- Modificación de proveedores e insumos
-- Registro de pagos a proveedores
-
-### Vendedor
-- Gestión de clientes
-- Visualización de inventario y proveedores
-- Creación de presupuestos, notas de entrega y facturas
-- Gestión de caja
-- Registro de pagos de clientes
-
----
-
-## Paleta de Colores (UI)
-
-El sistema usa una paleta azul + rojo definida en CSS:
-
-| Variable | Color | Uso |
-|----------|-------|-----|
-| `--brand-darkest` | `#0F172A` | Sidebar, fondos oscuros |
-| `--brand-primary` | `#1D4ED8` | Botones primarios, enlaces |
-| `--brand-light` | `#3B82F6` | Hovers, bordes |
-| `--brand-red` | `#DC2626` | Peligro, egresos, alertas |
-| `--brand-gradient` | `0F172A → 1D4ED8` | Headers, login, botones, tablas |
-
-Los stat cards del dashboard usan 6 colores de acento: teal, blue, purple, orange, green, red.
-
----
-
-## Flujo de Trabajo Principal
-
-1. **Abrir Caja** (obligatorio para facturar)
-2. **Registrar Cliente** (si es nuevo)
-3. **Crear Presupuesto** (opcional)
-4. **Aprobar Presupuesto** (si se creó)
-5. **Crear Nota de Entrega** (desde presupuesto o directa)
-6. **Crear Factura** (seleccionando método de pago)
-7. **Cerrar Caja** (al final de la jornada)
-8. **Gestionar Cuentas por Cobrar** (si hay ventas a crédito)
-
----
-
-## Respuestas del Servidor (JSON)
-
-Todas las peticiones AJAX retornan una estructura estandarizada:
-
-```json
-{
-    "estado": "exito" | "error",
-    "mensaje": "Descripción legible para el usuario",
-    "datos": {} | [] | null
-}
+### Parámetros de Configuración:
+```php
+return [
+    'smtp_host'       => getenv('SMTP_HOST') ?: 'smtp.gmail.com',
+    'smtp_port'       => (int)(getenv('SMTP_PORT') ?: 587),
+    'smtp_auth'       => true,
+    'smtp_user'       => getenv('SMTP_USER') ?: 'tu_correo@gmail.com',
+    'smtp_pass'       => getenv('SMTP_PASS') ?: 'tu_app_password_16_caracteres',
+    'smtp_secure'     => getenv('SMTP_SECURE') ?: 'tls',
+    'smtp_from_email' => getenv('SMTP_FROM_EMAIL') ?: 'tu_correo@gmail.com',
+    'smtp_from_name'  => getenv('SMTP_FROM_NAME') ?: 'SP Perfect Color',
+    'smtp_debug'      => false,
+];
 ```
 
----
-
-## Base de Datos
-
-El esquema completo está en `app/core/sp_perfect_color.sql`.
-
-### Bridge Tables (relaciones muchos a muchos)
-
-- `telefono_cliente` — Múltiples teléfonos por cliente
-- `telf_proveedor` — Múltiples teléfonos por proveedor
-- `rubro_proveedor` — Múltiples rubros por proveedor
-- `insumo_proveedor` — Múltiples proveedores por insumo
-
-### Tablas Principales
-
-- `usuarios` — Usuarios del sistema con roles
-- `roles` — Roles disponibles (Administrador, Vendedor)
-- `clientes` — Registro de clientes
-- `proveedores` — Registro de proveedores
-- `insumos` — Inventario de productos (unidad, categoría)
-- `presupuestos` / `presupuesto_detalle` — Presupuestos y sus items
-- `notas_entrega` / `nota_entrega_detalle` — Notas de entrega y sus items
-- `facturas` / `factura_detalle` — Facturas y sus items
-- `caja` — Registro de apertura y cierre de caja
-- `cuentas_cobrar` / `pagos_recibidos` — Cuentas por cobrar y sus pagos
-- `cuentas_pagar` / `pagos_realizados` — Cuentas por pagar y sus pagos
+> **Consejo para Gmail:** Genera una **Contraseña de aplicación** de 16 caracteres desde tu [Cuenta Google > Seguridad > Contraseñas de aplicaciones](https://myaccount.google.com/apppasswords) y asígnala al campo `smtp_pass`.
 
 ---
 
-## Reglas de Negocio Implementadas
+## Convenciones de Código
 
-- Cédula única por cliente
-- RIF único por proveedor
-- Código único por insumo
-- Correo único por usuario
-- Stock no puede ser negativo
-- No se puede eliminar el último administrador activo
-- No se puede facturar sin caja abierta
-- Las ventas a crédito generan cuentas por cobrar automáticamente
-- Las notas de entrega descuentan el inventario automáticamente
-- Los presupuestos aprobados pueden convertirse en notas de entrega
-- Pagos parciales o totales en cuentas por cobrar/pagar
-- Dashboard muestra ingresos y egresos del día en tiempo real
-- Moneda en dólares ($) en todo el sistema
-- Plazo crédito por defecto: 10 días
-- Notas de entrega en estado "en espera" pueden editar sus items (agregar/quitar insumos)
-- Pago a contado registra ingreso inmediato en el dashboard
-- Eliminación lógica (activo=0) en Clientes, Proveedores, Insumos, Usuarios, CxC, CxP, Presupuestos, Bancos, Tipos de Pago
-- Reactivación automática al reinsertar valor único duplicado (cédula, RIF, código, correo, nombre) — se actualiza el registro inactivo en vez de fallar por UNIQUE KEY
-- Reportes de ventas, ingresos y egresos por rango de fechas con desglose por tipo de pago y método de pago
-- Admin puede cambiar contraseña de cualquier usuario (activo o inactivo)
-- Login con URL absoluta y cache-busting en JS para evitar errores de sesión/caché
+* **Estandarización PSR:** 
+  - PSR-4 para autocarga de clases (`App\` en `app/`).
+  - PSR-12 para sintaxis de código e importaciones agrupadas.
+* **Nombres de Tablas y Columnas:** Notación snake_case (`id_producto`, `fecha_vencimiento`).
+* **Nombres de Clases y Modelos:** Notación PascalCase (`NotaEntregaModel`, `SessionTrait`).
+* **Nombres de Controladores y Helpers:** Formato camelCase (`notaEntregaController.php`, `correoHelper.php`).
+* **Encabezados de Documentación Obligatorios:**
+  ```php
+  <?php
+  // ARCHIVO: nombreArchivo.php
+  // OBJETIVO: Descripción concisa de la responsabilidad del componente
+  ```
 
 ---
 
-## SEO
+## Equipo y Créditos
 
-Por ser un sistema interno de administración:
+* **Franyel Pacheco**
+* **Javier Nieto**
+* **Jermaine Gonzalez**
+* **Luis Delgado**
+* **Sebastián Valera**
 
-- Todas las páginas tienen `<meta robots content="noindex, nofollow">`
-- `robots.txt` con `Disallow: /`
-- Headers de seguridad vía `.htaccess` (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`)
-- Títulos y descripciones dinámicos por controlador
-- Open Graph y Twitter Cards configurados
-- JSON-LD con datos de la organización
+* **Tutora Académica:** Ing. Paola Ruggiero
+* **Tutora Externa:** Lic. Nellyser Sánchez
 
----
-
-## Autores
-
-- **Franyel Pacheco** - CI: 28.679.228
-- **Javier Nieto** - CI: 31.692.516
-- **Jermaine Gonzalez** - CI: 31.929.716
-- **Luis Delgado** - CI: 31.973.245
-- **Sebastián Valera** - CI: 33.125.328
-
-**Tutora:** Ing. Paola Ruggiero
-
-**Tutora Externa:** Lic. Nellyser Sánchez
-
-**Sección:** IN2123
-
-**Proyecto Socio-Tecnológico - PNF en Informática**
-
-**Abril - Noviembre 2026**
-
----
-
-## Licencia
-
-Este proyecto es desarrollado como parte del programa de formación académica y es propiedad de sus autores.
+**Proyecto Socio-Tecnológico — Programa Nacional de Formación en Informática (PNFI)**  
+Barquisimeto, Estado Lara, Venezuela — 2026.

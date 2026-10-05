@@ -3,8 +3,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use \PDO;
-use \PDOException;
+use PDO, PDOException;
 
 class PresupuestoModel extends ModeloBase
 {
@@ -165,17 +164,48 @@ class PresupuestoModel extends ModeloBase
 
             $presupuestoId = $this->conexion->lastInsertId();
 
-            $consultaDetalle = "INSERT INTO presupuesto_detalle (id_presupuesto, id_insumo, cantidad, precio_unitario, subtotal) 
-                                VALUES (:id_presupuesto, :id_insumo, :cantidad, :precio_unitario, :subtotal)";
+            $consultaDetalle = "INSERT INTO presupuesto_detalle (id_presupuesto, descripcion, cantidad, precio_unitario, subtotal) 
+                                VALUES (:id_presupuesto, :descripcion, :cantidad, :precio_unitario, :subtotal)";
             $stmtDetalle = $this->conexion->prepare($consultaDetalle);
 
+            $consultaComp = "INSERT INTO item_composicion (id_presupuesto_detalle, id_producto, fraccion_128, cantidad_consumida) 
+                             VALUES (:id_pd, :id_producto, :fraccion, :cantidad_consumida)";
+            $stmtComp = $this->conexion->prepare($consultaComp);
+
             foreach ($this->detalle as $item) {
+                $descripcion = !empty($item['descripcion']) ? $item['descripcion'] : (!empty($item['nombre']) ? $item['nombre'] : 'Producto');
                 $stmtDetalle->bindValue(':id_presupuesto', $presupuestoId, PDO::PARAM_INT);
-                $stmtDetalle->bindValue(':id_insumo', $item['id_insumo'], PDO::PARAM_INT);
+                $stmtDetalle->bindValue(':descripcion', $descripcion, PDO::PARAM_STR);
                 $stmtDetalle->bindValue(':cantidad', $item['cantidad']);
                 $stmtDetalle->bindValue(':precio_unitario', $item['precio_unitario']);
                 $stmtDetalle->bindValue(':subtotal', $item['subtotal']);
                 $stmtDetalle->execute();
+
+                $pdId = (int)$this->conexion->lastInsertId();
+
+                if (!empty($item['mezclas']) && is_array($item['mezclas'])) {
+                    // Si es una mezcla, insertamos cada tinte base en item_composicion
+                    foreach ($item['mezclas'] as $m) {
+                        $idBase = (int)($m['id_producto_base'] ?? $m['id_producto'] ?? 0);
+                        if ($idBase > 0) {
+                            $stmtComp->bindValue(':id_pd', $pdId, PDO::PARAM_INT);
+                            $stmtComp->bindValue(':id_producto', $idBase, PDO::PARAM_INT);
+                            $stmtComp->bindValue(':fraccion', (int)($m['fraccion_128'] ?? 0), PDO::PARAM_INT);
+                            $stmtComp->bindValue(':cantidad_consumida', (float)($m['cantidad_consumida'] ?? $m['cantidad_galon'] ?? 0));
+                            $stmtComp->execute();
+                        }
+                    }
+                } else {
+                    // Articulo directo / simple: 1 componente exacto
+                    $idProd = (int)($item['id_producto'] ?? $item['id_insumo'] ?? 0);
+                    if ($idProd > 0) {
+                        $stmtComp->bindValue(':id_pd', $pdId, PDO::PARAM_INT);
+                        $stmtComp->bindValue(':id_producto', $idProd, PDO::PARAM_INT);
+                        $stmtComp->bindValue(':fraccion', 0, PDO::PARAM_INT);
+                        $stmtComp->bindValue(':cantidad_consumida', 1.0000);
+                        $stmtComp->execute();
+                    }
+                }
             }
 
             $this->conexion->commit();
@@ -188,13 +218,21 @@ class PresupuestoModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarSelectDetalle
-    // OBJETIVO: Obtiene las líneas de detalle de un presupuesto con datos del insumo
+    // OBJETIVO: Obtiene las líneas de detalle de un presupuesto con datos del producto y su composición
     private function _ejecutarSelectDetalle(): array
     {
-        $consulta = "SELECT pd.*, i.nombre as insumo_nombre, i.codigo as insumo_codigo,
-                            i.marca as insumo_marca, i.stock_actual as stock_actual
+        $consulta = "SELECT pd.*, 
+                            pd.descripcion as insumo_nombre,
+                            COALESCE(p.codigo, 'PREP') as insumo_codigo, 
+                            COALESCE(p.stock_actual, 0) as stock_actual,
+                            ic.id_producto as id_insumo, 
+                            ic.id_producto as id_producto,
+                            ic.id_item_composicion,
+                            ic.fraccion_128,
+                            ic.cantidad_consumida
                      FROM presupuesto_detalle pd
-                     INNER JOIN insumos i ON pd.id_insumo = i.id_insumo
+                     LEFT JOIN item_composicion ic ON pd.id_presupuesto_detalle = ic.id_presupuesto_detalle
+                     LEFT JOIN productos p ON ic.id_producto = p.id_producto
                      WHERE pd.id_presupuesto = :id_presupuesto";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id_presupuesto', $this->id, PDO::PARAM_INT);

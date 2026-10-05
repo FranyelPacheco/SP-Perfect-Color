@@ -7,10 +7,10 @@ use PDO;
 
 class InventarioModel extends ModeloBase
 {
-    private int $id_insumo;
+    private int $id_producto;
+    private int $id_tipo_producto;
     private string $codigo;
     private string $nombre;
-    private ?string $marca;
     private ?int $id_rubro;
     private string $unidad_medida;
     private float $stock_actual;
@@ -20,7 +20,7 @@ class InventarioModel extends ModeloBase
     private int $activo;
     private int $id;
     private ?int $idExcluir;
-    private int $insumoId;
+    private int $productoId;
     private int $proveedorId;
     private int $idProveedor;
     private string $termino;
@@ -33,49 +33,52 @@ class InventarioModel extends ModeloBase
     }
 
     // FUNCIÓN: contarTodos
-    // OBJETIVO: Retorna el total de insumos activos en el sistema
+    // OBJETIVO: Retorna el total de productos activos en el sistema
     public function contarTodos(): int
     {
         return $this->_ejecutarCountAll();
     }
 
     // FUNCIÓN: _ejecutarCountAll
-    // OBJETIVO: Ejecuta el COUNT de todos los insumos con activo = 1
+    // OBJETIVO: Ejecuta el COUNT de todos los productos con activo = 1
     private function _ejecutarCountAll(): int
     {
-        $consulta = "SELECT COUNT(*) as total FROM insumos WHERE activo = 1";
+        $consulta = "SELECT COUNT(*) as total FROM productos WHERE activo = 1";
         $stmt = $this->conexion->query($consulta);
         return (int)$stmt->fetch()['total'];
     }
 
     // FUNCIÓN: listarTodos
-    // OBJETIVO: Obtiene todos los insumos activos con sus rubros y proveedores asociados
+    // OBJETIVO: Obtiene todos los productos activos con sus rubros, tipo y proveedores asociados
     public function listarTodos(): array
     {
         return $this->_ejecutarSelectAll();
     }
 
     // FUNCIÓN: _ejecutarSelectAll
-    // OBJETIVO: Ejecuta la consulta que lista todos los insumos activos agrupados por ID
+    // OBJETIVO: Ejecuta la consulta que lista todos los productos activos agrupados por ID
     private function _ejecutarSelectAll(): array
     {
-        $consulta = "SELECT i.*, GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
-                            GROUP_CONCAT(DISTINCT p.nombre_empresa SEPARATOR ', ') as proveedores_nombre,
-                            GROUP_CONCAT(DISTINCT p.id_proveedor SEPARATOR ',') as proveedores_id
-                     FROM insumos i
-                     LEFT JOIN insumo_proveedor ip ON ip.id_insumo = i.id_insumo
-                     LEFT JOIN proveedores p ON p.id_proveedor = ip.id_proveedor
-                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
+        $consulta = "SELECT p.*, tp.nombre as tipo_producto_nombre,
+                            p.id_producto as id_insumo,
+                            GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
+                            GROUP_CONCAT(DISTINCT pr.nombre_empresa SEPARATOR ', ') as proveedores_nombre,
+                            GROUP_CONCAT(DISTINCT pr.id_proveedor SEPARATOR ',') as proveedores_id
+                     FROM productos p
+                     INNER JOIN tipo_producto tp ON p.id_tipo_producto = tp.id_tipo_producto
+                     LEFT JOIN producto_proveedor pp ON pp.id_producto = p.id_producto
+                     LEFT JOIN proveedores pr ON pr.id_proveedor = pp.id_proveedor
+                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = pr.id_proveedor
                      LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
-                     WHERE i.activo = 1
-                     GROUP BY i.id_insumo
-                     ORDER BY i.nombre ASC";
+                     WHERE p.activo = 1
+                     GROUP BY p.id_producto
+                     ORDER BY p.nombre ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
     }
 
     // FUNCIÓN: buscarPorId
-    // OBJETIVO: Busca un insumo por su ID, incluyendo rubros y proveedores
+    // OBJETIVO: Busca un producto por su ID, incluyendo rubros, tipo y proveedores
     public function buscarPorId(int $id): array|false
     {
         $this->id = $id;
@@ -83,19 +86,22 @@ class InventarioModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarSelectById
-    // OBJETIVO: Ejecuta la búsqueda de un insumo por ID con datos relacionados
+    // OBJETIVO: Ejecuta la búsqueda de un producto por ID con datos relacionados
     private function _ejecutarSelectById(): array|false
     {
-        $consulta = "SELECT i.*, GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
-                            GROUP_CONCAT(DISTINCT p.nombre_empresa SEPARATOR ', ') as proveedores_nombre,
-                            GROUP_CONCAT(DISTINCT p.id_proveedor SEPARATOR ',') as proveedores_id
-                     FROM insumos i
-                     LEFT JOIN insumo_proveedor ip ON ip.id_insumo = i.id_insumo
-                     LEFT JOIN proveedores p ON p.id_proveedor = ip.id_proveedor
-                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
+        $consulta = "SELECT p.*, tp.nombre as tipo_producto_nombre,
+                            p.id_producto as id_insumo,
+                            GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
+                            GROUP_CONCAT(DISTINCT pr.nombre_empresa SEPARATOR ', ') as proveedores_nombre,
+                            GROUP_CONCAT(DISTINCT pr.id_proveedor SEPARATOR ',') as proveedores_id
+                     FROM productos p
+                     INNER JOIN tipo_producto tp ON p.id_tipo_producto = tp.id_tipo_producto
+                     LEFT JOIN producto_proveedor pp ON pp.id_producto = p.id_producto
+                     LEFT JOIN proveedores pr ON pr.id_proveedor = pp.id_proveedor
+                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = pr.id_proveedor
                      LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
-                     WHERE i.id_insumo = :id AND i.activo = 1
-                     GROUP BY i.id_insumo LIMIT 1";
+                     WHERE p.id_producto = :id AND p.activo = 1
+                     GROUP BY p.id_producto LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         $stmt->execute();
@@ -103,7 +109,7 @@ class InventarioModel extends ModeloBase
     }
 
     // FUNCIÓN: buscarPorCodigo
-    // OBJETIVO: Busca un insumo activo por su código único
+    // OBJETIVO: Busca un producto activo por su código único
     public function buscarPorCodigo(string $codigo): array|false
     {
         $this->codigo = $codigo;
@@ -111,10 +117,10 @@ class InventarioModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarSelectByCodigo
-    // OBJETIVO: Ejecuta la búsqueda de insumo por código
+    // OBJETIVO: Ejecuta la búsqueda de producto por código
     private function _ejecutarSelectByCodigo(): array|false
     {
-        $consulta = "SELECT * FROM insumos WHERE codigo = :codigo AND activo = 1 LIMIT 1";
+        $consulta = "SELECT p.*, p.id_producto as id_insumo FROM productos p WHERE p.codigo = :codigo AND p.activo = 1 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':codigo', $this->codigo, PDO::PARAM_STR);
         $stmt->execute();
@@ -122,33 +128,33 @@ class InventarioModel extends ModeloBase
     }
 
     // FUNCIÓN: insertarInsumo
-    // OBJETIVO: Inserta un nuevo insumo en la BD con los datos proporcionados
-    public function insertarInsumo(string $codigo, string $nombre, ?string $marca = null, ?int $idRubro = null, string $unidadMedida = 'unidad', float $stockActual = 0, float $stockMinimo = 5, float $precioVenta = 0, float $precioCompra = 0): int|false
+    // OBJETIVO: Inserta un nuevo producto en la BD con los datos proporcionados
+    public function insertarInsumo(string $codigo, string $nombre, ?int $idRubro = null, string $unidadMedida = 'Unidad', float $stockActual = 0, float $stockMinimo = 5, float $precioVenta = 0, float $precioCompra = 0, int $idTipoProducto = 2): int|false
     {
         $this->codigo = $codigo;
         $this->nombre = $nombre;
-        $this->marca = $marca;
         $this->id_rubro = $idRubro;
         $this->unidad_medida = $unidadMedida;
         $this->stock_actual = $stockActual;
         $this->stock_minimo = $stockMinimo;
         $this->precio_venta = $precioVenta;
         $this->precio_compra = $precioCompra;
+        $this->id_tipo_producto = $idTipoProducto;
         return $this->_ejecutarInsert();
     }
 
     // FUNCIÓN: _ejecutarInsert
-    // OBJETIVO: Ejecuta la inserción del insumo en la tabla insumos
+    // OBJETIVO: Ejecuta la inserción del producto en la tabla productos
     private function _ejecutarInsert(): int|false
     {
-        $consulta = "INSERT INTO insumos (codigo, nombre, marca, unidad_medida,
+        $consulta = "INSERT INTO productos (codigo, nombre, id_tipo_producto, unidad_medida,
                      stock_actual, stock_minimo, precio_venta, precio_compra)
-                     VALUES (:codigo, :nombre, :marca, :unidad_medida,
+                     VALUES (:codigo, :nombre, :id_tipo_producto, :unidad_medida,
                      :stock_actual, :stock_minimo, :precio_venta, :precio_compra)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':codigo', $this->codigo, PDO::PARAM_STR);
         $stmt->bindParam(':nombre', $this->nombre, PDO::PARAM_STR);
-        $stmt->bindValue(':marca', $this->marca, $this->marca === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindParam(':id_tipo_producto', $this->id_tipo_producto, PDO::PARAM_INT);
         $stmt->bindParam(':unidad_medida', $this->unidad_medida, PDO::PARAM_STR);
         $stmt->bindParam(':stock_actual', $this->stock_actual);
         $stmt->bindParam(':stock_minimo', $this->stock_minimo);
@@ -159,36 +165,37 @@ class InventarioModel extends ModeloBase
     }
 
     // FUNCIÓN: actualizarInsumo
-    // OBJETIVO: Actualiza todos los campos de un insumo existente y lo marca como activo
-    public function actualizarInsumo(int $id, string $codigo, string $nombre, ?string $marca = null, ?int $idRubro = null, string $unidadMedida = 'unidad', float $stockActual = 0, float $stockMinimo = 5, float $precioVenta = 0, float $precioCompra = 0): bool
+    // OBJETIVO: Actualiza todos los campos de un producto existente y lo marca como activo
+    public function actualizarInsumo(int $id, string $codigo, string $nombre, ?int $idRubro = null, string $unidadMedida = 'Unidad', float $stockActual = 0, float $stockMinimo = 5, float $precioVenta = 0, float $precioCompra = 0, int $idTipoProducto = 2): bool
     {
         $this->id = $id;
         $this->codigo = $codigo;
         $this->nombre = $nombre;
-        $this->marca = $marca;
         $this->id_rubro = $idRubro;
         $this->unidad_medida = $unidadMedida;
         $this->stock_actual = $stockActual;
         $this->stock_minimo = $stockMinimo;
         $this->precio_venta = $precioVenta;
         $this->precio_compra = $precioCompra;
+        $this->id_tipo_producto = $idTipoProducto;
         return $this->_ejecutarUpdate();
     }
 
     // FUNCIÓN: _ejecutarUpdate
-    // OBJETIVO: Ejecuta el UPDATE del insumo seteando activo = 1 (reactivación implícita)
+    // OBJETIVO: Ejecuta el UPDATE del producto seteando activo = 1 (reactivación implícita)
     private function _ejecutarUpdate(): bool
     {
-        $consulta = "UPDATE insumos 
-                     SET codigo = :codigo, nombre = :nombre, marca = :marca,
+        $consulta = "UPDATE productos 
+                     SET codigo = :codigo, nombre = :nombre,
+                         id_tipo_producto = :id_tipo_producto,
                          unidad_medida = :unidad_medida, stock_actual = :stock_actual,
                          stock_minimo = :stock_minimo, precio_venta = :precio_venta,
                          precio_compra = :precio_compra, activo = 1
-                     WHERE id_insumo = :id";
+                     WHERE id_producto = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':codigo', $this->codigo, PDO::PARAM_STR);
         $stmt->bindParam(':nombre', $this->nombre, PDO::PARAM_STR);
-        $stmt->bindValue(':marca', $this->marca, $this->marca === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindParam(':id_tipo_producto', $this->id_tipo_producto, PDO::PARAM_INT);
         $stmt->bindParam(':unidad_medida', $this->unidad_medida, PDO::PARAM_STR);
         $stmt->bindParam(':stock_actual', $this->stock_actual);
         $stmt->bindParam(':stock_minimo', $this->stock_minimo);
@@ -199,7 +206,7 @@ class InventarioModel extends ModeloBase
     }
 
     // FUNCIÓN: eliminarInsumo
-    // OBJETIVO: Marca un insumo como inactivo (soft delete)
+    // OBJETIVO: Marca un producto como inactivo (soft delete)
     public function eliminarInsumo(int $id): bool
     {
         $this->id = $id;
@@ -207,17 +214,17 @@ class InventarioModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarDelete
-    // OBJETIVO: Ejecuta el UPDATE que desactiva el insumo (activo = 0)
+    // OBJETIVO: Ejecuta el UPDATE que desactiva el producto (activo = 0)
     private function _ejecutarDelete(): bool
     {
-        $consulta = "UPDATE insumos SET activo = 0 WHERE id_insumo = :id";
+        $consulta = "UPDATE productos SET activo = 0 WHERE id_producto = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
     // FUNCIÓN: codigoExiste
-    // OBJETIVO: Verifica si ya existe un insumo activo con el mismo código, opcionalmente excluyendo un ID
+    // OBJETIVO: Verifica si ya existe un producto activo con el mismo código, opcionalmente excluyendo un ID
     public function codigoExiste(string $codigo, ?int $idExcluir = null): bool
     {
         $this->codigo = $codigo;
@@ -229,9 +236,9 @@ class InventarioModel extends ModeloBase
     // OBJETIVO: Ejecuta la consulta COUNT para verificar unicidad del código
     private function _ejecutarCheckCodigo(): bool
     {
-        $consulta = "SELECT COUNT(*) as total FROM insumos WHERE codigo = :codigo AND activo = 1";
+        $consulta = "SELECT COUNT(*) as total FROM productos WHERE codigo = :codigo AND activo = 1";
         if ($this->idExcluir !== null) {
-            $consulta .= " AND id_insumo != :id";
+            $consulta .= " AND id_producto != :id";
         }
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':codigo', $this->codigo, PDO::PARAM_STR);
@@ -243,7 +250,7 @@ class InventarioModel extends ModeloBase
     }
 
     // FUNCIÓN: buscarInactivoPorCodigo
-    // OBJETIVO: Busca un insumo inactivo por código para reactivación
+    // OBJETIVO: Busca un producto inactivo por código para reactivación
     // NOTA: Usado antes de insertar para evitar duplicados por soft delete
     public function buscarInactivoPorCodigo(string $codigo): int|false
     {
@@ -253,19 +260,19 @@ class InventarioModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarBuscarInactivo
-    // OBJETIVO: Retorna el ID de un insumo inactivo con el código dado, o false si no existe
+    // OBJETIVO: Retorna el ID de un producto inactivo con el código dado, o false si no existe
     private function _ejecutarBuscarInactivo(): int|false
     {
-        $consulta = "SELECT id_insumo FROM insumos WHERE codigo = :codigo AND activo = 0 LIMIT 1";
+        $consulta = "SELECT id_producto FROM productos WHERE codigo = :codigo AND activo = 0 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':codigo', $this->codigo, PDO::PARAM_STR);
         $stmt->execute();
         $fila = $stmt->fetch();
-        return $fila ? (int)$fila['id_insumo'] : false;
+        return $fila ? (int)$fila['id_producto'] : false;
     }
 
     // FUNCIÓN: buscarInsumos
-    // OBJETIVO: Busca insumos por nombre, código o nombre de rubro usando LIKE
+    // OBJETIVO: Busca productos por nombre, código o nombre de rubro usando LIKE
     public function buscarInsumos(string $termino): array
     {
         $this->termino = '%' . $termino . '%';
@@ -276,19 +283,22 @@ class InventarioModel extends ModeloBase
     // OBJETIVO: Ejecuta la búsqueda con tres condiciones OR (nombre, código, rubro)
     private function _ejecutarSearch(): array
     {
-        $consulta = "SELECT i.*, GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
-                            GROUP_CONCAT(DISTINCT p.nombre_empresa SEPARATOR ', ') as proveedores_nombre,
-                            GROUP_CONCAT(DISTINCT p.id_proveedor SEPARATOR ',') as proveedores_id
-                     FROM insumos i
-                     LEFT JOIN insumo_proveedor ip ON ip.id_insumo = i.id_insumo
-                     LEFT JOIN proveedores p ON p.id_proveedor = ip.id_proveedor
-                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
+        $consulta = "SELECT p.*, tp.nombre as tipo_producto_nombre,
+                            p.id_producto as id_insumo,
+                            GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
+                            GROUP_CONCAT(DISTINCT pr.nombre_empresa SEPARATOR ', ') as proveedores_nombre,
+                            GROUP_CONCAT(DISTINCT pr.id_proveedor SEPARATOR ',') as proveedores_id
+                     FROM productos p
+                     INNER JOIN tipo_producto tp ON p.id_tipo_producto = tp.id_tipo_producto
+                     LEFT JOIN producto_proveedor pp ON pp.id_producto = p.id_producto
+                     LEFT JOIN proveedores pr ON pr.id_proveedor = pp.id_proveedor
+                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = pr.id_proveedor
                      LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
-                     WHERE i.activo = 1 AND (i.nombre LIKE :termino1
-                        OR i.codigo LIKE :termino2
+                     WHERE p.activo = 1 AND (p.nombre LIKE :termino1
+                        OR p.codigo LIKE :termino2
                         OR r.nombre LIKE :termino3)
-                     GROUP BY i.id_insumo
-                     ORDER BY i.nombre ASC";
+                     GROUP BY p.id_producto
+                     ORDER BY p.nombre ASC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':termino1', $this->termino, PDO::PARAM_STR);
         $stmt->bindParam(':termino2', $this->termino, PDO::PARAM_STR);
@@ -329,8 +339,29 @@ class InventarioModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
+    // FUNCIÓN: listarTiposProducto
+    // OBJETIVO: Retorna todos los tipos de producto activos
+    public function listarTiposProducto(): array
+    {
+        $consulta = "SELECT id_tipo_producto, nombre, descripcion FROM tipo_producto WHERE activo = 1 ORDER BY id_tipo_producto ASC";
+        $stmt = $this->conexion->query($consulta);
+        return $stmt->fetchAll();
+    }
+
+    // FUNCIÓN: listarBases
+    // OBJETIVO: Retorna todos los insumos base para formulación de mezclas
+    public function listarBases(): array
+    {
+        $consulta = "SELECT id_producto, codigo, nombre, unidad_medida, stock_actual, precio_venta, precio_compra 
+                     FROM productos 
+                     WHERE activo = 1 AND id_tipo_producto = 1 
+                     ORDER BY nombre ASC";
+        $stmt = $this->conexion->query($consulta);
+        return $stmt->fetchAll();
+    }
+
     // FUNCIÓN: obtenerAlertasStockBajo
-    // OBJETIVO: Obtiene los insumos cuyo stock actual es menor o igual al stock mínimo
+    // OBJETIVO: Obtiene los productos cuyo stock actual es menor o igual al stock mínimo
     // NOTA: Usado en el dashboard para alertas de inventario
     public function obtenerAlertasStockBajo(): array
     {
@@ -338,19 +369,20 @@ class InventarioModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarAlertasStockBajo
-    // OBJETIVO: Ejecuta la consulta de insumos con stock bajo, incluyendo rubros y proveedores
+    // OBJETIVO: Ejecuta la consulta de productos con stock bajo, incluyendo rubros y proveedores
     private function _ejecutarAlertasStockBajo(): array
     {
-        $consulta = "SELECT i.*, GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
-                            GROUP_CONCAT(DISTINCT p.nombre_empresa SEPARATOR ', ') as proveedores_nombre
-                     FROM insumos i
-                     LEFT JOIN insumo_proveedor ip ON ip.id_insumo = i.id_insumo
-                     LEFT JOIN proveedores p ON p.id_proveedor = ip.id_proveedor
-                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
+        $consulta = "SELECT p.*, p.id_producto as id_insumo,
+                            GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
+                            GROUP_CONCAT(DISTINCT pr.nombre_empresa SEPARATOR ', ') as proveedores_nombre
+                     FROM productos p
+                     LEFT JOIN producto_proveedor pp ON pp.id_producto = p.id_producto
+                     LEFT JOIN proveedores pr ON pr.id_proveedor = pp.id_proveedor
+                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = pr.id_proveedor
                      LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
-                     WHERE i.activo = 1 AND i.stock_actual <= i.stock_minimo
-                     GROUP BY i.id_insumo
-                     ORDER BY i.stock_actual ASC";
+                     WHERE p.activo = 1 AND p.stock_actual <= p.stock_minimo
+                     GROUP BY p.id_producto
+                     ORDER BY p.stock_actual ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
     }
@@ -379,41 +411,41 @@ class InventarioModel extends ModeloBase
     }
 
     // FUNCIÓN: asignarProveedorAInsumo
-    // OBJETIVO: Asocia un proveedor a un insumo en la tabla intermedia
+    // OBJETIVO: Asocia un proveedor a un producto en la tabla intermedia
     // NOTA: Usa INSERT IGNORE para evitar duplicados
-    public function asignarProveedorAInsumo(int $insumoId, int $proveedorId): bool
+    public function asignarProveedorAInsumo(int $productoId, int $proveedorId): bool
     {
-        $this->insumoId = $insumoId;
+        $this->productoId = $productoId;
         $this->proveedorId = $proveedorId;
         return $this->_ejecutarAsignarProveedor();
     }
 
     // FUNCIÓN: _ejecutarAsignarProveedor
-    // OBJETIVO: Ejecuta el INSERT IGNORE en la tabla insumo_proveedor
+    // OBJETIVO: Ejecuta el INSERT IGNORE en la tabla producto_proveedor
     private function _ejecutarAsignarProveedor(): bool
     {
-        $consulta = "INSERT IGNORE INTO insumo_proveedor (id_insumo, id_proveedor) VALUES (:id_insumo, :id_proveedor)";
+        $consulta = "INSERT IGNORE INTO producto_proveedor (id_producto, id_proveedor) VALUES (:id_producto, :id_proveedor)";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id_insumo', $this->insumoId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_producto', $this->productoId, PDO::PARAM_INT);
         $stmt->bindParam(':id_proveedor', $this->proveedorId, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
     // FUNCIÓN: eliminarProveedoresDeInsumo
-    // OBJETIVO: Elimina todas las relaciones proveedor-insumo para un insumo dado
-    public function eliminarProveedoresDeInsumo(int $insumoId): bool
+    // OBJETIVO: Elimina todas las relaciones proveedor-producto para un producto dado
+    public function eliminarProveedoresDeInsumo(int $productoId): bool
     {
-        $this->insumoId = $insumoId;
+        $this->productoId = $productoId;
         return $this->_ejecutarEliminarProveedores();
     }
 
     // FUNCIÓN: _ejecutarEliminarProveedores
-    // OBJETIVO: Ejecuta el DELETE de las relaciones en insumo_proveedor
+    // OBJETIVO: Ejecuta el DELETE de las relaciones en producto_proveedor
     private function _ejecutarEliminarProveedores(): bool
     {
-        $consulta = "DELETE FROM insumo_proveedor WHERE id_insumo = :id_insumo";
+        $consulta = "DELETE FROM producto_proveedor WHERE id_producto = :id_producto";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id_insumo', $this->insumoId, PDO::PARAM_INT);
+        $stmt->bindParam(':id_producto', $this->productoId, PDO::PARAM_INT);
         return $stmt->execute();
     }
 }

@@ -1,7 +1,6 @@
 // Archivo: presupuesto.js
 // Manejo de la vista de presupuestos
 
-
 document.addEventListener('DOMContentLoaded', function() {
     var busquedaPresupuestos = document.getElementById('busquedaPresupuestos');
     var filtroEstado = document.getElementById('filtroEstadoPresupuesto');
@@ -9,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarPresupuestos();
 
     function cargarPresupuestos() {
-        fetch('presupuesto/listarAjax')
+        fetch('/SP%20Perfect%20Color/presupuesto/listarAjax')
             .then(function(respuesta) { return respuesta.json(); })
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
@@ -55,10 +54,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     { data: 'usuario_nombre' },
                     {
                         data: null,
+                        orderable: false,
+                        searchable: false,
                         render: function(data, type, row) {
                             if (!row) return '';
                             var html = '<div class="d-flex gap-2">' +
-                                '<a href="presupuesto/ver?id=' + row.id_presupuesto + '" class="btn btn-sm btn-info" title="Ver" data-bs-toggle="tooltip"><i class="bi bi-eye"></i></a>';
+                                '<a href="/SP%20Perfect%20Color/presupuesto/ver?id=' + row.id_presupuesto + '" class="btn btn-sm btn-info" title="Ver" data-bs-toggle="tooltip"><i class="bi bi-eye"></i></a>';
                             if (row.estado === 'pendiente') {
                                 html +=
                                     '<button class="btn btn-sm btn-success btn-aprobar-presupuesto" data-id="' + row.id_presupuesto + '"><i class="bi bi-check-lg me-1"></i>Aprobar</button>' +
@@ -76,32 +77,59 @@ document.addEventListener('DOMContentLoaded', function() {
         var table = $('#tablaPresupuestos').DataTable();
         table.clear();
 
-        presupuestos.forEach(function(presupuesto) {
-            table.row.add(presupuesto);
-        });
+        if (Array.isArray(presupuestos)) {
+            presupuestos.forEach(function(presupuesto) {
+                table.row.add(presupuesto);
+            });
+        }
 
         table.draw();
     }
 
-    document.getElementById('tablaPresupuestos').addEventListener('click', function(e) {
-        var btn = e.target.closest('.btn-aprobar-presupuesto');
-        if (btn) { cambiarEstado(parseInt(btn.dataset.id), 'aprobado'); return; }
-        btn = e.target.closest('.btn-rechazar-presupuesto');
-        if (btn) { cambiarEstado(parseInt(btn.dataset.id), 'rechazado'); return; }
-        btn = e.target.closest('.btn-eliminar-presupuesto');
-        if (btn) {
+    // Delegacion de eventos robusta para botones de accion
+    $(document).on('click', '.btn-aprobar-presupuesto', function(e) {
+        e.preventDefault();
+        var tip = bootstrap.Tooltip.getInstance(this);
+        if (tip) tip.hide();
+        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+        if (!isNaN(id)) {
+            cambiarEstado(id, 'aprobado');
+        }
+    });
+
+    $(document).on('click', '.btn-rechazar-presupuesto', function(e) {
+        e.preventDefault();
+        var tip = bootstrap.Tooltip.getInstance(this);
+        if (tip) tip.hide();
+        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+        if (!isNaN(id)) {
+            cambiarEstado(id, 'rechazado');
+        }
+    });
+
+    $(document).on('click', '.btn-eliminar-presupuesto', function(e) {
+        e.preventDefault();
+        var tip = bootstrap.Tooltip.getInstance(this);
+        if (tip) tip.hide();
+        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+        if (!isNaN(id)) {
             confirmarConModal('Eliminar', 'Esta seguro de eliminar este presupuesto?', function() {
                 var fd = new FormData();
-                fd.append('id', btn.dataset.id);
-                fetch('presupuesto/eliminar', { method: 'POST', body: fd })
+                fd.append('id', id);
+                fetch('/SP%20Perfect%20Color/presupuesto/eliminar', { method: 'POST', body: fd })
                 .then(function(r) { return r.json(); })
                 .then(function(res) {
-                    if (res.estado === 'exito') { mostrarNotificacion(res.mensaje, 'exito'); cargarPresupuestos(); }
-                    else { mostrarNotificacion(res.mensaje, 'error'); }
+                    if (res.estado === 'exito') {
+                        mostrarNotificacion(res.mensaje, 'exito');
+                        cargarPresupuestos();
+                    } else {
+                        mostrarNotificacion(res.mensaje, 'error');
+                    }
                 })
-                .catch(function() { mostrarNotificacion('Error de conexion', 'error'); });
+                .catch(function() {
+                    mostrarNotificacion('Error de conexion', 'error');
+                });
             });
-            return;
         }
     });
 
@@ -136,23 +164,23 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('id', id);
             formData.append('estado', estado);
 
-            fetch('presupuesto/cambiarEstado', {
-            method: 'POST',
-            body: formData
-        })
-        .then(function(respuesta) { return respuesta.json(); })
-        .then(function(resultado) {
-            if (resultado.estado === 'exito') {
-                mostrarNotificacion(resultado.mensaje, 'exito');
-                cargarPresupuestos();
-            } else {
-                mostrarNotificacion(resultado.mensaje, 'error');
-            }
-        })
-        .catch(function(error) {
-            console.error('Error:', error);
-            mostrarNotificacion('Error de conexion', 'error');
-        });
+            fetch('/SP%20Perfect%20Color/presupuesto/cambiarEstado', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(respuesta) { return respuesta.json(); })
+            .then(function(resultado) {
+                if (resultado.estado === 'exito') {
+                    mostrarNotificacion(resultado.mensaje, 'exito');
+                    cargarPresupuestos();
+                } else {
+                    mostrarNotificacion(resultado.mensaje, 'error');
+                }
+            })
+            .catch(function(error) {
+                console.error('Error:', error);
+                mostrarNotificacion('Error de conexion', 'error');
+            });
         });
     }
 });

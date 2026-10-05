@@ -4,15 +4,19 @@
 
 namespace App\Controllers;
 
-use App\Models\PresupuestoModel;
-use App\Models\ClienteModel;
-use App\Models\InventarioModel;
-use function App\Helpers\respuestaJson;
-use function App\Helpers\verificarAutenticacion;
-use function App\Helpers\verificarPermiso;
-use function App\Helpers\verificarRolVendedor;
-use function App\Helpers\validarRequerido;
-use \PDOException;
+use PDOException;
+use App\Models\{
+    PresupuestoModel,
+    ClienteModel,
+    InventarioModel
+};
+use function App\Helpers\{
+    respuestaJson,
+    verificarAutenticacion,
+    verificarPermiso,
+    verificarRolVendedor,
+    validarRequerido
+};
 
 $presupuestoModel = new PresupuestoModel();
 $clienteModel = new ClienteModel();
@@ -110,23 +114,70 @@ if ($metodo === 'index') {
     $detalle = [];
     
     foreach ($items as $item) {
-        $insumoId = intval($item['id_insumo'] ?? 0);
         $cantidad = floatval($item['cantidad'] ?? 0);
         $precioUnitario = floatval($item['precio_unitario'] ?? 0);
         $subtotal = $cantidad * $precioUnitario;
         
-        if ($insumoId < 1 || $cantidad <= 0 || $precioUnitario <= 0) {
-            respuestaJson('error', 'Datos invalidos en uno de los items');
+        if ($cantidad <= 0 || $precioUnitario <= 0) {
+            respuestaJson('error', 'Datos invalidos en uno de los items (cantidad y precio deben ser mayores a 0)');
         }
         
-        $total += $subtotal;
+        $esMezcla = (!empty($item['tipo']) && $item['tipo'] === 'mezcla') || !empty($item['mezclas']);
         
-        $detalle[] = [
-            'id_insumo' => $insumoId,
-            'cantidad' => $cantidad,
-            'precio_unitario' => $precioUnitario,
-            'subtotal' => $subtotal
-        ];
+        if ($esMezcla) {
+            $descripcion = trim($item['descripcion'] ?? '');
+            if (empty($descripcion)) {
+                respuestaJson('error', 'La pintura preparada debe tener una descripcion valida');
+            }
+            $mezclas = $item['mezclas'] ?? [];
+            if (empty($mezclas) || !is_array($mezclas)) {
+                respuestaJson('error', 'La pintura preparada debe contener al menos un tinte base');
+            }
+            if (count($mezclas) > 6) {
+                respuestaJson('error', 'Una formulacion no puede contener mas de 6 tintes base');
+            }
+            
+            $mezclasValidadas = [];
+            foreach ($mezclas as $m) {
+                $idBase = intval($m['id_producto_base'] ?? $m['id_producto'] ?? 0);
+                $fraccion = intval($m['fraccion_128'] ?? 0);
+                $consumo = floatval($m['cantidad_consumida'] ?? 0);
+                if ($idBase < 1 || $fraccion < 1 || $consumo <= 0) {
+                    respuestaJson('error', 'Componente de mezcla invalido');
+                }
+                $mezclasValidadas[] = [
+                    'id_producto_base' => $idBase,
+                    'fraccion_128' => $fraccion,
+                    'cantidad_consumida' => $consumo
+                ];
+            }
+            
+            $total += $subtotal;
+            $detalle[] = [
+                'descripcion' => $descripcion,
+                'cantidad' => $cantidad,
+                'precio_unitario' => $precioUnitario,
+                'subtotal' => $subtotal,
+                'mezclas' => $mezclasValidadas
+            ];
+        } else {
+            $insumoId = intval($item['id_insumo'] ?? 0);
+            if ($insumoId < 1) {
+                respuestaJson('error', 'Datos invalidos en uno de los items');
+            }
+            $insumoInfo = $inventarioModel->buscarPorId($insumoId);
+            $descripcion = !empty($item['descripcion']) ? $item['descripcion'] : ($insumoInfo['nombre'] ?? 'Producto');
+            
+            $total += $subtotal;
+            $detalle[] = [
+                'id_insumo' => $insumoId,
+                'id_producto' => $insumoId,
+                'descripcion' => $descripcion,
+                'cantidad' => $cantidad,
+                'precio_unitario' => $precioUnitario,
+                'subtotal' => $subtotal
+            ];
+        }
     }
     
     try {

@@ -1,15 +1,19 @@
 <?php
 namespace App\Controllers;
 
-use App\Models\ReporteModel;
-use App\Models\ClienteModel;
-use App\Models\TipoPagoModel;
-use function App\Helpers\respuestaJson;
-use function App\Helpers\verificarAutenticacion;
-use function App\Helpers\verificarPermiso;
-use function App\Helpers\generarPDF;
-use function App\Helpers\generarExcel;
-use function App\Helpers\validarFecha;
+use App\Models\{
+    ReporteModel,
+    ClienteModel,
+    TipoPagoModel
+};
+use function App\Helpers\{
+    respuestaJson,
+    verificarAutenticacion,
+    verificarPermiso,
+    generarPDF,
+    generarExcel,
+    validarFecha
+};
 
 $reporteModel = new ReporteModel();
 

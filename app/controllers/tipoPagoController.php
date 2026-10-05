@@ -3,8 +3,10 @@
 namespace App\Controllers;
 
 use App\Models\TipoPagoModel;
-use function App\Helpers\respuestaJson;
-use function App\Helpers\verificarRolAdmin;
+use function App\Helpers\{
+    respuestaJson,
+    verificarRolAdmin
+};
 
 $tipoPagoModel = new TipoPagoModel();
 

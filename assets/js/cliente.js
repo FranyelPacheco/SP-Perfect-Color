@@ -1,7 +1,6 @@
 // Archivo: cliente.js
 // Manejo de la vista de gestion de clientes
 
-
 document.addEventListener('DOMContentLoaded', function() {
     // Referencias a elementos del DOM
     const busquedaClientes = document.getElementById('busquedaClientes');
@@ -24,48 +23,62 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarClientes();
 
     // Evento para abrir modal de nuevo cliente
-    btnNuevoCliente.addEventListener('click', function() {
-        formularioCliente.reset();
-        clienteId.value = '';
-        mensajeError.classList.add('d-none');
-        tituloModal.textContent = 'Nuevo Cliente';
-        bootstrap.Modal.getOrCreateInstance(modalCliente).show();
-    });
+    if (btnNuevoCliente) {
+        btnNuevoCliente.addEventListener('click', function() {
+            formularioCliente.reset();
+            clienteId.value = '';
+            mensajeError.classList.add('d-none');
+            tituloModal.textContent = 'Nuevo Cliente';
+            bootstrap.Modal.getOrCreateInstance(modalCliente).show();
+        });
+    }
 
     // Eventos para cerrar modal
-    btnCerrarModal.addEventListener('click', function() {
-        bootstrap.Modal.getInstance(modalCliente).hide();
-    });
-    btnCancelar.addEventListener('click', function() {
-        bootstrap.Modal.getInstance(modalCliente).hide();
-    });
+    if (btnCerrarModal) {
+        btnCerrarModal.addEventListener('click', function() {
+            bootstrap.Modal.getInstance(modalCliente).hide();
+        });
+    }
+    if (btnCancelar) {
+        btnCancelar.addEventListener('click', function() {
+            bootstrap.Modal.getInstance(modalCliente).hide();
+        });
+    }
 
     // Evento para enviar formulario
-    formularioCliente.addEventListener('submit', async function(evento) {
-        evento.preventDefault();
-        await guardarCliente();
-    });
+    if (formularioCliente) {
+        formularioCliente.addEventListener('submit', async function(evento) {
+            evento.preventDefault();
+            await guardarCliente();
+        });
+    }
 
     // Limpiar formulario cuando el modal se cierra
-    modalCliente.addEventListener('hidden.bs.modal', function () {
-        formularioCliente.reset();
-        mensajeError.classList.add('d-none');
-    });
+    if (modalCliente) {
+        modalCliente.addEventListener('hidden.bs.modal', function () {
+            formularioCliente.reset();
+            mensajeError.classList.add('d-none');
+        });
+    }
 
     // Permitir solo numeros en cedula
-    cedulaCliente.addEventListener('input', function() {
-        this.value = this.value.replace(/[^0-9]/g, '');
-    });
+    if (cedulaCliente) {
+        cedulaCliente.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    }
 
     // Permitir solo numeros en telefono
-    telefonoCliente.addEventListener('input', function() {
-        this.value = this.value.replace(/[^0-9]/g, '');
-    });
+    if (telefonoCliente) {
+        telefonoCliente.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    }
 
     // Cargar lista de clientes via API
     async function cargarClientes() {
         try {
-            const respuesta = await fetch('cliente/listarAjax');
+            const respuesta = await fetch('/SP%20Perfect%20Color/cliente/listarAjax');
             const resultado = await respuesta.json();
             if (resultado.estado === 'exito') {
                 mostrarClientes(resultado.datos.clientes);
@@ -75,43 +88,73 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Renderizar tabla usando API DataTables
+    // Renderizar tabla usando API DataTables con columns explicitas
     function mostrarClientes(clientes) {
         if (!$.fn.DataTable.isDataTable('#tablaClientes')) {
             $('#tablaClientes').DataTable({
                 dom: 'lrtip',
-                language: window.DATATABLES_SPANISH
+                language: window.DATATABLES_SPANISH,
+                columns: [
+                    { data: 'cedula' },
+                    { data: 'nombres' },
+                    { data: 'apellidos' },
+                    {
+                        data: 'telefonos',
+                        render: function(d) { return d || '-'; }
+                    },
+                    {
+                        data: 'correo',
+                        render: function(d) { return d || '-'; }
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        render: function(data, type, row) {
+                            if (!row) return '';
+                            var nomCompleto = ((row.nombres || '') + ' ' + (row.apellidos || '')).replace(/"/g, '&quot;');
+                            return '<div class="d-flex gap-2">' +
+                                '<button class="btn btn-sm btn-warning btn-editar-cliente" data-id="' + row.id_cliente + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
+                                '<button class="btn btn-sm btn-danger btn-eliminar-cliente" data-id="' + row.id_cliente + '" data-nombre="' + nomCompleto + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>' +
+                                '</div>';
+                        }
+                    }
+                ]
             });
         }
 
         var table = $('#tablaClientes').DataTable();
         table.clear();
 
-        clientes.forEach(function(cliente) {
-            var acciones = '<div class="d-flex gap-2">' +
-                '<button class="btn btn-sm btn-warning btn-editar-cliente" data-id="' + cliente.id_cliente + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
-                '<button class="btn btn-sm btn-danger btn-eliminar-cliente" data-id="' + cliente.id_cliente + '" data-nombre="' + (cliente.nombres + ' ' + cliente.apellidos).replace(/"/g, '&quot;') + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>' +
-                '</div>';
-
-            table.row.add([
-                cliente.cedula,
-                cliente.nombres,
-                cliente.apellidos,
-                cliente.telefonos || '-',
-                cliente.correo || '-',
-                acciones
-            ]);
-        });
+        if (Array.isArray(clientes)) {
+            clientes.forEach(function(cliente) {
+                table.row.add(cliente);
+            });
+        }
 
         table.draw();
     }
 
-    // Delegated events for action buttons
-    document.getElementById('tablaClientes').addEventListener('click', function(e) {
-        var btn = e.target.closest('.btn-editar-cliente');
-        if (btn) { abrirModalEditar(parseInt(btn.dataset.id)); return; }
-        btn = e.target.closest('.btn-eliminar-cliente');
-        if (btn) { eliminarCliente(parseInt(btn.dataset.id), btn.dataset.nombre); return; }
+    // Delegacion de eventos robusta para botones de accion
+    $(document).on('click', '.btn-editar-cliente', function(e) {
+        e.preventDefault();
+        var tip = bootstrap.Tooltip.getInstance(this);
+        if (tip) tip.hide();
+        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+        if (!isNaN(id)) {
+            abrirModalEditar(id);
+        }
+    });
+
+    $(document).on('click', '.btn-eliminar-cliente', function(e) {
+        e.preventDefault();
+        var tip = bootstrap.Tooltip.getInstance(this);
+        if (tip) tip.hide();
+        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+        var nombre = $(this).attr('data-nombre') || 'este cliente';
+        if (!isNaN(id)) {
+            eliminarCliente(id, nombre);
+        }
     });
 
     // Enlazar busqueda manual a DataTables
@@ -126,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Abre el modal en modo edicion
     async function abrirModalEditar(id) {
         try {
-            const respuesta = await fetch('cliente/obtener?id=' + id);
+            const respuesta = await fetch('/SP%20Perfect%20Color/cliente/obtener?id=' + id);
             const resultado = await respuesta.json();
 
             if (resultado.estado === 'exito') {
@@ -142,9 +185,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 direccionCliente.value = c.direccion || '';
                 tituloModal.textContent = 'Editar Cliente';
                 bootstrap.Modal.getOrCreateInstance(modalCliente).show();
+            } else {
+                mostrarNotificacion(resultado.mensaje, 'error');
             }
         } catch (error) {
             console.error('Error al obtener cliente:', error);
+            mostrarNotificacion('Error al cargar los datos del cliente', 'error');
         }
     }
 
@@ -166,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const url = esEdicion ? 'cliente/actualizar' : 'cliente/guardar';
+        const url = esEdicion ? '/SP%20Perfect%20Color/cliente/actualizar' : '/SP%20Perfect%20Color/cliente/guardar';
         const formData = new FormData(formularioCliente);
         if (esEdicion) {
             formData.set('id', id);
@@ -179,11 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (resultado.estado === 'exito') {
                 bootstrap.Modal.getInstance(modalCliente).hide();
                 cargarClientes();
-                if (typeof mostrarNotificacion === 'function') {
-                    mostrarNotificacion(resultado.mensaje, 'exito');
-                } else {
-                    alert(resultado.mensaje);
-                }
+                mostrarNotificacion(resultado.mensaje, 'exito');
             } else {
                 mostrarError(resultado.mensaje);
             }
@@ -198,31 +240,19 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmarConModal('Eliminar', 'Esta seguro de eliminar al cliente ' + nombre + '?', function() {
             const formData = new FormData();
             formData.append('id', id);
-            fetch('cliente/eliminar', { method: 'POST', body: formData })
+            fetch('/SP%20Perfect%20Color/cliente/eliminar', { method: 'POST', body: formData })
                 .then(function(r) { return r.json(); })
                 .then(function(resultado) {
                     if (resultado.estado === 'exito') {
                         cargarClientes();
-                        if (typeof mostrarNotificacion === 'function') {
-                            mostrarNotificacion(resultado.mensaje, 'exito');
-                        } else {
-                            alert(resultado.mensaje);
-                        }
+                        mostrarNotificacion(resultado.mensaje, 'exito');
                     } else {
-                        if (typeof mostrarNotificacion === 'function') {
-                            mostrarNotificacion(resultado.mensaje, 'error');
-                        } else {
-                            alert(resultado.mensaje);
-                        }
+                        mostrarNotificacion(resultado.mensaje, 'error');
                     }
                 })
                 .catch(function(error) {
                     console.error('Error al eliminar cliente:', error);
-                    if (typeof mostrarNotificacion === 'function') {
-                        mostrarNotificacion('Error de conexion al eliminar el cliente', 'error');
-                    } else {
-                        alert('Error de conexion al eliminar el cliente');
-                    }
+                    mostrarNotificacion('Error de conexion al eliminar el cliente', 'error');
                 });
         });
     }

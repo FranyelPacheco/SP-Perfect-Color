@@ -4,12 +4,16 @@
 
 namespace App\Controllers;
 
-use App\Models\CuentaCobrarModel;
-use App\Models\TipoPagoModel;
-use App\Models\BancoModel;
-use function App\Helpers\respuestaJson;
-use function App\Helpers\verificarRolAdmin;
-use \PDOException;
+use PDOException;
+use App\Models\{
+    CuentaCobrarModel,
+    TipoPagoModel,
+    BancoModel
+};
+use function App\Helpers\{
+    respuestaJson,
+    verificarRolAdmin
+};
 
 $cuentaCobrarModel = new CuentaCobrarModel();
 
