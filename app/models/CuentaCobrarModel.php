@@ -131,20 +131,23 @@ class CuentaCobrarModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarSelectAll
-    // OBJETIVO: Ejecuta la consulta que lista todas las cuentas activas con datos del cliente y nota
+    // OBJETIVO: Ejecuta la consulta que lista todas las cuentas activas con datos del cliente y venta
     private function _ejecutarSelectAll(): array
     {
-        $consulta = "SELECT cc.*, 
+        $consulta = "SELECT cc.*, cc.estado as activo, cc.situacion as estado,
+                        c.id_cliente,
                         CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                         c.cedula as cliente_cedula,
                         (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
-                        ne.id_nota_entrega as id_nota_entrega,
-                        ne.fecha as nota_fecha
+                        v.id_venta as id_nota_entrega,
+                        v.id_venta as id_nota_venta,
+                        v.id_venta,
+                        v.fecha as nota_fecha
                 FROM cuentas_cobrar cc 
-                INNER JOIN clientes c ON cc.id_cliente = c.id_cliente
-                LEFT JOIN notas_entrega ne ON cc.id_nota_entrega = ne.id_nota_entrega
-                WHERE cc.activo = 1
-                ORDER BY cc.estado ASC, cc.fecha_vencimiento ASC";
+                INNER JOIN ventas v ON cc.id_venta = v.id_venta
+                INNER JOIN clientes c ON v.id_cliente = c.id_cliente
+                WHERE cc.estado = 1
+                ORDER BY cc.situacion ASC, cc.fecha_vencimiento ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
     }
@@ -153,16 +156,19 @@ class CuentaCobrarModel extends ModeloBase
     // OBJETIVO: Ejecuta la búsqueda de una cuenta por ID
     private function _ejecutarSelectById(): array|false
     {
-        $consulta = "SELECT cc.*, 
+        $consulta = "SELECT cc.*, cc.estado as activo, cc.situacion as estado,
+                        c.id_cliente,
                         CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                         c.cedula as cliente_cedula,
                         (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
-                        ne.id_nota_entrega as id_nota_entrega,
-                        ne.fecha as nota_fecha
+                        v.id_venta as id_nota_entrega,
+                        v.id_venta as id_nota_venta,
+                        v.id_venta,
+                        v.fecha as nota_fecha
                 FROM cuentas_cobrar cc 
-                INNER JOIN clientes c ON cc.id_cliente = c.id_cliente
-                LEFT JOIN notas_entrega ne ON cc.id_nota_entrega = ne.id_nota_entrega
-                WHERE cc.id_cuenta_cobrar = :id AND cc.activo = 1";
+                INNER JOIN ventas v ON cc.id_venta = v.id_venta
+                INNER JOIN clientes c ON v.id_cliente = c.id_cliente
+                WHERE cc.id_cuenta_cobrar = :id AND cc.estado = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         $stmt->execute();
@@ -186,7 +192,7 @@ class CuentaCobrarModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarRegistrarPago
-    // OBJETIVO: Ejecuta la transacción que inserta el pago y actualiza saldo/estado de la cuenta
+    // OBJETIVO: Ejecuta la transacción que inserta el pago y actualiza saldo/situacion de la cuenta
     private function _ejecutarRegistrarPago(): bool
     {
         try {
@@ -221,7 +227,7 @@ class CuentaCobrarModel extends ModeloBase
                 $nuevoEstado = 'pendiente';
             }
 
-            $consultaActualizar = "UPDATE cuentas_cobrar SET saldo_pendiente = :saldo, estado = :estado WHERE id_cuenta_cobrar = :id";
+            $consultaActualizar = "UPDATE cuentas_cobrar SET saldo_pendiente = :saldo, situacion = :estado WHERE id_cuenta_cobrar = :id";
             $stmtActualizar = $this->conexion->prepare($consultaActualizar);
             $stmtActualizar->bindParam(':saldo', $nuevoSaldo);
             $stmtActualizar->bindParam(':estado', $nuevoEstado, PDO::PARAM_STR);
@@ -265,7 +271,7 @@ class CuentaCobrarModel extends ModeloBase
     // OBJETIVO: Ejecuta el soft delete de la cuenta por cobrar
     private function _ejecutarDelete(): bool
     {
-        $consulta = "UPDATE cuentas_cobrar SET activo = 0 WHERE id_cuenta_cobrar = :id";
+        $consulta = "UPDATE cuentas_cobrar SET estado = 0 WHERE id_cuenta_cobrar = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         return $stmt->execute();
@@ -277,7 +283,7 @@ class CuentaCobrarModel extends ModeloBase
     {
         $consulta = "SELECT COALESCE(SUM(saldo_pendiente), 0) as total
                      FROM cuentas_cobrar
-                     WHERE activo = 1 AND estado IN ('pendiente', 'moroso')";
+                     WHERE estado = 1 AND situacion = 'pendiente'";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchColumn();
     }
@@ -288,8 +294,8 @@ class CuentaCobrarModel extends ModeloBase
     {
         $consulta = "SELECT COUNT(*) as total
                      FROM cuentas_cobrar
-                     WHERE activo = 1
-                       AND estado <> 'pagado'
+                     WHERE estado = 1
+                       AND situacion <> 'pagado'
                        AND fecha_vencimiento IS NOT NULL
                        AND fecha_vencimiento < CURDATE()";
         $stmt = $this->conexion->query($consulta);
@@ -301,19 +307,22 @@ class CuentaCobrarModel extends ModeloBase
     private function _ejecutarSearch(): array
     {
         $terminoLike = '%' . $this->termino . '%';
-        $consulta = "SELECT cc.*, 
+        $consulta = "SELECT cc.*, cc.estado as activo, cc.situacion as estado,
+                        c.id_cliente,
                         CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                         c.cedula as cliente_cedula,
                         (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
-                        ne.id_nota_entrega as id_nota_entrega,
-                        ne.fecha as nota_fecha
+                        v.id_venta as id_nota_entrega,
+                        v.id_venta as id_nota_venta,
+                        v.id_venta,
+                        v.fecha as nota_fecha
                 FROM cuentas_cobrar cc 
-                INNER JOIN clientes c ON cc.id_cliente = c.id_cliente
-                LEFT JOIN notas_entrega ne ON cc.id_nota_entrega = ne.id_nota_entrega
-                WHERE cc.activo = 1 AND (c.nombres LIKE :termino1 
+                INNER JOIN ventas v ON cc.id_venta = v.id_venta
+                INNER JOIN clientes c ON v.id_cliente = c.id_cliente
+                WHERE cc.estado = 1 AND (c.nombres LIKE :termino1 
                     OR c.apellidos LIKE :termino2 
                     OR c.cedula LIKE :termino3) 
-                ORDER BY cc.estado ASC, cc.fecha_vencimiento ASC";
+                ORDER BY cc.situacion ASC, cc.fecha_vencimiento ASC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':termino1', $terminoLike, PDO::PARAM_STR);
         $stmt->bindParam(':termino2', $terminoLike, PDO::PARAM_STR);

@@ -91,13 +91,13 @@ class ProveedorModel extends ModeloBase
 
         if ($this->id < 1) return false;
 
-        $consulta = "SELECT COUNT(*) as total FROM cuentas_pagar WHERE id_proveedor = :id AND estado = 'pendiente'";
+        $consulta = "SELECT COUNT(*) as total FROM cuentas_pagar WHERE id_proveedor = :id AND situacion = 'pendiente' AND estado = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         $stmt->execute();
         if ((int)$stmt->fetch()['total'] > 0) return false;
 
-        $consulta = "SELECT COUNT(*) as total FROM insumo_proveedor WHERE id_proveedor = :id";
+        $consulta = "SELECT COUNT(*) as total FROM producto_proveedor WHERE id_proveedor = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         $stmt->execute();
@@ -189,14 +189,14 @@ class ProveedorModel extends ModeloBase
 
     private function _ejecutarCountAll(): int
     {
-        $consulta = "SELECT COUNT(*) as total FROM proveedores WHERE activo = 1";
+        $consulta = "SELECT COUNT(*) as total FROM proveedores WHERE estado = 1";
         $stmt = $this->conexion->query($consulta);
         return (int)$stmt->fetch()['total'];
     }
 
     private function _ejecutarSelectAll(): array
     {
-        $consulta = "SELECT p.*,
+        $consulta = "SELECT p.*, p.estado as activo,
                             GROUP_CONCAT(DISTINCT tp.telefono SEPARATOR ', ') as telefonos,
                             GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubros,
                             GROUP_CONCAT(DISTINCT rp.id_rubro SEPARATOR ',') as rubros_id
@@ -204,7 +204,7 @@ class ProveedorModel extends ModeloBase
                      LEFT JOIN telefono_proveedor tp ON tp.id_proveedor = p.id_proveedor
                      LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
                      LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
-                     WHERE p.activo = 1
+                     WHERE p.estado = 1
                      GROUP BY p.id_proveedor
                      ORDER BY p.nombre_empresa ASC";
         $stmt = $this->conexion->query($consulta);
@@ -213,7 +213,7 @@ class ProveedorModel extends ModeloBase
 
     private function _ejecutarSelectById(): array|false
     {
-        $consulta = "SELECT p.*,
+        $consulta = "SELECT p.*, p.estado as activo,
                             GROUP_CONCAT(DISTINCT tp.telefono SEPARATOR ', ') as telefonos,
                             GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubros,
                             GROUP_CONCAT(DISTINCT rp.id_rubro SEPARATOR ',') as rubros_id
@@ -221,7 +221,7 @@ class ProveedorModel extends ModeloBase
                      LEFT JOIN telefono_proveedor tp ON tp.id_proveedor = p.id_proveedor
                      LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
                      LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
-                     WHERE p.id_proveedor = :id AND p.activo = 1
+                     WHERE p.id_proveedor = :id AND p.estado = 1
                      GROUP BY p.id_proveedor LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
@@ -231,8 +231,8 @@ class ProveedorModel extends ModeloBase
 
     private function _ejecutarInsert(): int|false
     {
-        $consulta = "INSERT INTO proveedores (rif, nombre_empresa, direccion, contacto, correo)
-                     VALUES (:rif, :nombre_empresa, :direccion, :contacto, :correo)";
+        $consulta = "INSERT INTO proveedores (rif, nombre_empresa, direccion, contacto, correo, estado)
+                     VALUES (:rif, :nombre_empresa, :direccion, :contacto, :correo, 1)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':rif', $this->rif, PDO::PARAM_STR);
         $stmt->bindParam(':nombre_empresa', $this->nombreEmpresa, PDO::PARAM_STR);
@@ -247,7 +247,7 @@ class ProveedorModel extends ModeloBase
     {
         $consulta = "UPDATE proveedores
                      SET rif = :rif, nombre_empresa = :nombre_empresa, direccion = :direccion,
-                         contacto = :contacto, correo = :correo, activo = 1
+                         contacto = :contacto, correo = :correo, estado = 1
                      WHERE id_proveedor = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':rif', $this->rif, PDO::PARAM_STR);
@@ -261,7 +261,7 @@ class ProveedorModel extends ModeloBase
 
     private function _ejecutarDelete(): bool
     {
-        $consulta = "UPDATE proveedores SET activo = 0 WHERE id_proveedor = :id";
+        $consulta = "UPDATE proveedores SET estado = 0 WHERE id_proveedor = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         return $stmt->execute();
@@ -269,7 +269,7 @@ class ProveedorModel extends ModeloBase
 
     private function _ejecutarCheckRif(): bool
     {
-        $consulta = "SELECT COUNT(*) as total FROM proveedores WHERE rif = :rif AND activo = 1";
+        $consulta = "SELECT COUNT(*) as total FROM proveedores WHERE rif = :rif AND estado = 1";
         if ($this->idExcluir !== null) {
             $consulta .= " AND id_proveedor != :id";
         }
@@ -284,7 +284,7 @@ class ProveedorModel extends ModeloBase
 
     private function _ejecutarBuscarInactivo(): int|false
     {
-        $consulta = "SELECT id_proveedor FROM proveedores WHERE rif = :rif AND activo = 0 LIMIT 1";
+        $consulta = "SELECT id_proveedor FROM proveedores WHERE rif = :rif AND estado = 0 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':rif', $this->rif, PDO::PARAM_STR);
         $stmt->execute();
@@ -295,7 +295,7 @@ class ProveedorModel extends ModeloBase
     private function _ejecutarSearch(): array
     {
         $terminoLike = '%' . $this->termino . '%';
-        $consulta = "SELECT p.*,
+        $consulta = "SELECT p.*, p.estado as activo,
                             GROUP_CONCAT(DISTINCT tp.telefono SEPARATOR ', ') as telefonos,
                             GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubros,
                             GROUP_CONCAT(DISTINCT rp.id_rubro SEPARATOR ',') as rubros_id
@@ -303,7 +303,7 @@ class ProveedorModel extends ModeloBase
                      LEFT JOIN telefono_proveedor tp ON tp.id_proveedor = p.id_proveedor
                      LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
                      LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
-                     WHERE p.activo = 1 AND (p.nombre_empresa LIKE :termino1
+                     WHERE p.estado = 1 AND (p.nombre_empresa LIKE :termino1
                          OR p.rif LIKE :termino2)
                      GROUP BY p.id_proveedor
                      ORDER BY p.nombre_empresa ASC";

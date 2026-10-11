@@ -47,8 +47,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         data: 'estado',
                         render: function(data) {
                             if (!data) return '';
-                            var cap = data.charAt(0).toUpperCase() + data.slice(1);
-                            return '<span class="estado-' + data + '">' + cap + '</span>';
+                            var texto = (data === 'presupuesto' || data === 'pendiente') ? 'Presupuesto' : data.charAt(0).toUpperCase() + data.slice(1);
+                            return '<span class="estado-' + data + '">' + texto + '</span>';
                         }
                     },
                     { data: 'usuario_nombre' },
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (!row) return '';
                             var html = '<div class="d-flex gap-2">' +
                                 '<a href="/SP%20Perfect%20Color/presupuesto/ver?id=' + row.id_presupuesto + '" class="btn btn-sm btn-info" title="Ver" data-bs-toggle="tooltip"><i class="bi bi-eye"></i></a>';
-                            if (row.estado === 'pendiente') {
+                            if (row.estado === 'pendiente' || row.estado === 'presupuesto' || (row.id_estado_venta && parseInt(row.id_estado_venta) === 1)) {
                                 html +=
                                     '<button class="btn btn-sm btn-success btn-aprobar-presupuesto" data-id="' + row.id_presupuesto + '"><i class="bi bi-check-lg me-1"></i>Aprobar</button>' +
                                     '<button class="btn btn-sm btn-danger btn-rechazar-presupuesto" data-id="' + row.id_presupuesto + '"><i class="bi bi-x-lg me-1"></i>Rechazar</button>';
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (this.value === '') {
                     table.column(5).search('').draw();
                 } else {
-                    table.column(5).search('^' + this.value + '$', true).draw();
+                    table.column(5).search(this.value).draw();
                 }
             }
         });

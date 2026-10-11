@@ -61,7 +61,6 @@
                 <select id="filtroEstadoCxc" class="form-select">
                     <option value="">Todos</option>
                     <option value="pendiente">Pendiente</option>
-                    <option value="moroso">Moroso</option>
                     <option value="pagado">Pagado</option>
                 </select>
             </div>

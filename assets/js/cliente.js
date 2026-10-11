@@ -11,13 +11,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const formularioCliente = document.getElementById('formularioCliente');
     const tituloModal = document.getElementById('tituloModalCliente');
     const clienteId = document.getElementById('clienteId');
+    const tipoDocCliente = document.getElementById('tipoDocCliente');
     const cedulaCliente = document.getElementById('cedulaCliente');
+    const cedulaCompletaCliente = document.getElementById('cedulaCompletaCliente');
+    const feedbackCedulaCliente = document.getElementById('feedbackCedulaCliente');
     const nombresCliente = document.getElementById('nombresCliente');
     const apellidosCliente = document.getElementById('apellidosCliente');
+    const operadoraCliente = document.getElementById('operadoraCliente');
+    const telefonoNumeroCliente = document.getElementById('telefonoNumeroCliente');
     const telefonoCliente = document.getElementById('telefonoCliente');
     const correoCliente = document.getElementById('correoCliente');
     const direccionCliente = document.getElementById('direccionCliente');
     const mensajeError = document.getElementById('mensajeErrorCliente');
+    const btnGuardarCliente = document.getElementById('btnGuardarCliente');
 
     // Cargar lista de clientes al iniciar
     cargarClientes();
@@ -27,6 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btnNuevoCliente.addEventListener('click', function() {
             formularioCliente.reset();
             clienteId.value = '';
+            limpiarEstadoCedula();
             mensajeError.classList.add('d-none');
             tituloModal.textContent = 'Nuevo Cliente';
             bootstrap.Modal.getOrCreateInstance(modalCliente).show();
@@ -57,20 +64,78 @@ document.addEventListener('DOMContentLoaded', function() {
     if (modalCliente) {
         modalCliente.addEventListener('hidden.bs.modal', function () {
             formularioCliente.reset();
+            limpiarEstadoCedula();
             mensajeError.classList.add('d-none');
         });
     }
 
-    // Permitir solo numeros en cedula
+    function limpiarEstadoCedula() {
+        if (cedulaCliente) {
+            cedulaCliente.classList.remove('is-invalid', 'is-valid');
+        }
+        if (feedbackCedulaCliente) {
+            feedbackCedulaCliente.classList.add('d-none');
+        }
+        if (btnGuardarCliente) {
+            btnGuardarCliente.disabled = false;
+        }
+    }
+
+    // Verificacion en tiempo real de cedula existente
+    var temporizadorCedula;
+    function verificarCedulaEnTiempoReal() {
+        clearTimeout(temporizadorCedula);
+        const num = cedulaCliente.value.trim();
+        const tipo = tipoDocCliente ? tipoDocCliente.value : 'V';
+        if (!num || num.length < 5) {
+            limpiarEstadoCedula();
+            return;
+        }
+
+        const cedulaCompleta = tipo + '-' + num;
+        const id = clienteId.value || '';
+
+        temporizadorCedula = setTimeout(async function() {
+            try {
+                const resp = await fetch('/SP%20Perfect%20Color/cliente/verificarCedulaAjax?cedula=' + encodeURIComponent(cedulaCompleta) + '&id=' + encodeURIComponent(id));
+                const res = await resp.json();
+                if (res.estado === 'exito') {
+                    if (res.datos.existe) {
+                        cedulaCliente.classList.add('is-invalid');
+                        cedulaCliente.classList.remove('is-valid');
+                        if (feedbackCedulaCliente) {
+                            feedbackCedulaCliente.textContent = 'El cliente con ' + cedulaCompleta + ' ya existe en el sistema';
+                            feedbackCedulaCliente.classList.remove('d-none');
+                        }
+                        if (btnGuardarCliente) btnGuardarCliente.disabled = true;
+                    } else {
+                        cedulaCliente.classList.remove('is-invalid');
+                        cedulaCliente.classList.add('is-valid');
+                        if (feedbackCedulaCliente) {
+                            feedbackCedulaCliente.classList.add('d-none');
+                        }
+                        if (btnGuardarCliente) btnGuardarCliente.disabled = false;
+                    }
+                }
+            } catch (e) {
+                console.error('Error al verificar cedula:', e);
+            }
+        }, 300);
+    }
+
     if (cedulaCliente) {
         cedulaCliente.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '');
+            verificarCedulaEnTiempoReal();
         });
+    }
+    if (tipoDocCliente) {
+        tipoDocCliente.addEventListener('change', verificarCedulaEnTiempoReal);
     }
 
     // Permitir solo numeros en telefono
-    if (telefonoCliente) {
-        telefonoCliente.addEventListener('input', function() {
+    if (telefonoNumeroCliente) {
+        telefonoNumeroCliente.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '');
         });
     }
@@ -175,12 +240,31 @@ document.addEventListener('DOMContentLoaded', function() {
             if (resultado.estado === 'exito') {
                 const c = resultado.datos;
                 formularioCliente.reset();
+                limpiarEstadoCedula();
                 mensajeError.classList.add('d-none');
                 clienteId.value = c.id_cliente;
-                cedulaCliente.value = c.cedula;
+
+                // Parsear cedula (V-12345678)
+                const partesCedula = (c.cedula || '').split('-');
+                if (partesCedula.length === 2 && tipoDocCliente) {
+                    tipoDocCliente.value = partesCedula[0];
+                    cedulaCliente.value = partesCedula[1];
+                } else {
+                    cedulaCliente.value = c.cedula || '';
+                }
+
                 nombresCliente.value = c.nombres;
                 apellidosCliente.value = c.apellidos;
-                telefonoCliente.value = c.telefonos || '';
+
+                // Parsear telefono (0412-1234567 o 04121234567)
+                const telRaw = (c.telefonos || '').replace(/[^0-9]/g, '');
+                if (telRaw.length === 11 && operadoraCliente && telefonoNumeroCliente) {
+                    operadoraCliente.value = telRaw.substring(0, 4);
+                    telefonoNumeroCliente.value = telRaw.substring(4);
+                } else if (telefonoNumeroCliente) {
+                    telefonoNumeroCliente.value = telRaw;
+                }
+
                 correoCliente.value = c.correo || '';
                 direccionCliente.value = c.direccion || '';
                 tituloModal.textContent = 'Editar Cliente';
@@ -199,21 +283,54 @@ document.addEventListener('DOMContentLoaded', function() {
         const id = clienteId.value;
         const esEdicion = id !== '';
 
-        if (!cedulaCliente.value.trim()) {
+        const cedulaNum = cedulaCliente.value.trim();
+        const tipoDoc = tipoDocCliente ? tipoDocCliente.value : 'V';
+        if (!cedulaNum) {
             mostrarError('La cedula es obligatoria');
+            cedulaCliente.focus();
             return;
         }
+
+        const cedulaFinal = tipoDoc + '-' + cedulaNum;
+        if (cedulaCompletaCliente) {
+            cedulaCompletaCliente.value = cedulaFinal;
+        }
+
         if (!nombresCliente.value.trim()) {
             mostrarError('El nombre es obligatorio');
+            nombresCliente.focus();
             return;
         }
         if (!apellidosCliente.value.trim()) {
             mostrarError('El apellido es obligatorio');
+            apellidosCliente.focus();
             return;
+        }
+
+        if (!correoCliente.value.trim()) {
+            mostrarError('El correo electronico es obligatorio');
+            correoCliente.focus();
+            return;
+        }
+
+        // Armar telefono si tiene numero
+        const telNum = telefonoNumeroCliente ? telefonoNumeroCliente.value.trim() : '';
+        const op = operadoraCliente ? operadoraCliente.value : '';
+        if (telNum && telNum.length !== 7) {
+            mostrarError('El numero de telefono debe tener exactamente 7 digitos');
+            telefonoNumeroCliente.focus();
+            return;
+        }
+        if (telefonoCliente) {
+            telefonoCliente.value = telNum ? (op + telNum) : '';
         }
 
         const url = esEdicion ? '/SP%20Perfect%20Color/cliente/actualizar' : '/SP%20Perfect%20Color/cliente/guardar';
         const formData = new FormData(formularioCliente);
+        formData.set('cedula', cedulaFinal);
+        if (telNum) {
+            formData.set('telefono', op + telNum);
+        }
         if (esEdicion) {
             formData.set('id', id);
         }

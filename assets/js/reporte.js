@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 items.forEach(function(c) {
                     var fila = document.createElement('tr');
-                    var badge = c.estado === 'pagado' ? 'success' : (c.estado === 'moroso' ? 'danger' : 'warning');
+                    var badge = c.estado === 'pagado' ? 'success' : 'warning';
                     fila.innerHTML =
                         '<td>' + (c.cliente_nombre || '-') + '</td>' +
                         '<td>' + (c.cliente_cedula || '-') + '</td>' +

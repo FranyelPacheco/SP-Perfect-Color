@@ -36,14 +36,14 @@ class UsuarioModel extends ModeloBase
     // OBJETIVO: Ejecuta la consulta de búsqueda por correo
     private function _ejecutarSelectByCorreo(): array|false
     {
-        $consulta = "SELECT u.*, r.nombre as rol_nombre, r.activo as rol_activo,
+        $consulta = "SELECT u.*, u.estado as activo, r.nombre as rol_nombre, r.estado as rol_activo,
                             (SELECT GROUP_CONCAT(m.codigo SEPARATOR ',') 
                              FROM rol_modulo rm 
                              JOIN modulos m ON rm.id_modulo = m.id_modulo 
                              WHERE rm.id_rol = r.id_rol) as rol_modulos 
                      FROM usuarios u 
                      INNER JOIN roles r ON u.id_rol = r.id_rol 
-                     WHERE u.correo = :correo AND u.activo = 1 
+                     WHERE u.correo = :correo AND u.estado = 1 
                      LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
@@ -63,7 +63,7 @@ class UsuarioModel extends ModeloBase
     // OBJETIVO: Ejecuta la consulta de búsqueda por ID
     private function _ejecutarSelectById(): array|false
     {
-        $consulta = "SELECT * FROM usuarios WHERE id_usuario = :id AND activo = 1 LIMIT 1";
+        $consulta = "SELECT *, estado as activo FROM usuarios WHERE id_usuario = :id AND estado = 1 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         $stmt->execute();
@@ -82,14 +82,14 @@ class UsuarioModel extends ModeloBase
     // OBJETIVO: Ejecuta la consulta con JOIN a roles para datos de perfil
     private function _ejecutarSelectConRolById(): array|false
     {
-        $consulta = "SELECT u.*, r.nombre as rol_nombre,
+        $consulta = "SELECT u.*, u.estado as activo, r.nombre as rol_nombre,
                             (SELECT GROUP_CONCAT(m.codigo SEPARATOR ',') 
                              FROM rol_modulo rm 
                              JOIN modulos m ON rm.id_modulo = m.id_modulo 
                              WHERE rm.id_rol = r.id_rol) as rol_modulos 
                      FROM usuarios u 
                      INNER JOIN roles r ON u.id_rol = r.id_rol 
-                     WHERE u.id_usuario = :id AND u.activo = 1 
+                     WHERE u.id_usuario = :id AND u.estado = 1 
                      LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
@@ -108,10 +108,10 @@ class UsuarioModel extends ModeloBase
     // OBJETIVO: Ejecuta la consulta que lista usuarios con JOIN a roles
     private function _ejecutarSelectAll(): array
     {
-        $consulta = "SELECT u.*, r.nombre as rol_nombre
+        $consulta = "SELECT u.*, u.estado as activo, r.nombre as rol_nombre
                      FROM usuarios u
                      INNER JOIN roles r ON u.id_rol = r.id_rol
-                     WHERE u.activo = 1
+                     WHERE u.estado = 1
                      ORDER BY u.nombre ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
@@ -128,7 +128,7 @@ class UsuarioModel extends ModeloBase
     // OBJETIVO: Ejecuta la consulta de roles activos ordenados por ID
     private function _ejecutarSelectRoles(): array
     {
-        $consulta = "SELECT * FROM roles WHERE activo = 1 ORDER BY id_rol ASC";
+        $consulta = "SELECT *, estado as activo FROM roles WHERE estado = 1 ORDER BY id_rol ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
     }
@@ -149,7 +149,7 @@ class UsuarioModel extends ModeloBase
     // OBJETIVO: Ejecuta el INSERT del usuario en la tabla usuarios
     private function _ejecutarInsert(): bool
     {
-        $consulta = "INSERT INTO usuarios (nombre, correo, password_hash, id_rol, activo)
+        $consulta = "INSERT INTO usuarios (nombre, correo, password_hash, id_rol, estado)
                      VALUES (:nombre, :correo, :password_hash, :id_rol, :activo)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':nombre', $this->nombre, PDO::PARAM_STR);
@@ -161,7 +161,7 @@ class UsuarioModel extends ModeloBase
     }
 
     // FUNCIÓN: actualizarUsuario
-    // OBJETIVO: Actualiza los datos de un usuario (nombre, correo, rol, activo)
+    // OBJETIVO: Actualiza los datos de un usuario (nombre, correo, rol, estado)
     // NOTA: No actualiza la contraseña; usar actualizarClave para eso
     public function actualizarUsuario(int $id, string $nombre, string $correo, int $idRol, int $activo): bool
     {
@@ -177,7 +177,7 @@ class UsuarioModel extends ModeloBase
     // OBJETIVO: Ejecuta el UPDATE de datos generales del usuario
     private function _ejecutarUpdate(): bool
     {
-        $consulta = "UPDATE usuarios SET nombre = :nombre, correo = :correo, id_rol = :id_rol, activo = :activo WHERE id_usuario = :id";
+        $consulta = "UPDATE usuarios SET nombre = :nombre, correo = :correo, id_rol = :id_rol, estado = :activo WHERE id_usuario = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':nombre', $this->nombre, PDO::PARAM_STR);
         $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
@@ -215,7 +215,7 @@ class UsuarioModel extends ModeloBase
         $this->id = $id;
         $usuario = $this->buscarPorId($id);
         if ($usuario && $usuario['id_rol'] == 1) {
-            $consulta = "SELECT COUNT(*) as total FROM usuarios WHERE id_rol = 1 AND activo = 1";
+            $consulta = "SELECT COUNT(*) as total FROM usuarios WHERE id_rol = 1 AND estado = 1";
             $stmt = $this->conexion->query($consulta);
             $totalAdmins = $stmt->fetch()['total'];
             if ($totalAdmins <= 1) return false;
@@ -227,7 +227,7 @@ class UsuarioModel extends ModeloBase
     // OBJETIVO: Ejecuta el UPDATE que marca el usuario como inactivo
     private function _ejecutarDelete(): bool
     {
-        $consulta = "UPDATE usuarios SET activo = 0 WHERE id_usuario = :id";
+        $consulta = "UPDATE usuarios SET estado = 0 WHERE id_usuario = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         return $stmt->execute();
@@ -246,7 +246,7 @@ class UsuarioModel extends ModeloBase
     // OBJETIVO: Ejecuta la consulta COUNT para verificar unicidad del correo
     private function _ejecutarCheckCorreo(): bool
     {
-        $consulta = "SELECT COUNT(*) as total FROM usuarios WHERE correo = :correo AND activo = 1";
+        $consulta = "SELECT COUNT(*) as total FROM usuarios WHERE correo = :correo AND estado = 1";
         if ($this->idExcluir !== null) {
             $consulta .= " AND id_usuario != :id";
         }
@@ -274,7 +274,7 @@ class UsuarioModel extends ModeloBase
     // OBJETIVO: Retorna el ID de un usuario inactivo con el correo dado, o false si no existe
     private function _ejecutarBuscarInactivo(): int|false
     {
-        $consulta = "SELECT id_usuario FROM usuarios WHERE correo = :correo AND activo = 0 LIMIT 1";
+        $consulta = "SELECT id_usuario FROM usuarios WHERE correo = :correo AND estado = 0 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
         $stmt->execute();

@@ -5,11 +5,11 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-            <h4 class="mb-0 toolbar-title"><i class="bi bi-box-seam-fill me-2 text-primary"></i>Inventario / Insumos</h4>
+            <h4 class="mb-0 toolbar-title"><i class="bi bi-box-seam-fill me-2 text-primary"></i>Registro de Insumos</h4>
             <div class="d-flex gap-2 align-items-center">
                 <input type="text" id="busquedaInsumos" class="form-control" style="width: 220px;" placeholder="Buscar por codigo, nombre o rubro...">
                 <?php if ($_SESSION['usuario_rol'] == 1): ?>
-                <button id="btnNuevoInsumo" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
+                <button id="btnNuevoInsumo" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Nuevo Insumo</button>
                 <?php endif; ?>
             </div>
         </div>
@@ -55,8 +55,9 @@
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-4">
-                            <label for="codigoInsumo" class="form-label">Codigo</label>
+                            <label for="codigoInsumo" class="form-label">Codigo <span class="text-danger">*</span></label>
                             <input type="text" id="codigoInsumo" name="codigo" class="form-control" required placeholder="Codigo unico">
+                            <div class="invalid-feedback d-none" id="feedbackCodigoInsumo">Ya existe un insumo con este codigo</div>
                         </div>
                         <div class="col-md-5">
                             <label for="nombreInsumo" class="form-label">Nombre del Insumo / Producto</label>

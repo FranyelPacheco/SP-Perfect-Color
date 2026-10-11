@@ -153,7 +153,7 @@ c:/xampp/htdocs/SP Perfect Color/
 │   │   └── usuarioController.php     # Gestión de usuarios y roles
 │   ├── core/
 │   │   ├── conexionBD.php            # Singleton de conexión PDO
-│   │   └── sp_perfect_color.sql      # Esquema oficial (24 tablas normalizadas)
+│   │   └── sp_perfect_color.sql      # Esquema oficial (25 tablas normalizadas)
 │   ├── helpers/                      # Funciones auxiliares globales
 │   │   ├── correoHelper.php          # Servicio de correo y plantillas HTML
 │   │   ├── exportarReporteHelper.php # Exportadores PDF y Excel
@@ -166,11 +166,12 @@ c:/xampp/htdocs/SP Perfect Color/
 │   │   ├── CuentaCobrarModel.php
 │   │   ├── CuentaPagarModel.php
 │   │   ├── EstadoPresupuestoModel.php
+│   │   ├── EstadoVentaModel.php      # Estados de ventas/presupuestos
 │   │   ├── InventarioModel.php
 │   │   ├── ModeloBase.php            # Clase base con conexión PDO
 │   │   ├── ModuloModel.php
-│   │   ├── NotaEntregaModel.php
-│   │   ├── PresupuestoModel.php
+│   │   ├── NotaEntregaModel.php      # Manejador de despacho y ventas
+│   │   ├── PresupuestoModel.php      # Manejador de cotizaciones/ventas
 │   │   ├── ProveedorModel.php
 │   │   ├── ReporteModel.php
 │   │   ├── RolModel.php
@@ -193,6 +194,7 @@ c:/xampp/htdocs/SP Perfect Color/
 │       ├── plantillaBase.php         # Layout base con sidebar responsive
 │       ├── presupuestoFormView.php   # Formulario con formulador de mezclas
 │       ├── presupuestoListView.php
+│       ├── presupuestoVerView.php    # Visualización detallada de cotización/venta
 │       ├── proveedorListView.php
 │       ├── reporteListView.php
 │       ├── restablecerClaveView.php  # Vista de ingreso de nueva clave por token
@@ -214,7 +216,8 @@ c:/xampp/htdocs/SP Perfect Color/
 ├── composer.json                     # Definición de dependencias y autoload
 ├── index.php                         # Punto de entrada de la aplicación
 ├── AGENTS.md                         # Bitácora técnica y registro de cambios
-└── README.md                         # Documentación general del proyecto
+├── README.md                         # Documentación general del proyecto
+└── modelo_relacional.svg             # Diagrama vectorial ERD (25 tablas)
 ```
 
 ---
@@ -224,13 +227,13 @@ c:/xampp/htdocs/SP Perfect Color/
 | Módulo | Descripción Funcional | Clave URL |
 |---|---|:---:|
 | **Dashboard** | Resumen ejecutivo con contadores animados, accesos directos, balance del día y gráfico de ingresos vía Chart.js. | `/dashboard` |
-| **Clientes** | Registro de clientes con cédula única (V/E), historial y múltiples teléfonos en tabla puente. | `/cliente` |
+| **Clientes** | Registro de clientes con cédula única (V/E), historial y múltiples teléfonos en tabla débil. | `/cliente` |
 | **Proveedores** | Directorio de proveedores con validación de RIF (J/V/E/G), teléfonos y asignación de rubros. | `/proveedor` |
-| **Inventario** | Control de existencias diferenciando artículos simples de reventa y tintes base concentrados para formulación. | `/inventario` |
-| **Presupuestos** | Cotizaciones comerciales con soporte para productos físicos y formulador interactivo de mezclas de color. | `/presupuesto` |
-| **Notas de Entrega** | Despacho y facturación de presupuestos aprobados con descuento automático de inventario físico. | `/notaEntrega` |
-| **Cuentas por Cobrar** | Gestión de cartera a crédito, control de saldos y registro de pagos parciales o totales. | `/cuentaCobrar` |
-| **Cuentas por Pagar** | Control de compromisos con proveedores, fechas de vencimiento y registro de amortizaciones. | `/cuentaPagar` |
+| **Inventario** | Control de existencias diferenciando simples, tintes base y mezclas colorimétricas preparadas. | `/inventario` |
+| **Presupuestos y Ventas** | Cotizaciones y ventas comerciales con soporte para formulación de mezclas y ciclo de aprobación. | `/presupuesto` |
+| **Notas de Entrega** | Despacho y consolidación de ventas con descuento automático de inventario físico (BOM). | `/notaEntrega` |
+| **Cuentas por Cobrar** | Gestión de cartera a crédito derivada de ventas, control de saldos y registro de pagos. | `/cuentaCobrar` |
+| **Cuentas por Pagar** | Control de compromisos con proveedores por notas de entrega de compras y amortizaciones. | `/cuentaPagar` |
 | **Config. de Pago** | Administración unificada de entidades bancarias e instrumentos de cobro (Efectivo, Pago Móvil, etc.). | `/configPago` |
 | **Usuarios y Roles** | Administración centralizada de cuentas de usuario y asignación granular de módulos permitidos por rol. | `/usuario` |
 | **Mi Perfil** | Consulta personal de perfil, edición de datos propios y cambio seguro de contraseña. | `/perfil` |
@@ -241,53 +244,54 @@ c:/xampp/htdocs/SP Perfect Color/
 
 ## Flujo de Procesos y Modelo de Datos
 
-### Cadena Comercial y Ciclo de Inventario
+### Cadena Comercial y Ciclo de Inventario Unificado
 ```
-[Catálogo de Insumos / Tintes Base]
-                 │
-                 ▼
-[Presupuesto: Formulación de Mezcla o Producto Simple]
-                 │
-           (Aprobación)
-                 │
-                 ▼
-[Nota de Entrega: Descuenta Stock Físico (BOM)]
-                 │
-        ┌────────┴────────┐
-        ▼                 ▼
-   (De Contado)      (A Crédito)
-        │                 │
-  (Cancela CxC)     [Cuenta por Cobrar: Pendiente]
-        │                 │
-        ▼                 ▼
-[Pagos Recibidos: Referencia id_cuenta_cobrar]
+[Catálogo de Productos: Simples / Tintes Base / Mezclas Preparadas]
+                             │
+                             ▼
+     [Ventas (Estado: Presupuesto)] ──(Fecha Creación)
+                             │
+            ┌────────────────┴────────────────┐
+            ▼                                 ▼
+   [Rechazado / Anulado]           [Ventas (Estado: Aprobado)] ──(Fecha Aprobación)
+                                              │
+                                              ▼ (Descuenta Stock Físico)
+                                    ┌─────────┴─────────┐
+                                    ▼                   ▼
+                               (De Contado)        (A Crédito)
+                                    │                   │
+                              (Cancela CxC)       [Cuenta por Cobrar: Pendiente]
+                                    │                   │
+                                    ▼                   ▼
+                        [Pagos Recibidos: Referencia id_cuenta_cobrar]
 ```
 
-### Tablas Oficiales en Base de Datos (24 Tablas)
+### Tablas Oficiales en Base de Datos (25 Tablas)
 1. `banco` — Catálogo de entidades bancarias.
 2. `clientes` — Registro de clientes naturales o jurídicos.
-3. `cuentas_cobrar` — Deudas activas de clientes derivadas de notas de entrega.
-4. `cuentas_pagar` — Compromisos financieros con proveedores.
-5. `estado_presupuesto` — Estados parametrizados (Pendiente, Aprobado, Rechazado).
-6. `item_composicion` — Desglose de insumos consumidos por fórmula colorimétrica (BOM).
-7. `modulos` — Módulos del sistema para control de acceso.
-8. `notas_entrega` — Despacho y cobro directo del presupuesto.
-9. `pagos_realizados` — Egresos aplicados a cuentas por pagar.
-10. `pagos_recibidos` — Cobros aplicados exclusivamente a cuentas por cobrar.
-11. `presupuesto_detalle` — Ítems comerciales que componen una cotización.
-12. `presupuestos` — Cabecera de presupuestos cotizados.
-13. `producto_proveedor` — Relación N:M de proveedores y productos suministrados.
-14. `productos` — Catálogo maestro (stock en precisión decimal 12,4).
-15. `proveedores` — Registro de proveedores comerciales.
-16. `rol_modulo` — Matriz de permisos de módulos autorizados por rol.
-17. `roles` — Roles de usuario (Administrador, Vendedor, etc.).
-18. `rubro` — Clasificación de ramos de proveedores.
-19. `rubro_proveedor` — Tabla puente de proveedores y sus rubros.
-20. `telefono_cliente` — Múltiples números telefónicos por cliente.
-21. `telefono_proveedor` — Múltiples números telefónicos por proveedor.
-22. `tipo_pago` — Métodos de pago (Efectivo, Pago Móvil, Transferencia, etc.).
-23. `tipo_producto` — Naturaleza del producto (1: Base, 2: Simple).
-24. `usuarios` — Usuarios autenticables con clave hasheada.
+3. `cuentas_cobrar` — Deudas activas de clientes derivadas directamente de `ventas`.
+4. `cuentas_pagar` — Compromisos financieros con proveedores derivados de `nota_entrega`.
+5. `estado_venta` — Estados del ciclo comercial (1: Presupuesto, 2: Aprobado, 3: Rechazado, 4: Anulado).
+6. `mezcla_producto` — Receta de composición BOM de productos preparados a partir de tintes base.
+7. `modulos` — Catálogo de módulos del sistema para control de acceso y permisos.
+8. `nota_entrega` — Cabecera de compras y recepciones de mercancía de proveedores.
+9. `nota_entrega_producto` — Detalle de productos recibidos en compras a proveedores.
+10. `pagos_realizados` — Egresos y amortizaciones aplicados a cuentas por pagar.
+11. `pagos_recibidos` — Cobros aplicados exclusivamente a cuentas por cobrar.
+12. `producto_proveedor` — Catálogo puente N:M de proveedores y productos que suministran.
+13. `productos` — Catálogo maestro con soporte para fracciones de galón y precisión decimal (12,4).
+14. `proveedores` — Registro de proveedores comerciales.
+15. `rol_modulo` — Matriz de permisos de módulos autorizados por cada rol.
+16. `roles` — Roles de usuario (Administrador, Vendedor, etc.).
+17. `rubro` — Clasificación de especialidades y actividades de proveedores.
+18. `rubro_proveedor` — Asignación de rubros comerciales a cada proveedor.
+19. `telefono_cliente` — Entidad débil con clave primaria compuesta `(id_cliente, id_telefono_cliente)`.
+20. `telefono_proveedor` — Entidad débil con clave primaria compuesta `(id_proveedor, id_telefono_proveedor)`.
+21. `tipo_pago` — Instrumentos de pago (Efectivo, Pago Móvil, Transferencia, etc.).
+22. `tipo_producto` — Clasificación técnica del producto (1: Base, 2: Simple, 3: Preparado).
+23. `usuarios` — Usuarios autenticables con clave hasheada mediante Bcrypt.
+24. `ventas` — Cabecera unificada de cotizaciones y ventas con doble fecha (`fecha` y `fecha_aprobacion`).
+25. `venta_detalle` — Ítems comerciales y cantidades de cada presupuesto o venta.
 
 ---
 

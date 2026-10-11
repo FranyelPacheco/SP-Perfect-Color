@@ -12,15 +12,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const formularioProveedor = document.getElementById('formularioProveedor');
     const tituloModal = document.getElementById('tituloModalProveedor');
     const proveedorId = document.getElementById('proveedorId');
+    const tipoRifProveedor = document.getElementById('tipoRifProveedor');
     const rifProveedor = document.getElementById('rifProveedor');
+    const rifCompletoProveedor = document.getElementById('rifCompletoProveedor');
+    const feedbackRifProveedor = document.getElementById('feedbackRifProveedor');
     const nombreEmpresaProveedor = document.getElementById('nombreEmpresaProveedor');
     const contactoProveedor = document.getElementById('contactoProveedor');
+    const operadoraProveedor = document.getElementById('operadoraProveedor');
+    const telefonoNumeroProveedor = document.getElementById('telefonoNumeroProveedor');
     const telefonoProveedor = document.getElementById('telefonoProveedor');
     const correoProveedor = document.getElementById('correoProveedor');
     const direccionProveedor = document.getElementById('direccionProveedor');
     const rubrosContainer = document.getElementById('rubrosContainer');
     const btnAgregarRubro = document.getElementById('btnAgregarRubro');
     const mensajeError = document.getElementById('mensajeErrorProveedor');
+    const btnGuardarProveedor = formularioProveedor ? formularioProveedor.querySelector('button[type="submit"]') : null;
 
     var esAdmin = document.getElementById('btnNuevoProveedor') !== null;
 
@@ -132,26 +138,71 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (rifProveedor) {
-        rifProveedor.addEventListener('input', function() {
-            let valor = this.value.toUpperCase();
-            // Auto-agregar guion despues de la letra inicial
-            if (valor.length === 1 && /^[JVEG]$/.test(valor)) {
-                valor = valor + '-';
-            }
-            // Extraer la parte de solo digitos (despues del guion)
-            let partes = valor.split('-');
-            if (partes.length === 2) {
-                // Limitar digitos a maximo 9
-                partes[1] = partes[1].replace(/[^0-9]/g, '').slice(0, 9);
-                valor = partes[0] + '-' + partes[1];
-            }
-            this.value = valor;
-        });
+    function limpiarEstadoRif() {
+        if (rifProveedor) {
+            rifProveedor.classList.remove('is-invalid', 'is-valid');
+        }
+        if (feedbackRifProveedor) {
+            feedbackRifProveedor.classList.add('d-none');
+        }
+        if (btnGuardarProveedor) {
+            btnGuardarProveedor.disabled = false;
+        }
     }
 
-    if (telefonoProveedor) {
-        telefonoProveedor.addEventListener('input', function() {
+    var temporizadorRif;
+    function verificarRifEnTiempoReal() {
+        clearTimeout(temporizadorRif);
+        const num = rifProveedor.value.trim();
+        const tipo = tipoRifProveedor ? tipoRifProveedor.value : 'J';
+        if (!num || num.length < 3) {
+            limpiarEstadoRif();
+            return;
+        }
+
+        const rifCompleto = tipo + '-' + num;
+        const id = proveedorId.value || '';
+
+        temporizadorRif = setTimeout(async function() {
+            try {
+                const resp = await fetch('/SP%20Perfect%20Color/proveedor/verificarRifAjax?rif=' + encodeURIComponent(rifCompleto) + '&id=' + encodeURIComponent(id));
+                const res = await resp.json();
+                if (res.estado === 'exito') {
+                    if (res.datos.existe) {
+                        rifProveedor.classList.add('is-invalid');
+                        rifProveedor.classList.remove('is-valid');
+                        if (feedbackRifProveedor) {
+                            feedbackRifProveedor.textContent = 'El proveedor con RIF ' + rifCompleto + ' ya existe en el sistema';
+                            feedbackRifProveedor.classList.remove('d-none');
+                        }
+                        if (btnGuardarProveedor) btnGuardarProveedor.disabled = true;
+                    } else {
+                        rifProveedor.classList.remove('is-invalid');
+                        rifProveedor.classList.add('is-valid');
+                        if (feedbackRifProveedor) {
+                            feedbackRifProveedor.classList.add('d-none');
+                        }
+                        if (btnGuardarProveedor) btnGuardarProveedor.disabled = false;
+                    }
+                }
+            } catch (e) {
+                console.error('Error al verificar RIF:', e);
+            }
+        }, 300);
+    }
+
+    if (rifProveedor) {
+        rifProveedor.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            verificarRifEnTiempoReal();
+        });
+    }
+    if (tipoRifProveedor) {
+        tipoRifProveedor.addEventListener('change', verificarRifEnTiempoReal);
+    }
+
+    if (telefonoNumeroProveedor) {
+        telefonoNumeroProveedor.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '');
         });
     }
@@ -259,11 +310,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 tituloModal.textContent = 'Editar Proveedor';
                 proveedorId.value = proveedor.id_proveedor;
-                rifProveedor.value = proveedor.rif;
-                rifProveedor.disabled = true;
+                limpiarEstadoRif();
+
+                // Parsear RIF (J-12345678)
+                const partesRif = (proveedor.rif || '').split('-');
+                if (partesRif.length === 2 && tipoRifProveedor) {
+                    tipoRifProveedor.value = partesRif[0];
+                    rifProveedor.value = partesRif[1];
+                } else {
+                    rifProveedor.value = proveedor.rif;
+                }
+
                 nombreEmpresaProveedor.value = proveedor.nombre_empresa;
                 contactoProveedor.value = proveedor.contacto || '';
-                telefonoProveedor.value = proveedor.telefonos || '';
+
+                // Parsear telefono
+                const telRaw = (proveedor.telefonos || '').replace(/[^0-9]/g, '');
+                if (telRaw.length === 11 && operadoraProveedor && telefonoNumeroProveedor) {
+                    operadoraProveedor.value = telRaw.substring(0, 4);
+                    telefonoNumeroProveedor.value = telRaw.substring(4);
+                } else if (telefonoNumeroProveedor) {
+                    telefonoNumeroProveedor.value = telRaw;
+                }
+
                 correoProveedor.value = proveedor.correo || '';
                 direccionProveedor.value = proveedor.direccion || '';
                 var rubrosArray = proveedor.rubros_id ? proveedor.rubros_id.split(',').filter(Boolean).map(Number) : [];
@@ -284,21 +353,40 @@ document.addEventListener('DOMContentLoaded', function() {
         const id = proveedorId.value;
         const esEdicion = id !== '';
 
-        const rif = rifProveedor.value.trim().toUpperCase();
-        if (!rif) {
+        const rifNum = rifProveedor.value.trim();
+        const tipoRif = tipoRifProveedor ? tipoRifProveedor.value : 'J';
+        if (!rifNum) {
             mostrarError('El RIF es obligatorio');
+            rifProveedor.focus();
             return;
         }
 
-        const formatoRIF = /^[JVEG]-\d{1,9}$/;
-        if (!formatoRIF.test(rif)) {
-            mostrarError('El RIF debe tener formato valido (Ej: J-123456789)');
-            return;
+        const rifFinal = tipoRif + '-' + rifNum;
+        if (rifCompletoProveedor) {
+            rifCompletoProveedor.value = rifFinal;
         }
 
         if (!nombreEmpresaProveedor.value.trim()) {
             mostrarError('El nombre de la empresa es obligatorio');
+            nombreEmpresaProveedor.focus();
             return;
+        }
+
+        if (!correoProveedor.value.trim()) {
+            mostrarError('El correo electronico es obligatorio');
+            correoProveedor.focus();
+            return;
+        }
+
+        const telNum = telefonoNumeroProveedor ? telefonoNumeroProveedor.value.trim() : '';
+        const op = operadoraProveedor ? operadoraProveedor.value : '';
+        if (telNum && telNum.length !== 7) {
+            mostrarError('El numero de telefono debe tener exactamente 7 digitos');
+            telefonoNumeroProveedor.focus();
+            return;
+        }
+        if (telefonoProveedor) {
+            telefonoProveedor.value = telNum ? (op + telNum) : '';
         }
 
         const selectsRubros = rubrosContainer.querySelectorAll('select[name="rubros[]"]');
@@ -314,6 +402,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const url = esEdicion ? '/SP%20Perfect%20Color/proveedor/actualizar' : '/SP%20Perfect%20Color/proveedor/guardar';
         const formData = new FormData(formularioProveedor);
+        formData.set('rif', rifFinal);
+        if (telNum) {
+            formData.set('telefono', op + telNum);
+        }
 
         if (esEdicion) {
             formData.set('id', id);

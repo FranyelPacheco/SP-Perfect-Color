@@ -121,12 +121,12 @@ class CuentaPagarModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarTotalPendiente
-    // OBJETIVO: Suma saldo_pendiente de cuentas por pagar con estado pendiente
+    // OBJETIVO: Suma saldo_pendiente de cuentas por pagar con situacion pendiente
     private function _ejecutarTotalPendiente(): string
     {
         $consulta = "SELECT COALESCE(SUM(saldo_pendiente), 0) as total
                      FROM cuentas_pagar
-                     WHERE activo = 1 AND estado = 'pendiente'";
+                     WHERE estado = 1 AND situacion = 'pendiente'";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchColumn();
     }
@@ -149,27 +149,29 @@ class CuentaPagarModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarSelectAll
-    // OBJETIVO: Ejecuta la consulta que lista todas las cuentas activas con datos del proveedor
+    // OBJETIVO: Ejecuta la consulta que lista todas las cuentas activas con datos del proveedor obtenido vía nota_entrega
     private function _ejecutarSelectAll(): array
     {
-        $consulta = "SELECT cp.*, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif
+        $consulta = "SELECT cp.*, cp.estado as activo, cp.situacion as estado, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif
                      FROM cuentas_pagar cp 
-                     INNER JOIN proveedores p ON cp.id_proveedor = p.id_proveedor
-                     WHERE cp.activo = 1
-                     ORDER BY cp.estado ASC, cp.fecha_vencimiento ASC";
+                     INNER JOIN nota_entrega ne ON cp.id_nota_entrega = ne.id_nota_entrega
+                     INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
+                     WHERE cp.estado = 1
+                     ORDER BY cp.situacion ASC, cp.fecha_vencimiento ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
     }
 
     // FUNCIÓN: _ejecutarSelectById
-    // OBJETIVO: Ejecuta la búsqueda de una cuenta por ID con teléfonos del proveedor
+    // OBJETIVO: Ejecuta la búsqueda de una cuenta por ID con teléfonos del proveedor obtenido vía nota_entrega
     private function _ejecutarSelectById(): array|false
     {
-        $consulta = "SELECT cp.*, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif,
+        $consulta = "SELECT cp.*, cp.estado as activo, cp.situacion as estado, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif,
                             (SELECT GROUP_CONCAT(tp.telefono SEPARATOR ', ') FROM telefono_proveedor tp WHERE tp.id_proveedor = p.id_proveedor) as proveedor_telefonos
                      FROM cuentas_pagar cp 
-                     INNER JOIN proveedores p ON cp.id_proveedor = p.id_proveedor
-                     WHERE cp.id_cuenta_pagar = :id AND cp.activo = 1";
+                     INNER JOIN nota_entrega ne ON cp.id_nota_entrega = ne.id_nota_entrega
+                     INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
+                     WHERE cp.id_cuenta_pagar = :id AND cp.estado = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         $stmt->execute();
@@ -193,7 +195,7 @@ class CuentaPagarModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarRegistrarPago
-    // OBJETIVO: Ejecuta la transacción que inserta el pago y actualiza saldo/estado de la cuenta
+    // OBJETIVO: Ejecuta la transacción que inserta el pago y actualiza saldo/situacion de la cuenta
     private function _ejecutarRegistrarPago(): bool
     {
         try {
@@ -228,7 +230,7 @@ class CuentaPagarModel extends ModeloBase
                 $nuevoEstado = 'pendiente';
             }
 
-            $consulta = "UPDATE cuentas_pagar SET saldo_pendiente = :saldo, estado = :estado WHERE id_cuenta_pagar = :id";
+            $consulta = "UPDATE cuentas_pagar SET saldo_pendiente = :saldo, situacion = :estado WHERE id_cuenta_pagar = :id";
             $stmt = $this->conexion->prepare($consulta);
             $stmt->bindParam(':saldo', $nuevoSaldo);
             $stmt->bindParam(':estado', $nuevoEstado, PDO::PARAM_STR);
@@ -245,13 +247,20 @@ class CuentaPagarModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarInsert
-    // OBJETIVO: Ejecuta la inserción de una nueva cuenta por pagar
+    // OBJETIVO: Ejecuta la inserción de una nueva cuenta por pagar asociada a su nota de entrega
     private function _ejecutarInsert(): int|false
     {
-        $consulta = "INSERT INTO cuentas_pagar (id_proveedor, monto_total, saldo_pendiente, fecha_vencimiento, estado, activo) 
-                     VALUES (:id_proveedor, :monto_total, :saldo_pendiente, :fecha_vencimiento, 'pendiente', 1)";
+        $stmtNe = $this->conexion->prepare("INSERT INTO nota_entrega (id_proveedor, fecha, total, observaciones, created_at, estado) 
+                                            VALUES (:id_proveedor, NOW(), :total, 'Cuenta por pagar registrada directamente', NOW(), 1)");
+        $stmtNe->bindParam(':id_proveedor', $this->idProveedor, PDO::PARAM_INT);
+        $stmtNe->bindParam(':total', $this->montoTotal);
+        $stmtNe->execute();
+        $idNotaEntrega = (int)$this->conexion->lastInsertId();
+
+        $consulta = "INSERT INTO cuentas_pagar (id_nota_entrega, monto_total, saldo_pendiente, fecha_vencimiento, situacion, created_at, estado) 
+                     VALUES (:id_nota_entrega, :monto_total, :saldo_pendiente, :fecha_vencimiento, 'pendiente', NOW(), 1)";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id_proveedor', $this->idProveedor, PDO::PARAM_INT);
+        $stmt->bindParam(':id_nota_entrega', $idNotaEntrega, PDO::PARAM_INT);
         $stmt->bindParam(':monto_total', $this->montoTotal);
         $stmt->bindParam(':saldo_pendiente', $this->saldoPendiente);
         $stmt->bindParam(':fecha_vencimiento', $this->fechaVencimiento, PDO::PARAM_STR);
@@ -266,23 +275,24 @@ class CuentaPagarModel extends ModeloBase
     // OBJETIVO: Ejecuta el soft delete de la cuenta por pagar
     private function _ejecutarDelete(): bool
     {
-        $consulta = "UPDATE cuentas_pagar SET activo = 0 WHERE id_cuenta_pagar = :id";
+        $consulta = "UPDATE cuentas_pagar SET estado = 0 WHERE id_cuenta_pagar = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
     // FUNCIÓN: _ejecutarSearch
-    // OBJETIVO: Busca cuentas por pagar filtrando por nombre de empresa o RIF del proveedor
+    // OBJETIVO: Busca cuentas por pagar filtrando por nombre de empresa o RIF del proveedor vía nota_entrega
     private function _ejecutarSearch(): array
     {
         $terminoLike = '%' . $this->termino . '%';
-        $consulta = "SELECT cp.*, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif
+        $consulta = "SELECT cp.*, cp.estado as activo, cp.situacion as estado, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif
                      FROM cuentas_pagar cp 
-                     INNER JOIN proveedores p ON cp.id_proveedor = p.id_proveedor
-                     WHERE cp.activo = 1 AND (p.nombre_empresa LIKE :termino1 
+                     INNER JOIN nota_entrega ne ON cp.id_nota_entrega = ne.id_nota_entrega
+                     INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
+                     WHERE cp.estado = 1 AND (p.nombre_empresa LIKE :termino1 
                         OR p.rif LIKE :termino2) 
-                     ORDER BY cp.estado ASC, cp.fecha_vencimiento ASC";
+                     ORDER BY cp.situacion ASC, cp.fecha_vencimiento ASC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':termino1', $terminoLike, PDO::PARAM_STR);
         $stmt->bindParam(':termino2', $terminoLike, PDO::PARAM_STR);

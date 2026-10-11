@@ -27,14 +27,14 @@ class RolModel extends ModeloBase
 
     private function _ejecutarSelectAll(): array
     {
-        $consulta = "SELECT r.id_rol, r.nombre, r.activo, r.created_at,
+        $consulta = "SELECT r.id_rol, r.nombre, r.estado, r.estado as activo, r.created_at,
                             (SELECT GROUP_CONCAT(m.codigo ORDER BY m.id_modulo SEPARATOR ',') 
                              FROM rol_modulo rm 
                              JOIN modulos m ON rm.id_modulo = m.id_modulo 
                              WHERE rm.id_rol = r.id_rol) as modulos,
-                            (SELECT COUNT(*) FROM usuarios u WHERE u.id_rol = r.id_rol AND u.activo = 1) as total_usuarios
+                            (SELECT COUNT(*) FROM usuarios u WHERE u.id_rol = r.id_rol AND u.estado = 1) as total_usuarios
                      FROM roles r 
-                     WHERE r.activo = 1
+                     WHERE r.estado = 1
                      ORDER BY r.id_rol ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
@@ -55,7 +55,7 @@ class RolModel extends ModeloBase
                              JOIN modulos m ON rm.id_modulo = m.id_modulo 
                              WHERE rm.id_rol = r.id_rol) as modulos
                      FROM roles r 
-                     WHERE r.activo = 1 
+                     WHERE r.estado = 1 
                      ORDER BY r.nombre ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
@@ -71,7 +71,7 @@ class RolModel extends ModeloBase
 
     private function _ejecutarSelectById(): array|false
     {
-        $consulta = "SELECT r.id_rol, r.nombre, r.activo, r.created_at,
+        $consulta = "SELECT r.id_rol, r.nombre, r.estado, r.estado as activo, r.created_at,
                             (SELECT GROUP_CONCAT(m.codigo ORDER BY m.id_modulo SEPARATOR ',') 
                              FROM rol_modulo rm 
                              JOIN modulos m ON rm.id_modulo = m.id_modulo 
@@ -101,7 +101,7 @@ class RolModel extends ModeloBase
     {
         $this->conexion->beginTransaction();
         try {
-            $consulta = "INSERT INTO roles (nombre, activo) VALUES (:nombre, :activo)";
+            $consulta = "INSERT INTO roles (nombre, estado) VALUES (:nombre, :activo)";
             $stmt = $this->conexion->prepare($consulta);
             $stmt->bindParam(':nombre', $this->nombre, PDO::PARAM_STR);
             $stmt->bindParam(':activo', $this->activo, PDO::PARAM_INT);
@@ -135,7 +135,7 @@ class RolModel extends ModeloBase
     {
         $this->conexion->beginTransaction();
         try {
-            $consulta = "UPDATE roles SET nombre = :nombre, activo = :activo WHERE id_rol = :id";
+            $consulta = "UPDATE roles SET nombre = :nombre, estado = :activo WHERE id_rol = :id";
             $stmt = $this->conexion->prepare($consulta);
             $stmt->bindParam(':nombre', $this->nombre, PDO::PARAM_STR);
             $stmt->bindParam(':activo', $this->activo, PDO::PARAM_INT);
@@ -200,7 +200,7 @@ class RolModel extends ModeloBase
 
     private function _ejecutarToggleActivo(): bool
     {
-        $consulta = "UPDATE roles SET activo = :activo WHERE id_rol = :id";
+        $consulta = "UPDATE roles SET estado = :activo WHERE id_rol = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':activo', $this->activo, PDO::PARAM_INT);
         $stmt->bindParam(':id', $this->id_rol, PDO::PARAM_INT);
@@ -218,7 +218,7 @@ class RolModel extends ModeloBase
 
     private function _ejecutarCheckNombre(): bool
     {
-        $consulta = "SELECT COUNT(*) as total FROM roles WHERE LOWER(nombre) = LOWER(:nombre) AND activo = 1";
+        $consulta = "SELECT COUNT(*) as total FROM roles WHERE LOWER(nombre) = LOWER(:nombre) AND estado = 1";
         if ($this->idExcluir !== null) {
             $consulta .= " AND id_rol != :id";
         }
@@ -242,7 +242,7 @@ class RolModel extends ModeloBase
 
     private function _ejecutarBuscarInactivo(): int|false
     {
-        $consulta = "SELECT id_rol FROM roles WHERE LOWER(nombre) = LOWER(:nombre) AND activo = 0 LIMIT 1";
+        $consulta = "SELECT id_rol FROM roles WHERE LOWER(nombre) = LOWER(:nombre) AND estado = 0 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':nombre', $this->nombre, PDO::PARAM_STR);
         $stmt->execute();
@@ -251,7 +251,7 @@ class RolModel extends ModeloBase
     }
 
     // FUNCIÓN: eliminarRol
-    // OBJETIVO: Eliminación lógica (soft-delete) de un rol (marca activo = 0)
+    // OBJETIVO: Eliminación lógica (soft-delete) de un rol (marca estado = 0)
     // NOTA: Protege el rol Administrador (id_rol = 1) y valida que no tenga usuarios activos asignados
     public function eliminarRol(int $id): bool
     {
@@ -264,7 +264,7 @@ class RolModel extends ModeloBase
 
     private function _ejecutarDelete(): bool
     {
-        $consultaCheck = "SELECT COUNT(*) as total FROM usuarios WHERE id_rol = :id AND activo = 1";
+        $consultaCheck = "SELECT COUNT(*) as total FROM usuarios WHERE id_rol = :id AND estado = 1";
         $stmtCheck = $this->conexion->prepare($consultaCheck);
         $stmtCheck->bindParam(':id', $this->id_rol, PDO::PARAM_INT);
         $stmtCheck->execute();
@@ -273,7 +273,7 @@ class RolModel extends ModeloBase
             throw new \PDOException('No se puede eliminar este rol porque tiene ' . $conteo['total'] . ' usuario(s) activo(s) asignado(s). Reasigne los usuarios a otro rol primero.');
         }
 
-        $consulta = "UPDATE roles SET activo = 0 WHERE id_rol = :id";
+        $consulta = "UPDATE roles SET estado = 0 WHERE id_rol = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id_rol, PDO::PARAM_INT);
         return $stmt->execute();

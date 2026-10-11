@@ -1,5 +1,176 @@
 # Session Summary
 
+## Diferenciación Operativa de Flujos: Ventas vs. Compras (26 Tablas — Opción A)
+
+### Contexto & Problema de Negocio
+- Existía confusión de nomenclatura en el sistema donde el módulo de cotizaciones a clientes se titulaba erróneamente *"Ordenes de Compra"*, y el módulo de compras de insumos a proveedores no contaba con su propia interfaz de recepción de notas de entrega.
+- Se implementó la **Opción A** (sin agregar tablas redundantes en la BD, conservando exactamente las 26 tablas relacionales normalizadas):
+  1. **Camino de Ventas (Clientes):**
+     - Módulo 1: **Presupuestos** (`/presupuesto`, cotizaciones con `id_estado_venta = 1`).
+     - Módulo 2: **Notas de Entrega (Ventas)** (`/notaEntrega`, despacho al cliente que descuenta stock físico en `productos` y `mezcla_producto`, con `id_estado_venta = 2`).
+     - Módulo 3: **Cuentas por Cobrar** (`/cuentaCobrar`, abonos y pagos de clientes a crédito vía `pagos_recibidos`).
+  2. **Camino de Compras & Stock (Proveedores):**
+     - Módulo 1: **Proveedores** (`/proveedor`, catálogo y contactos).
+     - Módulo 2: **Notas de Entrega (Compras)** (`/notaEntregaCompra`, recepción de mercancía en `nota_entrega` y `nota_entrega_producto`, **SUMA** stock físico a `productos` y genera CxP si es crédito).
+     - Módulo 3: **Cuentas por Pagar** (`/cuentaPagar`, pagos y abonos a proveedores vía `pagos_realizados`).
+     - Módulo 4: **Registro Insumos** (`/inventario`, consulta de existencias y productos).
+
+### Cambios realizados en Base de Datos & SQL Dump (`app/core/sp_perfect_color.sql`)
+1. **Registrado módulo `14 = notaEntregaCompra`:**
+   - Insertado en `modulos` y concedido permiso a `id_rol = 1` (Administrador) en `rol_modulo`. Total de tablas: exactamente 26.
+2. **Dump sincronizado:** Actualizados inserts en `app/core/sp_perfect_color.sql`.
+
+### Cambios en Backend & Modelos PHP
+- **`app/models/NotaEntregaCompraModel.php`:** Nuevo modelo con métodos `listarTodas()`, `buscarPorId()`, `obtenerDetalle()`, `crearNotaCompra()` y `anular()`. Realiza transacción completa: cabecera `nota_entrega`, detalle `nota_entrega_producto`, incremento de stock `stock_actual + cantidad` en `productos`, y generación automática de `cuentas_pagar` (crédito) o saldada con `pagos_realizados` (contado).
+- **`app/models/CuentaPagarModel.php`:** Corregida inserción directa en `_ejecutarInsert()` creando la cabecera correspondiente en `nota_entrega` para preservar la integridad referencial de `id_nota_entrega`.
+- **`app/controllers/notaEntregaCompraController.php`:** Nuevo controlador con endpoints `index`, `listarAjax`, `crear`, `guardar`, `ver` y `anular`.
+- **`app/controllers/frontController.php`:** Mapeada ruta `'notaentregacompra' => 'notaEntregaCompra'` y títulos SEO corregidos (cambiando "Ordenes de Compra" a "Presupuestos").
+
+### Cambios en Frontend & Vistas
+- **`app/views/plantillaBase.php`:** Menú lateral (móvil y escritorio) reorganizado con subtítulos de sección: **Ventas**, **Compras & Insumos** y **Administración**.
+- **`app/views/notaEntregaCompraListView.php`:** DataTable de recepciones de compras con columnas de Proveedor, RIF, Total, Condición de pago y Estado de pago.
+- **`app/views/notaEntregaCompraFormView.php`:** Formulario interactivo de recepción de compras con selector de proveedor, buscador de insumos, cálculo dinámico de subtotales/total y toggle crédito/contado.
+- **`app/views/notaEntregaCompraVerView.php`:** Comprobante formal de recepción de mercancía con detalle de insumos e impresión.
+- **`assets/js/notaEntregaCompra.js`:** Gestión asíncrona de DataTables y dinamismo de filas de compra.
+- **`app/views/presupuestoListView.php`**, **`presupuestoFormView.php`** y **`presupuestoVerView.php`:** Textos corregidos de "Orden de Compra" a "Presupuesto".
+- **`assets/css/estiloBase.css`:** Ocultamiento limpio de los subtítulos de sección `.nav-section-title` al colapsar el sidebar.
+
+---
+
+## Módulo de Tasa de Cambio (USD / Bs.) y Alerta Diaria (26 Tablas)
+
+### Contexto & Problema de Negocio
+- La moneda principal del sistema es el Dólar ($ USD), pero los clientes y transacciones locales requieren pagos en Bolívares (Bs.) vía Pago Móvil, Transferencia bancaria o Efectivo en Bs.
+- La tasa oficial de cambio no se carga vía API externa; es registrada manualmente cada día por el administrador.
+- Se requería:
+  1. Tabla `tasa_cambio` diseñada como **Isla** (parámetro/configuración independiente sin dependencias foráneas).
+  2. Guardado diario histórico (`fecha` única).
+  3. Operaciones CRUD **sin opción de eliminación** (no se permite borrar registros históricos de tasas).
+  4. Alerta visual en el Dashboard/Welcome si la tasa del día actual aún no ha sido registrada.
+  5. Eliminación de todos los archivos y recursos temporales de defensa (`defensa_bd.html`, guiones `.md`, `assets/img/defensa/`), manteniendo el diagrama `modelo_relacional.svg` actualizado.
+
+### Cambios realizados en Base de Datos & SQL Dump (`app/core/sp_perfect_color.sql`)
+1. **Creada tabla `tasa_cambio`:**
+   - Columnas: `id_tasa_cambio` (PK AUTO_INCREMENT), `tasa` (DECIMAL 12,4), `fecha` (DATE UNIQUE `uk_tasa_fecha`), `created_at` (DATETIME), `estado` (TINYINT 1).
+2. **Registrado módulo `13 = tasaCambio`:**
+   - Insertado en `modulos` y concedido permiso a `id_rol = 1` (Administrador) en `rol_modulo`.
+3. **Diagrama Relacional (`modelo_relacional.svg`):**
+   - Agregada tabla `tasa_cambio` como isla en coordenadas `x=750, y=1230` debajo de `banco`. Total: 26 tablas.
+
+### Cambios en Backend & Controladores
+- **`app/models/TasaCambioModel.php`:** Métodos encapsulados `listarTodas()`, `buscarPorId()`, `obtenerTasaHoy()`, `obtenerUltimaTasa()`, `fechaExiste()`, `insertar()`, `actualizar()`. Cero métodos de eliminación física.
+- **`app/controllers/tasaCambioController.php`:** Endpoints `index`, `listarAjax`, `guardar`, `obtener`, `actualizar`, `obtenerHoy`. Solo rol admin.
+- **`app/controllers/frontController.php`:** Enrutamiento de `/SP Perfect Color/tasaCambio`.
+- **`app/controllers/dashboardController.php`:** Cálculo de alerta `$alertaTasaPendiente` evaluando si existe tasa para `date('Y-m-d')`.
+- **`app/views/dashboardView.php`:** Banner de advertencia en amarillo para registrar la tasa del día cuando está pendiente, o badge verde con valor cuando está actualizada.
+- **`app/views/plantillaBase.php`:** Ítem "Tasa de Cambio" en el sidebar con icono `bi-currency-exchange`.
+
+### Cambios en Frontend & Vistas
+- **`app/views/tasaCambioListView.php`:**
+  - Tarjetas de resumen superior: Tasa de Hoy y Última Tasa Registrada.
+  - DataTable `#tablaTasas` con columnas: `Fecha`, `Tasa (Bs / $)`, `Registrada el`, `Estado`, `Acciones` (únicamente botón Editar, **sin botón Eliminar**).
+  - Modal `#modalTasaCambio` para registrar o modificar la tasa.
+- **`assets/js/tasaCambio.js`:**
+  - Inicialización de DataTables en español.
+  - Carga AJAX, validaciones numéricas y formato con 4 decimales.
+  - Evento de edición y guardado vía fetch. Cero código o botones de eliminación.
+
+---
+
+## Unificación de Ciclo Comercial: Presupuestos $\to$ Ventas (25 Tablas, Cero Ciclos y Doble Fecha)
+
+### Contexto & Problema de Negocio
+- Anteriormente existían tablas separadas para `presupuestos` y `nota_venta`, lo que introducía duplicidad de estados y dependencias intermedias innecesarias.
+- Se requería unificar ambas entidades en una sola tabla `ventas` (con `venta_detalle` y `estado_venta`), donde una cotización pasa a venta aprobada mediante cambio de estado sin crear registros duplicados en tablas secundarias.
+- Se implementó doble marca de tiempo en `ventas`:
+  - `fecha` (DATETIME): Momento de creación de la cotización / presupuesto.
+  - `fecha_aprobacion` (DATETIME NULL): Inicialmente `NULL`, se asigna con `NOW()` en el momento en que el presupuesto es aprobado / convertido en venta efectiva.
+- La tabla obsoleta `nota_venta` fue eliminada por completo. Los atributos y relaciones que conectaban con `nota_venta` (`cuentas_cobrar`, `tipo_pago`, etc.) ahora se conectan directamente con `ventas` (`id_venta`).
+
+### Cambios realizados en Base de Datos & SQL Dump (`app/core/sp_perfect_color.sql`)
+1. **Creada tabla unificada `ventas`:**
+   - Columnas: `id_venta` (PK AUTO_INCREMENT), `id_cliente` (FK), `id_estado_venta` (FK), `id_tipo_pago` (FK), `fecha` (DATETIME), `fecha_aprobacion` (DATETIME NULL), `total` (DECIMAL 10,2), `condicion_pago` (ENUM 'contado','credito'), `observaciones` (TEXT), `created_at` (DATETIME), `estado` (TINYINT 1).
+2. **Creada tabla `venta_detalle`:**
+   - Columnas: `id_venta_detalle` (PK AUTO_INCREMENT), `id_venta` (FK), `id_producto` (FK), `descripcion` (VARCHAR 200), `cantidad` (DECIMAL 12,4), `precio_unitario` (DECIMAL 10,2), `subtotal` (DECIMAL 10,2).
+3. **Creada tabla maestra `estado_venta`:**
+   - Columnas: `id_estado_venta` (PK AUTO_INCREMENT), `nombre` (VARCHAR 30), `estado` (TINYINT 1).
+   - Semillas: `1 = Presupuesto`, `2 = Aprobado`, `3 = Rechazado`, `4 = Anulado`.
+4. **Actualizada `cuentas_cobrar`:**
+   - FK `id_venta` referenciando `ventas(id_venta)`. Eliminada columna `id_nota_venta`.
+5. **Eliminadas tablas obsoletas:**
+   - Removidas `nota_venta`, `presupuestos`, `presupuesto_detalle` y `estado_presupuesto`.
+   - Total oficial de la base de datos: exactamente 25 tablas relacionales 100% compatibles con MariaDB y phpMyAdmin.
+
+### Cambios en Código y Modelos PHP
+- **`app/models/PresupuestoModel.php`:**
+  - Actualizado para operar sobre `ventas` y `venta_detalle`.
+  - Mantiene alias de compatibilidad (`id_presupuesto`, etc.) para que la interfaz web existente no sufra disrupciones.
+  - Al aprobar un presupuesto (`id_estado_venta = 2`), asigna automáticamente `fecha_aprobacion = NOW()`.
+- **`app/models/EstadoVentaModel.php` & `EstadoPresupuestoModel.php`:**
+  - Creado `EstadoVentaModel` para interactuar directamente con `estado_venta`.
+  - `EstadoPresupuestoModel` actualizado como capa de compatibilidad transparente que consulta `estado_venta`.
+- **`app/models/CuentaCobrarModel.php`:**
+  - Consultas actualizadas con `INNER JOIN ventas v ON cc.id_venta = v.id_venta`.
+- **`app/models/ReporteModel.php`:**
+  - Reportes de ventas y cartera adaptados a `ventas` y `cuentas_cobrar.id_venta`.
+  - Agregado filtro estricto `v.id_estado_venta = 2` y agrupaciones con `COALESCE(v.fecha_aprobacion, v.fecha)` para contabilizar únicamente ventas efectivamente aprobadas en las métricas e ingresos.
+- **`app/models/NotaEntregaModel.php`:**
+  - Consultas y despacho adaptados para operar sobre `ventas` y su detalle.
+  - Sincronización de cantidades y subtotales en `venta_detalle` al despachar, permitiendo ajustes del vendedor sin desfasar el inventario físico ni los registros contables.
+- **`app/controllers/presupuestoController.php` & `app/controllers/notaEntregaController.php`:**
+  - Soportados de forma transparente estados `'presupuesto'`, `'pendiente'`, `'aprobado'`, `'rechazado'` y `'anulado'`.
+  - Normalizado el mapeo de `id_insumo`/`id_producto` para evitar excepciones PDO de claves foráneas nulas al despachar ítems existentes.
+- **`app/views/presupuestoVerView.php` & `app/views/presupuestoListView.php`:**
+  - Agregada visualización explícita de `Fecha de Creación` y `Fecha de Aprobación` (o badge "Pendiente de aprobación" si es `NULL`).
+  - Habilitados botones "Aprobar" y "Rechazar" para cotizaciones en estado `1` (`presupuesto` / `pendiente`).
+  - Botón "Crear Nota de Entrega" condicionado a ventas en estado `2` (`aprobado`).
+- **`assets/js/presupuesto.js` & `assets/js/notaEntrega.js`:**
+  - Filtros y renderizado de DataTables adaptados a los nombres de estado del nuevo catálogo (`presupuesto`, `aprobado`, etc.).
+  - Columna de código/identificador corregida para priorizar `row.id_nota_entrega` / `row.id_venta`.
+- **`assets/css/estiloBase.css`:**
+  - Clases CSS agregadas: `.estado-presupuesto`, `.estado-pendiente` y `.estado-anulado`.
+
+### Diagrama Relacional Vectorial (`modelo_relacional.svg`)
+- Eliminada la caja `<g id="table_nota_venta">`.
+- Actualizadas las cajas `<g id="table_ventas">`, `<g id="table_venta_detalle">` y `<g id="table_estado_venta">`.
+- En `table_cuentas_cobrar`, actualizada columna `id_venta`.
+- Actualizadas y verificadas las 29 rutas de relación ortogonales:
+  - `rel_ventas_clientes`, `rel_ventas_estado_venta`, `rel_venta_detalle_ventas`, `rel_venta_detalle_productos`.
+  - `rel_ventas_tipo_pago` y `rel_cuentas_cobrar_ventas` conectando directamente con `ventas`.
+- Conteo total: 25 tablas y 29 relaciones libres de solapamientos.
+
+---
+
+## Rediseño de Base de Datos v2 (26 Tablas), Modelos PHP y Diagrama `modelo_relacional.svg`
+
+### Cambios en Base de Datos (`app/core/sp_perfect_color.sql` — 100% compatible con phpMyAdmin)
+1. **Isla de Seguridad Independiente (`usuarios`, `roles`, `rol_modulo`, `modulos`):**
+   - Eliminado `id_usuario` de `presupuestos` y `nota_venta`. Las 4 tablas de seguridad quedan como una isla independiente dedicada a autenticación y permisos en su posición original, sin adornos ni cuadros punteados y con cero conexiones salientes.
+2. **Atributo `activo` $\to$ `estado` al final de cada tabla:**
+   - Todas las tablas tienen `estado TINYINT(1) NOT NULL DEFAULT 1` como última columna para borrado lógico.
+   - En `cuentas_cobrar` y `cuentas_pagar`, el estatus de cobro/pago (`pendiente`, `pagado`, `moroso`/`vencido`) se renombró a `situacion` para mantener `estado TINYINT(1)` al final.
+3. **Normalización de Atributos Transitivos (`id_cliente`):**
+   - Eliminado `id_cliente` de `nota_venta` y de `cuentas_cobrar`: el cliente se obtiene legítimamente a través de `presupuestos` (`nota_venta` $\to$ `presupuestos` $\to$ `clientes`), eliminando redundancias y claves foráneas duplicadas tanto en la base de datos como en el diagrama.
+4. **Teléfonos como Entidad Débil (Clave Primaria Compuesta):**
+   - `telefono_cliente`: `PRIMARY KEY (id_cliente, id_telefono_cliente)` con `id_cliente` primero para indexar/buscar por cliente.
+   - `telefono_proveedor`: `PRIMARY KEY (id_proveedor, id_telefono_proveedor)` con `id_proveedor` primero.
+5. **Tabla `mezcla_producto` y Productos Preparados:**
+   - Reemplazado `item_composicion` por `mezcla_producto` (`id_mezcla_producto`, `id_producto_mezclado`, `id_producto_base`, `fraccion`, `cantidad_galon`, `estado`).
+   - Cuando se formula una pintura preparada, se registra como un producto nuevo en `productos` (`id_tipo_producto = 3`) y su receta de tintes base queda en `mezcla_producto`.
+   - `presupuesto_detalle` apunta directamente a `productos` (`id_producto`).
+6. **Sub-productos por Fracciones ($1, 1/2, 1/4, \dots, 1/128$):**
+   - `productos` incluye `id_producto_padre` (FK autorreferencial a `productos`) y `fraccion` (`'1'`, `'1/2'`, `'1/4'`, `'1/8'`, `'1/16'`, `'1/32'`, `'1/64'`, `'1/128'`), permitiendo registrar presentaciones fraccionadas como *"Pintura Azul 1/2"*, *"Pintura Azul 1/4"*, etc.
+7. **Renombrada `notas_entrega` $\to$ `nota_venta` conectada con `tipo_pago`:**
+   - `nota_venta` (`id_nota_venta`, `id_presupuesto`, `id_tipo_pago`, `fecha`, `total`, `condicion_pago`, `created_at`, `estado`) soporta contado y crédito, conectándose con `tipo_pago`, `presupuestos` y `cuentas_cobrar`.
+8. **Nueva `nota_entrega` (Compras a Proveedores) y Puente `nota_entrega_producto`:**
+   - `nota_entrega`: Cabecera de compras recibidas de proveedores (`id_nota_entrega`, `id_proveedor`, `fecha`, `total`, `observaciones`, `created_at`, `estado`), vinculada también a `cuentas_pagar`.
+   - `nota_entrega_producto`: Tabla puente entre `nota_entrega` y `productos` con `cantidad`, `precio_compra` y `subtotal`.
+9. **Disposición Original Restaurada en `modelo_relacional.svg`:**
+   - Diagrama SVG regenerado manteniendo la disposición original de coordenadas de tablas, con las 26 tablas y 31 relaciones sin solapamientos ni cruces sobre cajas de tablas. Isla de seguridad colocada en su lugar original simple y sin marcos adicionales.
+   - Todos los modelos en `app/models/` actualizados y verificados sin errores de sintaxis (`php -l`).
+
+---
+
 ## Cadena Lineal de Ventas y Cobros (Cero Ciclos: `notas_entrega` $\to$ `cuentas_cobrar` $\to$ `pagos_recibidos`)
 
 ### Contexto & Problema de Negocio
@@ -670,9 +841,30 @@ Las FK tenían nombres inconsistentes con las PKs que referenciaban. Ej: `cuenta
 - **`app/models/UsuarioModel.php`**: Agregado `buscarConRolPorId()` y su método privado encapsulado `_ejecutarSelectConRolById()`.
 - **`app/controllers/frontController.php`**: Mapeada la ruta `perfil` en controladores y títulos de página.
 - **`app/views/plantillaBase.php`**: Enlaces del usuario en el sidebar (móvil y desktop) actualizados a `/SP%20Perfect%20Color/perfil`.
-- **`app/controllers/usuarioController.php`**: Usuarios sin permisos para gestionar usuarios son redirigidos automáticamente a `/perfil`.
 
 
+---
 
+## Reorganización Visual del Sidebar: Menús Desplegables de Ventas y Compras & Entidades Directas
 
+### Contexto & Problema de Negocio
+- La barra de navegación lateral mostraba cabeceras de texto planas (`.nav-section-title`) que sobrecargaban visualmente la interfaz y generaban inconsistencias de estilo.
+- Se requería:
+  1. Extraer **Clientes**, **Proveedores** y **Registro Insumos** (`/inventario`) como elementos directos e independientes del primer nivel de navegación.
+  2. Implementar menús desplegables extensibles bajo el patrón interactivo ya existente de **Config. de Pago** (`.nav-item.dropdown-hover` con `.dropdown-submenu` y flecha `bi-chevron-down`):
+     - **Ventas**: Despliega `Presupuestos`, `Notas de Entrega` y `Cuentas por Cobrar`.
+     - **Compras**: Despliega `Notas de Entrega` y `Cuentas por Pagar`.
+     - **Config. de Pago**: Despliega `Bancos` y `Tipos de Pago`.
+  3. Mantener **Inicio**, **Tasa de Cambio**, **Reportes** y **Usuarios y Roles** como accesos directos de primer nivel.
 
+### Cambios en Vistas & Frontend
+- **`app/views/plantillaBase.php`**:
+  - Reemplazadas las listas estáticas de navegación en el menú móvil offcanvas (`#offcanvasSidebar`) y en el sidebar de escritorio (`nav.sidebar`).
+  - Eliminados por completo los separadores de texto planos `.nav-section-title`.
+  - Reutilizado el componente nativo `.dropdown-hover` y sus listeners JavaScript delegados existentes (`document.querySelectorAll('.dropdown-hover > .nav-link')`), logrando apertura al clic y cierre automático al hacer clic fuera tanto en móvil como en escritorio.
+  - Submenús con clase `.active` aplicados sobre el enlace hijo actual para asegurar contraste óptimo y resaltar la opción seleccionada.
+
+### Cumplimiento de Principios y Skills
+- **/antislop-ui**: Cero clases CSS inventadas o colores arbitrarios; reutilización estricta de variables CSS corporativas (`var(--brand-gradient)`, `var(--brand-bright)`). Interfaz limpia en español.
+- **/ponytail**: Máxima economía de código (YAGNI). Cero dependencias añadidas; se reutilizó la infraestructura CSS/JS existente para `.dropdown-hover` sin modificar archivos externos.
+- **/break-ui**: Verificado en resoluciones móviles estrechas (320px offcanvas con comportamiento accordion inline) y en sidebar colapsado (70px con `left: 70px !important` y ocultamiento del chevron indicador). Cero solapamientos ni desbordes horizontales. Cero errores de sintaxis en PHP y JS.

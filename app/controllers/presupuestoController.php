@@ -229,7 +229,7 @@ if ($metodo === 'index') {
     $id = intval($_POST['id'] ?? 0);
     $estado = $_POST['estado'] ?? '';
     
-    $estadosValidos = ['pendiente', 'aprobado', 'rechazado', 'convertido'];
+    $estadosValidos = ['pendiente', 'presupuesto', 'aprobado', 'rechazado', 'convertido', 'anulado'];
     
     if ($id < 1 || !in_array($estado, $estadosValidos)) {
         respuestaJson('error', 'Datos invalidos');
@@ -239,8 +239,10 @@ if ($metodo === 'index') {
         $mensajes = [
             'aprobado' => 'Presupuesto aprobado exitosamente',
             'rechazado' => 'Presupuesto rechazado',
+            'anulado' => 'Presupuesto anulado',
             'convertido' => 'Presupuesto convertido a nota de entrega',
-            'pendiente' => 'Presupuesto vuelto a estado pendiente'
+            'pendiente' => 'Presupuesto vuelto a estado pendiente',
+            'presupuesto' => 'Presupuesto vuelto a estado pendiente'
         ];
         
         respuestaJson('exito', $mensajes[$estado] ?? 'Estado actualizado');

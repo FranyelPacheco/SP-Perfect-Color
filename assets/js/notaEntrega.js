@@ -27,10 +27,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 language: window.DATATABLES_SPANISH,
                 columns: [
                     {
-                        data: 'id',
-                        render: function(data) {
-                            if (data == null) return '';
-                            return '#' + data;
+                        data: 'id_nota_entrega',
+                        render: function(data, type, row) {
+                            var val = data || (row ? (row.id || row.id_venta) : '');
+                            return val ? '#' + val : '';
                         }
                     },
                     { data: 'fecha' },
