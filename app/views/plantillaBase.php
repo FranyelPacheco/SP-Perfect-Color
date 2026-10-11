@@ -97,11 +97,11 @@ $isConfigPagoActive = in_array($ctrlLower, ['banco', 'tipopago', 'configpago'], 
                         <?php endif; ?>
 
                         <?php if (\App\Helpers\tienePermiso('proveedor')): ?>
-                        <li class="nav-item"><a href="/SP%20Perfect%20Color/proveedor" class="nav-link<?php echo ($ctrlLower === 'proveedor') ? ' active' : ''; ?>"><i class="bi bi-truck me-2"></i><span>Proveedores</span></a></li>
+                        <li class="nav-item"><a href="/SP%20Perfect%20Color/proveedor" class="nav-link<?php echo ($ctrlLower === 'proveedor') ? ' active' : ''; ?>"><i class="bi bi-truck-front-fill me-2"></i><span>Proveedores</span></a></li>
                         <?php endif; ?>
 
                         <?php if (\App\Helpers\tienePermiso('inventario')): ?>
-                        <li class="nav-item"><a href="/SP%20Perfect%20Color/inventario" class="nav-link<?php echo ($ctrlLower === 'inventario') ? ' active' : ''; ?>"><i class="bi bi-box-seam-fill me-2"></i><span>Registro Insumos</span></a></li>
+                        <li class="nav-item"><a href="/SP%20Perfect%20Color/inventario" class="nav-link<?php echo ($ctrlLower === 'inventario') ? ' active' : ''; ?>"><i class="bi bi-box-seam-fill me-2"></i><span>Gestión de Inventario</span></a></li>
                         <?php endif; ?>
 
                         <?php if (\App\Helpers\tienePermiso('presupuesto') || \App\Helpers\tienePermiso('notaEntrega') || \App\Helpers\tienePermiso('cuentaCobrar')): ?>
@@ -115,7 +115,7 @@ $isConfigPagoActive = in_array($ctrlLower, ['banco', 'tipopago', 'configpago'], 
                                 <li><a href="/SP%20Perfect%20Color/notaEntrega" class="<?php echo ($ctrlLower === 'notaentrega') ? 'active' : ''; ?>"><i class="bi bi-receipt-cutoff me-2"></i><span>Notas de Entrega</span></a></li>
                                 <?php endif; ?>
                                 <?php if (\App\Helpers\tienePermiso('cuentaCobrar')): ?>
-                                <li><a href="/SP%20Perfect%20Color/cuentaCobrar" class="<?php echo ($ctrlLower === 'cuentacobrar') ? 'active' : ''; ?>"><i class="bi bi-cash-coin me-2"></i><span>Cuentas por Cobrar</span></a></li>
+                                <li><a href="/SP%20Perfect%20Color/cuentaCobrar" class="<?php echo ($ctrlLower === 'cuentacobrar') ? 'active' : ''; ?>"><i class="bi bi-cash-stack me-2"></i><span>Cuentas por Cobrar</span></a></li>
                                 <?php endif; ?>
                             </ul>
                         </li>
@@ -126,7 +126,7 @@ $isConfigPagoActive = in_array($ctrlLower, ['banco', 'tipopago', 'configpago'], 
                             <a href="#" class="nav-link<?php echo $isComprasActive ? ' active' : ''; ?>"><i class="bi bi-cart-plus-fill me-2"></i><span>Compras</span> <i class="bi bi-chevron-down ms-auto"></i></a>
                             <ul class="dropdown-submenu">
                                 <?php if (\App\Helpers\tienePermiso('notaEntregaCompra')): ?>
-                                <li><a href="/SP%20Perfect%20Color/notaEntregaCompra" class="<?php echo ($ctrlLower === 'notaentregacompra') ? 'active' : ''; ?>"><i class="bi bi-box-arrow-in-down me-2"></i><span>Notas de Entrega</span></a></li>
+                                <li><a href="/SP%20Perfect%20Color/notaEntregaCompra" class="<?php echo ($ctrlLower === 'notaentregacompra') ? 'active' : ''; ?>"><i class="bi bi-inboxes-fill me-2"></i><span>Notas de Entrega</span></a></li>
                                 <?php endif; ?>
                                 <?php if (\App\Helpers\tienePermiso('cuentaPagar')): ?>
                                 <li><a href="/SP%20Perfect%20Color/cuentaPagar" class="<?php echo ($ctrlLower === 'cuentapagar') ? 'active' : ''; ?>"><i class="bi bi-credit-card-2-back-fill me-2"></i><span>Cuentas por Pagar</span></a></li>
@@ -140,10 +140,10 @@ $isConfigPagoActive = in_array($ctrlLower, ['banco', 'tipopago', 'configpago'], 
                             <a href="#" class="nav-link<?php echo $isConfigPagoActive ? ' active' : ''; ?>"><i class="bi bi-gear-fill me-2"></i><span>Config. de Pago</span> <i class="bi bi-chevron-down ms-auto"></i></a>
                             <ul class="dropdown-submenu">
                                 <?php if (\App\Helpers\tienePermiso('banco')): ?>
-                                <li><a href="/SP%20Perfect%20Color/banco" class="<?php echo ($ctrlLower === 'banco') ? 'active' : ''; ?>"><i class="bi bi-bank me-2"></i><span>Bancos</span></a></li>
+                                <li><a href="/SP%20Perfect%20Color/banco" class="<?php echo ($ctrlLower === 'banco') ? 'active' : ''; ?>"><i class="bi bi-building-fill me-2"></i><span>Bancos</span></a></li>
                                 <?php endif; ?>
                                 <?php if (\App\Helpers\tienePermiso('tipoPago')): ?>
-                                <li><a href="/SP%20Perfect%20Color/tipoPago" class="<?php echo ($ctrlLower === 'tipopago') ? 'active' : ''; ?>"><i class="bi bi-credit-card me-2"></i><span>Tipos de Pago</span></a></li>
+                                <li><a href="/SP%20Perfect%20Color/tipoPago" class="<?php echo ($ctrlLower === 'tipopago') ? 'active' : ''; ?>"><i class="bi bi-credit-card-2-front-fill me-2"></i><span>Tipos de Pago</span></a></li>
                                 <?php endif; ?>
                             </ul>
                         </li>
@@ -187,11 +187,11 @@ $isConfigPagoActive = in_array($ctrlLower, ['banco', 'tipopago', 'configpago'], 
                 <?php endif; ?>
 
                 <?php if (\App\Helpers\tienePermiso('proveedor')): ?>
-                <li class="nav-item"><a href="/SP%20Perfect%20Color/proveedor" class="nav-link<?php echo ($ctrlLower === 'proveedor') ? ' active' : ''; ?>"><i class="bi bi-truck me-2"></i><span>Proveedores</span></a></li>
+                <li class="nav-item"><a href="/SP%20Perfect%20Color/proveedor" class="nav-link<?php echo ($ctrlLower === 'proveedor') ? ' active' : ''; ?>"><i class="bi bi-truck-front-fill me-2"></i><span>Proveedores</span></a></li>
                 <?php endif; ?>
 
                 <?php if (\App\Helpers\tienePermiso('inventario')): ?>
-                <li class="nav-item"><a href="/SP%20Perfect%20Color/inventario" class="nav-link<?php echo ($ctrlLower === 'inventario') ? ' active' : ''; ?>"><i class="bi bi-box-seam-fill me-2"></i><span>Registro Insumos</span></a></li>
+                <li class="nav-item"><a href="/SP%20Perfect%20Color/inventario" class="nav-link<?php echo ($ctrlLower === 'inventario') ? ' active' : ''; ?>"><i class="bi bi-box-seam-fill me-2"></i><span>Gestión de Inventario</span></a></li>
                 <?php endif; ?>
 
                 <?php if (\App\Helpers\tienePermiso('presupuesto') || \App\Helpers\tienePermiso('notaEntrega') || \App\Helpers\tienePermiso('cuentaCobrar')): ?>
@@ -205,7 +205,7 @@ $isConfigPagoActive = in_array($ctrlLower, ['banco', 'tipopago', 'configpago'], 
                         <li><a href="/SP%20Perfect%20Color/notaEntrega" class="<?php echo ($ctrlLower === 'notaentrega') ? 'active' : ''; ?>"><i class="bi bi-receipt-cutoff me-2"></i><span>Notas de Entrega</span></a></li>
                         <?php endif; ?>
                         <?php if (\App\Helpers\tienePermiso('cuentaCobrar')): ?>
-                        <li><a href="/SP%20Perfect%20Color/cuentaCobrar" class="<?php echo ($ctrlLower === 'cuentacobrar') ? 'active' : ''; ?>"><i class="bi bi-cash-coin me-2"></i><span>Cuentas por Cobrar</span></a></li>
+                        <li><a href="/SP%20Perfect%20Color/cuentaCobrar" class="<?php echo ($ctrlLower === 'cuentacobrar') ? 'active' : ''; ?>"><i class="bi bi-cash-stack me-2"></i><span>Cuentas por Cobrar</span></a></li>
                         <?php endif; ?>
                     </ul>
                 </li>
@@ -216,7 +216,7 @@ $isConfigPagoActive = in_array($ctrlLower, ['banco', 'tipopago', 'configpago'], 
                     <a href="#" class="nav-link<?php echo $isComprasActive ? ' active' : ''; ?>"><i class="bi bi-cart-plus-fill me-2"></i><span>Compras</span> <i class="bi bi-chevron-down ms-auto"></i></a>
                     <ul class="dropdown-submenu">
                         <?php if (\App\Helpers\tienePermiso('notaEntregaCompra')): ?>
-                        <li><a href="/SP%20Perfect%20Color/notaEntregaCompra" class="<?php echo ($ctrlLower === 'notaentregacompra') ? 'active' : ''; ?>"><i class="bi bi-box-arrow-in-down me-2"></i><span>Notas de Entrega</span></a></li>
+                        <li><a href="/SP%20Perfect%20Color/notaEntregaCompra" class="<?php echo ($ctrlLower === 'notaentregacompra') ? 'active' : ''; ?>"><i class="bi bi-inboxes-fill me-2"></i><span>Notas de Entrega</span></a></li>
                         <?php endif; ?>
                         <?php if (\App\Helpers\tienePermiso('cuentaPagar')): ?>
                         <li><a href="/SP%20Perfect%20Color/cuentaPagar" class="<?php echo ($ctrlLower === 'cuentapagar') ? 'active' : ''; ?>"><i class="bi bi-credit-card-2-back-fill me-2"></i><span>Cuentas por Pagar</span></a></li>
@@ -230,10 +230,10 @@ $isConfigPagoActive = in_array($ctrlLower, ['banco', 'tipopago', 'configpago'], 
                     <a href="#" class="nav-link<?php echo $isConfigPagoActive ? ' active' : ''; ?>"><i class="bi bi-gear-fill me-2"></i><span>Config. de Pago</span> <i class="bi bi-chevron-down ms-auto"></i></a>
                     <ul class="dropdown-submenu">
                         <?php if (\App\Helpers\tienePermiso('banco')): ?>
-                        <li><a href="/SP%20Perfect%20Color/banco" class="<?php echo ($ctrlLower === 'banco') ? 'active' : ''; ?>"><i class="bi bi-bank me-2"></i><span>Bancos</span></a></li>
+                        <li><a href="/SP%20Perfect%20Color/banco" class="<?php echo ($ctrlLower === 'banco') ? 'active' : ''; ?>"><i class="bi bi-building-fill me-2"></i><span>Bancos</span></a></li>
                         <?php endif; ?>
                         <?php if (\App\Helpers\tienePermiso('tipoPago')): ?>
-                        <li><a href="/SP%20Perfect%20Color/tipoPago" class="<?php echo ($ctrlLower === 'tipopago') ? 'active' : ''; ?>"><i class="bi bi-credit-card me-2"></i><span>Tipos de Pago</span></a></li>
+                        <li><a href="/SP%20Perfect%20Color/tipoPago" class="<?php echo ($ctrlLower === 'tipopago') ? 'active' : ''; ?>"><i class="bi bi-credit-card-2-front-fill me-2"></i><span>Tipos de Pago</span></a></li>
                         <?php endif; ?>
                     </ul>
                 </li>

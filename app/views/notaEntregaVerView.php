@@ -4,8 +4,15 @@
 ?>
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-    <h2 class="h4 mb-0">Nota de Entrega #<?php echo $nota['id_nota_entrega']; ?></h2>
-    <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Volver</a>
+    <h2 class="h4 mb-0"><i class="bi bi-receipt-cutoff me-2 text-primary"></i>Nota de Entrega #<?php echo $nota['id_nota_entrega']; ?></h2>
+    <div class="d-flex gap-2">
+        <a href="/SP%20Perfect%20Color/notaEntrega/pdf?id=<?php echo $nota['id_nota_entrega']; ?>" target="_blank" class="btn btn-primary shadow-sm">
+            <i class="bi bi-file-earmark-pdf-fill me-2"></i>Imprimir / PDF
+        </a>
+        <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
+    </div>
 </div>
 
 <div class="card border-0 shadow-sm mb-4">
@@ -104,5 +111,8 @@
 </div>
 
 <div class="d-flex justify-content-end gap-2 mt-4">
-    <a href="/SP%20Perfect%20Color/notaEntrega/editar?id=<?php echo $nota['id_nota_entrega']; ?>" class="btn btn-primary"><i class="bi bi-pencil me-1"></i>Editar Items</a>
+    <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Volver al Listado</a>
+    <a href="/SP%20Perfect%20Color/notaEntrega/pdf?id=<?php echo $nota['id_nota_entrega']; ?>" target="_blank" class="btn btn-primary shadow-sm">
+        <i class="bi bi-file-earmark-pdf-fill me-2"></i>Descargar Comprobante PDF
+    </a>
 </div>

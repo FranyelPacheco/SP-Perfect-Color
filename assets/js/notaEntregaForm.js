@@ -133,51 +133,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         var total = 0;
 
-        itemsNota.forEach(function(item, indice) {
+        itemsNota.forEach(function(item) {
             var fila = document.createElement('tr');
             
             fila.innerHTML = 
-                '<td>' + item.insumo_codigo + '</td>' +
-                '<td>' + item.insumo_nombre + '</td>' +
-                '<td>' + item.stock_actual.toFixed(2) + '</td>' +
-                '<td><input type="number" class="cantidad-input" value="' + item.cantidad + '" min="0.01" step="0.01" data-indice="' + indice + '"></td>' +
-                '<td><input type="number" class="precio-input" value="' + item.precio_unitario + '" min="0.01" step="0.01" data-indice="' + indice + '"></td>' +
-                '<td>$ ' + formatearMoneda(item.subtotal) + '</td>' +
-                '<td><button type="button" class="btn btn-sm btn-outline-danger" data-indice="' + indice + '"><i class="bi bi-trash"></i> Quitar</button></td>';
-
-            fila.querySelector('.cantidad-input').addEventListener('change', function() {
-                var idx = parseInt(this.dataset.indice);
-                var nuevaCantidad = parseFloat(this.value) || 0;
-                
-                if (nuevaCantidad <= 0) {
-                    this.value = itemsNota[idx].cantidad;
-                    return;
-                }
-                
-                itemsNota[idx].cantidad = nuevaCantidad;
-                itemsNota[idx].subtotal = nuevaCantidad * itemsNota[idx].precio_unitario;
-                actualizarTablaItems();
-            });
-
-            fila.querySelector('.precio-input').addEventListener('change', function() {
-                var idx = parseInt(this.dataset.indice);
-                var nuevoPrecio = parseFloat(this.value) || 0;
-                
-                if (nuevoPrecio <= 0) {
-                    this.value = itemsNota[idx].precio_unitario;
-                    return;
-                }
-                
-                itemsNota[idx].precio_unitario = nuevoPrecio;
-                itemsNota[idx].subtotal = itemsNota[idx].cantidad * nuevoPrecio;
-                actualizarTablaItems();
-            });
-
-            fila.querySelector('.btn-outline-danger').addEventListener('click', function() {
-                var idx = parseInt(this.dataset.indice);
-                itemsNota.splice(idx, 1);
-                actualizarTablaItems();
-            });
+                '<td><span class="badge bg-light text-secondary border font-monospace">' + item.insumo_codigo + '</span></td>' +
+                '<td class="fw-semibold">' + item.insumo_nombre + '</td>' +
+                '<td class="text-secondary">' + item.stock_actual.toFixed(2) + '</td>' +
+                '<td><span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 fs-6">' + item.cantidad.toFixed(2) + '</span></td>' +
+                '<td>$ ' + formatearMoneda(item.precio_unitario) + '</td>' +
+                '<td class="fw-bold text-dark">$ ' + formatearMoneda(item.subtotal) + '</td>';
 
             cuerpoTablaItems.insertBefore(fila, filaVacia);
             total += item.subtotal;

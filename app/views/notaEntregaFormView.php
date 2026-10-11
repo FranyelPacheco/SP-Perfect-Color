@@ -77,19 +77,17 @@
                             <th>Cantidad</th>
                             <th>Precio Unit.</th>
                             <th>Subtotal</th>
-                            <th>Accion</th>
                         </tr>
                     </thead>
                     <tbody id="cuerpoTablaItems">
                         <tr id="filaVacia">
-                            <td colspan="7" class="text-center text-muted">Cargando items del presupuesto...</td>
+                            <td colspan="6" class="text-center text-muted">Cargando items del presupuesto...</td>
                         </tr>
                     </tbody>
                     <tfoot>
                         <tr>
                             <td colspan="5" class="text-end fw-bold">Total:</td>
                             <td id="totalNota" class="fw-bold">$ 0.00</td>
-                            <td></td>
                         </tr>
                     </tfoot>
                 </table>

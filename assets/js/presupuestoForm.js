@@ -363,16 +363,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             '<span class="' + badgeCls + '" style="font-size: 0.68rem; padding: 0.2em 0.5em;">' + tipoNom + '</span>' +
                         '</div>' +
                     '</td>' +
+                    '</td>' +
                     '<td class="text-center">' +
                         '<input type="number" class="form-control form-control-sm item-presupuesto-cantidad mx-auto" ' +
                                'value="' + item.cantidad + '" min="1" step="1" data-indice="' + indice + '">' +
                     '</td>' +
                     '<td class="text-end">' +
-                        '<input type="number" class="form-control form-control-sm item-presupuesto-precio ms-auto" ' +
-                               'value="' + item.precio_unitario.toFixed(2) + '" min="0.01" step="0.01" data-indice="' + indice + '">' +
+                        '<span class="fw-semibold text-secondary">$ ' + formatearMoneda(item.precio_unitario) + '</span>' +
                     '</td>' +
                     '<td class="text-end">' +
-                        '<span class="item-presupuesto-subtotal">$ ' + formatearMoneda(item.subtotal) + '</span>' +
+                        '<span class="item-presupuesto-subtotal fw-bold text-dark">$ ' + formatearMoneda(item.subtotal) + '</span>' +
                     '</td>' +
                     '<td class="text-center">' +
                         '<button type="button" class="btn btn-sm btn-light text-danger btn-quitar-item" data-indice="' + indice + '" title="Quitar item">' +
@@ -389,19 +389,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!isNaN(val) && val > 0) {
                     itemsPresupuesto[idx].cantidad = val;
                     itemsPresupuesto[idx].subtotal = val * itemsPresupuesto[idx].precio_unitario;
-                    fila.querySelector('.item-presupuesto-subtotal').textContent = '$ ' + formatearMoneda(itemsPresupuesto[idx].subtotal);
-                    recalcularTotalGlobal();
-                }
-            });
-
-            // Evento para cambiar precio
-            var inputPrecio = fila.querySelector('.item-presupuesto-precio');
-            inputPrecio.addEventListener('input', function() {
-                var idx = parseInt(this.dataset.indice);
-                var val = parseFloat(this.value);
-                if (!isNaN(val) && val >= 0) {
-                    itemsPresupuesto[idx].precio_unitario = val;
-                    itemsPresupuesto[idx].subtotal = itemsPresupuesto[idx].cantidad * val;
                     fila.querySelector('.item-presupuesto-subtotal').textContent = '$ ' + formatearMoneda(itemsPresupuesto[idx].subtotal);
                     recalcularTotalGlobal();
                 }
@@ -458,6 +445,55 @@ document.addEventListener('DOMContentLoaded', function() {
             total += item.subtotal;
         });
         totalPresupuesto.textContent = '$ ' + formatearMoneda(total);
+    }
+
+    // ==========================================
+    // DETALLE DE PAGO Y CONDICIÓN (CONTADO / CRÉDITO)
+    // ==========================================
+    var condicionPagoPresupuesto = document.getElementById('condicionPagoPresupuesto');
+    var seccionPagoContado = document.getElementById('seccionPagoContado');
+    var tipoPagoPresupuesto = document.getElementById('tipoPagoPresupuesto');
+    var bancoPresupuesto = document.getElementById('bancoPresupuesto');
+    var colBancoPresupuesto = document.getElementById('colBancoPresupuesto');
+    var colReferenciaPresupuesto = document.getElementById('colReferenciaPresupuesto');
+    var referenciaPresupuesto = document.getElementById('referenciaPresupuesto');
+
+    function cargarDatosPago() {
+        fetch('/SP%20Perfect%20Color/presupuesto/obtenerDatosPagoAjax')
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (res.estado === 'exito') {
+                    if (bancoPresupuesto && res.datos.bancos) {
+                        bancoPresupuesto.innerHTML = '<option value="">Seleccione banco...</option>';
+                        res.datos.bancos.forEach(function(b) {
+                            var opt = document.createElement('option');
+                            opt.value = b.id_banco;
+                            opt.textContent = b.nombre;
+                            bancoPresupuesto.appendChild(opt);
+                        });
+                    }
+                }
+            })
+            .catch(function(e) { console.error('Error cargando bancos:', e); });
+    }
+    cargarDatosPago();
+
+    if (condicionPagoPresupuesto) {
+        condicionPagoPresupuesto.addEventListener('change', function() {
+            if (seccionPagoContado) {
+                seccionPagoContado.style.display = this.value === 'contado' ? '' : 'none';
+            }
+        });
+    }
+
+    if (tipoPagoPresupuesto) {
+        tipoPagoPresupuesto.addEventListener('change', function() {
+            var val = this.value;
+            // 1 = Efectivo
+            var esEfectivo = (val === '1');
+            if (colBancoPresupuesto) colBancoPresupuesto.style.display = esEfectivo ? 'none' : '';
+            if (colReferenciaPresupuesto) colReferenciaPresupuesto.style.display = esEfectivo ? 'none' : '';
+        });
     }
 
     // ==========================================
@@ -794,19 +830,22 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('id_cliente', clientePresupuesto.value);
         formData.append('observaciones', document.getElementById('observacionesPresupuesto').value);
 
-        var itemsSimplificados = itemsPresupuesto.map(function(item) {
-            if (item.es_mezcla) {
-                return {
-                    tipo: 'mezcla',
-                    descripcion: item.descripcion,
-                    presentacion: item.presentacion,
-                    cantidad: item.cantidad,
-                    precio_unitario: item.precio_unitario,
-                    mezclas: item.mezclas
-                };
+        var condicionPagoPresupuesto = document.getElementById('condicionPagoPresupuesto');
+        var tipoPagoPresupuesto = document.getElementById('tipoPagoPresupuesto');
+        var bancoPresupuesto = document.getElementById('bancoPresupuesto');
+        var referenciaPresupuesto = document.getElementById('referenciaPresupuesto');
+
+        if (condicionPagoPresupuesto) {
+            formData.append('condicion_pago', condicionPagoPresupuesto.value);
+            if (condicionPagoPresupuesto.value === 'contado') {
+                if (tipoPagoPresupuesto) formData.append('id_tipo_pago', tipoPagoPresupuesto.value);
+                if (bancoPresupuesto && tipoPagoPresupuesto && tipoPagoPresupuesto.value !== '1') formData.append('id_banco', bancoPresupuesto.value);
+                if (referenciaPresupuesto && tipoPagoPresupuesto && tipoPagoPresupuesto.value !== '1') formData.append('referencia', referenciaPresupuesto.value.trim());
             }
+        }
+
+        var itemsSimplificados = itemsPresupuesto.map(function(item) {
             return {
-                tipo: 'simple',
                 id_insumo: item.id_insumo,
                 descripcion: item.insumo_nombre,
                 cantidad: item.cantidad,

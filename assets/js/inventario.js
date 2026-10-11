@@ -75,7 +75,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let proveedoresGlobal = [];
     let rubrosGlobal = [];
-    const esAdmin = document.getElementById('btnNuevoInsumo') !== null;
+    let insumosGlobal = [];
+    let basesGlobal = [];
+    const esAdmin = document.getElementById('btnPrepararMezcla') !== null || document.getElementById('btnNuevoInsumo') !== null;
 
     // Ajusta la unidad de medida según el tipo de producto
     function ajustarUnidadSegunTipo(unidadPrevia) {
@@ -179,6 +181,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const resultado = await respuesta.json();
 
             if (resultado.estado === 'exito') {
+                insumosGlobal = resultado.datos.insumos || [];
                 mostrarInsumos(resultado.datos.insumos);
 
                 if (resultado.datos.proveedores) {
@@ -255,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         var nom = (row.nombre || '').replace(/"/g, '&quot;');
                         return '<div class="d-flex gap-2">' +
                             '<button class="btn btn-sm btn-warning btn-editar-insumo" data-id="' + row.id_insumo + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
-                            '<button class="btn btn-sm btn-danger btn-eliminar-insumo" data-id="' + row.id_insumo + '" data-nombre="' + nom + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>' +
+                            '<button class="btn btn-sm btn-danger btn-eliminar-insumo" data-id="' + row.id_insumo + '" data-nombre="' + nom + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>' +
                             '</div>';
                     }
                 });
@@ -516,6 +519,339 @@ document.addEventListener('DOMContentLoaded', function() {
     function mostrarError(mensaje) {
         mensajeError.textContent = mensaje;
         mensajeError.classList.remove('d-none');
+    }
+
+    // =========================================================================
+    // SECCIÓN: PREPARAR MEZCLA / COLOR PERSONALIZADO (TALLER)
+    // =========================================================================
+    const btnPrepararMezcla = document.getElementById('btnPrepararMezcla');
+    const modalPrepararMezcla = document.getElementById('modalPrepararMezcla');
+    const formMezcla = document.getElementById('formularioMezcla');
+    const cuerpoBasesMezcla = document.getElementById('cuerpoBasesMezcla');
+    const btnAgregarFilaBase = document.getElementById('btnAgregarFilaBase');
+    const contadorBasesMezcla = document.getElementById('contadorBasesMezcla');
+    const totalGalonesMezcla = document.getElementById('totalGalonesMezcla');
+    const mezclaNombre = document.getElementById('mezclaNombre');
+    const mezclaPresentacion = document.getElementById('mezclaPresentacion');
+    const mezclaCantidad = document.getElementById('mezclaCantidad');
+    const mezclaPrecioVenta = document.getElementById('mezclaPrecioVenta');
+    const mezclaSubtotalEstimado = document.getElementById('mezclaSubtotalEstimado');
+    const mensajeErrorMezcla = document.getElementById('mensajeErrorMezcla');
+
+    async function cargarBasesParaMezcla() {
+        try {
+            const resp = await fetch('/SP%20Perfect%20Color/inventario/listarBasesAjax');
+            const res = await resp.json();
+            if (res.estado === 'exito') {
+                basesGlobal = res.datos.bases || [];
+            }
+        } catch (e) {
+            console.error('Error al cargar bases:', e);
+        }
+    }
+
+    if (btnPrepararMezcla) {
+        btnPrepararMezcla.addEventListener('click', async function() {
+            if (formMezcla) formMezcla.reset();
+            if (mensajeErrorMezcla) mensajeErrorMezcla.classList.add('d-none');
+            if (cuerpoBasesMezcla) cuerpoBasesMezcla.innerHTML = '';
+            await cargarBasesParaMezcla();
+            agregarFilaBaseMezcla();
+            recalcularTotalesMezcla();
+            if (modalPrepararMezcla) {
+                bootstrap.Modal.getOrCreateInstance(modalPrepararMezcla).show();
+            }
+        });
+    }
+
+    if (btnAgregarFilaBase) {
+        btnAgregarFilaBase.addEventListener('click', function() {
+            agregarFilaBaseMezcla();
+        });
+    }
+
+    function agregarFilaBaseMezcla() {
+        if (!cuerpoBasesMezcla) return;
+        const totalFilas = cuerpoBasesMezcla.querySelectorAll('tr').length;
+        if (totalFilas >= 6) {
+            mostrarNotificacion('El límite máximo es de 6 tintes base por mezcla.', 'error');
+            return;
+        }
+
+        const fila = document.createElement('tr');
+        let opciones = '<option value="">Seleccione tinte base...</option>';
+        basesGlobal.forEach(function(b) {
+            const stock = parseFloat(b.stock_actual) || 0;
+            opciones += '<option value="' + b.id_producto + '" data-nombre="' + b.nombre + '" data-precio="' + b.precio_venta + '" data-stock="' + stock + '">' + b.codigo + ' - ' + b.nombre + ' (' + stock.toFixed(2) + ' gal)</option>';
+        });
+
+        fila.innerHTML =
+            '<td>' +
+                '<select class="form-select form-select-sm select-base-tinte" required>' +
+                    opciones +
+                '</select>' +
+            '</td>' +
+            '<td>' +
+                '<select class="form-select form-select-sm select-fraccion-tinte">' +
+                    '<option value="1/2" data-galon="0.5">1/2 Galón (0.50 gal)</option>' +
+                    '<option value="1/4" data-galon="0.25" selected>1/4 Galón (0.25 gal)</option>' +
+                    '<option value="1/8" data-galon="0.125">1/8 Galón (0.125 gal)</option>' +
+                    '<option value="1/16" data-galon="0.0625">1/16 Galón (0.0625 gal)</option>' +
+                    '<option value="1/32" data-galon="0.03125">1/32 Galón (0.0312 gal)</option>' +
+                    '<option value="1/64" data-galon="0.015625">1/64 Galón (0.0156 gal)</option>' +
+                    '<option value="1/128" data-galon="0.0078125">1/128 Galón (0.0078 gal)</option>' +
+                '</select>' +
+            '</td>' +
+            '<td class="text-end">' +
+                '<span class="badge bg-light text-dark border consumo-galon-text">0.2500 gal</span>' +
+            '</td>' +
+            '<td class="text-center">' +
+                '<button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-base-fila" title="Quitar"><i class="bi bi-x-lg"></i></button>' +
+            '</td>';
+
+        const selBase = fila.querySelector('.select-base-tinte');
+        const selFrac = fila.querySelector('.select-fraccion-tinte');
+        const labelConsumo = fila.querySelector('.consumo-galon-text');
+        const btnElim = fila.querySelector('.btn-eliminar-base-fila');
+
+        selFrac.addEventListener('change', function() {
+            const gal = parseFloat(this.selectedOptions[0]?.dataset?.galon || 0);
+            labelConsumo.textContent = gal.toFixed(4) + ' gal';
+            recalcularTotalesMezcla();
+        });
+
+        selBase.addEventListener('change', function() {
+            recalcularTotalesMezcla();
+        });
+
+        btnElim.addEventListener('click', function() {
+            fila.remove();
+            actualizarContadorBasesMezcla();
+            recalcularTotalesMezcla();
+        });
+
+        cuerpoBasesMezcla.appendChild(fila);
+        actualizarContadorBasesMezcla();
+        recalcularTotalesMezcla();
+    }
+
+    function actualizarContadorBasesMezcla() {
+        if (!cuerpoBasesMezcla || !contadorBasesMezcla) return;
+        const count = cuerpoBasesMezcla.querySelectorAll('tr').length;
+        contadorBasesMezcla.textContent = count + '/6 bases';
+        if (btnAgregarFilaBase) btnAgregarFilaBase.disabled = count >= 6;
+    }
+
+    function recalcularTotalesMezcla() {
+        if (!cuerpoBasesMezcla) return;
+        let totalGal = 0;
+        let costoBases = 0;
+        cuerpoBasesMezcla.querySelectorAll('tr').forEach(function(r) {
+            const selBase = r.querySelector('.select-base-tinte');
+            const selFrac = r.querySelector('.select-fraccion-tinte');
+            if (selBase && selBase.value) {
+                const precio = parseFloat(selBase.selectedOptions[0]?.dataset?.precio || 0);
+                const gal = parseFloat(selFrac?.selectedOptions[0]?.dataset?.galon || 0);
+                totalGal += gal;
+                costoBases += (gal * precio);
+            }
+        });
+
+        if (totalGalonesMezcla) {
+            totalGalonesMezcla.textContent = 'Consumo total fórmula: ' + totalGal.toFixed(4) + ' gal';
+        }
+
+        const cant = parseInt(mezclaCantidad?.value || 1) || 1;
+        const precio = parseFloat(mezclaPrecioVenta?.value || 0) || 0;
+        if (mezclaSubtotalEstimado) {
+            mezclaSubtotalEstimado.textContent = '$ ' + formatearMoneda(cant * precio);
+        }
+    }
+
+    if (mezclaCantidad) mezclaCantidad.addEventListener('input', recalcularTotalesMezcla);
+    if (mezclaPrecioVenta) mezclaPrecioVenta.addEventListener('input', recalcularTotalesMezcla);
+
+    if (formMezcla) {
+        formMezcla.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            mensajeErrorMezcla.classList.add('d-none');
+
+            const nombre = mezclaNombre.value.trim();
+            const presentacion = mezclaPresentacion.value;
+            const cantidad = parseInt(mezclaCantidad.value) || 1;
+            const precioVenta = parseFloat(mezclaPrecioVenta.value) || 0;
+
+            const filas = cuerpoBasesMezcla.querySelectorAll('tr');
+            if (filas.length === 0) {
+                mensajeErrorMezcla.textContent = 'Debe agregar al menos una base para la formulación.';
+                mensajeErrorMezcla.classList.remove('d-none');
+                return;
+            }
+
+            const basesData = [];
+            let errorBases = false;
+            filas.forEach(function(r) {
+                const selBase = r.querySelector('.select-base-tinte');
+                const selFrac = r.querySelector('.select-fraccion-tinte');
+                const idBase = parseInt(selBase?.value || 0);
+                if (!idBase) {
+                    errorBases = true;
+                    return;
+                }
+                const fraccion = selFrac?.value || '1/4';
+                const cantGal = parseFloat(selFrac?.selectedOptions[0]?.dataset?.galon || 0.25);
+                basesData.push({
+                    id_producto_base: idBase,
+                    fraccion: fraccion,
+                    cantidad_galon: cantGal
+                });
+            });
+
+            if (errorBases || basesData.length === 0) {
+                mensajeErrorMezcla.textContent = 'Por favor seleccione todos los tintes base agregados.';
+                mensajeErrorMezcla.classList.remove('d-none');
+                return;
+            }
+
+            const fd = new FormData();
+            fd.append('nombre', nombre);
+            fd.append('presentacion', presentacion);
+            fd.append('cantidad', cantidad);
+            fd.append('precio_venta', precioVenta);
+            fd.append('bases', JSON.stringify(basesData));
+
+            try {
+                const resp = await fetch('/SP%20Perfect%20Color/inventario/guardarMezcla', {
+                    method: 'POST',
+                    body: fd
+                });
+                const res = await resp.json();
+                if (res.estado === 'exito') {
+                    bootstrap.Modal.getInstance(modalPrepararMezcla).hide();
+                    mostrarNotificacion(res.mensaje, 'exito');
+                    cargarInsumos();
+                } else {
+                    mensajeErrorMezcla.textContent = res.mensaje;
+                    mensajeErrorMezcla.classList.remove('d-none');
+                }
+            } catch (err) {
+                console.error(err);
+                mensajeErrorMezcla.textContent = 'Error de conexión al registrar la mezcla.';
+                mensajeErrorMezcla.classList.remove('d-none');
+            }
+        });
+    }
+
+    // =========================================================================
+    // SECCIÓN: AJUSTE POR MERMA / DAÑO
+    // =========================================================================
+    const btnAjusteMerma = document.getElementById('btnAjusteMerma');
+    const modalAjusteMerma = document.getElementById('modalAjusteMerma');
+    const formAjusteMerma = document.getElementById('formularioAjusteMerma');
+    const ajusteProducto = document.getElementById('ajusteProducto');
+    const ajusteStockDisponible = document.getElementById('ajusteStockDisponible');
+    const ajusteCantidad = document.getElementById('ajusteCantidad');
+    const ajusteMotivo = document.getElementById('ajusteMotivo');
+    const ajusteObservacion = document.getElementById('ajusteObservacion');
+    const mensajeErrorAjuste = document.getElementById('mensajeErrorAjuste');
+
+    if (btnAjusteMerma) {
+        btnAjusteMerma.addEventListener('click', function() {
+            if (formAjusteMerma) formAjusteMerma.reset();
+            if (mensajeErrorAjuste) mensajeErrorAjuste.classList.add('d-none');
+            if (ajusteStockDisponible) ajusteStockDisponible.textContent = '-';
+
+            if (ajusteProducto) {
+                ajusteProducto.innerHTML = '<option value="">Seleccione el producto afectado...</option>';
+                insumosGlobal.forEach(function(p) {
+                    const stock = parseFloat(p.stock_actual) || 0;
+                    if (stock > 0) {
+                        const opt = document.createElement('option');
+                        opt.value = p.id_producto;
+                        opt.textContent = p.codigo + ' - ' + p.nombre + ' (Stock: ' + stock + ' ' + (p.unidad_medida || '') + ')';
+                        opt.dataset.stock = stock;
+                        opt.dataset.unidad = p.unidad_medida || '';
+                        ajusteProducto.appendChild(opt);
+                    }
+                });
+            }
+
+            if (modalAjusteMerma) {
+                bootstrap.Modal.getOrCreateInstance(modalAjusteMerma).show();
+            }
+        });
+    }
+
+    if (ajusteProducto) {
+        ajusteProducto.addEventListener('change', function() {
+            const opt = this.selectedOptions[0];
+            if (opt && opt.value) {
+                const stock = opt.dataset.stock || '0';
+                const unidad = opt.dataset.unidad || '';
+                ajusteStockDisponible.textContent = stock + ' ' + unidad;
+            } else {
+                ajusteStockDisponible.textContent = '-';
+            }
+        });
+    }
+
+    if (formAjusteMerma) {
+        formAjusteMerma.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            mensajeErrorAjuste.classList.add('d-none');
+
+            const idProd = parseInt(ajusteProducto.value) || 0;
+            const cant = parseFloat(ajusteCantidad.value) || 0;
+            const motivoSel = ajusteMotivo.value;
+            const obs = ajusteObservacion.value.trim();
+            const motivoFinal = motivoSel + (obs ? ': ' + obs : '');
+
+            if (!idProd) {
+                mensajeErrorAjuste.textContent = 'Seleccione un producto.';
+                mensajeErrorAjuste.classList.remove('d-none');
+                return;
+            }
+
+            const opt = ajusteProducto.selectedOptions[0];
+            const stockActual = parseFloat(opt ? opt.dataset.stock : 0) || 0;
+
+            if (cant <= 0) {
+                mensajeErrorAjuste.textContent = 'La cantidad a descontar debe ser mayor a 0.';
+                mensajeErrorAjuste.classList.remove('d-none');
+                return;
+            }
+
+            if (cant > stockActual) {
+                mensajeErrorAjuste.textContent = 'La cantidad (' + cant + ') excede el stock disponible (' + stockActual + ').';
+                mensajeErrorAjuste.classList.remove('d-none');
+                return;
+            }
+
+            const fd = new FormData();
+            fd.append('id_producto', idProd);
+            fd.append('cantidad', cant);
+            fd.append('motivo', motivoFinal);
+
+            try {
+                const resp = await fetch('/SP%20Perfect%20Color/inventario/ajustarMerma', {
+                    method: 'POST',
+                    body: fd
+                });
+                const res = await resp.json();
+                if (res.estado === 'exito') {
+                    bootstrap.Modal.getInstance(modalAjusteMerma).hide();
+                    mostrarNotificacion(res.mensaje, 'exito');
+                    cargarInsumos();
+                } else {
+                    mensajeErrorAjuste.textContent = res.mensaje;
+                    mensajeErrorAjuste.classList.remove('d-none');
+                }
+            } catch (err) {
+                console.error(err);
+                mensajeErrorAjuste.textContent = 'Error de conexión al registrar ajuste.';
+                mensajeErrorAjuste.classList.remove('d-none');
+            }
+        });
     }
 
     // Re-cargar datos si la pagina se restaura desde bfcache

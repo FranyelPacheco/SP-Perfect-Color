@@ -277,10 +277,11 @@ if ($metodo === 'index') {
     respuestaJson('exito', 'Bancos obtenidos', [
         'bancos' => $bancos
     ]);
-// FUNCIÓN: editar
-// OBJETIVO: Renderiza el formulario de edición de items de una nota de entrega
-} elseif ($metodo === 'editar') {
-    verificarRolVendedor();
+
+// FUNCIÓN: pdf
+// OBJETIVO: Genera y visualiza o descarga el comprobante formal en PDF de la nota de entrega
+} elseif ($metodo === 'pdf') {
+    verificarAutenticacion();
 
     $id = intval($_GET['id'] ?? 0);
     if ($id < 1) {
@@ -296,10 +297,24 @@ if ($metodo === 'index') {
 
     $detalle = $notaEntregaModel->obtenerDetalle($id);
 
-    $pageTitle = 'SP Perfect Color - Editar Nota de Entrega #' . $id;
-    $pageDescription = 'Modificar items de la nota de entrega #' . $id . ' - SP Perfect Color';
-    $contenidoVista = __DIR__ . '/../views/notaEntregaEditView.php';
-    require_once __DIR__ . '/../views/plantillaBase.php';
+    // Obtener tasa de cambio del día o última tasa registrada
+    $tasaModel = new \App\Models\TasaCambioModel();
+    $tasaObj = $tasaModel->obtenerTasaHoy();
+    if (!$tasaObj) {
+        $tasaObj = $tasaModel->obtenerUltimaTasa();
+    }
+    $tasaBs = $tasaObj ? (float)$tasaObj['tasa'] : null;
+
+    require_once __DIR__ . '/../helpers/notaEntregaPdfHelper.php';
+    $descargar = isset($_GET['descargar']) && $_GET['descargar'] == '1';
+    \App\Helpers\generarPdfNotaEntrega($nota, $detalle, $tasaBs, $descargar);
+    exit;
+
+// FUNCIÓN: editar (Desactivado: las notas despachadas son inmutables)
+} elseif ($metodo === 'editar') {
+    $id = intval($_GET['id'] ?? 0);
+    header('Location: /SP%20Perfect%20Color/notaEntrega/ver?id=' . $id);
+    exit;
 
 // FUNCIÓN: actualizar
 // OBJETIVO: Guarda los cambios de items de una nota de entrega
