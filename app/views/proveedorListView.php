@@ -50,8 +50,18 @@
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label for="rifProveedor" class="form-label">RIF</label>
-                            <input type="text" id="rifProveedor" name="rif" class="form-control" required placeholder="Ej: J-123456789" maxlength="11">
+                            <label class="form-label">RIF / Documento</label>
+                            <div class="input-group">
+                                <select id="tipoRifProveedor" name="tipo_rif" class="form-select" style="max-width: 85px;">
+                                    <option value="J" selected>J</option>
+                                    <option value="V">V</option>
+                                    <option value="E">E</option>
+                                    <option value="G">G</option>
+                                </select>
+                                <input type="text" id="rifProveedor" name="rif_num" class="form-control" required placeholder="1-9 digitos" maxlength="9">
+                            </div>
+                            <input type="hidden" id="rifCompletoProveedor" name="rif" value="">
+                            <div id="feedbackRifProveedor" class="invalid-feedback d-none">Este RIF ya existe en el sistema</div>
                         </div>
                         <div class="col-md-6">
                             <label for="nombreEmpresaProveedor" class="form-label">Nombre de la Empresa</label>
@@ -70,12 +80,23 @@
                             <input type="text" id="contactoProveedor" name="contacto" class="form-control" placeholder="Nombre del contacto">
                         </div>
                         <div class="col-md-4">
-                            <label for="telefonoProveedor" class="form-label">Telefono</label>
-                            <input type="text" id="telefonoProveedor" name="telefono" class="form-control" placeholder="11 digitos" maxlength="11">
+                            <label class="form-label">Telefono</label>
+                            <div class="input-group">
+                                <select id="operadoraProveedor" name="operadora" class="form-select" style="max-width: 95px;">
+                                    <option value="0412" selected>0412</option>
+                                    <option value="0414">0414</option>
+                                    <option value="0424">0424</option>
+                                    <option value="0416">0416</option>
+                                    <option value="0426">0426</option>
+                                    <option value="0251">0251</option>
+                                </select>
+                                <input type="text" id="telefonoNumeroProveedor" name="telefono_num" class="form-control" placeholder="7 digitos" maxlength="7">
+                            </div>
+                            <input type="hidden" id="telefonoProveedor" name="telefono" value="">
                         </div>
                         <div class="col-md-4">
                             <label for="correoProveedor" class="form-label">Correo</label>
-                            <input type="email" id="correoProveedor" name="correo" class="form-control" placeholder="correo@ejemplo.com">
+                            <input type="email" id="correoProveedor" name="correo" class="form-control" required placeholder="correo@ejemplo.com">
                         </div>
                     </div>
 

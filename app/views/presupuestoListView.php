@@ -11,13 +11,13 @@
                 <input type="text" id="busquedaPresupuestos" class="form-control" style="width: 220px;" placeholder="Buscar por cliente o cedula...">
                 <select id="filtroEstadoPresupuesto" class="form-select" style="width: auto;">
                     <option value="">Todos los estados</option>
-                    <option value="pendiente">Pendientes</option>
+                    <option value="presupuesto">Presupuestos / Pendientes</option>
                     <option value="aprobado">Aprobados</option>
                     <option value="rechazado">Rechazados</option>
-                    <option value="convertido">Convertidos</option>
+                    <option value="anulado">Anulados</option>
                 </select>
                 <button type="button" class="btn btn-primary" onclick="location.href='/SP%20Perfect%20Color/presupuesto/nuevo'">
-                    <i class="bi bi-plus-lg me-2"></i>Nuevo
+                    <i class="bi bi-plus-lg me-2"></i>Nuevo Presupuesto
                 </button>
             </div>
         </div>

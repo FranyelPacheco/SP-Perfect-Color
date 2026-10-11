@@ -51,6 +51,15 @@ if ($metodo === 'index') {
     respuestaJson('exito', 'Busqueda completada', [
         'proveedores' => $proveedores
     ]);
+// FUNCIÓN: verificarRifAjax
+// OBJETIVO: Verifica en tiempo real si un RIF ya está registrado
+} elseif ($metodo === 'verificarRifAjax') {
+    verificarAcceso([1]);
+    $rif = strtoupper(trim($_GET['rif'] ?? ''));
+    $id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : null;
+    $existe = !empty($rif) && $proveedorModel->rifExiste($rif, $id);
+    respuestaJson('exito', 'Verificacion realizada', ['existe' => $existe]);
+
 // FUNCIÓN: guardar
 // OBJETIVO: Crea un nuevo proveedor o reactiva uno inactivo, con teléfonos y rubros
 } elseif ($metodo === 'guardar') {
@@ -60,11 +69,24 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
 
+    $tipoRif = strtoupper(trim($_POST['tipo_rif'] ?? 'J'));
+    $rifNum = trim($_POST['rif_num'] ?? '');
     $rif = strtoupper(trim($_POST['rif'] ?? ''));
+    if (empty($rif) && !empty($rifNum)) {
+        $rif = $tipoRif . '-' . $rifNum;
+    }
+
     $nombreEmpresa = trim($_POST['nombre_empresa'] ?? '');
     $direccion = trim($_POST['direccion'] ?? '');
     $contacto = trim($_POST['contacto'] ?? '');
+
+    $operadora = trim($_POST['operadora'] ?? '');
+    $telefonoNum = trim($_POST['telefono_num'] ?? '');
     $telefono = trim($_POST['telefono'] ?? '');
+    if (empty($telefono) && !empty($telefonoNum)) {
+        $telefono = $operadora . $telefonoNum;
+    }
+
     $correo = trim($_POST['correo'] ?? '');
     $rubros = $_POST['rubros'] ?? [];
 
@@ -80,12 +102,16 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El nombre de la empresa es obligatorio');
     }
 
-    if (!empty($telefono) && !validarTelefono($telefono)) {
-        respuestaJson('error', 'El telefono debe tener 11 digitos');
+    if (!validarRequerido($correo)) {
+        respuestaJson('error', 'El correo electronico es obligatorio');
     }
 
-    if (!empty($correo) && !validarCorreo($correo)) {
+    if (!validarCorreo($correo)) {
         respuestaJson('error', 'El correo electronico no es valido');
+    }
+
+    if (!empty($telefono) && !validarTelefono($telefono)) {
+        respuestaJson('error', 'El telefono debe tener 11 digitos');
     }
 
     if ($proveedorModel->rifExiste($rif)) {
@@ -155,11 +181,24 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id'] ?? 0);
+    $tipoRif = strtoupper(trim($_POST['tipo_rif'] ?? 'J'));
+    $rifNum = trim($_POST['rif_num'] ?? '');
     $rif = strtoupper(trim($_POST['rif'] ?? ''));
+    if (empty($rif) && !empty($rifNum)) {
+        $rif = $tipoRif . '-' . $rifNum;
+    }
+
     $nombreEmpresa = trim($_POST['nombre_empresa'] ?? '');
     $direccion = trim($_POST['direccion'] ?? '');
     $contacto = trim($_POST['contacto'] ?? '');
+
+    $operadora = trim($_POST['operadora'] ?? '');
+    $telefonoNum = trim($_POST['telefono_num'] ?? '');
     $telefono = trim($_POST['telefono'] ?? '');
+    if (empty($telefono) && !empty($telefonoNum)) {
+        $telefono = $operadora . $telefonoNum;
+    }
+
     $correo = trim($_POST['correo'] ?? '');
     $rubros = $_POST['rubros'] ?? [];
 
@@ -179,12 +218,16 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El nombre de la empresa es obligatorio');
     }
 
-    if (!empty($telefono) && !validarTelefono($telefono)) {
-        respuestaJson('error', 'El telefono debe tener 11 digitos');
+    if (!validarRequerido($correo)) {
+        respuestaJson('error', 'El correo electronico es obligatorio');
     }
 
-    if (!empty($correo) && !validarCorreo($correo)) {
+    if (!validarCorreo($correo)) {
         respuestaJson('error', 'El correo electronico no es valido');
+    }
+
+    if (!empty($telefono) && !validarTelefono($telefono)) {
+        respuestaJson('error', 'El telefono debe tener 11 digitos');
     }
 
     if ($proveedorModel->rifExiste($rif, $id)) {

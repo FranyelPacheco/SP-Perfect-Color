@@ -43,8 +43,17 @@
                     <input type="hidden" id="clienteId" name="id" value="">
 
                     <div class="mb-3">
-                        <label for="cedulaCliente" class="form-label">Cedula</label>
-                        <input type="text" id="cedulaCliente" name="cedula" class="form-control" required placeholder="Ingrese la cedula (7-8 digitos)" maxlength="8">
+                        <label class="form-label">Cedula / Documento</label>
+                        <div class="input-group">
+                            <select id="tipoDocCliente" name="tipo_doc" class="form-select" style="max-width: 85px;">
+                                <option value="V" selected>V</option>
+                                <option value="E">E</option>
+                                <option value="J">J</option>
+                            </select>
+                            <input type="text" id="cedulaCliente" name="cedula_num" class="form-control" required placeholder="Numero de documento" maxlength="9">
+                        </div>
+                        <input type="hidden" id="cedulaCompletaCliente" name="cedula" value="">
+                        <div id="feedbackCedulaCliente" class="invalid-feedback d-none">Este documento ya existe en el sistema</div>
                     </div>
 
                     <div class="mb-3">
@@ -58,13 +67,24 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="telefonoCliente" class="form-label">Telefono</label>
-                        <input type="text" id="telefonoCliente" name="telefono" class="form-control" placeholder="Ingrese el telefono (11 digitos)" maxlength="11">
+                        <label class="form-label">Telefono</label>
+                        <div class="input-group">
+                            <select id="operadoraCliente" name="operadora" class="form-select" style="max-width: 105px;">
+                                <option value="0412" selected>0412</option>
+                                <option value="0414">0414</option>
+                                <option value="0424">0424</option>
+                                <option value="0416">0416</option>
+                                <option value="0426">0426</option>
+                                <option value="0251">0251</option>
+                            </select>
+                            <input type="text" id="telefonoNumeroCliente" name="telefono_num" class="form-control" placeholder="7 digitos (ej: 1234567)" maxlength="7">
+                        </div>
+                        <input type="hidden" id="telefonoCliente" name="telefono" value="">
                     </div>
 
                     <div class="mb-3">
                         <label for="correoCliente" class="form-label">Correo Electronico</label>
-                        <input type="email" id="correoCliente" name="correo" class="form-control" placeholder="Ingrese el correo electronico">
+                        <input type="email" id="correoCliente" name="correo" class="form-control" required placeholder="correo@ejemplo.com">
                     </div>
 
                     <div class="mb-3">

@@ -24,6 +24,54 @@ document.addEventListener('DOMContentLoaded', function() {
     const mensajeError = document.getElementById('mensajeErrorInsumo');
     const alertasStockBajo = document.getElementById('alertasStockBajo');
     const contenidoAlertas = document.getElementById('contenidoAlertas');
+    const feedbackCodigoInsumo = document.getElementById('feedbackCodigoInsumo');
+    const btnGuardarInsumo = document.getElementById('btnGuardarInsumo');
+
+    let timerCodigo = null;
+
+    function verificarCodigoEnTiempoReal() {
+        if (!codigoInsumo) return;
+        const cod = codigoInsumo.value.trim().toUpperCase();
+        const id = insumoId.value || '';
+
+        clearTimeout(timerCodigo);
+
+        if (!cod) {
+            codigoInsumo.classList.remove('is-invalid', 'is-valid');
+            if (feedbackCodigoInsumo) feedbackCodigoInsumo.classList.add('d-none');
+            if (btnGuardarInsumo) btnGuardarInsumo.disabled = false;
+            return;
+        }
+
+        timerCodigo = setTimeout(async function() {
+            try {
+                const resp = await fetch('/SP%20Perfect%20Color/inventario/verificarCodigoAjax?codigo=' + encodeURIComponent(cod) + '&id=' + encodeURIComponent(id));
+                const res = await resp.json();
+                if (res.estado === 'exito') {
+                    if (res.datos.existe) {
+                        codigoInsumo.classList.add('is-invalid');
+                        codigoInsumo.classList.remove('is-valid');
+                        if (feedbackCodigoInsumo) {
+                            feedbackCodigoInsumo.textContent = 'El insumo con código ' + cod + ' ya existe en el sistema';
+                            feedbackCodigoInsumo.classList.remove('d-none');
+                        }
+                        if (btnGuardarInsumo) btnGuardarInsumo.disabled = true;
+                    } else {
+                        codigoInsumo.classList.remove('is-invalid');
+                        codigoInsumo.classList.add('is-valid');
+                        if (feedbackCodigoInsumo) feedbackCodigoInsumo.classList.add('d-none');
+                        if (btnGuardarInsumo) btnGuardarInsumo.disabled = false;
+                    }
+                }
+            } catch (e) {
+                console.error('Error al verificar codigo:', e);
+            }
+        }, 300);
+    }
+
+    if (codigoInsumo) {
+        codigoInsumo.addEventListener('input', verificarCodigoEnTiempoReal);
+    }
 
     let proveedoresGlobal = [];
     let rubrosGlobal = [];
@@ -77,6 +125,9 @@ document.addEventListener('DOMContentLoaded', function() {
             insumoId.value = '';
             codigoInsumo.value = '';
             codigoInsumo.disabled = false;
+            codigoInsumo.classList.remove('is-invalid', 'is-valid');
+            if (feedbackCodigoInsumo) feedbackCodigoInsumo.classList.add('d-none');
+            if (btnGuardarInsumo) btnGuardarInsumo.disabled = false;
             nombreInsumo.value = '';
             if (tipoProductoInsumo) tipoProductoInsumo.value = '2';
             rubroInsumo.value = '';
@@ -337,6 +388,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 insumoId.value = insumo.id_insumo;
                 codigoInsumo.value = insumo.codigo;
                 codigoInsumo.disabled = true;
+                codigoInsumo.classList.remove('is-invalid', 'is-valid');
+                if (feedbackCodigoInsumo) feedbackCodigoInsumo.classList.add('d-none');
+                if (btnGuardarInsumo) btnGuardarInsumo.disabled = false;
                 nombreInsumo.value = insumo.nombre;
                 if (tipoProductoInsumo) tipoProductoInsumo.value = insumo.id_tipo_producto || '2';
                 ajustarUnidadSegunTipo(insumo.unidad_medida);

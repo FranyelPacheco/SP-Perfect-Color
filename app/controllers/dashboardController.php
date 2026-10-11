@@ -8,13 +8,13 @@ use App\Models\{
     InventarioModel,
     CuentaPagarModel,
     CuentaCobrarModel,
-    NotaEntregaModel
+    NotaEntregaModel,
+    TasaCambioModel
 };
 use function App\Helpers\verificarAutenticacion;
 
 // FUNCIÓN: index
-// OBJETIVO: Renderiza el panel principal con estadísticas (clientes, proveedores, stock, pagos del día, gráfica de ingresos)
-// NOTA: Se cargan 6 modelos para obtener los indicadores del dashboard
+// OBJETIVO: Renderiza el panel principal con estadísticas, verificación de tasa del día y alertas
 if ($metodo === 'index') {
     verificarAutenticacion();
 
@@ -24,6 +24,7 @@ if ($metodo === 'index') {
     $cuentaPagarModel = new CuentaPagarModel();
     $cuentaCobrarModel = new CuentaCobrarModel();
     $notaEntregaModel = new NotaEntregaModel();
+    $tasaCambioModel = new TasaCambioModel();
 
     $totalClientes = $clienteModel->contarTodos();
     $totalProveedores = $proveedorModel->contarTodos();
@@ -38,6 +39,11 @@ if ($metodo === 'index') {
     $clienteTopMes = $notaEntregaModel->obtenerClienteTopMes();
 
     $ingresosPorDia = $cuentaCobrarModel->obtenerPagosPorDia(7);
+
+    // Verificación de tasa del día
+    $tasaHoy = $tasaCambioModel->obtenerTasaHoy();
+    $ultimaTasa = $tasaCambioModel->obtenerUltimaTasa();
+    $alertaTasaPendiente = empty($tasaHoy);
 
     $contenidoVista = __DIR__ . '/../views/dashboardView.php';
 

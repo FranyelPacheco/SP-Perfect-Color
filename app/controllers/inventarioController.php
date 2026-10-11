@@ -61,6 +61,15 @@ if ($metodo === 'index') {
         'insumos' => $insumos
     ]);
 
+// FUNCIÓN: verificarCodigoAjax
+// OBJETIVO: Verifica en tiempo real si un codigo de insumo ya está registrado
+} elseif ($metodo === 'verificarCodigoAjax') {
+    verificarAcceso([1]);
+    $codigo = strtoupper(trim($_GET['codigo'] ?? ''));
+    $id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : null;
+    $existe = !empty($codigo) && $inventarioModel->codigoExiste($codigo, $id);
+    respuestaJson('exito', '', ['existe' => $existe]);
+
 // FUNCIÓN: guardar
 // OBJETIVO: Crea un nuevo insumo o reactiva uno inactivo, con proveedor asociado
 } elseif ($metodo === 'guardar') {

@@ -329,8 +329,7 @@ if ($metodo === 'index') {
     $detalle = [];
     foreach ($items as $item) {
         $presupuestoDetalleId = intval($item['id_presupuesto_detalle'] ?? 0);
-        $esNuevo = $presupuestoDetalleId === 0;
-        $idInsumo = $esNuevo ? intval($item['id_insumo'] ?? 0) : 0;
+        $idInsumo = intval($item['id_insumo'] ?? $item['id_producto'] ?? 0);
         $cantidad = floatval($item['cantidad'] ?? 0);
         $precioUnitario = floatval($item['precio_unitario'] ?? 0);
         $subtotal = $cantidad * $precioUnitario;
@@ -338,16 +337,14 @@ if ($metodo === 'index') {
         if ($cantidad <= 0 || $precioUnitario <= 0) {
             respuestaJson('error', 'Datos invalidos en uno de los items');
         }
-        if (!$esNuevo && $presupuestoDetalleId < 1) {
+        if ($idInsumo < 1 && $presupuestoDetalleId < 1) {
             respuestaJson('error', 'Datos invalidos en uno de los items');
-        }
-        if ($esNuevo && $idInsumo < 1) {
-            respuestaJson('error', 'Item nuevo sin insumo valido');
         }
 
         $detalle[] = [
             'id_presupuesto_detalle' => $presupuestoDetalleId,
             'id_insumo' => $idInsumo,
+            'id_producto' => $idInsumo,
             'cantidad' => $cantidad,
             'precio_unitario' => $precioUnitario,
             'subtotal' => $subtotal

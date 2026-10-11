@@ -28,7 +28,7 @@ class TipoPagoModel extends ModeloBase
 
     private function _ejecutarSelectAll(): array
     {
-        $consulta = "SELECT id_tipo_pago, nombre, activo FROM tipo_pago ORDER BY nombre ASC";
+        $consulta = "SELECT id_tipo_pago, nombre, estado, estado as activo FROM tipo_pago ORDER BY nombre ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
     }
@@ -44,7 +44,7 @@ class TipoPagoModel extends ModeloBase
 
     private function _ejecutarSelectById(): array|false
     {
-        $consulta = "SELECT id_tipo_pago, nombre, activo FROM tipo_pago WHERE id_tipo_pago = :id";
+        $consulta = "SELECT id_tipo_pago, nombre, estado, estado as activo FROM tipo_pago WHERE id_tipo_pago = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id_tipo_pago, PDO::PARAM_INT);
         $stmt->execute();
@@ -52,7 +52,7 @@ class TipoPagoModel extends ModeloBase
     }
 
     // FUNCIÓN: insertar
-    // OBJETIVO: Crea un nuevo tipo de pago con activo=1
+    // OBJETIVO: Crea un nuevo tipo de pago con estado=1
     public function insertar(string $nombre): bool
     {
         $this->nombre = $nombre;
@@ -62,14 +62,14 @@ class TipoPagoModel extends ModeloBase
 
     private function _ejecutarInsert(): bool
     {
-        $consulta = "INSERT INTO tipo_pago (nombre, activo) VALUES (:nombre, 1)";
+        $consulta = "INSERT INTO tipo_pago (nombre, estado) VALUES (:nombre, 1)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':nombre', $this->nombre, PDO::PARAM_STR);
         return $stmt->execute();
     }
 
     // FUNCIÓN: actualizar
-    // OBJETIVO: Actualiza nombre y activo de un tipo de pago existente
+    // OBJETIVO: Actualiza nombre y estado de un tipo de pago existente
     public function actualizar(int $id, string $nombre, int $activo): bool
     {
         $this->id_tipo_pago = $id;
@@ -81,7 +81,7 @@ class TipoPagoModel extends ModeloBase
 
     private function _ejecutarUpdate(): bool
     {
-        $consulta = "UPDATE tipo_pago SET nombre = :nombre, activo = :activo WHERE id_tipo_pago = :id";
+        $consulta = "UPDATE tipo_pago SET nombre = :nombre, estado = :activo WHERE id_tipo_pago = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':nombre', $this->nombre, PDO::PARAM_STR);
         $stmt->bindParam(':activo', $this->activo, PDO::PARAM_INT);
@@ -90,7 +90,7 @@ class TipoPagoModel extends ModeloBase
     }
 
     // FUNCIÓN: eliminar
-    // OBJETIVO: Soft-delete — marca activo=0 en vez de borrar
+    // OBJETIVO: Soft-delete — marca estado=0 en vez de borrar
     public function eliminar(int $id): bool
     {
         $this->id_tipo_pago = $id;
@@ -100,14 +100,14 @@ class TipoPagoModel extends ModeloBase
 
     private function _ejecutarDelete(): bool
     {
-        $consulta = "UPDATE tipo_pago SET activo = 0 WHERE id_tipo_pago = :id";
+        $consulta = "UPDATE tipo_pago SET estado = 0 WHERE id_tipo_pago = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id_tipo_pago, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
     // FUNCIÓN: toggleActivo
-    // OBJETIVO: Alterna activo entre 0 y 1 (bit flip)
+    // OBJETIVO: Alterna estado entre 0 y 1 (bit flip)
     public function toggleActivo(int $id): bool
     {
         $this->id_tipo_pago = $id;
@@ -117,7 +117,7 @@ class TipoPagoModel extends ModeloBase
 
     private function _ejecutarToggleActivo(): bool
     {
-        $consulta = "UPDATE tipo_pago SET activo = 1 - activo WHERE id_tipo_pago = :id";
+        $consulta = "UPDATE tipo_pago SET estado = 1 - estado WHERE id_tipo_pago = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id_tipo_pago, PDO::PARAM_INT);
         return $stmt->execute();
@@ -134,7 +134,7 @@ class TipoPagoModel extends ModeloBase
 
     private function _ejecutarBuscarInactivoPorNombre(): int|false
     {
-        $consulta = "SELECT id_tipo_pago FROM tipo_pago WHERE nombre = :nombre AND activo = 0 LIMIT 1";
+        $consulta = "SELECT id_tipo_pago FROM tipo_pago WHERE nombre = :nombre AND estado = 0 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':nombre', $this->nombre, PDO::PARAM_STR);
         $stmt->execute();

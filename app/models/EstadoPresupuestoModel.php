@@ -26,7 +26,10 @@ class EstadoPresupuestoModel extends ModeloBase
 
     private function _ejecutarSelectAll(): array
     {
-        $consulta = "SELECT id_estado_presupuesto, nombre FROM estado_presupuesto ORDER BY id_estado_presupuesto ASC";
+        $consulta = "SELECT id_estado_venta, id_estado_venta as id_estado_presupuesto, nombre 
+                     FROM estado_venta 
+                     WHERE estado = 1 
+                     ORDER BY id_estado_venta ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
     }
@@ -42,7 +45,9 @@ class EstadoPresupuestoModel extends ModeloBase
 
     private function _ejecutarSelectById(): array|false
     {
-        $consulta = "SELECT id_estado_presupuesto, nombre FROM estado_presupuesto WHERE id_estado_presupuesto = :id";
+        $consulta = "SELECT id_estado_venta, id_estado_venta as id_estado_presupuesto, nombre 
+                     FROM estado_venta 
+                     WHERE id_estado_venta = :id AND estado = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id_estado_presupuesto, PDO::PARAM_INT);
         $stmt->execute();
@@ -60,7 +65,9 @@ class EstadoPresupuestoModel extends ModeloBase
 
     private function _ejecutarSelectByNombre(): array|false
     {
-        $consulta = "SELECT id_estado_presupuesto, nombre FROM estado_presupuesto WHERE LOWER(nombre) = LOWER(:nombre)";
+        $consulta = "SELECT id_estado_venta, id_estado_venta as id_estado_presupuesto, nombre 
+                     FROM estado_venta 
+                     WHERE LOWER(nombre) = LOWER(:nombre) AND estado = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':nombre', $this->nombre, PDO::PARAM_STR);
         $stmt->execute();

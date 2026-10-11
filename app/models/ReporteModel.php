@@ -19,7 +19,7 @@ class ReporteModel extends ModeloBase
     }
 
     // FUNCIÓN: ventasPorRango
-    // OBJETIVO: Obtiene todas las notas de entrega activas en un rango de fechas, con filtros opcionales
+    // OBJETIVO: Obtiene todas las notas de venta activas en un rango de fechas, con filtros opcionales
     public function ventasPorRango(string $desde, string $hasta, ?int $idCliente = null, ?string $condicion = null, ?int $idTipoPago = null): array
     {
         $this->desde = $desde;
@@ -60,7 +60,6 @@ class ReporteModel extends ModeloBase
 
     // FUNCIÓN: _validarRangoFechas
     // OBJETIVO: Valida que ambas fechas existan y que desde <= hasta
-    // NOTA: Lanza InvalidArgumentException si la validación falla
     private function _validarRangoFechas(): void
     {
         if (empty($this->desde) || empty($this->hasta)) {
@@ -73,36 +72,42 @@ class ReporteModel extends ModeloBase
 
     private function _ejecutarVentasPorRango(?int $idCliente = null, ?string $condicion = null, ?int $idTipoPago = null): array
     {
-        $condiciones = ["ne.activo = 1", "DATE(ne.fecha) BETWEEN :desde AND :hasta"];
+        $condiciones = ["v.estado = 1", "v.id_estado_venta = 2", "DATE(COALESCE(v.fecha_aprobacion, v.fecha)) BETWEEN :desde AND :hasta"];
         $params = [':desde' => $this->desde, ':hasta' => $this->hasta];
 
         if ($idCliente !== null) {
-            $condiciones[] = "ne.id_cliente = :id_cliente";
+            $condiciones[] = "v.id_cliente = :id_cliente";
             $params[':id_cliente'] = $idCliente;
         }
         if ($condicion !== null) {
-            $condiciones[] = "ne.condicion_pago = :condicion";
+            $condiciones[] = "v.condicion_pago = :condicion";
             $params[':condicion'] = $condicion;
         }
         if ($idTipoPago !== null) {
-            $condiciones[] = "pr.id_tipo_pago = :id_tipo_pago";
+            $condiciones[] = "COALESCE(v.id_tipo_pago, pr.id_tipo_pago) = :id_tipo_pago";
             $params[':id_tipo_pago'] = $idTipoPago;
         }
 
         $where = implode(' AND ', $condiciones);
-        $consulta = "SELECT ne.*,
+        $consulta = "SELECT v.*,
+                            v.id_venta as id_nota_venta,
+                            v.id_venta as id_nota_entrega,
+                            v.id_venta as id_presupuesto,
+                            v.estado as activo,
+                            c.id_cliente,
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
-                            u.nombre as usuario_nombre,
-                            COALESCE(tp.nombre, CASE WHEN ne.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre
-                     FROM notas_entrega ne
-                     INNER JOIN clientes c ON ne.id_cliente = c.id_cliente
-                     INNER JOIN usuarios u ON ne.id_usuario = u.id_usuario
-                     LEFT JOIN cuentas_cobrar cc ON cc.id_nota_entrega = ne.id_nota_entrega
+                            'Sistema' as usuario_nombre,
+                            COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre
+                     FROM ventas v
+                     INNER JOIN clientes c ON v.id_cliente = c.id_cliente
+                     LEFT JOIN tipo_pago tp_v ON v.id_tipo_pago = tp_v.id_tipo_pago
+                     LEFT JOIN cuentas_cobrar cc ON cc.id_venta = v.id_venta
                      LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
-                     LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
+                     LEFT JOIN tipo_pago tp_pr ON pr.id_tipo_pago = tp_pr.id_tipo_pago
                      WHERE $where
-                     ORDER BY ne.fecha DESC, ne.id_nota_entrega DESC";
+                     GROUP BY v.id_venta
+                     ORDER BY COALESCE(v.fecha_aprobacion, v.fecha) DESC, v.id_venta DESC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->execute($params);
         return $stmt->fetchAll();
@@ -111,8 +116,8 @@ class ReporteModel extends ModeloBase
     private function _ejecutarTotalVentasPorTipoPago(): array
     {
         $consulta = "SELECT COALESCE(condicion_pago, 'sin_asignar') as tipo, COUNT(*) as cantidad, SUM(total) as total
-                     FROM notas_entrega
-                     WHERE activo = 1 AND DATE(fecha) BETWEEN :desde AND :hasta
+                     FROM ventas
+                     WHERE estado = 1 AND id_estado_venta = 2 AND DATE(COALESCE(fecha_aprobacion, fecha)) BETWEEN :desde AND :hasta
                      GROUP BY condicion_pago
                      ORDER BY total DESC";
         $stmt = $this->conexion->prepare($consulta);
@@ -124,13 +129,11 @@ class ReporteModel extends ModeloBase
 
     private function _ejecutarTotalVentasPorMetodoPago(): array
     {
-        $consulta = "SELECT COALESCE(tp.nombre, 'sin_asignar') as metodo, COUNT(*) as cantidad, SUM(pr.monto) as total
-                     FROM pagos_recibidos pr
-                     INNER JOIN cuentas_cobrar cc ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
-                     INNER JOIN notas_entrega ne ON cc.id_nota_entrega = ne.id_nota_entrega
-                     LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
-                     WHERE ne.activo = 1 AND DATE(ne.fecha) BETWEEN :desde AND :hasta AND ne.condicion_pago = 'contado'
-                     GROUP BY pr.id_tipo_pago
+        $consulta = "SELECT COALESCE(tp.nombre, 'sin_asignar') as metodo, COUNT(*) as cantidad, SUM(v.total) as total
+                     FROM ventas v
+                     LEFT JOIN tipo_pago tp ON v.id_tipo_pago = tp.id_tipo_pago
+                     WHERE v.estado = 1 AND v.id_estado_venta = 2 AND DATE(COALESCE(v.fecha_aprobacion, v.fecha)) BETWEEN :desde AND :hasta AND v.condicion_pago = 'contado'
+                     GROUP BY v.id_tipo_pago
                      ORDER BY total DESC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':desde', $this->desde, PDO::PARAM_STR);
@@ -141,31 +144,35 @@ class ReporteModel extends ModeloBase
 
     private function _ejecutarCarteraCxc(?int $idCliente = null, ?string $estado = null): array
     {
-        $condiciones = ["cc.activo = 1", "DATE(cc.created_at) BETWEEN :desde AND :hasta"];
+        $condiciones = ["cc.estado = 1", "DATE(cc.created_at) BETWEEN :desde AND :hasta"];
         $params = [':desde' => $this->desde, ':hasta' => $this->hasta];
 
         if ($idCliente !== null) {
-            $condiciones[] = "cc.id_cliente = :id_cliente";
+            $condiciones[] = "v.id_cliente = :id_cliente";
             $params[':id_cliente'] = $idCliente;
         }
         if ($estado !== null) {
-            $condiciones[] = "cc.estado = :estado";
+            $condiciones[] = "cc.situacion = :estado";
             $params[':estado'] = $estado;
         } else {
-            $condiciones[] = "cc.estado IN ('pendiente', 'moroso')";
+            $condiciones[] = "cc.situacion = 'pendiente'";
         }
 
         $where = implode(' AND ', $condiciones);
         $consulta = "SELECT cc.*,
-                        CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
-                        c.cedula as cliente_cedula,
-                        ne.id_nota_entrega as id_nota_entrega,
-                        ne.fecha as nota_fecha
-                 FROM cuentas_cobrar cc
-                 INNER JOIN clientes c ON cc.id_cliente = c.id_cliente
-                 LEFT JOIN notas_entrega ne ON cc.id_nota_entrega = ne.id_nota_entrega
-                 WHERE $where
-                 ORDER BY cc.estado ASC, cc.fecha_vencimiento ASC";
+                            cc.situacion as estado,
+                            cc.estado as activo,
+                            c.id_cliente,
+                            CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
+                            c.cedula as cliente_cedula,
+                            v.id_venta as id_nota_entrega,
+                            v.id_venta as id_nota_venta,
+                            v.fecha as nota_fecha
+                     FROM cuentas_cobrar cc
+                     INNER JOIN ventas v ON cc.id_venta = v.id_venta
+                     INNER JOIN clientes c ON v.id_cliente = c.id_cliente
+                     WHERE $where
+                     ORDER BY cc.situacion ASC, cc.fecha_vencimiento ASC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->execute($params);
         return $stmt->fetchAll();

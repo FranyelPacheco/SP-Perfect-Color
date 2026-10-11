@@ -54,6 +54,15 @@ if ($metodo === 'index') {
         'clientes' => $clientes
     ]);
 
+// FUNCIÓN: verificarCedulaAjax
+// OBJETIVO: Verifica en tiempo real si una cédula ya está registrada
+} elseif ($metodo === 'verificarCedulaAjax') {
+    verificarPermiso('cliente');
+    $cedula = trim($_GET['cedula'] ?? '');
+    $id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : null;
+    $existe = !empty($cedula) && $clienteModel->cedulaExiste($cedula, $id);
+    respuestaJson('exito', 'Verificacion realizada', ['existe' => $existe]);
+
 // FUNCIÓN: guardar
 // OBJETIVO: Crea un cliente nuevo o reactiva uno inactivo con la misma cédula; incluye validaciones de campos
 // NOTA: El teléfono se guarda en tabla separada (telefono_cliente); verifica unicidad de cédula antes de insertar
@@ -64,10 +73,23 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
 
+    $tipoDoc = trim($_POST['tipo_doc'] ?? 'V');
+    $cedulaNum = trim($_POST['cedula_num'] ?? '');
     $cedula = trim($_POST['cedula'] ?? '');
+    if (empty($cedula) && !empty($cedulaNum)) {
+        $cedula = $tipoDoc . '-' . $cedulaNum;
+    }
+    
     $nombres = trim($_POST['nombres'] ?? '');
     $apellidos = trim($_POST['apellidos'] ?? '');
+    
+    $operadora = trim($_POST['operadora'] ?? '');
+    $telefonoNum = trim($_POST['telefono_num'] ?? '');
     $telefono = trim($_POST['telefono'] ?? '');
+    if (empty($telefono) && !empty($telefonoNum)) {
+        $telefono = $operadora . $telefonoNum;
+    }
+
     $correo = trim($_POST['correo'] ?? '');
     $direccion = trim($_POST['direccion'] ?? '');
 
@@ -75,8 +97,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'La cedula es obligatoria');
     }
 
-    if (!validarCedula($cedula)) {
-        respuestaJson('error', 'La cedula debe tener entre 7 y 8 digitos');
+    if (!preg_match('/^[VEJ]-\d{6,9}$/i', $cedula)) {
+        respuestaJson('error', 'El documento debe tener formato V, E o J seguido de 6 a 9 digitos');
     }
 
     if (!validarRequerido($nombres)) {
@@ -87,12 +109,16 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El apellido es obligatorio');
     }
 
-    if (!empty($telefono) && !validarTelefono($telefono)) {
-        respuestaJson('error', 'El telefono debe tener 11 digitos');
+    if (!validarRequerido($correo)) {
+        respuestaJson('error', 'El correo electronico es obligatorio');
     }
 
-    if (!empty($correo) && !validarCorreo($correo)) {
+    if (!validarCorreo($correo)) {
         respuestaJson('error', 'El correo electronico no es valido');
+    }
+
+    if (!empty($telefono) && !validarTelefono($telefono)) {
+        respuestaJson('error', 'El telefono debe tener 11 digitos');
     }
 
     if ($clienteModel->cedulaExiste($cedula)) {
@@ -150,11 +176,23 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
 
-    $id = intval($_POST['id'] ?? 0);
+    $tipoDoc = trim($_POST['tipo_doc'] ?? 'V');
+    $cedulaNum = trim($_POST['cedula_num'] ?? '');
     $cedula = trim($_POST['cedula'] ?? '');
+    if (empty($cedula) && !empty($cedulaNum)) {
+        $cedula = $tipoDoc . '-' . $cedulaNum;
+    }
+
     $nombres = trim($_POST['nombres'] ?? '');
     $apellidos = trim($_POST['apellidos'] ?? '');
+
+    $operadora = trim($_POST['operadora'] ?? '');
+    $telefonoNum = trim($_POST['telefono_num'] ?? '');
     $telefono = trim($_POST['telefono'] ?? '');
+    if (empty($telefono) && !empty($telefonoNum)) {
+        $telefono = $operadora . $telefonoNum;
+    }
+
     $correo = trim($_POST['correo'] ?? '');
     $direccion = trim($_POST['direccion'] ?? '');
 
@@ -166,8 +204,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'La cedula es obligatoria');
     }
 
-    if (!validarCedula($cedula)) {
-        respuestaJson('error', 'La cedula debe tener entre 7 y 8 digitos');
+    if (!preg_match('/^[VEJ]-\d{6,9}$/i', $cedula)) {
+        respuestaJson('error', 'El documento debe tener formato V, E o J seguido de 6 a 9 digitos');
     }
 
     if (!validarRequerido($nombres)) {
@@ -178,12 +216,16 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El apellido es obligatorio');
     }
 
-    if (!empty($telefono) && !validarTelefono($telefono)) {
-        respuestaJson('error', 'El telefono debe tener 11 digitos');
+    if (!validarRequerido($correo)) {
+        respuestaJson('error', 'El correo electronico es obligatorio');
     }
 
-    if (!empty($correo) && !validarCorreo($correo)) {
+    if (!validarCorreo($correo)) {
         respuestaJson('error', 'El correo electronico no es valido');
+    }
+
+    if (!empty($telefono) && !validarTelefono($telefono)) {
+        respuestaJson('error', 'El telefono debe tener 11 digitos');
     }
 
     if ($clienteModel->cedulaExiste($cedula, $id)) {

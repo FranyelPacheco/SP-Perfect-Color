@@ -15,8 +15,12 @@
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-4 col-6">
-                <small class="text-muted d-block">Fecha:</small>
+                <small class="text-muted d-block">Fecha de Creacion:</small>
                 <span><?php echo $presupuesto['fecha']; ?></span>
+            </div>
+            <div class="col-md-4 col-6">
+                <small class="text-muted d-block">Fecha de Aprobacion:</small>
+                <span><?php echo !empty($presupuesto['fecha_aprobacion']) ? $presupuesto['fecha_aprobacion'] : '<span class="text-muted fst-italic">Pendiente</span>'; ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Cliente:</small>
@@ -25,10 +29,6 @@
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Cedula:</small>
                 <span><?php echo htmlspecialchars($presupuesto['cliente_cedula'] ?? ''); ?></span>
-            </div>
-            <div class="col-md-4 col-6">
-                <small class="text-muted d-block">Vendedor:</small>
-                <span><?php echo htmlspecialchars($presupuesto['usuario_nombre'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Estado:</small>
@@ -89,14 +89,14 @@
     </div>
 </div>
 
-<?php if ($presupuesto['estado'] == 'pendiente'): ?>
+<?php if ($presupuesto['estado'] == 'pendiente' || $presupuesto['estado'] == 'presupuesto' || (int)($presupuesto['id_estado_venta'] ?? 0) === 1): ?>
 <div class="d-flex justify-content-end gap-2">
     <button class="btn btn-outline-danger" onclick="cambiarEstado(<?php echo $presupuesto['id_presupuesto']; ?>, 'rechazado')"><i class="bi bi-x-lg me-1"></i>Rechazar</button>
     <button class="btn btn-success" onclick="cambiarEstado(<?php echo $presupuesto['id_presupuesto']; ?>, 'aprobado')"><i class="bi bi-check-lg me-1"></i>Aprobar</button>
 </div>
 <?php endif; ?>
 
-<?php if ($presupuesto['estado'] == 'aprobado'): ?>
+<?php if ($presupuesto['estado'] == 'aprobado' || (int)($presupuesto['id_estado_venta'] ?? 0) === 2): ?>
 <div class="d-flex justify-content-end">
     <a href="../notaEntrega/crearDesdePresupuesto?id=<?php echo $presupuesto['id_presupuesto']; ?>" class="btn btn-primary btn-lg"><i class="bi bi-receipt-cutoff me-2"></i>Crear Nota de Entrega</a>
 </div>

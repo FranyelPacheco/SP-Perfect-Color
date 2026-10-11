@@ -50,17 +50,30 @@
             </div>
         </div>
 
-        <!-- COLUMNA DERECHA: DATOS DEL CLIENTE, ITEMS Y TOTAL -->
+        <!-- COLUMNA DERECHA: DATOS DEL CLIENTE, CONDICION DE PAGO, ITEMS Y TOTAL -->
         <div class="d-flex flex-column gap-3">
-            <!-- Tarjeta Cliente -->
+            <!-- Tarjeta Cliente y Condicion de Pago -->
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-3">
-                    <label for="clientePresupuesto" class="form-label fw-bold text-dark mb-1">
-                        <i class="bi bi-person-fill text-primary me-1"></i>Cliente <span class="text-danger">*</span>
-                    </label>
-                    <select id="clientePresupuesto" name="id_cliente" class="form-select" required>
-                        <option value="">Seleccione un cliente...</option>
-                    </select>
+                    <div class="row g-2">
+                        <div class="col-md-7">
+                            <label for="clientePresupuesto" class="form-label fw-bold text-dark mb-1">
+                                <i class="bi bi-person-fill text-primary me-1"></i>Cliente <span class="text-danger">*</span>
+                            </label>
+                            <select id="clientePresupuesto" name="id_cliente" class="form-select" required>
+                                <option value="">Seleccione un cliente...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label for="condicionPagoPresupuesto" class="form-label fw-bold text-dark mb-1">
+                                <i class="bi bi-cash-stack text-success me-1"></i>Condición de Pago <span class="text-danger">*</span>
+                            </label>
+                            <select id="condicionPagoPresupuesto" name="condicion_pago" class="form-select" required>
+                                <option value="contado" selected>Contado</option>
+                                <option value="credito">Crédito</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
 

@@ -53,7 +53,7 @@
             <?php endif; ?>
             <div class="col-12">
                 <small class="text-muted d-block">Estado:</small>
-                <span class="badge <?php echo $cuenta['estado'] === 'pagado' ? 'bg-success' : ($cuenta['estado'] === 'moroso' ? 'bg-danger' : 'bg-warning text-dark'); ?>">
+                <span class="badge <?php echo $cuenta['estado'] === 'pagado' ? 'bg-success' : 'bg-warning text-dark'; ?>">
                     <?php echo ucfirst($cuenta['estado']); ?>
                 </span>
             </div>

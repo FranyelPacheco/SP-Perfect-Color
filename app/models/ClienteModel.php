@@ -90,7 +90,7 @@ class ClienteModel extends ModeloBase
 
         if ($this->id < 1) return false;
 
-        $consulta = "SELECT COUNT(*) as total FROM cuentas_cobrar WHERE id_cliente = :id AND estado = 'pendiente'";
+        $consulta = "SELECT COUNT(*) as total FROM cuentas_cobrar WHERE id_cliente = :id AND situacion = 'pendiente' AND estado = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         $stmt->execute();
@@ -159,17 +159,17 @@ class ClienteModel extends ModeloBase
 
     private function _ejecutarCountAll(): int
     {
-        $consulta = "SELECT COUNT(*) as total FROM clientes WHERE activo = 1";
+        $consulta = "SELECT COUNT(*) as total FROM clientes WHERE estado = 1";
         $stmt = $this->conexion->query($consulta);
         return (int)$stmt->fetch()['total'];
     }
 
     private function _ejecutarSelectAll(): array
     {
-        $consulta = "SELECT c.*, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
+        $consulta = "SELECT c.*, c.estado as activo, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
                      FROM clientes c
                      LEFT JOIN telefono_cliente tc ON tc.id_cliente = c.id_cliente
-                     WHERE c.activo = 1
+                     WHERE c.estado = 1
                      GROUP BY c.id_cliente
                      ORDER BY c.apellidos ASC, c.nombres ASC";
         $stmt = $this->conexion->query($consulta);
@@ -178,10 +178,10 @@ class ClienteModel extends ModeloBase
 
     private function _ejecutarSelectById(): array|false
     {
-        $consulta = "SELECT c.*, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
+        $consulta = "SELECT c.*, c.estado as activo, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
                      FROM clientes c
                      LEFT JOIN telefono_cliente tc ON tc.id_cliente = c.id_cliente
-                     WHERE c.id_cliente = :id AND c.activo = 1
+                     WHERE c.id_cliente = :id AND c.estado = 1
                      GROUP BY c.id_cliente LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
@@ -191,8 +191,8 @@ class ClienteModel extends ModeloBase
 
     private function _ejecutarInsert(): int|false
     {
-        $consulta = "INSERT INTO clientes (cedula, nombres, apellidos, correo, direccion)
-                     VALUES (:cedula, :nombres, :apellidos, :correo, :direccion)";
+        $consulta = "INSERT INTO clientes (cedula, nombres, apellidos, correo, direccion, estado)
+                     VALUES (:cedula, :nombres, :apellidos, :correo, :direccion, 1)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':cedula', $this->cedula, PDO::PARAM_STR);
         $stmt->bindParam(':nombres', $this->nombres, PDO::PARAM_STR);
@@ -209,7 +209,7 @@ class ClienteModel extends ModeloBase
     {
         $consulta = "UPDATE clientes
                      SET cedula = :cedula, nombres = :nombres, apellidos = :apellidos,
-                         correo = :correo, direccion = :direccion, activo = 1
+                         correo = :correo, direccion = :direccion, estado = 1
                      WHERE id_cliente = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':cedula', $this->cedula, PDO::PARAM_STR);
@@ -223,7 +223,7 @@ class ClienteModel extends ModeloBase
 
     private function _ejecutarDelete(): bool
     {
-        $consulta = "UPDATE clientes SET activo = 0 WHERE id_cliente = :id";
+        $consulta = "UPDATE clientes SET estado = 0 WHERE id_cliente = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         return $stmt->execute();
@@ -249,7 +249,7 @@ class ClienteModel extends ModeloBase
 
     private function _ejecutarCheckCedula(): bool
     {
-        $consulta = "SELECT COUNT(*) as total FROM clientes WHERE cedula = :cedula AND activo = 1";
+        $consulta = "SELECT COUNT(*) as total FROM clientes WHERE cedula = :cedula AND estado = 1";
         if ($this->idExcluir !== null) {
             $consulta .= " AND id_cliente != :id";
         }
@@ -264,7 +264,7 @@ class ClienteModel extends ModeloBase
 
     private function _ejecutarBuscarInactivo(): int|false
     {
-        $consulta = "SELECT id_cliente FROM clientes WHERE cedula = :cedula AND activo = 0 LIMIT 1";
+        $consulta = "SELECT id_cliente FROM clientes WHERE cedula = :cedula AND estado = 0 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':cedula', $this->cedula, PDO::PARAM_STR);
         $stmt->execute();
@@ -275,10 +275,10 @@ class ClienteModel extends ModeloBase
     private function _ejecutarSearch(): array
     {
         $terminoLike = '%' . $this->termino . '%';
-        $consulta = "SELECT c.*, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
+        $consulta = "SELECT c.*, c.estado as activo, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
                      FROM clientes c
                      LEFT JOIN telefono_cliente tc ON tc.id_cliente = c.id_cliente
-                     WHERE c.activo = 1 AND (c.nombres LIKE :termino1
+                     WHERE c.estado = 1 AND (c.nombres LIKE :termino1
                          OR c.apellidos LIKE :termino2
                          OR c.cedula LIKE :termino3)
                      GROUP BY c.id_cliente
