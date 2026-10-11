@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         var nom = (row.nombre_empresa || '').replace(/"/g, '&quot;');
                         return '<div class="d-flex gap-2">' +
                             '<button class="btn btn-sm btn-warning btn-editar-proveedor" data-id="' + row.id_proveedor + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
-                            '<button class="btn btn-sm btn-danger btn-eliminar-proveedor" data-id="' + row.id_proveedor + '" data-nombre="' + nom + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>' +
+                            '<button class="btn btn-sm btn-danger btn-eliminar-proveedor" data-id="' + row.id_proveedor + '" data-nombre="' + nom + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>' +
                             '</div>';
                     }
                 });

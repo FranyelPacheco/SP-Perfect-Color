@@ -8,7 +8,9 @@ use PDOException;
 use App\Models\{
     PresupuestoModel,
     ClienteModel,
-    InventarioModel
+    InventarioModel,
+    BancoModel,
+    TipoPagoModel
 };
 use function App\Helpers\{
     respuestaJson,
@@ -55,9 +57,9 @@ if ($metodo === 'index') {
         'presupuestos' => $presupuestos
     ]);
 
-// FUNCIÓN: nuevo
+// FUNCIÓN: nuevo / crear
 // OBJETIVO: Renderiza el formulario para crear un nuevo presupuesto
-} elseif ($metodo === 'nuevo') {
+} elseif ($metodo === 'nuevo' || $metodo === 'crear') {
     verificarPermiso('presupuesto');
     verificarRolVendedor();
     
@@ -88,6 +90,19 @@ if ($metodo === 'index') {
         'clientes' => $clientes
     ]);
 
+// FUNCIÓN: obtenerDatosPagoAjax
+// OBJETIVO: Obtiene tipos de pago y bancos activos para ventas de contado
+} elseif ($metodo === 'obtenerDatosPagoAjax') {
+    verificarPermiso('presupuesto');
+    
+    $tiposPago = (new TipoPagoModel())->listarTodos();
+    $bancos = (new BancoModel())->listarTodos();
+    
+    respuestaJson('exito', 'Datos de pago obtenidos', [
+        'tipos_pago' => $tiposPago,
+        'bancos' => $bancos
+    ]);
+
 // FUNCIÓN: guardar
 // OBJETIVO: Crea un nuevo presupuesto con su detalle y calcula el total
 } elseif ($metodo === 'guardar') {
@@ -99,6 +114,10 @@ if ($metodo === 'index') {
     
     $clienteId = intval($_POST['id_cliente'] ?? 0);
     $observaciones = trim($_POST['observaciones'] ?? '');
+    $condicionPago = trim($_POST['condicion_pago'] ?? 'contado');
+    $idTipoPago = !empty($_POST['id_tipo_pago']) ? intval($_POST['id_tipo_pago']) : null;
+    $idBanco = !empty($_POST['id_banco']) ? intval($_POST['id_banco']) : null;
+    $referencia = trim($_POST['referencia'] ?? '');
     
     $items = json_decode($_POST['items'] ?? '[]', true);
     
@@ -167,6 +186,11 @@ if ($metodo === 'index') {
             }
             $insumoInfo = $inventarioModel->buscarPorId($insumoId);
             $descripcion = !empty($item['descripcion']) ? $item['descripcion'] : ($insumoInfo['nombre'] ?? 'Producto');
+            // Precio del catálogo oficial (no editable por el vendedor)
+            if ($insumoInfo && isset($insumoInfo['precio_venta']) && (float)$insumoInfo['precio_venta'] > 0) {
+                $precioUnitario = (float)$insumoInfo['precio_venta'];
+                $subtotal = $cantidad * $precioUnitario;
+            }
             
             $total += $subtotal;
             $detalle[] = [
@@ -181,7 +205,17 @@ if ($metodo === 'index') {
     }
     
     try {
-        $presupuestoId = $presupuestoModel->insertarPresupuesto($clienteId, (int)$_SESSION['id_usuario'], $total, $observaciones, $detalle);
+        $presupuestoId = $presupuestoModel->insertarPresupuesto(
+            $clienteId,
+            (int)$_SESSION['id_usuario'],
+            $total,
+            $observaciones,
+            $detalle,
+            $condicionPago,
+            $idTipoPago,
+            $idBanco,
+            $referencia
+        );
         
         respuestaJson('exito', 'Presupuesto creado exitosamente', [
             'id_presupuesto' => $presupuestoId,

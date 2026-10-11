@@ -16,6 +16,10 @@ class PresupuestoModel extends ModeloBase
     private int $idEstadoPresupuesto;
     private array $detalle;
     private string $termino;
+    private string $condicionPago = 'contado';
+    private ?int $idTipoPago = null;
+    private ?int $idBanco = null;
+    private ?string $referencia = null;
 
     // FUNCIÓN: Constructor
     // OBJETIVO: Inicializa la conexión a la BD
@@ -45,13 +49,27 @@ class PresupuestoModel extends ModeloBase
     // FUNCIÓN: insertarPresupuesto
     // OBJETIVO: Crea un nuevo presupuesto con su detalle en una transacción
     // NOTA: Inserta el presupuesto y todos sus items en presupuesto_detalle
-    public function insertarPresupuesto(int $idCliente, int $idUsuario, float $total, string $observaciones, array $detalle): int
+    public function insertarPresupuesto(
+        int $idCliente,
+        int $idUsuario,
+        float $total,
+        string $observaciones,
+        array $detalle,
+        string $condicionPago = 'contado',
+        ?int $idTipoPago = null,
+        ?int $idBanco = null,
+        ?string $referencia = null
+    ): int
     {
         $this->idCliente = $idCliente;
         $this->idUsuario = $idUsuario;
         $this->total = $total;
         $this->observaciones = $observaciones;
         $this->detalle = $detalle;
+        $this->condicionPago = in_array(strtolower($condicionPago), ['contado', 'credito'], true) ? strtolower($condicionPago) : 'contado';
+        $this->idTipoPago = $idTipoPago ?: null;
+        $this->idBanco = $idBanco ?: null;
+        $this->referencia = !empty($referencia) ? trim($referencia) : null;
         return $this->_ejecutarInsert();
     }
 
@@ -152,11 +170,15 @@ class PresupuestoModel extends ModeloBase
         try {
             $this->conexion->beginTransaction();
 
-            $consulta = "INSERT INTO ventas (id_cliente, id_estado_venta, fecha, fecha_aprobacion, total, condicion_pago, observaciones, estado) 
-                         VALUES (:id_cliente, 1, NOW(), NULL, :total, 'contado', :observaciones, 1)";
+            $consulta = "INSERT INTO ventas (id_cliente, id_estado_venta, fecha, fecha_aprobacion, total, condicion_pago, id_tipo_pago, id_banco, referencia, observaciones, estado) 
+                         VALUES (:id_cliente, 1, NOW(), NULL, :total, :condicion_pago, :id_tipo_pago, :id_banco, :referencia, :observaciones, 1)";
             $stmt = $this->conexion->prepare($consulta);
             $stmt->bindParam(':id_cliente', $this->idCliente, PDO::PARAM_INT);
             $stmt->bindParam(':total', $this->total);
+            $stmt->bindParam(':condicion_pago', $this->condicionPago, PDO::PARAM_STR);
+            $stmt->bindParam(':id_tipo_pago', $this->idTipoPago, $this->idTipoPago === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmt->bindParam(':id_banco', $this->idBanco, $this->idBanco === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmt->bindParam(':referencia', $this->referencia, $this->referencia === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmt->bindParam(':observaciones', $this->observaciones, PDO::PARAM_STR);
             $stmt->execute();
 

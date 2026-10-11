@@ -47,8 +47,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         data: 'estado',
                         render: function(data) {
                             if (!data) return '';
-                            var texto = (data === 'presupuesto' || data === 'pendiente') ? 'Presupuesto' : data.charAt(0).toUpperCase() + data.slice(1);
-                            return '<span class="estado-' + data + '">' + texto + '</span>';
+                            var isEspera = (data === 'presupuesto' || data === 'pendiente');
+                            var texto = isEspera ? 'En Espera' : (data.charAt(0).toUpperCase() + data.slice(1));
+                            var cls = isEspera ? 'estado-presupuesto' : 'estado-' + data;
+                            var icon = isEspera ? 'bi-clock-fill' : (data === 'aprobado' ? 'bi-check-circle-fill' : 'bi-x-circle-fill');
+                            return '<span class="' + cls + '"><i class="bi ' + icon + ' me-1"></i>' + texto + '</span>';
                         }
                     },
                     { data: 'usuario_nombre' },
@@ -59,13 +62,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         render: function(data, type, row) {
                             if (!row) return '';
                             var html = '<div class="d-flex gap-2">' +
-                                '<a href="/SP%20Perfect%20Color/presupuesto/ver?id=' + row.id_presupuesto + '" class="btn btn-sm btn-info" title="Ver" data-bs-toggle="tooltip"><i class="bi bi-eye"></i></a>';
+                                '<a href="/SP%20Perfect%20Color/presupuesto/ver?id=' + row.id_presupuesto + '" class="btn btn-sm btn-info" title="Ver" data-bs-toggle="tooltip"><i class="bi bi-eye-fill"></i></a>';
                             if (row.estado === 'pendiente' || row.estado === 'presupuesto' || (row.id_estado_venta && parseInt(row.id_estado_venta) === 1)) {
                                 html +=
                                     '<button class="btn btn-sm btn-success btn-aprobar-presupuesto" data-id="' + row.id_presupuesto + '"><i class="bi bi-check-lg me-1"></i>Aprobar</button>' +
                                     '<button class="btn btn-sm btn-danger btn-rechazar-presupuesto" data-id="' + row.id_presupuesto + '"><i class="bi bi-x-lg me-1"></i>Rechazar</button>';
                             }
-                            html += '<button class="btn btn-sm btn-outline-danger btn-eliminar-presupuesto" data-id="' + row.id_presupuesto + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>';
+                            html += '<button class="btn btn-sm btn-outline-danger btn-eliminar-presupuesto" data-id="' + row.id_presupuesto + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>';
                             html += '</div>';
                             return html;
                         }
@@ -140,6 +143,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    $(document).on('click', '.btn-filtro-presupuesto', function(e) {
+        e.preventDefault();
+        $('.btn-filtro-presupuesto').removeClass('btn-primary active').addClass('btn-outline-primary');
+        $(this).removeClass('btn-outline-primary').addClass('btn-primary active');
+        var filtro = $(this).attr('data-filtro') || '';
+        if ($.fn.DataTable.isDataTable('#tablaPresupuestos')) {
+            var table = $('#tablaPresupuestos').DataTable();
+            table.column(5).search(filtro).draw();
+        }
+    });
 
     if (filtroEstado) {
         filtroEstado.addEventListener('change', function() {

@@ -289,6 +289,77 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Error al eliminar el insumo');
     }
 
+// FUNCIÓN: listarBasesAjax
+// OBJETIVO: Obtiene tintes base para formulación de colores
+} elseif ($metodo === 'listarBasesAjax') {
+    verificarAcceso([1]);
+    $bases = $inventarioModel->listarBases();
+    respuestaJson('exito', 'Bases obtenidas', ['bases' => $bases]);
+
+// FUNCIÓN: guardarMezcla
+// OBJETIVO: Registra un producto preparado y descuenta las bases consumidas
+} elseif ($metodo === 'guardarMezcla') {
+    verificarRolAdmin();
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        respuestaJson('error', 'Metodo no permitido');
+    }
+    
+    $nombre = trim($_POST['nombre'] ?? '');
+    $presentacion = trim($_POST['presentacion'] ?? '1/4 Galón');
+    $cantidad = intval($_POST['cantidad'] ?? 1);
+    $precioVenta = floatval($_POST['precio_venta'] ?? 0);
+    $basesJson = $_POST['bases'] ?? '[]';
+    $bases = json_decode($basesJson, true);
+
+    if (empty($nombre)) {
+        respuestaJson('error', 'El nombre del color o fórmula es obligatorio');
+    }
+    if ($cantidad < 1) {
+        respuestaJson('error', 'La cantidad de envases debe ser al menos 1');
+    }
+    if ($precioVenta <= 0) {
+        respuestaJson('error', 'El precio de venta debe ser mayor a 0');
+    }
+    if (!is_array($bases) || count($bases) === 0) {
+        respuestaJson('error', 'Debe agregar al menos un tinte base a la mezcla');
+    }
+
+    $resultado = $inventarioModel->registrarMezclaTaller($nombre, $presentacion, $cantidad, $precioVenta, $bases);
+    if ($resultado['exito']) {
+        respuestaJson('exito', $resultado['mensaje'], ['id_producto' => $resultado['id_producto'], 'codigo' => $resultado['codigo']]);
+    } else {
+        respuestaJson('error', $resultado['mensaje']);
+    }
+
+// FUNCIÓN: ajustarMerma
+// OBJETIVO: Descuenta inventario por merma o daño justificado
+} elseif ($metodo === 'ajustarMerma') {
+    verificarRolAdmin();
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        respuestaJson('error', 'Metodo no permitido');
+    }
+
+    $idProducto = intval($_POST['id_producto'] ?? 0);
+    $cantidad = floatval($_POST['cantidad'] ?? 0);
+    $motivo = trim($_POST['motivo'] ?? '');
+
+    if ($idProducto < 1) {
+        respuestaJson('error', 'Debe seleccionar un producto');
+    }
+    if ($cantidad <= 0) {
+        respuestaJson('error', 'La cantidad a descontar debe ser mayor a 0');
+    }
+    if (empty($motivo)) {
+        respuestaJson('error', 'Debe especificar el motivo del daño o merma');
+    }
+
+    $resultado = $inventarioModel->registrarAjusteMerma($idProducto, $cantidad, $motivo);
+    if ($resultado['exito']) {
+        respuestaJson('exito', $resultado['mensaje']);
+    } else {
+        respuestaJson('error', $resultado['mensaje']);
+    }
+
 } else {
     require_once __DIR__ . '/../views/error404View.php';
 }

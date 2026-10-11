@@ -74,6 +74,35 @@
                             </select>
                         </div>
                     </div>
+
+                    <!-- Fila condicional para detalle de pago al contado -->
+                    <div class="row g-3 mt-1" id="seccionPagoContado">
+                        <div class="col-md-4">
+                            <label for="tipoPagoPresupuesto" class="form-label fw-semibold text-secondary small mb-1">
+                                <i class="bi bi-credit-card-2-front-fill me-1"></i>Método de Pago
+                            </label>
+                            <select id="tipoPagoPresupuesto" name="id_tipo_pago" class="form-select form-select-sm">
+                                <option value="1">Efectivo ($ / Bs.)</option>
+                                <option value="3" selected>Pago Móvil</option>
+                                <option value="2">Transferencia Bancaria</option>
+                                <option value="4">Tarjeta de Débito</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4" id="colBancoPresupuesto">
+                            <label for="bancoPresupuesto" class="form-label fw-semibold text-secondary small mb-1">
+                                <i class="bi bi-building-fill me-1"></i>Banco Receptor
+                            </label>
+                            <select id="bancoPresupuesto" name="id_banco" class="form-select form-select-sm">
+                                <option value="">Seleccione banco...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4" id="colReferenciaPresupuesto">
+                            <label for="referenciaPresupuesto" class="form-label fw-semibold text-secondary small mb-1">
+                                <i class="bi bi-hash me-1"></i>Nro. Referencia
+                            </label>
+                            <input type="text" id="referenciaPresupuesto" name="referencia" class="form-control form-control-sm" placeholder="Ej: 123456">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -84,9 +113,6 @@
                         <i class="bi bi-cart-check-fill text-primary me-2"></i>Items del Presupuesto
                     </h5>
                     <div class="d-flex align-items-center gap-2">
-                        <button type="button" class="btn btn-sm btn-success shadow-sm" id="btnModalPrepararMezcla">
-                            <i class="bi bi-palette-fill me-1"></i>Preparar Mezcla
-                        </button>
                         <span id="badgeCantidadItems" class="badge bg-primary rounded-pill">0 items</span>
                     </div>
                 </div>
@@ -108,7 +134,7 @@
                                         <div class="items-empty-state">
                                             <i class="bi bi-basket text-muted"></i>
                                             <p class="mb-1 fw-semibold text-secondary">Aún no hay items en el presupuesto</p>
-                                            <small class="text-muted">Agregue productos del catálogo o use <strong>Preparar Mezcla</strong> para crear formulaciones.</small>
+                                            <small class="text-muted">Seleccione productos del catálogo a la derecha para agregarlos al presupuesto.</small>
                                         </div>
                                     </td>
                                 </tr>
@@ -153,106 +179,5 @@
         </div>
     </div>
 </form>
-
-<!-- MODAL PARA FORMULAR Y PREPARAR PINTURA / MEZCLA -->
-<div class="modal fade" id="modalPrepararMezcla" tabindex="-1" aria-labelledby="modalPrepararMezclaLabel" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold" id="modalPrepararMezclaLabel">
-                    <i class="bi bi-palette-fill me-2"></i>Preparar Pintura (Fórmula y Mezcla de Tintes)
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <form id="formularioMezcla">
-                <div class="modal-body p-4">
-                    <!-- Fila 1: Nombre del Color y Presentación -->
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-5">
-                            <label for="mezclaNombre" class="form-label fw-semibold text-dark">Nombre / Identificación del Color <span class="text-danger">*</span></label>
-                            <input type="text" id="mezclaNombre" class="form-control" placeholder="Ej: Azul Marino Metalizado #102" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="mezclaPresentacion" class="form-label fw-semibold text-dark">Tamaño a Vender <span class="text-danger">*</span></label>
-                            <select id="mezclaPresentacion" class="form-select" required>
-                                <option value="1 Galón" data-factor="1.0">1 Galón (1 gal)</option>
-                                <option value="1/2 Galón" data-factor="0.5">1/2 Galón (0.50 gal)</option>
-                                <option value="1/4 Galón" data-factor="0.25" selected>1/4 Galón (0.25 gal)</option>
-                                <option value="1/8 Galón" data-factor="0.125">1/8 Galón (0.125 gal)</option>
-                                <option value="1/16 Galón" data-factor="0.0625">1/16 Galón (0.0625 gal)</option>
-                                <option value="1/32 Galón" data-factor="0.03125">1/32 Galón (0.03125 gal)</option>
-                                <option value="1/64 Galón" data-factor="0.015625">1/64 Galón (0.0156 gal)</option>
-                                <option value="1/128 Galón" data-factor="0.0078125">1/128 Galón (0.0078 gal)</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="mezclaCantidad" class="form-label fw-semibold text-dark">Cantidad Envases <span class="text-danger">*</span></label>
-                            <input type="number" id="mezclaCantidad" class="form-control" min="1" step="1" value="1" required>
-                        </div>
-                    </div>
-
-                    <!-- Fila 2: Formulación BOM (Tintes Base) -->
-                    <div class="card bg-light border mb-3">
-                        <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
-                            <span class="fw-bold text-dark small">
-                                <i class="bi bi-droplet-half text-primary me-1"></i>Composición de Tintes Base (Máximo 6 bases concentradas)
-                            </span>
-                            <span id="contadorBasesMezcla" class="badge bg-light text-secondary border">0/6 bases</span>
-                        </div>
-                        <div class="card-body p-2">
-                            <div class="table-responsive">
-                                <table class="table table-sm align-middle mb-2" id="tablaBasesMezcla">
-                                    <thead>
-                                        <tr class="text-muted small">
-                                            <th style="width: 45%;">Tinte Base Concentrado</th>
-                                            <th style="width: 30%;">Medida (Fracción de Galón)</th>
-                                            <th style="width: 18%;" class="text-end">Consumo Unit.</th>
-                                            <th style="width: 7%;" class="text-center"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="cuerpoBasesMezcla">
-                                        <!-- Filas dinámicas agregadas por JS -->
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center pt-1">
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="btnAgregarFilaBase">
-                                    <i class="bi bi-plus-circle me-1"></i>Agregar Tinte Base
-                                </button>
-                                <small class="text-muted" id="totalGalonesMezcla">Consumo total fórmula: 0.0000 gal</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Fila 3: Precio y Totales -->
-                    <div class="row g-3 align-items-center">
-                        <div class="col-md-6">
-                            <label for="mezclaPrecioVenta" class="form-label fw-semibold text-dark mb-1">Precio de Venta por Envase ($) <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-white text-muted">$</span>
-                                <input type="number" id="mezclaPrecioVenta" class="form-control" min="0.01" step="0.01" placeholder="0.00" required>
-                            </div>
-                            <small class="text-muted" id="ayudaPrecioMezcla">Costo estimado bases: $ 0.00</small>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 bg-light rounded border text-end">
-                                <div class="text-muted small">Subtotal Renglón Mezcla:</div>
-                                <div class="fs-4 fw-bold text-primary" id="mezclaSubtotalEstimado">$ 0.00</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="mensajeErrorMezcla" class="alert alert-danger d-none mt-3 mb-0"></div>
-                </div>
-                <div class="modal-footer bg-white border-top">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success" id="btnGuardarMezcla">
-                        <i class="bi bi-check-lg me-1"></i>Agregar Mezcla al Presupuesto
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <script src="/SP%20Perfect%20Color/assets/js/presupuestoForm.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/presupuestoForm.js'); ?>"></script>

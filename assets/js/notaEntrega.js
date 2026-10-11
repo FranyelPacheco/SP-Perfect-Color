@@ -58,8 +58,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         render: function(data, type, row) {
                             if (!row) return '';
                             return '<div class="d-flex gap-2">' +
-                                '<a href="/SP%20Perfect%20Color/notaEntrega/ver?id=' + row.id_nota_entrega + '" class="btn btn-sm btn-info" title="Ver"><i class="bi bi-eye"></i></a>' +
-                                '<a href="/SP%20Perfect%20Color/notaEntrega/editar?id=' + row.id_nota_entrega + '" class="btn btn-sm btn-primary" title="Editar Items"><i class="bi bi-pencil"></i></a>' +
+                                '<a href="/SP%20Perfect%20Color/notaEntrega/ver?id=' + row.id_nota_entrega + '" class="btn btn-sm btn-info" title="Ver" data-bs-toggle="tooltip"><i class="bi bi-eye-fill"></i></a>' +
+                                '<a href="/SP%20Perfect%20Color/notaEntrega/pdf?id=' + row.id_nota_entrega + '" target="_blank" class="btn btn-sm btn-primary" title="Comprobante PDF" data-bs-toggle="tooltip"><i class="bi bi-file-earmark-pdf-fill"></i></a>' +
                                 '</div>';
                         }
                     }

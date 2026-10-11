@@ -446,4 +446,139 @@ class InventarioModel extends ModeloBase
         $stmt->bindParam(':id_producto', $this->productoId, PDO::PARAM_INT);
         return $stmt->execute();
     }
+
+    // FUNCIÓN: registrarMezclaTaller
+    // OBJETIVO: Crea una pintura preparada (tipo 3), guarda su fórmula en mezcla_producto y descuenta el stock de las bases utilizadas
+    public function registrarMezclaTaller(string $nombre, string $presentacion, int $cantidadEnvases, float $precioVenta, array $bases): array
+    {
+        try {
+            $this->conexion->beginTransaction();
+
+            // 1. Generar código único para el producto preparado
+            $codigo = 'PREP-' . strtoupper(substr(uniqid(), -6));
+            while ($this->codigoExiste($codigo)) {
+                $codigo = 'PREP-' . strtoupper(substr(uniqid(), -6));
+            }
+
+            // 2. Insertar producto en productos (tipo 3 = Preparado)
+            $consultaProd = "INSERT INTO productos (codigo, nombre, id_tipo_producto, unidad_medida, stock_actual, stock_minimo, precio_venta, estado)
+                             VALUES (:codigo, :nombre, 3, :unidad_medida, :stock_actual, 1.0000, :precio_venta, 1)";
+            $stmtProd = $this->conexion->prepare($consultaProd);
+            $stmtProd->bindParam(':codigo', $codigo, PDO::PARAM_STR);
+            $stmtProd->bindParam(':nombre', $nombre, PDO::PARAM_STR);
+            $stmtProd->bindParam(':unidad_medida', $presentacion, PDO::PARAM_STR);
+            $stockActualEnvases = (float)$cantidadEnvases;
+            $stmtProd->bindParam(':stock_actual', $stockActualEnvases);
+            $stmtProd->bindParam(':precio_venta', $precioVenta);
+            $stmtProd->execute();
+
+            $idProductoMezclado = (int)$this->conexion->lastInsertId();
+
+            // 3. Preparar statements para mezcla_producto y actualización de stock de bases
+            $consultaMezcla = "INSERT INTO mezcla_producto (id_producto_mezclado, id_producto_base, fraccion, cantidad_galon, estado)
+                               VALUES (:id_producto_mezclado, :id_producto_base, :fraccion, :cantidad_galon, 1)";
+            $stmtMezcla = $this->conexion->prepare($consultaMezcla);
+
+            $consultaDescuento = "UPDATE productos SET stock_actual = stock_actual - :consumo_total WHERE id_producto = :id_base";
+            $stmtDescuento = $this->conexion->prepare($consultaDescuento);
+
+            $stmtVerificarStock = $this->conexion->prepare("SELECT stock_actual, nombre FROM productos WHERE id_producto = :id_base LIMIT 1");
+
+            foreach ($bases as $b) {
+                $idBase = (int)($b['id_producto_base'] ?? $b['id_producto'] ?? 0);
+                $fraccion = (string)($b['fraccion'] ?? '1/4');
+                $cantGalon = (float)($b['cantidad_galon'] ?? 0);
+                $consumoTotal = $cantGalon * $cantidadEnvases;
+
+                if ($idBase <= 0 || $cantGalon <= 0) {
+                    continue;
+                }
+
+                // Verificar stock suficiente del tinte base
+                $stmtVerificarStock->bindParam(':id_base', $idBase, PDO::PARAM_INT);
+                $stmtVerificarStock->execute();
+                $baseInfo = $stmtVerificarStock->fetch(PDO::FETCH_ASSOC);
+
+                if (!$baseInfo || (float)$baseInfo['stock_actual'] < $consumoTotal) {
+                    $this->conexion->rollBack();
+                    $nombreBase = $baseInfo['nombre'] ?? "ID $idBase";
+                    return [
+                        'exito' => false,
+                        'mensaje' => "Stock insuficiente del tinte base '{$nombreBase}' para preparar la mezcla (requerido: {$consumoTotal} gal, disponible: " . ($baseInfo ? $baseInfo['stock_actual'] : 0) . " gal)"
+                    ];
+                }
+
+                // Guardar receta en mezcla_producto
+                $stmtMezcla->bindParam(':id_producto_mezclado', $idProductoMezclado, PDO::PARAM_INT);
+                $stmtMezcla->bindParam(':id_producto_base', $idBase, PDO::PARAM_INT);
+                $stmtMezcla->bindParam(':fraccion', $fraccion, PDO::PARAM_STR);
+                $stmtMezcla->bindParam(':cantidad_galon', $cantGalon);
+                $stmtMezcla->execute();
+
+                // Descontar inventario base
+                $stmtDescuento->bindParam(':consumo_total', $consumoTotal);
+                $stmtDescuento->bindParam(':id_base', $idBase, PDO::PARAM_INT);
+                $stmtDescuento->execute();
+            }
+
+            $this->conexion->commit();
+            return [
+                'exito' => true,
+                'id_producto' => $idProductoMezclado,
+                'codigo' => $codigo,
+                'mensaje' => 'Pintura preparada registrada exitosamente e inventario base descontado.'
+            ];
+        } catch (\Exception $e) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
+            return [
+                'exito' => false,
+                'mensaje' => 'Error al preparar la mezcla: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    // FUNCIÓN: registrarAjusteMerma
+    // OBJETIVO: Descuenta stock de un producto por motivo de daño, evaporación o merma
+    public function registrarAjusteMerma(int $idProducto, float $cantidad, string $motivo): array
+    {
+        try {
+            $this->conexion->beginTransaction();
+
+            $stmtProd = $this->conexion->prepare("SELECT stock_actual, nombre FROM productos WHERE id_producto = :id AND estado = 1 LIMIT 1");
+            $stmtProd->bindParam(':id', $idProducto, PDO::PARAM_INT);
+            $stmtProd->execute();
+            $prod = $stmtProd->fetch(PDO::FETCH_ASSOC);
+
+            if (!$prod) {
+                $this->conexion->rollBack();
+                return ['exito' => false, 'mensaje' => 'Producto no encontrado o inactivo'];
+            }
+
+            if ((float)$prod['stock_actual'] < $cantidad) {
+                $this->conexion->rollBack();
+                return [
+                    'exito' => false,
+                    'mensaje' => "Stock insuficiente para realizar el ajuste (actual: {$prod['stock_actual']}, a descontar: {$cantidad})"
+                ];
+            }
+
+            $stmtUpdate = $this->conexion->prepare("UPDATE productos SET stock_actual = stock_actual - :cantidad WHERE id_producto = :id");
+            $stmtUpdate->bindParam(':cantidad', $cantidad);
+            $stmtUpdate->bindParam(':id', $idProducto, PDO::PARAM_INT);
+            $stmtUpdate->execute();
+
+            $this->conexion->commit();
+            return [
+                'exito' => true,
+                'mensaje' => "Ajuste por merma aplicado correctamente a '{$prod['nombre']}' (-{$cantidad})."
+            ];
+        } catch (\Exception $e) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
+            return ['exito' => false, 'mensaje' => 'Error al registrar ajuste: ' . $e->getMessage()];
+        }
+    }
 }

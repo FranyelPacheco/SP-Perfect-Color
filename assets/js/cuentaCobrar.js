@@ -95,8 +95,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         render: function(data, type, row) {
                             if (!row) return '';
                             return '<div class="d-flex gap-2">' +
-                                '<a href="/SP%20Perfect%20Color/cuentaCobrar/ver?id=' + row.id_cuenta_cobrar + '" class="btn btn-sm btn-info" title="Ver" data-bs-toggle="tooltip"><i class="bi bi-eye"></i></a>' +
-                                '<button class="btn btn-sm btn-outline-danger btn-eliminar-cxc" data-id="' + row.id_cuenta_cobrar + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>' +
+                                '<a href="/SP%20Perfect%20Color/cuentaCobrar/ver?id=' + row.id_cuenta_cobrar + '" class="btn btn-sm btn-info text-white" title="Ver" data-bs-toggle="tooltip"><i class="bi bi-eye-fill"></i></a>' +
+                                '<button class="btn btn-sm btn-outline-danger btn-eliminar-cxc" data-id="' + row.id_cuenta_cobrar + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>' +
                                 '</div>';
                         }
                     }

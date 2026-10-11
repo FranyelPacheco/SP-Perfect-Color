@@ -34,7 +34,7 @@ class frontController
         'dashboard'         => ['Panel de Control', 'Resumen general del sistema de gestión administrativa en SP Perfect Color'],
         'cliente'           => ['Clientes', 'Gestión de clientes - SP Perfect Color'],
         'proveedor'         => ['Proveedores', 'Gestión de proveedores - SP Perfect Color'],
-        'inventario'        => ['Registro de Insumos', 'Control de registro de insumos y existencias - SP Perfect Color'],
+        'inventario'        => ['Gestión de Inventario', 'Control de existencias, formulación de colores y ajustes - SP Perfect Color'],
         'presupuesto'       => ['Presupuestos', 'Gestión de cotizaciones y presupuestos de venta - SP Perfect Color'],
         'notaentrega'       => ['Notas de Entrega (Ventas)', 'Gestión y despacho de notas de entrega a clientes - SP Perfect Color'],
         'notaentregacompra' => ['Notas de Entrega (Compras)', 'Recepción de insumos y compras a proveedores - SP Perfect Color'],

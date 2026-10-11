@@ -5,11 +5,12 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-            <h4 class="mb-0 toolbar-title"><i class="bi bi-box-seam-fill me-2 text-primary"></i>Registro de Insumos</h4>
-            <div class="d-flex gap-2 align-items-center">
-                <input type="text" id="busquedaInsumos" class="form-control" style="width: 220px;" placeholder="Buscar por codigo, nombre o rubro...">
+            <h4 class="mb-0 toolbar-title"><i class="bi bi-box-seam-fill me-2 text-primary"></i>Gestión de Inventario</h4>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <input type="text" id="busquedaInsumos" class="form-control" style="width: 220px;" placeholder="Buscar por codigo, nombre...">
                 <?php if ($_SESSION['usuario_rol'] == 1): ?>
-                <button id="btnNuevoInsumo" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Nuevo Insumo</button>
+                <button id="btnPrepararMezcla" class="btn btn-primary shadow-sm"><i class="bi bi-palette-fill me-2"></i>Preparar Mezcla</button>
+                <button id="btnAjusteMerma" class="btn btn-outline-danger"><i class="bi bi-dash-circle-fill me-2"></i>Ajuste por Merma</button>
                 <?php endif; ?>
             </div>
         </div>
@@ -42,11 +43,12 @@
 </div>
 
 <?php if ($_SESSION['usuario_rol'] == 1): ?>
+<!-- MODAL PARA EDICION DE INSUMO -->
 <div id="modalInsumo" class="modal" style="display: none;" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="tituloModalInsumo">Nuevo Insumo</h5>
+                <h5 class="modal-title" id="tituloModalInsumo">Editar Insumo</h5>
                 <button type="button" id="btnCerrarModalInsumo" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="formularioInsumo">
@@ -124,6 +126,157 @@
                 <div class="modal-footer">
                     <button type="button" id="btnCancelarInsumo" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" id="btnGuardarInsumo" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PARA FORMULAR Y PREPARAR PINTURA / MEZCLA -->
+<div class="modal fade" id="modalPrepararMezcla" tabindex="-1" aria-labelledby="modalPrepararMezclaLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="modalPrepararMezclaLabel">
+                    <i class="bi bi-palette-fill me-2"></i>Preparar Pintura Personalizada (Fórmula Taller)
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="formularioMezcla">
+                <div class="modal-body p-4">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-5">
+                            <label for="mezclaNombre" class="form-label fw-semibold text-dark">Nombre / Identificación del Color <span class="text-danger">*</span></label>
+                            <input type="text" id="mezclaNombre" class="form-control" placeholder="Ej: Azul Perlado Fiesta #204" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="mezclaPresentacion" class="form-label fw-semibold text-dark">Presentación <span class="text-danger">*</span></label>
+                            <select id="mezclaPresentacion" class="form-select" required>
+                                <option value="1 Galón" data-factor="1.0">1 Galón (1 gal)</option>
+                                <option value="1/2 Galón" data-factor="0.5">1/2 Galón (0.50 gal)</option>
+                                <option value="1/4 Galón" data-factor="0.25" selected>1/4 Galón (0.25 gal)</option>
+                                <option value="1/8 Galón" data-factor="0.125">1/8 Galón (0.125 gal)</option>
+                                <option value="1/16 Galón" data-factor="0.0625">1/16 Galón (0.0625 gal)</option>
+                                <option value="1/32 Galón" data-factor="0.03125">1/32 Galón (0.03125 gal)</option>
+                                <option value="1/64 Galón" data-factor="0.015625">1/64 Galón (0.0156 gal)</option>
+                                <option value="1/128 Galón" data-factor="0.0078125">1/128 Galón (0.0078 gal)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="mezclaCantidad" class="form-label fw-semibold text-dark">Cantidad Envases <span class="text-danger">*</span></label>
+                            <input type="number" id="mezclaCantidad" class="form-control" min="1" step="1" value="1" required>
+                        </div>
+                    </div>
+
+                    <div class="card bg-light border mb-3">
+                        <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-dark small">
+                                <i class="bi bi-droplet-half text-primary me-1"></i>Composición de Tintes Base (Máximo 6 bases concentradas)
+                            </span>
+                            <span id="contadorBasesMezcla" class="badge bg-light text-secondary border">0/6 bases</span>
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-2" id="tablaBasesMezcla">
+                                    <thead>
+                                        <tr class="text-muted small">
+                                            <th style="width: 45%;">Tinte Base Concentrado</th>
+                                            <th style="width: 30%;">Medida (Fracción de Galón)</th>
+                                            <th style="width: 18%;" class="text-end">Consumo Unit.</th>
+                                            <th style="width: 7%;" class="text-center"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cuerpoBasesMezcla">
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="btnAgregarFilaBase">
+                                    <i class="bi bi-plus-circle me-1"></i>Agregar Tinte Base
+                                </button>
+                                <small class="text-muted" id="totalGalonesMezcla">Consumo total fórmula: 0.0000 gal</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-6">
+                            <label for="mezclaPrecioVenta" class="form-label fw-semibold text-dark mb-1">Precio de Venta por Envase ($) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white text-muted">$</span>
+                                <input type="number" id="mezclaPrecioVenta" class="form-control" min="0.01" step="0.01" placeholder="0.00" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded border text-end">
+                                <div class="text-muted small">Subtotal Estimado Total:</div>
+                                <div class="fs-4 fw-bold text-primary" id="mezclaSubtotalEstimado">$ 0.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mensajeErrorMezcla" class="alert alert-danger d-none mt-3 mb-0"></div>
+                </div>
+                <div class="modal-footer bg-white border-top">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success" id="btnGuardarMezcla">
+                        <i class="bi bi-check-lg me-1"></i>Registrar Mezcla en Inventario
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PARA AJUSTE POR MERMA / DAÑO -->
+<div class="modal fade" id="modalAjusteMerma" tabindex="-1" aria-labelledby="modalAjusteMermaLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold" id="modalAjusteMermaLabel">
+                    <i class="bi bi-dash-circle-fill me-2"></i>Ajuste de Inventario por Merma o Daño
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="formularioAjusteMerma">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="ajusteProducto" class="form-label fw-semibold text-dark">Producto / Insumo <span class="text-danger">*</span></label>
+                        <select id="ajusteProducto" class="form-select" required>
+                            <option value="">Seleccione el producto afectado...</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3 p-3 bg-light rounded border d-flex justify-content-between align-items-center">
+                        <span class="text-muted small">Stock actual disponible:</span>
+                        <span class="fw-bold fs-5 text-dark" id="ajusteStockDisponible">-</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ajusteCantidad" class="form-label fw-semibold text-dark">Cantidad a Descontar <span class="text-danger">*</span></label>
+                        <input type="number" id="ajusteCantidad" class="form-control" min="0.0001" step="any" placeholder="0.00" required>
+                        <div class="form-text">Esta cantidad se restará inmediatamente de las existencias.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ajusteMotivo" class="form-label fw-semibold text-dark">Motivo del Ajuste <span class="text-danger">*</span></label>
+                        <select id="ajusteMotivo" class="form-select mb-2" required>
+                            <option value="Dañado en almacén">Dañado / Caída en almacén</option>
+                            <option value="Vencido o deteriorado">Vencido o químicamente deteriorado</option>
+                            <option value="Evaporación / Fuga">Evaporación o derrame de envase</option>
+                            <option value="Defecto de fábrica">Defecto de fábrica detectado</option>
+                            <option value="Otro">Otro motivo justificado</option>
+                        </select>
+                        <textarea id="ajusteObservacion" class="form-control" rows="2" placeholder="Detalle adicional u observación sobre la pérdida..." required></textarea>
+                    </div>
+
+                    <div id="mensajeErrorAjuste" class="alert alert-danger d-none mb-0"></div>
+                </div>
+                <div class="modal-footer bg-white border-top">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger" id="btnGuardarAjuste">
+                        <i class="bi bi-dash-lg me-1"></i>Confirmar Descuento
+                    </button>
                 </div>
             </form>
         </div>
