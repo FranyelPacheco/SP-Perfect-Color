@@ -17,6 +17,10 @@ class NotaEntregaModel extends ModeloBase
     private ?int $idBanco;
     private ?string $referencia;
     private ?string $fechaVencimiento;
+    private float $montoInicial = 0;
+    private ?int $idTipoPagoInicial = null;
+    private ?int $idBancoInicial = null;
+    private ?string $referenciaInicial = null;
     private array $detalle;
     private string $termino;
     private int $notaId;
@@ -60,9 +64,23 @@ class NotaEntregaModel extends ModeloBase
 
     // FUNCIÓN: crearNotaEntrega
     // OBJETIVO: Crea una nota de venta a partir de un presupuesto, descuenta stock y genera cuenta/pago
-    // NOTA: Usa transacción; si es crédito crea cuenta por cobrar, si es contado registra cuenta saldada y pago
-    public function crearNotaEntrega(int $idCliente, int $idUsuario, float $total, int $idPresupuesto, string $condicionPago, array $detalle, ?int $idTipoPago = null, ?int $idBanco = null, ?string $referencia = null, ?string $fechaVencimiento = null): int
-    {
+    // NOTA: Usa transacción; si es crédito crea cuenta por cobrar con abono inicial opcional, si es contado registra cuenta saldada y pago
+    public function crearNotaEntrega(
+        int $idCliente,
+        int $idUsuario,
+        float $total,
+        int $idPresupuesto,
+        string $condicionPago,
+        array $detalle,
+        ?int $idTipoPago = null,
+        ?int $idBanco = null,
+        ?string $referencia = null,
+        ?string $fechaVencimiento = null,
+        float $montoInicial = 0,
+        ?int $idTipoPagoInicial = null,
+        ?int $idBancoInicial = null,
+        ?string $referenciaInicial = null
+    ): int {
         $this->idCliente = $idCliente;
         $this->idUsuario = $idUsuario;
         $this->total = $total;
@@ -73,6 +91,10 @@ class NotaEntregaModel extends ModeloBase
         $this->idBanco = $idBanco;
         $this->referencia = $referencia;
         $this->fechaVencimiento = $fechaVencimiento;
+        $this->montoInicial = $montoInicial;
+        $this->idTipoPagoInicial = $idTipoPagoInicial;
+        $this->idBancoInicial = $idBancoInicial;
+        $this->referenciaInicial = $referenciaInicial;
         return $this->_ejecutarCrearNota();
     }
 
@@ -110,14 +132,16 @@ class NotaEntregaModel extends ModeloBase
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
                             'Sistema' as usuario_nombre,
-                            COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre
+                            COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre,
+                            COALESCE(ev.nombre, CASE WHEN v.id_estado_venta = 1 THEN 'En Espera' WHEN v.id_estado_venta = 2 THEN 'Aprobado' WHEN v.id_estado_venta = 3 THEN 'Rechazado' ELSE 'Otro' END) as estado_nombre
                      FROM ventas v 
                      INNER JOIN clientes c ON v.id_cliente = c.id_cliente
+                     LEFT JOIN estado_venta ev ON v.id_estado_venta = ev.id_estado_venta
                      LEFT JOIN tipo_pago tp_v ON v.id_tipo_pago = tp_v.id_tipo_pago
                      LEFT JOIN cuentas_cobrar cc ON cc.id_venta = v.id_venta
                      LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
                      LEFT JOIN tipo_pago tp_pr ON pr.id_tipo_pago = tp_pr.id_tipo_pago
-                     WHERE v.estado = 1 AND v.id_estado_venta = 2
+                     WHERE v.estado = 1 AND v.id_estado_venta IN (1, 2, 3)
                      GROUP BY v.id_venta
                      ORDER BY v.fecha DESC, v.id_venta DESC";
         $stmt = $this->conexion->query($consulta);
@@ -499,19 +523,41 @@ class NotaEntregaModel extends ModeloBase
     }
 
     // FUNCIÓN: _crearCuentaCobrar
-    // OBJETIVO: Crea una cuenta por cobrar cuando la condición de pago es crédito
+    // OBJETIVO: Crea una cuenta por cobrar cuando la condición de pago es crédito, descontando y registrando abono inicial si aplica
     private function _crearCuentaCobrar(): void
     {
+        $montoInicial = max(0, (float)$this->montoInicial);
+        $saldoPendiente = max(0, $this->total - $montoInicial);
+        $situacion = ($saldoPendiente <= 0) ? 'pagado' : 'pendiente';
+
         $consulta = "INSERT INTO cuentas_cobrar (id_venta, monto_total, saldo_pendiente, fecha_vencimiento, situacion, estado) 
-                     VALUES (:id_venta, :monto_total, :saldo_pendiente, :fecha_vencimiento, 'pendiente', 1)";
+                     VALUES (:id_venta, :monto_total, :saldo_pendiente, :fecha_vencimiento, :situacion, 1)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindValue(':id_venta', $this->notaId, PDO::PARAM_INT);
         $stmt->bindValue(':monto_total', $this->total);
-        $stmt->bindValue(':saldo_pendiente', $this->total);
+        $stmt->bindValue(':saldo_pendiente', $saldoPendiente);
         $stmt->bindValue(':fecha_vencimiento', $this->fechaVencimiento, PDO::PARAM_STR);
+        $stmt->bindValue(':situacion', $situacion, PDO::PARAM_STR);
         if (!$stmt->execute()) {
             $errInfo = $stmt->errorInfo();
             throw new PDOException('Error al insertar en cuentas_cobrar: ' . ($errInfo[2] ?? 'desconocido'));
+        }
+
+        $idCuentaCobrar = (int)$this->conexion->lastInsertId();
+
+        // Si se pagó una inicial, registrar automáticamente en pagos_recibidos
+        if ($montoInicial > 0) {
+            $tipoPagoInicial = !empty($this->idTipoPagoInicial) ? (int)$this->idTipoPagoInicial : 1;
+            $consultaPago = "INSERT INTO pagos_recibidos (id_cuenta_cobrar, id_tipo_pago, id_banco, monto, fecha, referencia, estado) 
+                             VALUES (:id_cuenta_cobrar, :id_tipo_pago, :id_banco, :monto, NOW(), :referencia, 1)";
+            $stmtPago = $this->conexion->prepare($consultaPago);
+            $stmtPago->bindValue(':id_cuenta_cobrar', $idCuentaCobrar, PDO::PARAM_INT);
+            $stmtPago->bindValue(':id_tipo_pago', $tipoPagoInicial, PDO::PARAM_INT);
+            $stmtPago->bindValue(':id_banco', $this->idBancoInicial, empty($this->idBancoInicial) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmtPago->bindValue(':monto', $montoInicial);
+            $referenciaVal = !empty($this->referenciaInicial) ? $this->referenciaInicial : 'Abono Inicial';
+            $stmtPago->bindValue(':referencia', $referenciaVal, PDO::PARAM_STR);
+            $stmtPago->execute();
         }
     }
 

@@ -60,9 +60,18 @@
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="mb-2">
-                            <label for="referenciaPago" class="form-label fw-semibold">Referencia / Comprobante</label>
-                            <input type="text" id="referenciaPago" name="referencia" class="form-control" placeholder="Ej. REF-48921">
+                        <div class="mb-2" id="contenedorBancoCompra" style="display: none;">
+                            <label for="idBanco" class="form-label fw-semibold">Banco Emisor / Cuenta</label>
+                            <select id="idBanco" name="id_banco" class="form-select">
+                                <option value="">Seleccione banco...</option>
+                                <?php foreach ($bancos as $b): ?>
+                                    <option value="<?php echo $b['id_banco']; ?>"><?php echo htmlspecialchars($b['nombre']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="mb-2" id="contenedorReferenciaCompra" style="display: none;">
+                            <label for="referenciaPago" class="form-label fw-semibold">Referencia (Últimos 4 dígitos)</label>
+                            <input type="text" id="referenciaPago" name="referencia" class="form-control" placeholder="Ej: 4821 (últimos 4 dígitos)" maxlength="20">
                         </div>
                     </div>
 
@@ -77,31 +86,31 @@
         <!-- Insumos Recibidos (Detalle) -->
         <div class="col-12 col-lg-8">
             <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white py-3">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0 fs-6 fw-bold"><i class="bi bi-box-seam me-2 text-primary"></i>Insumos y Productos Recibidos</h5>
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalRapidoInsumo">
+                        <i class="bi bi-plus-circle me-1"></i>Nuevo Insumo
+                    </button>
                 </div>
                 <div class="card-body">
-                    <!-- Selector de nuevo ítem -->
+                    <!-- Selector de nuevo ítem con búsqueda integrada -->
                     <div class="p-3 bg-light rounded-3 mb-3 border">
                         <div class="row g-2 align-items-end">
                             <div class="col-12 col-md-5">
-                                <label for="selectProducto" class="form-label small fw-semibold">Producto / Insumo</label>
-                                <select id="selectProducto" class="form-select form-select-sm">
-                                    <option value="">Seleccione un producto...</option>
-                                    <?php foreach ($insumos as $ins): ?>
-                                        <option value="<?php echo $ins['id_producto']; ?>" 
-                                                data-codigo="<?php echo htmlspecialchars($ins['codigo']); ?>"
-                                                data-nombre="<?php echo htmlspecialchars($ins['nombre']); ?>"
-                                                data-precio="<?php echo htmlspecialchars($ins['precio_compra'] ?? '0.00'); ?>"
-                                                data-stock="<?php echo htmlspecialchars($ins['stock_actual']); ?>">
-                                            <?php echo htmlspecialchars($ins['codigo'] . ' - ' . $ins['nombre'] . ' (Stock actual: ' . $ins['stock_actual'] . ')'); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+                                <label for="inputBuscarProductoCompra" class="form-label small fw-semibold">Producto / Insumo <span class="text-danger">*</span></label>
+                                <div class="position-relative">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                                        <input type="text" id="inputBuscarProductoCompra" class="form-control form-control-sm" placeholder="Escriba para buscar producto..." autocomplete="off">
+                                        <button class="btn btn-outline-secondary d-none" type="button" id="btnLimpiarProductoCompra" title="Limpiar"><i class="bi bi-x-lg"></i></button>
+                                    </div>
+                                    <input type="hidden" id="selectProducto" value="">
+                                    <div class="dropdown-menu w-100 p-0 shadow border" id="listaSugerenciasProductoCompra" style="max-height: 220px; overflow-y: auto; z-index: 1055;"></div>
+                                </div>
                             </div>
                             <div class="col-6 col-md-3">
                                 <label for="cantidadItem" class="form-label small fw-semibold">Cantidad</label>
-                                <input type="number" id="cantidadItem" class="form-control form-control-sm" step="0.0001" min="0.0001" placeholder="Ej. 10">
+                                <input type="number" id="cantidadItem" class="form-control form-control-sm" step="1" min="1" placeholder="Ej: 10">
                             </div>
                             <div class="col-6 col-md-2">
                                 <label for="precioItem" class="form-label small fw-semibold">Costo ($)</label>
@@ -159,4 +168,76 @@
     </div>
 </form>
 
+<!-- Modal Rápido para Crear Nuevo Insumo -->
+<div class="modal fade" id="modalRapidoInsumo" tabindex="-1" aria-labelledby="modalRapidoInsumoLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="modalRapidoInsumoLabel">
+                    <i class="bi bi-box-seam me-2"></i>Registrar Nuevo Insumo en Inventario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="formularioRapidoInsumo">
+                <div class="modal-body p-4">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-5">
+                            <label for="rapidoCodigo" class="form-label small fw-semibold">Código <span class="text-danger">*</span></label>
+                            <input type="text" id="rapidoCodigo" name="codigo" class="form-control form-control-sm" required placeholder="Ej: INS-001">
+                        </div>
+                        <div class="col-md-7">
+                            <label for="rapidoTipo" class="form-label small fw-semibold">Tipo <span class="text-danger">*</span></label>
+                            <select id="rapidoTipo" name="id_tipo_producto" class="form-select form-select-sm" required>
+                                <option value="2">Simple (Venta directa / Herramienta)</option>
+                                <option value="1">Base (Tinte concentrado 1 Galón)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="rapidoNombre" class="form-label small fw-semibold">Nombre del Insumo / Producto <span class="text-danger">*</span></label>
+                        <input type="text" id="rapidoNombre" name="nombre" class="form-control form-control-sm" required placeholder="Ej: Solvente Limpiador 1L">
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="rapidoUnidad" class="form-label small fw-semibold">Unidad de Medida <span class="text-danger">*</span></label>
+                            <select id="rapidoUnidad" name="unidad_medida" class="form-select form-select-sm" required>
+                                <option value="Unidad">Unidad / Galón</option>
+                                <option value="KG">KG</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="rapidoStockMinimo" class="form-label small fw-semibold">Stock Mínimo</label>
+                            <input type="number" id="rapidoStockMinimo" name="stock_minimo" class="form-control form-control-sm" min="0" value="5">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-2">
+                        <div class="col-md-6">
+                            <label for="rapidoPrecioVenta" class="form-label small fw-semibold">Precio de Venta ($) <span class="text-danger">*</span></label>
+                            <input type="number" id="rapidoPrecioVenta" name="precio_venta" class="form-control form-control-sm" step="0.01" min="0" value="0.00" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="rapidoPrecioCompra" class="form-label small fw-semibold">Costo Estimado ($)</label>
+                            <input type="number" id="rapidoPrecioCompra" name="precio_compra" class="form-control form-control-sm" step="0.01" min="0" value="0.00">
+                        </div>
+                    </div>
+
+                    <div id="alertaErrorRapidoInsumo" class="alert alert-danger d-none mt-3 mb-0 small"></div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-3" id="btnGuardarRapidoInsumo">
+                        <i class="bi bi-check-lg me-1"></i>Crear e Insertar en Compra
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+window.insumosCompraCatalogo = <?php echo json_encode($insumos ?? []); ?>;
+</script>
 <script src="/SP%20Perfect%20Color/assets/js/notaEntregaCompra.js?v=<?php echo file_exists(__DIR__ . '/../../assets/js/notaEntregaCompra.js') ? filemtime(__DIR__ . '/../../assets/js/notaEntregaCompra.js') : time(); ?>"></script>

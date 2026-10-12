@@ -91,7 +91,10 @@ class ProveedorModel extends ModeloBase
 
         if ($this->id < 1) return false;
 
-        $consulta = "SELECT COUNT(*) as total FROM cuentas_pagar WHERE id_proveedor = :id AND situacion = 'pendiente' AND estado = 1";
+        $consulta = "SELECT COUNT(*) as total 
+                     FROM cuentas_pagar cp
+                     INNER JOIN nota_entrega ne ON cp.id_nota_entrega = ne.id_nota_entrega
+                     WHERE ne.id_proveedor = :id AND cp.situacion = 'pendiente' AND cp.estado = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         $stmt->execute();
@@ -231,13 +234,12 @@ class ProveedorModel extends ModeloBase
 
     private function _ejecutarInsert(): int|false
     {
-        $consulta = "INSERT INTO proveedores (rif, nombre_empresa, direccion, contacto, correo, estado)
-                     VALUES (:rif, :nombre_empresa, :direccion, :contacto, :correo, 1)";
+        $consulta = "INSERT INTO proveedores (rif, nombre_empresa, direccion, correo, estado)
+                     VALUES (:rif, :nombre_empresa, :direccion, :correo, 1)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':rif', $this->rif, PDO::PARAM_STR);
         $stmt->bindParam(':nombre_empresa', $this->nombreEmpresa, PDO::PARAM_STR);
         $stmt->bindParam(':direccion', $this->direccion, PDO::PARAM_STR);
-        $stmt->bindParam(':contacto', $this->contacto, PDO::PARAM_STR);
         $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
         if ($stmt->execute()) return (int)$this->conexion->lastInsertId();
         return false;
@@ -247,13 +249,12 @@ class ProveedorModel extends ModeloBase
     {
         $consulta = "UPDATE proveedores
                      SET rif = :rif, nombre_empresa = :nombre_empresa, direccion = :direccion,
-                         contacto = :contacto, correo = :correo, estado = 1
+                         correo = :correo, estado = 1
                      WHERE id_proveedor = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':rif', $this->rif, PDO::PARAM_STR);
         $stmt->bindParam(':nombre_empresa', $this->nombreEmpresa, PDO::PARAM_STR);
         $stmt->bindParam(':direccion', $this->direccion, PDO::PARAM_STR);
-        $stmt->bindParam(':contacto', $this->contacto, PDO::PARAM_STR);
         $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         return $stmt->execute();
@@ -316,11 +317,10 @@ class ProveedorModel extends ModeloBase
 
     private function _ejecutarInsertTelefono(): bool
     {
-        $consulta = "INSERT INTO telefono_proveedor (id_proveedor, telefono, tipo) VALUES (:id_proveedor, :telefono, :tipo)";
+        $consulta = "INSERT INTO telefono_proveedor (id_proveedor, telefono, estado) VALUES (:id_proveedor, :telefono, 1)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id_proveedor', $this->proveedorId, PDO::PARAM_INT);
         $stmt->bindParam(':telefono', $this->telefono, PDO::PARAM_STR);
-        $stmt->bindParam(':tipo', $this->tipo, PDO::PARAM_STR);
         return $stmt->execute();
     }
 

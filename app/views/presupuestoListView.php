@@ -33,7 +33,6 @@
                         <th>Cedula</th>
                         <th>Total</th>
                         <th>Estado</th>
-                        <th>Vendedor</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>

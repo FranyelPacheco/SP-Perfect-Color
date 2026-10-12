@@ -72,6 +72,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Botones de filtro por tipo (Solo Bases y Simples)
+    var fraccionFiltroActual = 'todos';
+    var contenedorFiltrosFraccion = document.getElementById('filtrosFraccionBase');
     var botonesFiltro = document.querySelectorAll('.btn-filtro-tipo');
     botonesFiltro.forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -82,6 +84,41 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.remove('btn-outline-secondary');
             this.classList.add('btn-primary', 'active');
             tipoFiltroActual = this.dataset.tipo;
+
+            if (tipoFiltroActual === '1') {
+                if (contenedorFiltrosFraccion) contenedorFiltrosFraccion.classList.remove('d-none');
+            } else {
+                if (contenedorFiltrosFraccion) contenedorFiltrosFraccion.classList.add('d-none');
+                fraccionFiltroActual = 'todos';
+                resetBotonesFraccion();
+            }
+
+            aplicarFiltros();
+        });
+    });
+
+    function resetBotonesFraccion() {
+        var btns = document.querySelectorAll('.btn-filtro-fraccion');
+        btns.forEach(function(b) {
+            b.classList.remove('btn-primary', 'btn-outline-primary', 'active');
+            b.classList.add('btn-outline-secondary');
+            if (b.dataset.fraccion === 'todos') {
+                b.classList.remove('btn-outline-secondary');
+                b.classList.add('btn-outline-primary', 'active');
+            }
+        });
+    }
+
+    var botonesFraccion = document.querySelectorAll('.btn-filtro-fraccion');
+    botonesFraccion.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            botonesFraccion.forEach(function(b) {
+                b.classList.remove('btn-primary', 'btn-outline-primary', 'active');
+                b.classList.add('btn-outline-secondary');
+            });
+            this.classList.remove('btn-outline-secondary');
+            this.classList.add('btn-outline-primary', 'active');
+            fraccionFiltroActual = this.dataset.fraccion;
             aplicarFiltros();
         });
     });
@@ -177,7 +214,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 coincideTipo = (tipoId === parseInt(tipoFiltroActual));
             }
 
-            return coincideTexto && coincideTipo;
+            // Filtro por fraccion / presentacion (cuando tipo es Base)
+            var coincideFraccion = true;
+            if (tipoFiltroActual === '1' && fraccionFiltroActual !== 'todos') {
+                var frac = (insumo.fraccion || '').trim();
+                var nom = (insumo.nombre || '').toLowerCase();
+                var um = (insumo.unidad_medida || '').toLowerCase();
+                coincideFraccion = (frac === fraccionFiltroActual) ||
+                                   (nom.indexOf(fraccionFiltroActual) !== -1) ||
+                                   (um.indexOf(fraccionFiltroActual) !== -1);
+            }
+
+            return coincideTexto && coincideTipo && coincideFraccion;
         });
 
         mostrarInsumosDisponibles(filtrados);
@@ -449,52 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ==========================================
     // DETALLE DE PAGO Y CONDICIÓN (CONTADO / CRÉDITO)
-    // ==========================================
-    var condicionPagoPresupuesto = document.getElementById('condicionPagoPresupuesto');
-    var seccionPagoContado = document.getElementById('seccionPagoContado');
-    var tipoPagoPresupuesto = document.getElementById('tipoPagoPresupuesto');
-    var bancoPresupuesto = document.getElementById('bancoPresupuesto');
-    var colBancoPresupuesto = document.getElementById('colBancoPresupuesto');
-    var colReferenciaPresupuesto = document.getElementById('colReferenciaPresupuesto');
-    var referenciaPresupuesto = document.getElementById('referenciaPresupuesto');
-
-    function cargarDatosPago() {
-        fetch('/SP%20Perfect%20Color/presupuesto/obtenerDatosPagoAjax')
-            .then(function(r) { return r.json(); })
-            .then(function(res) {
-                if (res.estado === 'exito') {
-                    if (bancoPresupuesto && res.datos.bancos) {
-                        bancoPresupuesto.innerHTML = '<option value="">Seleccione banco...</option>';
-                        res.datos.bancos.forEach(function(b) {
-                            var opt = document.createElement('option');
-                            opt.value = b.id_banco;
-                            opt.textContent = b.nombre;
-                            bancoPresupuesto.appendChild(opt);
-                        });
-                    }
-                }
-            })
-            .catch(function(e) { console.error('Error cargando bancos:', e); });
-    }
-    cargarDatosPago();
-
-    if (condicionPagoPresupuesto) {
-        condicionPagoPresupuesto.addEventListener('change', function() {
-            if (seccionPagoContado) {
-                seccionPagoContado.style.display = this.value === 'contado' ? '' : 'none';
-            }
-        });
-    }
-
-    if (tipoPagoPresupuesto) {
-        tipoPagoPresupuesto.addEventListener('change', function() {
-            var val = this.value;
-            // 1 = Efectivo
-            var esEfectivo = (val === '1');
-            if (colBancoPresupuesto) colBancoPresupuesto.style.display = esEfectivo ? 'none' : '';
-            if (colReferenciaPresupuesto) colReferenciaPresupuesto.style.display = esEfectivo ? 'none' : '';
-        });
-    }
+    // El presupuesto no maneja pago directo (se maneja en Nota de Entrega)
 
     // ==========================================
     // LÓGICA DE PREPARACIÓN DE PINTURA (MEZCLAS)

@@ -85,12 +85,13 @@
                     </div>
 
                     <div class="row g-3 mb-3">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label for="stockActualInsumo" class="form-label">Stock Actual</label>
-                            <input type="number" id="stockActualInsumo" name="stock_actual" class="form-control" step="1" min="0" value="0">
+                            <input type="number" id="stockActualInsumo" name="stock_actual" class="form-control bg-light" step="1" min="0" value="0" readonly tabindex="-1">
+                            <div class="form-text text-muted small">Solo lectura. Se actualiza vía Compras y Ventas.</div>
                         </div>
-                        <div class="col-md-4">
-                            <label for="stockMinimoInsumo" class="form-label">Stock Minimo</label>
+                        <div class="col-md-6">
+                            <label for="stockMinimoInsumo" class="form-label">Stock Mínimo</label>
                             <input type="number" id="stockMinimoInsumo" name="stock_minimo" class="form-control" step="1" min="0" value="5">
                         </div>
                     </div>
@@ -101,21 +102,18 @@
                             <input type="number" id="precioVentaInsumo" name="precio_venta" class="form-control" step="0.01" min="0" value="0" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="precioCompraInsumo" class="form-label">Precio de Compra ($)</label>
-                            <input type="number" id="precioCompraInsumo" name="precio_compra" class="form-control" step="0.01" min="0" value="0">
+                            <label for="proveedorInsumo" class="form-label">Proveedor Asociado</label>
+                            <select id="proveedorInsumo" name="id_proveedor" class="form-select bg-light" disabled>
+                                <option value="">Sin proveedor asociado...</option>
+                            </select>
+                            <div class="form-text text-muted small">El proveedor se asocia en Compras.</div>
                         </div>
                     </div>
 
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label for="proveedorInsumo" class="form-label">Proveedor</label>
-                            <select id="proveedorInsumo" name="id_proveedor" class="form-select">
-                                <option value="">Seleccione un proveedor...</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
+                    <div class="row g-3 mb-3 d-none">
+                        <div class="col-md-12">
                             <label for="rubroInsumo" class="form-label">Rubro</label>
-                            <select id="rubroInsumo" name="id_rubro" class="form-select">
+                            <select id="rubroInsumo" name="id_rubro" class="form-select" disabled>
                                 <option value="">Seleccione un proveedor primero</option>
                             </select>
                         </div>
@@ -147,14 +145,14 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-5">
                             <label for="mezclaNombre" class="form-label fw-semibold text-dark">Nombre / Identificación del Color <span class="text-danger">*</span></label>
-                            <input type="text" id="mezclaNombre" class="form-control" placeholder="Ej: Azul Perlado Fiesta #204" required>
+                            <input type="text" id="mezclaNombre" class="form-control" placeholder="Ej: Azul Perla Fiesta" required>
                         </div>
                         <div class="col-md-4">
                             <label for="mezclaPresentacion" class="form-label fw-semibold text-dark">Presentación <span class="text-danger">*</span></label>
                             <select id="mezclaPresentacion" class="form-select" required>
-                                <option value="1 Galón" data-factor="1.0">1 Galón (1 gal)</option>
+                                <option value="1 Galón" data-factor="1.0" selected>1 Galón (1 gal)</option>
                                 <option value="1/2 Galón" data-factor="0.5">1/2 Galón (0.50 gal)</option>
-                                <option value="1/4 Galón" data-factor="0.25" selected>1/4 Galón (0.25 gal)</option>
+                                <option value="1/4 Galón" data-factor="0.25">1/4 Galón (0.25 gal)</option>
                                 <option value="1/8 Galón" data-factor="0.125">1/8 Galón (0.125 gal)</option>
                                 <option value="1/16 Galón" data-factor="0.0625">1/16 Galón (0.0625 gal)</option>
                                 <option value="1/32 Galón" data-factor="0.03125">1/32 Galón (0.03125 gal)</option>
@@ -163,7 +161,7 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="mezclaCantidad" class="form-label fw-semibold text-dark">Cantidad Envases <span class="text-danger">*</span></label>
+                            <label for="mezclaCantidad" class="form-label fw-semibold text-dark">Cantidad <span class="text-danger">*</span></label>
                             <input type="number" id="mezclaCantidad" class="form-control" min="1" step="1" value="1" required>
                         </div>
                     </div>
@@ -194,7 +192,9 @@
                                 <button type="button" class="btn btn-sm btn-outline-primary" id="btnAgregarFilaBase">
                                     <i class="bi bi-plus-circle me-1"></i>Agregar Tinte Base
                                 </button>
-                                <small class="text-muted" id="totalGalonesMezcla">Consumo total fórmula: 0.0000 gal</small>
+                                <div class="text-end">
+                                    <div id="indicadorBalanceFormula" class="fw-semibold small text-muted">Volumen: 0.0000 / 1.0000 gal</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -254,8 +254,8 @@
 
                     <div class="mb-3">
                         <label for="ajusteCantidad" class="form-label fw-semibold text-dark">Cantidad a Descontar <span class="text-danger">*</span></label>
-                        <input type="number" id="ajusteCantidad" class="form-control" min="0.0001" step="any" placeholder="0.00" required>
-                        <div class="form-text">Esta cantidad se restará inmediatamente de las existencias.</div>
+                        <input type="number" id="ajusteCantidad" class="form-control" min="1" step="1" placeholder="1" required>
+                        <div class="form-text">Esta cantidad se restará inmediatamente de las existencias (solo números enteros).</div>
                     </div>
 
                     <div class="mb-3">

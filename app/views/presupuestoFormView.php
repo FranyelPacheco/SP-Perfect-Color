@@ -34,10 +34,23 @@
                 </div>
 
                 <!-- Filtros rapidos por tipo -->
-                <div class="d-flex gap-1 mb-3 overflow-auto pb-1" id="filtrosTipoInsumo">
+                <div class="d-flex gap-1 mb-2 overflow-auto pb-1" id="filtrosTipoInsumo">
                     <button type="button" class="btn btn-sm btn-primary btn-filtro-tipo active" data-tipo="todos">Todos</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-tipo" data-tipo="1"><i class="bi bi-droplet-half me-1"></i>Bases</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-tipo" data-tipo="2"><i class="bi bi-box-seam me-1"></i>Simples</button>
+                </div>
+
+                <!-- Sub-filtro por tamaño/fracción para bases -->
+                <div class="d-flex gap-1 mb-3 overflow-auto pb-1 d-none" id="filtrosFraccionBase">
+                    <button type="button" class="btn btn-sm btn-outline-primary active btn-filtro-fraccion" data-fraccion="todos">Todas</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-fraccion" data-fraccion="1">1 Gal</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-fraccion" data-fraccion="1/2">1/2 Gal</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-fraccion" data-fraccion="1/4">1/4 Gal</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-fraccion" data-fraccion="1/8">1/8 Gal</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-fraccion" data-fraccion="1/16">1/16 Gal</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-fraccion" data-fraccion="1/32">1/32 Gal</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-fraccion" data-fraccion="1/64">1/64 Gal</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-fraccion" data-fraccion="1/128">1/128 Gal</button>
                 </div>
 
                 <!-- Lista de insumos con scroll -->
@@ -50,57 +63,20 @@
             </div>
         </div>
 
-        <!-- COLUMNA DERECHA: DATOS DEL CLIENTE, CONDICION DE PAGO, ITEMS Y TOTAL -->
+        <!-- COLUMNA DERECHA: DATOS DEL CLIENTE, ITEMS Y TOTAL -->
         <div class="d-flex flex-column gap-3">
-            <!-- Tarjeta Cliente y Condicion de Pago -->
+            <!-- Tarjeta Cliente -->
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-3">
                     <div class="row g-2">
-                        <div class="col-md-7">
+                        <div class="col-12">
                             <label for="clientePresupuesto" class="form-label fw-bold text-dark mb-1">
                                 <i class="bi bi-person-fill text-primary me-1"></i>Cliente <span class="text-danger">*</span>
                             </label>
                             <select id="clientePresupuesto" name="id_cliente" class="form-select" required>
                                 <option value="">Seleccione un cliente...</option>
                             </select>
-                        </div>
-                        <div class="col-md-5">
-                            <label for="condicionPagoPresupuesto" class="form-label fw-bold text-dark mb-1">
-                                <i class="bi bi-cash-stack text-success me-1"></i>Condición de Pago <span class="text-danger">*</span>
-                            </label>
-                            <select id="condicionPagoPresupuesto" name="condicion_pago" class="form-select" required>
-                                <option value="contado" selected>Contado</option>
-                                <option value="credito">Crédito</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Fila condicional para detalle de pago al contado -->
-                    <div class="row g-3 mt-1" id="seccionPagoContado">
-                        <div class="col-md-4">
-                            <label for="tipoPagoPresupuesto" class="form-label fw-semibold text-secondary small mb-1">
-                                <i class="bi bi-credit-card-2-front-fill me-1"></i>Método de Pago
-                            </label>
-                            <select id="tipoPagoPresupuesto" name="id_tipo_pago" class="form-select form-select-sm">
-                                <option value="1">Efectivo ($ / Bs.)</option>
-                                <option value="3" selected>Pago Móvil</option>
-                                <option value="2">Transferencia Bancaria</option>
-                                <option value="4">Tarjeta de Débito</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4" id="colBancoPresupuesto">
-                            <label for="bancoPresupuesto" class="form-label fw-semibold text-secondary small mb-1">
-                                <i class="bi bi-building-fill me-1"></i>Banco Receptor
-                            </label>
-                            <select id="bancoPresupuesto" name="id_banco" class="form-select form-select-sm">
-                                <option value="">Seleccione banco...</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4" id="colReferenciaPresupuesto">
-                            <label for="referenciaPresupuesto" class="form-label fw-semibold text-secondary small mb-1">
-                                <i class="bi bi-hash me-1"></i>Nro. Referencia
-                            </label>
-                            <input type="text" id="referenciaPresupuesto" name="referencia" class="form-control form-control-sm" placeholder="Ej: 123456">
+                            <small class="text-muted">El presupuesto es una cotización preliminar. Las condiciones y forma de pago se definen al generar la Nota de Entrega.</small>
                         </div>
                     </div>
                 </div>

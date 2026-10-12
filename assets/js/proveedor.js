@@ -17,10 +17,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const rifCompletoProveedor = document.getElementById('rifCompletoProveedor');
     const feedbackRifProveedor = document.getElementById('feedbackRifProveedor');
     const nombreEmpresaProveedor = document.getElementById('nombreEmpresaProveedor');
-    const contactoProveedor = document.getElementById('contactoProveedor');
     const operadoraProveedor = document.getElementById('operadoraProveedor');
     const telefonoNumeroProveedor = document.getElementById('telefonoNumeroProveedor');
     const telefonoProveedor = document.getElementById('telefonoProveedor');
+
+    // Elementos segundo teléfono
+    const btnToggleTel2Proveedor = document.getElementById('btnToggleTel2Proveedor');
+    const btnQuitarTel2Proveedor = document.getElementById('btnQuitarTel2Proveedor');
+    const seccionTel2Proveedor = document.getElementById('seccionTel2Proveedor');
+    const operadoraProveedor2 = document.getElementById('operadoraProveedor2');
+    const telefonoNumeroProveedor2 = document.getElementById('telefonoNumeroProveedor2');
+    const telefonoProveedor2 = document.getElementById('telefonoProveedor2');
+
     const correoProveedor = document.getElementById('correoProveedor');
     const direccionProveedor = document.getElementById('direccionProveedor');
     const rubrosContainer = document.getElementById('rubrosContainer');
@@ -77,6 +85,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function resetearSegundoTelefonoProveedor() {
+        if (seccionTel2Proveedor) seccionTel2Proveedor.classList.add('d-none');
+        if (btnToggleTel2Proveedor) btnToggleTel2Proveedor.classList.remove('d-none');
+        if (telefonoNumeroProveedor2) telefonoNumeroProveedor2.value = '';
+        if (telefonoProveedor2) telefonoProveedor2.value = '';
+    }
+
+    if (btnToggleTel2Proveedor) {
+        btnToggleTel2Proveedor.addEventListener('click', function() {
+            if (seccionTel2Proveedor) seccionTel2Proveedor.classList.remove('d-none');
+            this.classList.add('d-none');
+        });
+    }
+
+    if (btnQuitarTel2Proveedor) {
+        btnQuitarTel2Proveedor.addEventListener('click', function() {
+            resetearSegundoTelefonoProveedor();
+        });
+    }
+
     if (btnNuevoProveedor) {
         btnNuevoProveedor.addEventListener('click', function() {
             tituloModal.textContent = 'Nuevo Proveedor';
@@ -84,8 +112,8 @@ document.addEventListener('DOMContentLoaded', function() {
             rifProveedor.value = '';
             rifProveedor.disabled = false;
             nombreEmpresaProveedor.value = '';
-            contactoProveedor.value = '';
             telefonoProveedor.value = '';
+            resetearSegundoTelefonoProveedor();
             correoProveedor.value = '';
             direccionProveedor.value = '';
             resetRubrosContainer();
@@ -102,6 +130,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnCancelar) {
         btnCancelar.addEventListener('click', function() {
             bootstrap.Modal.getInstance(modalProveedor).hide();
+        });
+    }
+
+    if (modalProveedor) {
+        modalProveedor.addEventListener('hidden.bs.modal', function() {
+            formularioProveedor.reset();
+            resetearSegundoTelefonoProveedor();
+            mensajeError.classList.add('d-none');
         });
     }
 
@@ -201,8 +237,16 @@ document.addEventListener('DOMContentLoaded', function() {
         tipoRifProveedor.addEventListener('change', verificarRifEnTiempoReal);
     }
 
+
+
     if (telefonoNumeroProveedor) {
         telefonoNumeroProveedor.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    }
+
+    if (telefonoNumeroProveedor2) {
+        telefonoNumeroProveedor2.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '');
         });
     }
@@ -225,10 +269,6 @@ document.addEventListener('DOMContentLoaded', function() {
             var columnsDef = [
                 { data: 'rif' },
                 { data: 'nombre_empresa' },
-                {
-                    data: 'contacto',
-                    render: function(d) { return d || '-'; }
-                },
                 {
                     data: 'telefonos',
                     render: function(d) { return d || '-'; }
@@ -322,15 +362,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 nombreEmpresaProveedor.value = proveedor.nombre_empresa;
-                contactoProveedor.value = proveedor.contacto || '';
 
-                // Parsear telefono
-                const telRaw = (proveedor.telefonos || '').replace(/[^0-9]/g, '');
-                if (telRaw.length === 11 && operadoraProveedor && telefonoNumeroProveedor) {
-                    operadoraProveedor.value = telRaw.substring(0, 4);
-                    telefonoNumeroProveedor.value = telRaw.substring(4);
-                } else if (telefonoNumeroProveedor) {
-                    telefonoNumeroProveedor.value = telRaw;
+                // Parsear teléfonos (pueden venir separados por coma)
+                resetearSegundoTelefonoProveedor();
+                const arrayTels = (proveedor.telefonos || '').split(',').map(function(t) { return t.trim(); });
+                if (arrayTels.length > 0 && arrayTels[0]) {
+                    const telRaw1 = arrayTels[0].replace(/[^0-9]/g, '');
+                    if (telRaw1.length === 11 && operadoraProveedor && telefonoNumeroProveedor) {
+                        operadoraProveedor.value = telRaw1.substring(0, 4);
+                        telefonoNumeroProveedor.value = telRaw1.substring(4);
+                    } else if (telefonoNumeroProveedor) {
+                        telefonoNumeroProveedor.value = telRaw1;
+                    }
+                }
+                if (arrayTels.length > 1 && arrayTels[1]) {
+                    const telRaw2 = arrayTels[1].replace(/[^0-9]/g, '');
+                    if (telRaw2.length === 11 && operadoraProveedor2 && telefonoNumeroProveedor2) {
+                        operadoraProveedor2.value = telRaw2.substring(0, 4);
+                        telefonoNumeroProveedor2.value = telRaw2.substring(4);
+                        if (seccionTel2Proveedor) seccionTel2Proveedor.classList.remove('d-none');
+                        if (btnToggleTel2Proveedor) btnToggleTel2Proveedor.classList.add('d-none');
+                    }
                 }
 
                 correoProveedor.value = proveedor.correo || '';
@@ -372,8 +424,17 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (!correoProveedor.value.trim()) {
+
+
+        const correoVal = correoProveedor.value.trim();
+        if (!correoVal) {
             mostrarError('El correo electronico es obligatorio');
+            correoProveedor.focus();
+            return;
+        }
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(correoVal)) {
+            mostrarError('El correo electronico no tiene un formato valido');
             correoProveedor.focus();
             return;
         }
@@ -387,6 +448,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (telefonoProveedor) {
             telefonoProveedor.value = telNum ? (op + telNum) : '';
+        }
+
+        // Telefono 2
+        const telNum2 = telefonoNumeroProveedor2 ? telefonoNumeroProveedor2.value.trim() : '';
+        const op2 = operadoraProveedor2 ? operadoraProveedor2.value : '';
+        if (telNum2 && telNum2.length !== 7) {
+            mostrarError('El segundo numero de telefono debe tener exactamente 7 digitos');
+            telefonoNumeroProveedor2.focus();
+            return;
         }
 
         const selectsRubros = rubrosContainer.querySelectorAll('select[name="rubros[]"]');
@@ -405,6 +475,9 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.set('rif', rifFinal);
         if (telNum) {
             formData.set('telefono', op + telNum);
+        }
+        if (telNum2) {
+            formData.set('telefono2', op2 + telNum2);
         }
 
         if (esEdicion) {

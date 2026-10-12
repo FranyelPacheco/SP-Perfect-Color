@@ -20,6 +20,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const operadoraCliente = document.getElementById('operadoraCliente');
     const telefonoNumeroCliente = document.getElementById('telefonoNumeroCliente');
     const telefonoCliente = document.getElementById('telefonoCliente');
+
+    // Elementos segundo teléfono
+    const btnToggleTel2Cliente = document.getElementById('btnToggleTel2Cliente');
+    const btnQuitarTel2Cliente = document.getElementById('btnQuitarTel2Cliente');
+    const seccionTel2Cliente = document.getElementById('seccionTel2Cliente');
+    const operadoraCliente2 = document.getElementById('operadoraCliente2');
+    const telefonoNumeroCliente2 = document.getElementById('telefonoNumeroCliente2');
+    const telefonoCliente2 = document.getElementById('telefonoCliente2');
+
     const correoCliente = document.getElementById('correoCliente');
     const direccionCliente = document.getElementById('direccionCliente');
     const mensajeError = document.getElementById('mensajeErrorCliente');
@@ -34,10 +43,32 @@ document.addEventListener('DOMContentLoaded', function() {
             formularioCliente.reset();
             clienteId.value = '';
             limpiarEstadoCedula();
+            resetearSegundoTelefono();
             mensajeError.classList.add('d-none');
             tituloModal.textContent = 'Nuevo Cliente';
             bootstrap.Modal.getOrCreateInstance(modalCliente).show();
         });
+    }
+
+    // Toggle segundo teléfono
+    if (btnToggleTel2Cliente) {
+        btnToggleTel2Cliente.addEventListener('click', function() {
+            if (seccionTel2Cliente) seccionTel2Cliente.classList.remove('d-none');
+            this.classList.add('d-none');
+        });
+    }
+
+    if (btnQuitarTel2Cliente) {
+        btnQuitarTel2Cliente.addEventListener('click', function() {
+            resetearSegundoTelefono();
+        });
+    }
+
+    function resetearSegundoTelefono() {
+        if (seccionTel2Cliente) seccionTel2Cliente.classList.add('d-none');
+        if (btnToggleTel2Cliente) btnToggleTel2Cliente.classList.remove('d-none');
+        if (telefonoNumeroCliente2) telefonoNumeroCliente2.value = '';
+        if (telefonoCliente2) telefonoCliente2.value = '';
     }
 
     // Eventos para cerrar modal
@@ -65,6 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
         modalCliente.addEventListener('hidden.bs.modal', function () {
             formularioCliente.reset();
             limpiarEstadoCedula();
+            resetearSegundoTelefono();
             mensajeError.classList.add('d-none');
         });
     }
@@ -133,9 +165,26 @@ document.addEventListener('DOMContentLoaded', function() {
         tipoDocCliente.addEventListener('change', verificarCedulaEnTiempoReal);
     }
 
-    // Permitir solo numeros en telefono
+    // Restringir caracteres especiales en nombres y apellidos (solo letras y espacios)
+    function restringirSoloLetras(input) {
+        if (!input) return;
+        input.addEventListener('input', function() {
+            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+        });
+    }
+    restringirSoloLetras(nombresCliente);
+    restringirSoloLetras(apellidosCliente);
+
+    // Permitir solo numeros en telefono principal
     if (telefonoNumeroCliente) {
         telefonoNumeroCliente.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    }
+
+    // Permitir solo numeros en segundo telefono
+    if (telefonoNumeroCliente2) {
+        telefonoNumeroCliente2.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '');
         });
     }
@@ -256,13 +305,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 nombresCliente.value = c.nombres;
                 apellidosCliente.value = c.apellidos;
 
-                // Parsear telefono (0412-1234567 o 04121234567)
-                const telRaw = (c.telefonos || '').replace(/[^0-9]/g, '');
-                if (telRaw.length === 11 && operadoraCliente && telefonoNumeroCliente) {
-                    operadoraCliente.value = telRaw.substring(0, 4);
-                    telefonoNumeroCliente.value = telRaw.substring(4);
-                } else if (telefonoNumeroCliente) {
-                    telefonoNumeroCliente.value = telRaw;
+                // Parsear teléfonos (pueden venir separados por coma)
+                resetearSegundoTelefono();
+                const arrayTels = (c.telefonos || '').split(',').map(function(t) { return t.trim(); });
+                if (arrayTels.length > 0 && arrayTels[0]) {
+                    const telRaw1 = arrayTels[0].replace(/[^0-9]/g, '');
+                    if (telRaw1.length === 11 && operadoraCliente && telefonoNumeroCliente) {
+                        operadoraCliente.value = telRaw1.substring(0, 4);
+                        telefonoNumeroCliente.value = telRaw1.substring(4);
+                    } else if (telefonoNumeroCliente) {
+                        telefonoNumeroCliente.value = telRaw1;
+                    }
+                }
+                if (arrayTels.length > 1 && arrayTels[1]) {
+                    const telRaw2 = arrayTels[1].replace(/[^0-9]/g, '');
+                    if (telRaw2.length === 11 && operadoraCliente2 && telefonoNumeroCliente2) {
+                        operadoraCliente2.value = telRaw2.substring(0, 4);
+                        telefonoNumeroCliente2.value = telRaw2.substring(4);
+                        if (seccionTel2Cliente) seccionTel2Cliente.classList.remove('d-none');
+                        if (btnToggleTel2Cliente) btnToggleTel2Cliente.classList.add('d-none');
+                    }
                 }
 
                 correoCliente.value = c.correo || '';
@@ -296,24 +358,45 @@ document.addEventListener('DOMContentLoaded', function() {
             cedulaCompletaCliente.value = cedulaFinal;
         }
 
-        if (!nombresCliente.value.trim()) {
+        const nombreVal = nombresCliente.value.trim();
+        if (!nombreVal) {
             mostrarError('El nombre es obligatorio');
             nombresCliente.focus();
             return;
         }
-        if (!apellidosCliente.value.trim()) {
+        const soloLetrasRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
+        if (!soloLetrasRegex.test(nombreVal)) {
+            mostrarError('El nombre solo puede contener letras y espacios (sin caracteres especiales)');
+            nombresCliente.focus();
+            return;
+        }
+
+        const apellidoVal = apellidosCliente.value.trim();
+        if (!apellidoVal) {
             mostrarError('El apellido es obligatorio');
             apellidosCliente.focus();
             return;
         }
+        if (!soloLetrasRegex.test(apellidoVal)) {
+            mostrarError('El apellido solo puede contener letras y espacios (sin caracteres especiales)');
+            apellidosCliente.focus();
+            return;
+        }
 
-        if (!correoCliente.value.trim()) {
+        const correoVal = correoCliente.value.trim();
+        if (!correoVal) {
             mostrarError('El correo electronico es obligatorio');
             correoCliente.focus();
             return;
         }
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(correoVal)) {
+            mostrarError('El correo electronico no es valido');
+            correoCliente.focus();
+            return;
+        }
 
-        // Armar telefono si tiene numero
+        // Armar telefono 1 si tiene numero
         const telNum = telefonoNumeroCliente ? telefonoNumeroCliente.value.trim() : '';
         const op = operadoraCliente ? operadoraCliente.value : '';
         if (telNum && telNum.length !== 7) {
@@ -331,6 +414,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (telNum) {
             formData.set('telefono', op + telNum);
         }
+
+        // Armar telefono 2 si tiene numero
+        const telNum2 = telefonoNumeroCliente2 ? telefonoNumeroCliente2.value.trim() : '';
+        const op2 = operadoraCliente2 ? operadoraCliente2.value : '';
+        if (telNum2) {
+            if (telNum2.length !== 7) {
+                mostrarError('El segundo numero de telefono debe tener exactamente 7 digitos');
+                telefonoNumeroCliente2.focus();
+                return;
+            }
+            formData.set('telefono2', op2 + telNum2);
+        }
+
         if (esEdicion) {
             formData.set('id', id);
         }

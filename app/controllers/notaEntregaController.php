@@ -72,20 +72,22 @@ if ($metodo === 'index') {
     
     $presupuesto = $presupuestoModel->buscarPorId($presupuestoId);
     
-    if (!$presupuesto || $presupuesto['estado'] !== 'aprobado') {
+    $estadoActual = $presupuesto['estado'] ?? '';
+    $idEstadoVenta = intval($presupuesto['id_estado_venta'] ?? 0);
+    if (!$presupuesto || ($estadoActual !== 'aprobado' && $estadoActual !== 'presupuesto' && $estadoActual !== 'pendiente' && $idEstadoVenta !== 1 && $idEstadoVenta !== 2)) {
         header('Location: /SP%20Perfect%20Color/presupuesto');
         exit;
     }
     
     $detalle = $presupuestoModel->obtenerDetalle($presupuestoId);
     
-    $pageTitle = 'SP Perfect Color - Nota de Entrega desde Presupuesto #' . $presupuestoId;
-    $pageDescription = 'Crear nota de entrega a partir del presupuesto #' . $presupuestoId . ' - SP Perfect Color';
+    $pageTitle = 'SP Perfect Color - Procesar Entrega y Cobro #' . $presupuestoId;
+    $pageDescription = 'Aprobar/Rechazar y cobrar nota de entrega a partir del presupuesto #' . $presupuestoId . ' - SP Perfect Color';
     $contenidoVista = __DIR__ . '/../views/notaEntregaFormView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
 // FUNCIÓN: guardar
-// OBJETIVO: Crea una nueva nota de entrega con detalle, condicion de pago y datos de pago
+// OBJETIVO: Aprueba y cobra o rechaza la nota de entrega desde un presupuesto
 } elseif ($metodo === 'guardar') {
     verificarRolVendedor();
     
@@ -103,6 +105,15 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Presupuesto asociado no encontrado');
     }
 
+    $decision = trim($_POST['decision'] ?? 'aprobar');
+    if ($decision === 'rechazar') {
+        if ($presupuestoModel->cambiarEstado($presupuestoId, 'rechazado')) {
+            respuestaJson('exito', 'Nota de entrega / Presupuesto #' . $presupuestoId . ' rechazada correctamente');
+        } else {
+            respuestaJson('error', 'No se pudo rechazar la nota de entrega');
+        }
+    }
+
     // Tomar id_cliente directamente del presupuesto
     $clienteId = intval($presupuesto['id_cliente'] ?? 0);
     if ($clienteId < 1) {
@@ -117,26 +128,55 @@ if ($metodo === 'index') {
     $bancoId = !empty($_POST['id_banco']) ? intval($_POST['id_banco']) : null;
     $referencia = trim($_POST['referencia'] ?? '');
     $fechaVencimiento = $_POST['fecha_vencimiento'] ?? '';
+    $montoInicial = floatval($_POST['monto_inicial'] ?? 0);
+    $tipoPagoInicial = !empty($_POST['id_tipo_pago_inicial']) ? intval($_POST['id_tipo_pago_inicial']) : null;
+    $bancoInicial = !empty($_POST['id_banco_inicial']) ? intval($_POST['id_banco_inicial']) : null;
+    $referenciaInicial = trim($_POST['referencia_inicial'] ?? '');
+
     $items = json_decode($_POST['items'] ?? '[]', true);
     
     if (empty($items)) {
         respuestaJson('error', 'Debe agregar al menos un item');
     }
     
-    if ($condicionPago === 'credito' && empty($fechaVencimiento)) {
-        respuestaJson('error', 'Debe seleccionar una fecha de vencimiento para pagos a credito');
-    }
-    
-    if ($condicionPago === 'contado' && (empty($tipoPagoId) || $tipoPagoId < 1)) {
-        respuestaJson('error', 'Debe seleccionar un tipo de pago');
-    }
-    
-    if ($condicionPago === 'contado' && ($tipoPagoId === 2 || $tipoPagoId === 3)) {
-        if (empty($bancoId) || $bancoId < 1) {
-            respuestaJson('error', 'Debe seleccionar un banco para transferencia o pago movil');
+    if ($condicionPago === 'credito') {
+        if (empty($fechaVencimiento)) {
+            respuestaJson('error', 'Debe seleccionar una fecha de vencimiento para pagos a credito');
         }
-        if (empty($referencia)) {
-            respuestaJson('error', 'Debe ingresar el numero de referencia para transferencia o pago movil');
+        if ($montoInicial > 0) {
+            if (empty($tipoPagoInicial)) {
+                respuestaJson('error', 'Debe seleccionar el método de pago para el abono inicial');
+            }
+            if ($tipoPagoInicial === 1) {
+                // Efectivo: banco no aplica, referencia por defecto
+                $bancoInicial = null;
+                if (empty($referenciaInicial)) $referenciaInicial = 'Efectivo';
+            } else {
+                if (empty($bancoInicial)) {
+                    respuestaJson('error', 'Debe seleccionar el banco receptor para el abono inicial');
+                }
+                if (empty($referenciaInicial)) {
+                    respuestaJson('error', 'Debe ingresar la referencia para el abono inicial');
+                }
+            }
+        }
+    }
+    
+    if ($condicionPago === 'contado') {
+        if (empty($tipoPagoId) || $tipoPagoId < 1) {
+            respuestaJson('error', 'Debe seleccionar un tipo de pago para aprobar la entrega');
+        }
+        if ($tipoPagoId === 1) {
+            // Efectivo
+            $bancoId = null;
+            if (empty($referencia)) $referencia = 'Efectivo';
+        } else {
+            if (empty($bancoId) || $bancoId < 1) {
+                respuestaJson('error', 'Debe seleccionar un banco para el pago por transferencia o pago móvil');
+            }
+            if (empty($referencia)) {
+                respuestaJson('error', 'Debe ingresar el número de referencia para el pago');
+            }
         }
     }
     
@@ -174,7 +214,11 @@ if ($metodo === 'index') {
             $tipoPagoId,
             $bancoId,
             $referencia !== '' ? $referencia : null,
-            $fechaVencimiento !== '' ? $fechaVencimiento : null
+            $fechaVencimiento !== '' ? $fechaVencimiento : null,
+            $montoInicial,
+            $tipoPagoInicial,
+            $bancoInicial,
+            $referenciaInicial !== '' ? $referenciaInicial : null
         );
         
         respuestaJson('exito', 'Nota de entrega creada exitosamente', [

@@ -45,16 +45,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     {
                         data: 'estado',
-                        render: function(data) {
+                        render: function(data, type) {
                             if (!data) return '';
                             var isEspera = (data === 'presupuesto' || data === 'pendiente');
                             var texto = isEspera ? 'En Espera' : (data.charAt(0).toUpperCase() + data.slice(1));
+                            if (type === 'filter' || type === 'sort') {
+                                return texto;
+                            }
                             var cls = isEspera ? 'estado-presupuesto' : 'estado-' + data;
                             var icon = isEspera ? 'bi-clock-fill' : (data === 'aprobado' ? 'bi-check-circle-fill' : 'bi-x-circle-fill');
                             return '<span class="' + cls + '"><i class="bi ' + icon + ' me-1"></i>' + texto + '</span>';
                         }
                     },
-                    { data: 'usuario_nombre' },
                     {
                         data: null,
                         orderable: false,
@@ -96,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (tip) tip.hide();
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         if (!isNaN(id)) {
-            cambiarEstado(id, 'aprobado');
+            window.location.href = '/SP%20Perfect%20Color/notaEntrega/crearDesdePresupuesto?id=' + id;
         }
     });
 

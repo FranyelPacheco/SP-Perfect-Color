@@ -71,15 +71,13 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(function(res) {
                 if (res.estado === 'exito') {
                     var sel = document.getElementById('tipoPago');
-                    if (sel) {
-                        sel.innerHTML = '<option value="">Seleccione...</option>';
-                        res.datos.tipos_pago.forEach(function(tp) {
-                            var op = document.createElement('option');
-                            op.value = tp.id_tipo_pago;
-                            op.textContent = tp.nombre;
-                            sel.appendChild(op);
-                        });
-                    }
+                    var selIni = document.getElementById('tipoPagoInicial');
+                    var opts = '<option value="">Seleccione...</option>';
+                    res.datos.tipos_pago.forEach(function(tp) {
+                        opts += '<option value="' + tp.id_tipo_pago + '">' + tp.nombre + '</option>';
+                    });
+                    if (sel) sel.innerHTML = opts;
+                    if (selIni) selIni.innerHTML = opts;
                 }
             });
     }
@@ -91,15 +89,13 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(function(res) {
                 if (res.estado === 'exito') {
                     var sel = document.getElementById('bancoPago');
-                    if (sel) {
-                        sel.innerHTML = '<option value="">Seleccione un banco...</option>';
-                        res.datos.bancos.forEach(function(b) {
-                            var op = document.createElement('option');
-                            op.value = b.id_banco;
-                            op.textContent = b.nombre;
-                            sel.appendChild(op);
-                        });
-                    }
+                    var selIni = document.getElementById('bancoPagoInicial');
+                    var opts = '<option value="">Seleccione un banco...</option>';
+                    res.datos.bancos.forEach(function(b) {
+                        opts += '<option value="' + b.id_banco + '">' + b.nombre + '</option>';
+                    });
+                    if (sel) sel.innerHTML = opts;
+                    if (selIni) selIni.innerHTML = opts;
                 }
             });
     }
@@ -149,87 +145,164 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         totalNota.textContent = '$ ' + formatearMoneda(total);
+        actualizarCalculoInicial(total);
+    }
+
+    var montoInicialInput = document.getElementById('montoInicial');
+    var tipoPagoInicialSelect = document.getElementById('tipoPagoInicial');
+    var textoSaldoRestante = document.getElementById('textoSaldoRestante');
+
+    function actualizarCalculoInicial(totalTotal) {
+        if (!montoInicialInput || !textoSaldoRestante) return;
+        var total = (typeof totalTotal === 'number') ? totalTotal : (itemsNota.reduce(function(acc, i) { return acc + i.subtotal; }, 0));
+        var ini = parseFloat(montoInicialInput.value) || 0;
+        var restante = Math.max(0, total - ini);
+        textoSaldoRestante.textContent = '$ ' + formatearMoneda(restante);
+    }
+
+    if (montoInicialInput) {
+        montoInicialInput.addEventListener('input', function() {
+            var ini = parseFloat(this.value) || 0;
+            var contT = document.getElementById('contenedorTipoPagoInicial');
+            var contB = document.getElementById('contenedorBancoInicial');
+            var contR = document.getElementById('contenedorReferenciaInicial');
+            if (ini > 0) {
+                if (contT) contT.style.display = 'block';
+                verificarTipoPagoInicial();
+            } else {
+                if (contT) contT.style.display = 'none';
+                if (contB) contB.style.display = 'none';
+                if (contR) contR.style.display = 'none';
+            }
+            actualizarCalculoInicial();
+        });
+    }
+
+    function verificarTipoPagoInicial() {
+        if (!tipoPagoInicialSelect) return;
+        var val = parseInt(tipoPagoInicialSelect.value);
+        var contB = document.getElementById('contenedorBancoInicial');
+        var contR = document.getElementById('contenedorReferenciaInicial');
+        if (val === 2 || val === 3 || val === 4) {
+            if (contB) contB.style.display = 'block';
+            if (contR) contR.style.display = 'block';
+        } else {
+            if (contB) contB.style.display = 'none';
+            if (contR) contR.style.display = 'none';
+        }
+    }
+
+    if (tipoPagoInicialSelect) {
+        tipoPagoInicialSelect.addEventListener('change', verificarTipoPagoInicial);
     }
 
     function guardarNotaEntrega() {
         try {
-            if (!clienteNota) {
-                mostrarError('Error interno: campo cliente no encontrado');
-                return;
-            }
-            if (!clienteNota.value) {
-                mostrarError('Debe seleccionar un cliente');
-                return;
-            }
-
-            if (itemsNota.length === 0) {
-                mostrarError('Debe agregar al menos un item');
-                return;
-            }
-
             var presupuestoInput = document.getElementById('presupuestoId');
-
-            // Forzar remover required de fecha si esta oculta
-            if (contenedorVencimiento && contenedorVencimiento.style.display === 'none') {
-                if (fechaVencimientoInput) fechaVencimientoInput.required = false;
-            }
+            var decisionSelect = document.getElementById('decisionNota');
+            var decision = decisionSelect ? decisionSelect.value : 'aprobar';
 
             var formData = new FormData();
-            formData.append('id_cliente', clienteNota.value);
             formData.append('id_presupuesto', presupuestoInput ? presupuestoInput.value : '');
-            var condPago = condicionPagoSelect ? condicionPagoSelect.value : 'contado';
-            formData.append('condicion_pago', condPago);
+            formData.append('decision', decision);
 
-            var tipoPagoInput = document.getElementById('tipoPago');
-            // Tipo de pago obligatorio cuando es contado
-            if (condPago === 'contado') {
-                if (!tipoPagoInput || !tipoPagoInput.value) {
-                    mostrarError('Debe seleccionar un tipo de pago');
+            if (decision === 'rechazar') {
+                // Confirmación para rechazar
+                if (!confirm('¿Está seguro de que desea rechazar este presupuesto / nota de entrega?')) {
                     return;
                 }
-            }
-            if (tipoPagoInput && tipoPagoInput.value) {
-                formData.append('id_tipo_pago', tipoPagoInput.value);
-            }
-
-            var tipoPagoVal = tipoPagoInput ? parseInt(tipoPagoInput.value) : 0;
-            // Transferencia=2, Pago Movil=3 â€” banco y referencia obligatorios
-            if (tipoPagoVal === 2 || tipoPagoVal === 3) {
-                var bancoInput = document.getElementById('bancoPago');
-                if (!bancoInput || !bancoInput.value) {
-                    mostrarError('Debe seleccionar un banco para transferencia o pago movil');
-                    return;
-                }
-                var referenciaInput = document.getElementById('referenciaPago');
-                if (!referenciaInput || !referenciaInput.value.trim()) {
-                    mostrarError('Debe ingresar el numero de referencia para transferencia o pago movil');
-                    return;
-                }
-                formData.append('id_banco', bancoInput.value);
-                formData.append('referencia', referenciaInput.value.trim());
             } else {
-                var bancoInput = document.getElementById('bancoPago');
-                if (bancoInput && bancoInput.value) {
-                    formData.append('id_banco', bancoInput.value);
+                if (!clienteNota) {
+                    mostrarError('Error interno: campo cliente no encontrado');
+                    return;
                 }
-                var referenciaInput = document.getElementById('referenciaPago');
-                if (referenciaInput && referenciaInput.value) {
-                    formData.append('referencia', referenciaInput.value);
+                if (!clienteNota.value) {
+                    mostrarError('Debe seleccionar un cliente');
+                    return;
                 }
-            }
 
-            if (fechaVencimientoInput) {
-                formData.append('fecha_vencimiento', fechaVencimientoInput.value);
+                if (itemsNota.length === 0) {
+                    mostrarError('Debe agregar al menos un item');
+                    return;
+                }
+
+                formData.append('id_cliente', clienteNota.value);
+                var condPago = condicionPagoSelect ? condicionPagoSelect.value : 'contado';
+                formData.append('condicion_pago', condPago);
+
+                if (condPago === 'contado') {
+                    var tipoPagoInput = document.getElementById('tipoPago');
+                    if (!tipoPagoInput || !tipoPagoInput.value) {
+                        mostrarError('Debe seleccionar el tipo de pago para aprobar la entrega al contado');
+                        return;
+                    }
+                    formData.append('id_tipo_pago', tipoPagoInput.value);
+
+                    var tipoPagoVal = parseInt(tipoPagoInput.value);
+                    if (tipoPagoVal !== 1) { // Si no es efectivo
+                        var bancoInput = document.getElementById('bancoPago');
+                        if (!bancoInput || !bancoInput.value) {
+                            mostrarError('Debe seleccionar un banco para el pago al contado');
+                            return;
+                        }
+                        var referenciaInput = document.getElementById('referenciaPago');
+                        if (!referenciaInput || !referenciaInput.value.trim()) {
+                            mostrarError('Debe ingresar la referencia para el pago al contado');
+                            return;
+                        }
+                        formData.append('id_banco', bancoInput.value);
+                        formData.append('referencia', referenciaInput.value.trim());
+                    } else {
+                        formData.append('referencia', 'Efectivo');
+                    }
+                } else {
+                    // Crédito
+                    if (!fechaVencimientoInput || !fechaVencimientoInput.value) {
+                        mostrarError('Debe seleccionar una fecha de vencimiento para la venta a crédito');
+                        return;
+                    }
+                    formData.append('fecha_vencimiento', fechaVencimientoInput.value);
+
+                    var montoInicialInput = document.getElementById('montoInicial');
+                    var iniVal = parseFloat(montoInicialInput ? montoInicialInput.value : 0) || 0;
+                    if (iniVal > 0) {
+                        var tipoPagoInicialSelect = document.getElementById('tipoPagoInicial');
+                        if (!tipoPagoInicialSelect || !tipoPagoInicialSelect.value) {
+                            mostrarError('Debe seleccionar el método de pago para el abono inicial');
+                            return;
+                        }
+                        formData.append('monto_inicial', iniVal);
+                        formData.append('id_tipo_pago_inicial', tipoPagoInicialSelect.value);
+
+                        var tipoIniVal = parseInt(tipoPagoInicialSelect.value);
+                        if (tipoIniVal !== 1) { // Si no es efectivo
+                            var bancoIni = document.getElementById('bancoPagoInicial');
+                            if (!bancoIni || !bancoIni.value) {
+                                mostrarError('Debe seleccionar el banco receptor para el abono inicial');
+                                return;
+                            }
+                            var refIni = document.getElementById('referenciaPagoInicial');
+                            if (!refIni || !refIni.value.trim()) {
+                                mostrarError('Debe ingresar el número de referencia para el abono inicial');
+                                return;
+                            }
+                            formData.append('id_banco_inicial', bancoIni.value);
+                            formData.append('referencia_inicial', refIni.value.trim());
+                        } else {
+                            formData.append('referencia_inicial', 'Efectivo');
+                        }
+                    }
+                }
+                
+                var itemsSimplificados = itemsNota.map(function(item) {
+                    return {
+                        id_presupuesto_detalle: item.id_presupuesto_detalle,
+                        cantidad: item.cantidad,
+                        precio_unitario: item.precio_unitario
+                    };
+                });
+                formData.append('items', JSON.stringify(itemsSimplificados));
             }
-            
-            var itemsSimplificados = itemsNota.map(function(item) {
-                return {
-                    id_presupuesto_detalle: item.id_presupuesto_detalle,
-                    cantidad: item.cantidad,
-                    precio_unitario: item.precio_unitario
-                };
-            });
-            formData.append('items', JSON.stringify(itemsSimplificados));
 
             fetch('/SP%20Perfect%20Color/notaEntrega/guardar', {
                 method: 'POST',
@@ -243,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     mostrarNotificacion('Nota de entrega #' + resultado.datos.id_nota_entrega + ' creada exitosamente', 'exito');
                     setTimeout(function() {
                         window.location.href = '/SP%20Perfect%20Color/notaEntrega';
-                    }, 2000);
+                    }, 1500);
                 } else {
                     mostrarError(resultado.mensaje);
                 }
@@ -261,7 +334,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function mostrarError(mensaje) {
         if (!mensajeError) { alert(mensaje); return; }
         mensajeError.textContent = mensaje;
+        mensajeError.classList.remove('d-none');
         mensajeError.style.display = 'block';
-        setTimeout(function() { mensajeError.style.display = 'none'; }, 5000);
+        mensajeError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(function() { 
+            mensajeError.style.display = 'none'; 
+            mensajeError.classList.add('d-none');
+        }, 5000);
     }
 });

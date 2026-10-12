@@ -172,7 +172,103 @@ document.addEventListener('DOMContentLoaded', function() {
         var totalDisplay = document.getElementById('totalCompraDisplay');
         var alertaError = document.getElementById('alertaErrorCompra');
 
+        var inputBuscarProd = document.getElementById('inputBuscarProductoCompra');
+        var btnLimpiarProd = document.getElementById('btnLimpiarProductoCompra');
+        var listaSugerenciasProd = document.getElementById('listaSugerenciasProductoCompra');
+        var contenedorBancoCompra = document.getElementById('contenedorBancoCompra');
+        var contenedorReferenciaCompra = document.getElementById('contenedorReferenciaCompra');
+        var idTipoPagoSelect = document.getElementById('idTipoPago');
         var itemsCompra = [];
+        var catalogoInsumos = Array.isArray(window.insumosCompraCatalogo) ? window.insumosCompraCatalogo : [];
+
+        // Toggle banco y referencia según método de pago (solo si no es efectivo)
+        function toggleBancoRefCompra() {
+            if (!idTipoPagoSelect) return;
+            var val = parseInt(idTipoPagoSelect.value || 0);
+            // 1 = Efectivo
+            if (val === 1 || val === 0) {
+                if (contenedorBancoCompra) contenedorBancoCompra.style.display = 'none';
+                if (contenedorReferenciaCompra) contenedorReferenciaCompra.style.display = 'none';
+            } else {
+                if (contenedorBancoCompra) contenedorBancoCompra.style.display = 'block';
+                if (contenedorReferenciaCompra) contenedorReferenciaCompra.style.display = 'block';
+            }
+        }
+        if (idTipoPagoSelect) {
+            idTipoPagoSelect.addEventListener('change', toggleBancoRefCompra);
+            toggleBancoRefCompra();
+        }
+
+        // Búsqueda integrada de productos al hacer clic / escribir en el selector
+        if (inputBuscarProd && selectProducto && listaSugerenciasProd) {
+            function renderizarSugerenciasCompra(filtro) {
+                listaSugerenciasProd.innerHTML = '';
+                var q = (filtro || '').toLowerCase().trim();
+                var filtrados = catalogoInsumos.filter(function(ins) {
+                    if (!q) return true;
+                    var txt = ((ins.codigo || '') + ' ' + (ins.nombre || '')).toLowerCase();
+                    return txt.includes(q);
+                });
+
+                if (filtrados.length === 0) {
+                    listaSugerenciasProd.innerHTML = '<div class="p-2 text-muted small text-center">No se encontraron productos</div>';
+                } else {
+                    filtrados.forEach(function(ins) {
+                        var stock = parseFloat(ins.stock_actual || 0);
+                        var precio = parseFloat(ins.precio_compra || 0);
+                        var item = document.createElement('a');
+                        item.className = 'dropdown-item d-flex justify-content-between align-items-center py-2 px-3 border-bottom small';
+                        item.href = '#';
+                        item.innerHTML = '<div><span class="badge bg-secondary me-1 font-monospace">' + ins.codigo + '</span> <strong>' + ins.nombre + '</strong></div>' +
+                                         '<span class="badge bg-light text-dark border">Stock: ' + stock + ' | $ ' + precio.toFixed(2) + '</span>';
+                        item.addEventListener('click', function(ev) {
+                            ev.preventDefault();
+                            inputBuscarProd.value = ins.codigo + ' - ' + ins.nombre;
+                            selectProducto.value = ins.id_producto;
+                            selectProducto.setAttribute('data-nombre', ins.nombre);
+                            selectProducto.setAttribute('data-codigo', ins.codigo);
+                            selectProducto.setAttribute('data-precio', ins.precio_compra || '0.00');
+                            
+                            precioInput.value = precio > 0 ? precio.toFixed(2) : '';
+                            if (btnLimpiarProd) btnLimpiarProd.classList.remove('d-none');
+                            listaSugerenciasProd.classList.remove('show');
+                            cantidadInput.focus();
+                        });
+                        listaSugerenciasProd.appendChild(item);
+                    });
+                }
+                listaSugerenciasProd.classList.add('show');
+            }
+
+            inputBuscarProd.addEventListener('focus', function() {
+                renderizarSugerenciasCompra(this.value);
+            });
+
+            inputBuscarProd.addEventListener('input', function() {
+                if (!this.value.trim()) {
+                    selectProducto.value = '';
+                    if (btnLimpiarProd) btnLimpiarProd.classList.add('d-none');
+                }
+                renderizarSugerenciasCompra(this.value);
+            });
+
+            if (btnLimpiarProd) {
+                btnLimpiarProd.addEventListener('click', function() {
+                    inputBuscarProd.value = '';
+                    selectProducto.value = '';
+                    precioInput.value = '';
+                    btnLimpiarProd.classList.add('d-none');
+                    listaSugerenciasProd.classList.remove('show');
+                    inputBuscarProd.focus();
+                });
+            }
+
+            document.addEventListener('click', function(e) {
+                if (!inputBuscarProd.closest('.position-relative').contains(e.target)) {
+                    listaSugerenciasProd.classList.remove('show');
+                }
+            });
+        }
 
         // Cambio de condición Contado / Crédito
         condicionSelect.addEventListener('change', function() {
@@ -182,35 +278,24 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 campoVencimiento.classList.add('d-none');
                 camposContado.classList.remove('d-none');
-            }
-        });
-
-        // Autocompletar precio según producto seleccionado
-        selectProducto.addEventListener('change', function() {
-            var selectedOpt = this.options[this.selectedIndex];
-            if (selectedOpt && selectedOpt.value) {
-                var precioSugerido = selectedOpt.getAttribute('data-precio') || '0.00';
-                precioInput.value = parseFloat(precioSugerido) || '';
-                cantidadInput.focus();
-            } else {
-                precioInput.value = '';
+                toggleBancoRefCompra();
             }
         });
 
         // Botón añadir producto
         btnAgregar.addEventListener('click', function() {
             ocultarError();
-            var idProd = parseInt(selectProducto.value);
-            var opt = selectProducto.options[selectProducto.selectedIndex];
-            var cant = parseFloat(cantidadInput.value);
+            var idProd = parseInt(selectProducto.value, 10);
+            var cant = parseInt(cantidadInput.value, 10);
             var precio = parseFloat(precioInput.value);
 
             if (!idProd || isNaN(idProd)) {
                 mostrarError('Seleccione un producto o insumo.');
+                inputBuscarProd.focus();
                 return;
             }
             if (isNaN(cant) || cant <= 0) {
-                mostrarError('Ingrese una cantidad válida mayor a 0.');
+                mostrarError('Ingrese una cantidad entera válida (mínimo 1).');
                 cantidadInput.focus();
                 return;
             }
@@ -220,8 +305,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            var nombreProd = opt.getAttribute('data-nombre') || opt.textContent;
-            var codigoProd = opt.getAttribute('data-codigo') || '';
+            var nombreProd = selectProducto.getAttribute('data-nombre') || inputBuscarProd.value;
+            var codigoProd = selectProducto.getAttribute('data-codigo') || '';
 
             // Verificar si ya existe en la lista
             var existente = itemsCompra.find(function(it) { return it.id_producto === idProd; });
@@ -242,11 +327,78 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Limpiar campos de ítem
             selectProducto.value = '';
+            inputBuscarProd.value = '';
+            if (btnLimpiarProd) btnLimpiarProd.classList.add('d-none');
             cantidadInput.value = '';
             precioInput.value = '';
 
             renderizarTablaDetalle();
         });
+
+        // Gestión del modal de nuevo insumo rápido
+        var formRapidoInsumo = document.getElementById('formularioRapidoInsumo');
+        if (formRapidoInsumo) {
+            formRapidoInsumo.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var alertaRapida = document.getElementById('alertaErrorRapidoInsumo');
+                if (alertaRapida) alertaRapida.classList.add('d-none');
+
+                var fd = new FormData(formRapidoInsumo);
+                var btnGuardar = document.getElementById('btnGuardarRapidoInsumo');
+                btnGuardar.disabled = true;
+                btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando...';
+
+                fetch('/SP%20Perfect%20Color/inventario/guardar', {
+                    method: 'POST',
+                    body: fd
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    btnGuardar.disabled = false;
+                    btnGuardar.innerHTML = '<i class="bi bi-check-lg me-1"></i>Crear e Insertar en Compra';
+
+                    if (res.estado === 'exito') {
+                        var prodNuevo = res.datos || {};
+                        var nuevoOpt = document.createElement('option');
+                        nuevoOpt.value = prodNuevo.id_producto;
+                        nuevoOpt.setAttribute('data-codigo', prodNuevo.codigo);
+                        nuevoOpt.setAttribute('data-nombre', prodNuevo.nombre);
+                        var costoEst = parseFloat(fd.get('precio_compra') || 0);
+                        nuevoOpt.setAttribute('data-precio', costoEst.toFixed(2));
+                        nuevoOpt.setAttribute('data-stock', '0');
+                        nuevoOpt.textContent = prodNuevo.codigo + ' - ' + prodNuevo.nombre + ' (Stock actual: 0)';
+
+                        selectProducto.appendChild(nuevoOpt);
+                        selectProducto.value = prodNuevo.id_producto;
+                        precioInput.value = costoEst > 0 ? costoEst : '';
+                        cantidadInput.value = 1;
+
+                        // Cerrar modal
+                        var modalEl = document.getElementById('modalRapidoInsumo');
+                        var modalInstance = bootstrap.Modal.getInstance(modalEl);
+                        if (modalInstance) modalInstance.hide();
+                        formRapidoInsumo.reset();
+
+                        if (typeof mostrarNotificacion === 'function') {
+                            mostrarNotificacion('Insumo registrado e insertado en la orden', 'exito');
+                        }
+                    } else {
+                        if (alertaRapida) {
+                            alertaRapida.textContent = res.mensaje || 'Error al crear insumo.';
+                            alertaRapida.classList.remove('d-none');
+                        }
+                    }
+                })
+                .catch(function(err) {
+                    btnGuardar.disabled = false;
+                    btnGuardar.innerHTML = '<i class="bi bi-check-lg me-1"></i>Crear e Insertar en Compra';
+                    if (alertaRapida) {
+                        alertaRapida.textContent = 'Error de conexión con el servidor.';
+                        alertaRapida.classList.remove('d-none');
+                    }
+                });
+            });
+        }
 
         // Renderizar tabla de detalle
         function renderizarTablaDetalle() {
