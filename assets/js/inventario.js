@@ -397,19 +397,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 nombreInsumo.value = insumo.nombre;
                 if (tipoProductoInsumo) tipoProductoInsumo.value = insumo.id_tipo_producto || '2';
                 ajustarUnidadSegunTipo(insumo.unidad_medida);
-                stockActualInsumo.value = Math.round(parseFloat(insumo.stock_actual) || 0);
-                stockMinimoInsumo.value = Math.round(parseFloat(insumo.stock_minimo) || 0);
-                precioVentaInsumo.value = insumo.precio_venta;
-                precioCompraInsumo.value = insumo.precio_compra;
-                proveedorInsumo.value = insumo.proveedores_id || '';
+                if (stockActualInsumo) {
+                    stockActualInsumo.value = Math.round(parseFloat(insumo.stock_actual) || 0);
+                    stockActualInsumo.readOnly = true;
+                }
+                if (stockMinimoInsumo) stockMinimoInsumo.value = Math.round(parseFloat(insumo.stock_minimo) || 0);
+                if (precioVentaInsumo) precioVentaInsumo.value = insumo.precio_venta;
+                if (precioCompraInsumo) precioCompraInsumo.value = insumo.precio_compra || 0;
+                if (proveedorInsumo) {
+                    proveedorInsumo.value = insumo.proveedores_id || '';
+                    proveedorInsumo.disabled = true;
+                }
                 // Cargar rubros segun el proveedor del insumo
-                const rubrosEdit = await cargarRubrosPorProveedor(proveedorInsumo.value);
-                if (proveedorInsumo.value && rubrosEdit.length === 1) {
-                    rubroInsumo.value = rubrosEdit[0].id_rubro;
-                    rubroInsumo.disabled = true;
-                } else {
+                const rubrosEdit = await cargarRubrosPorProveedor(insumo.proveedores_id || '');
+                if (rubroInsumo) {
                     rubroInsumo.value = insumo.id_rubro || '';
-                    rubroInsumo.disabled = false;
+                    rubroInsumo.disabled = true;
                 }
                 mensajeError.classList.add('d-none');
 
@@ -579,20 +582,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const fila = document.createElement('tr');
-        let opciones = '<option value="">Seleccione tinte base...</option>';
-        basesGlobal.forEach(function(b) {
-            const stock = parseFloat(b.stock_actual) || 0;
-            opciones += '<option value="' + b.id_producto + '" data-nombre="' + b.nombre + '" data-precio="' + b.precio_venta + '" data-stock="' + stock + '">' + b.codigo + ' - ' + b.nombre + ' (' + stock.toFixed(2) + ' gal)</option>';
-        });
-
         fila.innerHTML =
-            '<td>' +
-                '<select class="form-select form-select-sm select-base-tinte" required>' +
-                    opciones +
-                '</select>' +
+            '<td class="position-relative">' +
+                '<div class="input-group input-group-sm">' +
+                    '<span class="input-group-text bg-light text-muted px-2"><i class="bi bi-search"></i></span>' +
+                    '<input type="text" class="form-control form-control-sm input-buscar-base" placeholder="Buscar base por código o nombre..." autocomplete="off">' +
+                    '<button type="button" class="btn btn-outline-secondary btn-limpiar-base d-none" title="Limpiar"><i class="bi bi-x"></i></button>' +
+                '</div>' +
+                '<input type="hidden" class="select-base-tinte" value="" required>' +
+                '<div class="dropdown-menu w-100 p-0 lista-sugerencias-base shadow border" style="max-height: 220px; overflow-y: auto; z-index: 1055;"></div>' +
             '</td>' +
             '<td>' +
                 '<select class="form-select form-select-sm select-fraccion-tinte">' +
+                    '<option value="1" data-galon="1.0">1 Galón (1.00 gal)</option>' +
                     '<option value="1/2" data-galon="0.5">1/2 Galón (0.50 gal)</option>' +
                     '<option value="1/4" data-galon="0.25" selected>1/4 Galón (0.25 gal)</option>' +
                     '<option value="1/8" data-galon="0.125">1/8 Galón (0.125 gal)</option>' +
@@ -609,18 +611,82 @@ document.addEventListener('DOMContentLoaded', function() {
                 '<button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-base-fila" title="Quitar"><i class="bi bi-x-lg"></i></button>' +
             '</td>';
 
-        const selBase = fila.querySelector('.select-base-tinte');
+        const inputBuscar = fila.querySelector('.input-buscar-base');
+        const inputHidden = fila.querySelector('.select-base-tinte');
+        const btnLimpiar = fila.querySelector('.btn-limpiar-base');
+        const listaSug = fila.querySelector('.lista-sugerencias-base');
         const selFrac = fila.querySelector('.select-fraccion-tinte');
         const labelConsumo = fila.querySelector('.consumo-galon-text');
         const btnElim = fila.querySelector('.btn-eliminar-base-fila');
 
+        function renderizarSugerencias(filtro) {
+            listaSug.innerHTML = '';
+            const q = (filtro || '').toLowerCase().trim();
+            const filtradas = basesGlobal.filter(function(b) {
+                if (!q) return true;
+                const texto = ((b.codigo || '') + ' ' + (b.nombre || '')).toLowerCase();
+                return texto.includes(q);
+            });
+
+            if (filtradas.length === 0) {
+                listaSug.innerHTML = '<div class="p-2 text-muted small text-center">No se encontraron tintes base</div>';
+            } else {
+                filtradas.forEach(function(b) {
+                    const stock = parseFloat(b.stock_actual) || 0;
+                    const item = document.createElement('a');
+                    item.className = 'dropdown-item d-flex justify-content-between align-items-center py-2 px-3 border-bottom small';
+                    item.href = '#';
+                    item.innerHTML = '<div><span class="badge bg-secondary me-1">' + b.codigo + '</span> <strong>' + b.nombre + '</strong></div>' +
+                                     '<span class="badge bg-light text-dark border">' + stock.toFixed(2) + ' gal</span>';
+                    item.addEventListener('click', function(ev) {
+                        ev.preventDefault();
+                        inputBuscar.value = b.codigo + ' - ' + b.nombre;
+                        inputHidden.value = b.id_producto;
+                        inputHidden.dataset.precio = b.precio_venta || 0;
+                        inputHidden.dataset.nombre = b.nombre;
+                        btnLimpiar.classList.remove('d-none');
+                        listaSug.classList.remove('show');
+                        recalcularTotalesMezcla();
+                    });
+                    listaSug.appendChild(item);
+                });
+            }
+            listaSug.classList.add('show');
+        }
+
+        inputBuscar.addEventListener('focus', function() {
+            renderizarSugerencias(this.value);
+        });
+
+        inputBuscar.addEventListener('input', function() {
+            if (!this.value.trim()) {
+                inputHidden.value = '';
+                inputHidden.dataset.precio = 0;
+                btnLimpiar.classList.add('d-none');
+                recalcularTotalesMezcla();
+            }
+            renderizarSugerencias(this.value);
+        });
+
+        btnLimpiar.addEventListener('click', function() {
+            inputBuscar.value = '';
+            inputHidden.value = '';
+            inputHidden.dataset.precio = 0;
+            btnLimpiar.classList.add('d-none');
+            listaSug.classList.remove('show');
+            recalcularTotalesMezcla();
+            inputBuscar.focus();
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!fila.contains(e.target)) {
+                listaSug.classList.remove('show');
+            }
+        });
+
         selFrac.addEventListener('change', function() {
             const gal = parseFloat(this.selectedOptions[0]?.dataset?.galon || 0);
             labelConsumo.textContent = gal.toFixed(4) + ' gal';
-            recalcularTotalesMezcla();
-        });
-
-        selBase.addEventListener('change', function() {
             recalcularTotalesMezcla();
         });
 
@@ -650,24 +716,39 @@ document.addEventListener('DOMContentLoaded', function() {
             const selBase = r.querySelector('.select-base-tinte');
             const selFrac = r.querySelector('.select-fraccion-tinte');
             if (selBase && selBase.value) {
-                const precio = parseFloat(selBase.selectedOptions[0]?.dataset?.precio || 0);
+                const precio = parseFloat(selBase.dataset?.precio || selBase.selectedOptions?.[0]?.dataset?.precio || 0);
                 const gal = parseFloat(selFrac?.selectedOptions[0]?.dataset?.galon || 0);
                 totalGal += gal;
                 costoBases += (gal * precio);
             }
         });
 
-        if (totalGalonesMezcla) {
-            totalGalonesMezcla.textContent = 'Consumo total fórmula: ' + totalGal.toFixed(4) + ' gal';
+        const capacidadObjetivo = parseFloat(mezclaPresentacion?.selectedOptions[0]?.dataset?.factor || 1.0);
+        const cant = parseInt(mezclaCantidad?.value || 1) || 1;
+        const volumenTotalTaller = totalGal * cant;
+
+        const indicadorBalance = document.getElementById('indicadorBalanceFormula');
+        if (indicadorBalance) {
+            if (totalGal === 0) {
+                indicadorBalance.innerHTML = '<span class="text-muted small">Volumen: 0.0000 / ' + capacidadObjetivo.toFixed(4) + ' gal</span>';
+            } else if (Math.abs(totalGal - capacidadObjetivo) < 0.0001) {
+                indicadorBalance.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Fórmula exacta: ' + totalGal.toFixed(4) + ' / ' + capacidadObjetivo.toFixed(4) + ' gal (' + cant + ' envases = ' + volumenTotalTaller.toFixed(4) + ' gal)</span>';
+            } else if (totalGal < capacidadObjetivo) {
+                const falta = (capacidadObjetivo - totalGal).toFixed(4);
+                indicadorBalance.innerHTML = '<span class="text-warning fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>Faltan ' + falta + ' gal para completar ' + capacidadObjetivo.toFixed(4) + ' gal</span>';
+            } else {
+                const sobra = (totalGal - capacidadObjetivo).toFixed(4);
+                indicadorBalance.innerHTML = '<span class="text-danger fw-semibold"><i class="bi bi-x-circle-fill me-1"></i>Exceso de fórmula: excede por ' + sobra + ' gal</span>';
+            }
         }
 
-        const cant = parseInt(mezclaCantidad?.value || 1) || 1;
         const precio = parseFloat(mezclaPrecioVenta?.value || 0) || 0;
         if (mezclaSubtotalEstimado) {
             mezclaSubtotalEstimado.textContent = '$ ' + formatearMoneda(cant * precio);
         }
     }
 
+    if (mezclaPresentacion) mezclaPresentacion.addEventListener('change', recalcularTotalesMezcla);
     if (mezclaCantidad) mezclaCantidad.addEventListener('input', recalcularTotalesMezcla);
     if (mezclaPrecioVenta) mezclaPrecioVenta.addEventListener('input', recalcularTotalesMezcla);
 
@@ -678,6 +759,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const nombre = mezclaNombre.value.trim();
             const presentacion = mezclaPresentacion.value;
+            const capacidadObjetivo = parseFloat(mezclaPresentacion?.selectedOptions[0]?.dataset?.factor || 1.0);
             const cantidad = parseInt(mezclaCantidad.value) || 1;
             const precioVenta = parseFloat(mezclaPrecioVenta.value) || 0;
 
@@ -688,6 +770,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            let sumaFormula = 0;
             const basesData = [];
             let errorBases = false;
             filas.forEach(function(r) {
@@ -700,6 +783,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 const fraccion = selFrac?.value || '1/4';
                 const cantGal = parseFloat(selFrac?.selectedOptions[0]?.dataset?.galon || 0.25);
+                sumaFormula += cantGal;
                 basesData.push({
                     id_producto_base: idBase,
                     fraccion: fraccion,
@@ -709,6 +793,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (errorBases || basesData.length === 0) {
                 mensajeErrorMezcla.textContent = 'Por favor seleccione todos los tintes base agregados.';
+                mensajeErrorMezcla.classList.remove('d-none');
+                return;
+            }
+
+            // Validación estricta de balance de volumen: debe dar la cantidad exacta
+            if (Math.abs(sumaFormula - capacidadObjetivo) >= 0.0001) {
+                if (sumaFormula < capacidadObjetivo) {
+                    const falta = (capacidadObjetivo - sumaFormula).toFixed(4);
+                    mensajeErrorMezcla.textContent = 'La mezcla debe dar la cantidad exacta de la presentación (' + capacidadObjetivo.toFixed(4) + ' gal). Le faltan ' + falta + ' galones.';
+                } else {
+                    const sobra = (sumaFormula - capacidadObjetivo).toFixed(4);
+                    mensajeErrorMezcla.textContent = 'La mezcla excede la capacidad de la presentación (' + capacidadObjetivo.toFixed(4) + ' gal). Le sobran ' + sobra + ' galones.';
+                }
                 mensajeErrorMezcla.classList.remove('d-none');
                 return;
             }
@@ -801,7 +898,8 @@ document.addEventListener('DOMContentLoaded', function() {
             mensajeErrorAjuste.classList.add('d-none');
 
             const idProd = parseInt(ajusteProducto.value) || 0;
-            const cant = parseFloat(ajusteCantidad.value) || 0;
+            const cantRaw = ajusteCantidad.value.trim();
+            const cant = Number(cantRaw);
             const motivoSel = ajusteMotivo.value;
             const obs = ajusteObservacion.value.trim();
             const motivoFinal = motivoSel + (obs ? ': ' + obs : '');
@@ -815,8 +913,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const opt = ajusteProducto.selectedOptions[0];
             const stockActual = parseFloat(opt ? opt.dataset.stock : 0) || 0;
 
-            if (cant <= 0) {
-                mensajeErrorAjuste.textContent = 'La cantidad a descontar debe ser mayor a 0.';
+            if (!cantRaw || !Number.isInteger(cant) || cant < 1) {
+                mensajeErrorAjuste.textContent = 'La cantidad a descontar debe ser un número entero mayor o igual a 1.';
                 mensajeErrorAjuste.classList.remove('d-none');
                 return;
             }

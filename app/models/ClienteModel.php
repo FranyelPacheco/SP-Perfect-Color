@@ -90,7 +90,10 @@ class ClienteModel extends ModeloBase
 
         if ($this->id < 1) return false;
 
-        $consulta = "SELECT COUNT(*) as total FROM cuentas_cobrar WHERE id_cliente = :id AND situacion = 'pendiente' AND estado = 1";
+        $consulta = "SELECT COUNT(*) as total 
+                     FROM cuentas_cobrar cc
+                     INNER JOIN ventas v ON cc.id_venta = v.id_venta
+                     WHERE v.id_cliente = :id AND cc.situacion = 'pendiente' AND cc.estado = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         $stmt->execute();
@@ -231,11 +234,10 @@ class ClienteModel extends ModeloBase
 
     private function _ejecutarInsertTelefono(): bool
     {
-        $consulta = "INSERT INTO telefono_cliente (id_cliente, telefono, tipo) VALUES (:id_cliente, :telefono, :tipo)";
+        $consulta = "INSERT INTO telefono_cliente (id_cliente, telefono, estado) VALUES (:id_cliente, :telefono, 1)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id_cliente', $this->clienteId, PDO::PARAM_INT);
         $stmt->bindParam(':telefono', $this->telefono, PDO::PARAM_STR);
-        $stmt->bindParam(':tipo', $this->tipo, PDO::PARAM_STR);
         return $stmt->execute();
     }
 

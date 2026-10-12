@@ -130,8 +130,7 @@ class NotaEntregaCompraModel extends ModeloBase
             $stmtDetalle = $this->conexion->prepare($sqlDetalle);
 
             $sqlStock = "UPDATE productos 
-                         SET stock_actual = stock_actual + :cantidad,
-                             precio_compra = :precio_compra
+                         SET stock_actual = stock_actual + :cantidad
                          WHERE id_producto = :id_producto";
             $stmtStock = $this->conexion->prepare($sqlStock);
 
@@ -151,7 +150,6 @@ class NotaEntregaCompraModel extends ModeloBase
 
                 // Sumar stock
                 $stmtStock->bindParam(':cantidad', $cant);
-                $stmtStock->bindParam(':precio_compra', $precio);
                 $stmtStock->bindParam(':id_producto', $idProducto, PDO::PARAM_INT);
                 $stmtStock->execute();
             }

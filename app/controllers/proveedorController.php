@@ -78,7 +78,6 @@ if ($metodo === 'index') {
 
     $nombreEmpresa = trim($_POST['nombre_empresa'] ?? '');
     $direccion = trim($_POST['direccion'] ?? '');
-    $contacto = trim($_POST['contacto'] ?? '');
 
     $operadora = trim($_POST['operadora'] ?? '');
     $telefonoNum = trim($_POST['telefono_num'] ?? '');
@@ -86,6 +85,7 @@ if ($metodo === 'index') {
     if (empty($telefono) && !empty($telefonoNum)) {
         $telefono = $operadora . $telefonoNum;
     }
+    $telefono2 = trim($_POST['telefono2'] ?? '');
 
     $correo = trim($_POST['correo'] ?? '');
     $rubros = $_POST['rubros'] ?? [];
@@ -114,16 +114,23 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El telefono debe tener 11 digitos');
     }
 
+    if (!empty($telefono2) && !validarTelefono($telefono2)) {
+        respuestaJson('error', 'El segundo telefono debe tener 11 digitos');
+    }
+
     if ($proveedorModel->rifExiste($rif)) {
         respuestaJson('error', 'Ya existe un proveedor con ese RIF');
     }
 
     $inactivoId = $proveedorModel->buscarInactivoPorRIF($rif);
     if ($inactivoId) {
-        if ($proveedorModel->actualizarProveedor($inactivoId, $rif, $nombreEmpresa, $direccion, $contacto, $correo)) {
+        if ($proveedorModel->actualizarProveedor($inactivoId, $rif, $nombreEmpresa, $direccion, null, $correo)) {
             $proveedorModel->eliminarTelefonos($inactivoId);
             if (!empty($telefono)) {
-                $proveedorModel->insertarTelefono($inactivoId, $telefono, 'movil');
+                $proveedorModel->insertarTelefono($inactivoId, $telefono);
+            }
+            if (!empty($telefono2) && $telefono2 !== $telefono) {
+                $proveedorModel->insertarTelefono($inactivoId, $telefono2);
             }
             $proveedorModel->eliminarRubros($inactivoId);
             foreach ($rubros as $rubroId) {
@@ -138,10 +145,13 @@ if ($metodo === 'index') {
         }
     }
 
-    $nuevoId = $proveedorModel->insertarProveedor($rif, $nombreEmpresa, $direccion, $contacto, $correo);
+    $nuevoId = $proveedorModel->insertarProveedor($rif, $nombreEmpresa, $direccion, null, $correo);
     if ($nuevoId) {
         if (!empty($telefono)) {
-            $proveedorModel->insertarTelefono($nuevoId, $telefono, 'movil');
+            $proveedorModel->insertarTelefono($nuevoId, $telefono);
+        }
+        if (!empty($telefono2) && $telefono2 !== $telefono) {
+            $proveedorModel->insertarTelefono($nuevoId, $telefono2);
         }
         foreach ($rubros as $rubroId) {
             $rubroId = intval($rubroId);
@@ -198,6 +208,7 @@ if ($metodo === 'index') {
     if (empty($telefono) && !empty($telefonoNum)) {
         $telefono = $operadora . $telefonoNum;
     }
+    $telefono2 = trim($_POST['telefono2'] ?? '');
 
     $correo = trim($_POST['correo'] ?? '');
     $rubros = $_POST['rubros'] ?? [];
@@ -230,14 +241,21 @@ if ($metodo === 'index') {
         respuestaJson('error', 'El telefono debe tener 11 digitos');
     }
 
+    if (!empty($telefono2) && !validarTelefono($telefono2)) {
+        respuestaJson('error', 'El segundo telefono debe tener 11 digitos');
+    }
+
     if ($proveedorModel->rifExiste($rif, $id)) {
         respuestaJson('error', 'Ya existe otro proveedor con ese RIF');
     }
 
-    if ($proveedorModel->actualizarProveedor($id, $rif, $nombreEmpresa, $direccion, $contacto, $correo)) {
+    if ($proveedorModel->actualizarProveedor($id, $rif, $nombreEmpresa, $direccion, null, $correo)) {
         $proveedorModel->eliminarTelefonos($id);
         if (!empty($telefono)) {
-            $proveedorModel->insertarTelefono($id, $telefono, 'movil');
+            $proveedorModel->insertarTelefono($id, $telefono);
+        }
+        if (!empty($telefono2) && $telefono2 !== $telefono) {
+            $proveedorModel->insertarTelefono($id, $telefono2);
         }
         $proveedorModel->eliminarRubros($id);
         foreach ($rubros as $rubroId) {

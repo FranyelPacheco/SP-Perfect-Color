@@ -145,7 +145,12 @@ if ($metodo === 'index') {
         if ($proveedorId) {
             $inventarioModel->asignarProveedorAInsumo($nuevoId, $proveedorId);
         }
-        respuestaJson('exito', 'Insumo creado exitosamente');
+        respuestaJson('exito', 'Insumo creado exitosamente', [
+            'id_producto' => $nuevoId,
+            'codigo' => $codigo,
+            'nombre' => $nombre,
+            'precio_venta' => $precioVenta
+        ]);
     } else {
         respuestaJson('error', 'Error al crear el insumo');
     }
@@ -190,6 +195,14 @@ if ($metodo === 'index') {
     $proveedorId = !empty($_POST['id_proveedor']) ? intval($_POST['id_proveedor']) : null;
     $idTipoProducto = !empty($_POST['id_tipo_producto']) ? intval($_POST['id_tipo_producto']) : 2;
 
+    $insumoExistente = $inventarioModel->buscarPorId($id);
+    if (!$insumoExistente) {
+        respuestaJson('error', 'Insumo no encontrado');
+    }
+
+    // El stock actual y el proveedor son de solo lectura y no se modifican desde este formulario
+    $stockActual = (float)$insumoExistente['stock_actual'];
+
     if ($idTipoProducto !== 1 && $idTipoProducto !== 2) {
         respuestaJson('error', 'Tipo de producto no valido (solo Base o Simple)');
     }
@@ -202,13 +215,9 @@ if ($metodo === 'index') {
         }
     }
 
-    if (!is_numeric($stockActualRaw) || floor((float)$stockActualRaw) != (float)$stockActualRaw || (float)$stockActualRaw < 0) {
-        respuestaJson('error', 'El stock actual debe ser un numero entero no negativo');
-    }
     if (!is_numeric($stockMinimoRaw) || floor((float)$stockMinimoRaw) != (float)$stockMinimoRaw || (float)$stockMinimoRaw < 0) {
         respuestaJson('error', 'El stock minimo debe ser un numero entero no negativo');
     }
-    $stockActual = (float)intval($stockActualRaw);
     $stockMinimo = (float)intval($stockMinimoRaw);
     
     if ($id < 1) {
@@ -231,11 +240,7 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Ya existe otro insumo con ese codigo');
     }
     
-    if ($inventarioModel->actualizarInsumo($id, $codigo, $nombre, $rubroId, $unidadMedida, $stockActual, $stockMinimo, $precioVenta, $precioCompra, $idTipoProducto)) {
-        $inventarioModel->eliminarProveedoresDeInsumo($id);
-        if ($proveedorId) {
-            $inventarioModel->asignarProveedorAInsumo($id, $proveedorId);
-        }
+    if ($inventarioModel->actualizarInsumo($id, $codigo, $nombre, $rubroId, $unidadMedida, $stockActual, $stockMinimo, $precioVenta, 0, $idTipoProducto)) {
         respuestaJson('exito', 'Insumo actualizado exitosamente');
     } else {
         respuestaJson('error', 'Error al actualizar el insumo');
@@ -340,14 +345,15 @@ if ($metodo === 'index') {
     }
 
     $idProducto = intval($_POST['id_producto'] ?? 0);
-    $cantidad = floatval($_POST['cantidad'] ?? 0);
+    $cantidadRaw = trim($_POST['cantidad'] ?? '0');
+    $cantidad = intval($cantidadRaw);
     $motivo = trim($_POST['motivo'] ?? '');
 
     if ($idProducto < 1) {
         respuestaJson('error', 'Debe seleccionar un producto');
     }
-    if ($cantidad <= 0) {
-        respuestaJson('error', 'La cantidad a descontar debe ser mayor a 0');
+    if (!ctype_digit($cantidadRaw) || $cantidad < 1) {
+        respuestaJson('error', 'La cantidad a descontar debe ser un número entero mayor a 0');
     }
     if (empty($motivo)) {
         respuestaJson('error', 'Debe especificar el motivo del daño o merma');

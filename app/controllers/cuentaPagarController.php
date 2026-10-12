@@ -201,6 +201,17 @@ if ($metodo === 'index') {
         respuestaJson('error', 'ID invalido');
     }
     
+    $cuenta = $cuentaPagarModel->buscarPorId($id);
+    if (!$cuenta) {
+        respuestaJson('error', 'Cuenta por pagar no encontrada');
+    }
+
+    $saldo = floatval($cuenta['saldo_pendiente'] ?? 0);
+    $situacion = strtolower($cuenta['situacion'] ?? ($cuenta['estado'] ?? ''));
+    if ($saldo > 0 || $situacion !== 'pagado') {
+        respuestaJson('error', 'No se puede eliminar una cuenta por pagar que no esté totalmente pagada');
+    }
+    
     try {
         $cuentaPagarModel->eliminarCuenta($id);
         respuestaJson('exito', 'Cuenta eliminada correctamente');

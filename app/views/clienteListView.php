@@ -57,17 +57,22 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="nombresCliente" class="form-label">Nombres</label>
-                        <input type="text" id="nombresCliente" name="nombres" class="form-control" required placeholder="Ingrese los nombres">
+                        <label for="nombresCliente" class="form-label">Nombres <span class="text-danger">*</span></label>
+                        <input type="text" id="nombresCliente" name="nombres" class="form-control" required placeholder="Ingrese los nombres" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$" title="Solo letras y espacios">
                     </div>
 
                     <div class="mb-3">
-                        <label for="apellidosCliente" class="form-label">Apellidos</label>
-                        <input type="text" id="apellidosCliente" name="apellidos" class="form-control" required placeholder="Ingrese los apellidos">
+                        <label for="apellidosCliente" class="form-label">Apellidos <span class="text-danger">*</span></label>
+                        <input type="text" id="apellidosCliente" name="apellidos" class="form-control" required placeholder="Ingrese los apellidos" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$" title="Solo letras y espacios">
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Telefono</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label mb-0">Teléfono Principal <span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none" id="btnToggleTel2Cliente">
+                                <i class="bi bi-plus-circle me-1"></i>Añadir segundo teléfono
+                            </button>
+                        </div>
                         <div class="input-group">
                             <select id="operadoraCliente" name="operadora" class="form-select" style="max-width: 105px;">
                                 <option value="0412" selected>0412</option>
@@ -77,26 +82,47 @@
                                 <option value="0426">0426</option>
                                 <option value="0251">0251</option>
                             </select>
-                            <input type="text" id="telefonoNumeroCliente" name="telefono_num" class="form-control" placeholder="7 digitos (ej: 1234567)" maxlength="7">
+                            <input type="text" id="telefonoNumeroCliente" name="telefono_num" class="form-control" placeholder="7 dígitos (ej: 1234567)" maxlength="7" pattern="[0-9]{7}">
                         </div>
                         <input type="hidden" id="telefonoCliente" name="telefono" value="">
                     </div>
 
-                    <div class="mb-3">
-                        <label for="correoCliente" class="form-label">Correo Electronico</label>
-                        <input type="email" id="correoCliente" name="correo" class="form-control" required placeholder="correo@ejemplo.com">
+                    <div class="mb-3 d-none" id="seccionTel2Cliente">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label text-muted mb-0 small">Segundo Teléfono (Opcional)</label>
+                            <button type="button" class="btn btn-sm btn-link text-danger p-0 text-decoration-none" id="btnQuitarTel2Cliente">
+                                <i class="bi bi-trash me-1"></i>Quitar
+                            </button>
+                        </div>
+                        <div class="input-group">
+                            <select id="operadoraCliente2" name="operadora2" class="form-select" style="max-width: 105px;">
+                                <option value="0412">0412</option>
+                                <option value="0414">0414</option>
+                                <option value="0424" selected>0424</option>
+                                <option value="0416">0416</option>
+                                <option value="0426">0426</option>
+                                <option value="0251">0251</option>
+                            </select>
+                            <input type="text" id="telefonoNumeroCliente2" name="telefono_num2" class="form-control" placeholder="7 dígitos (ej: 7654321)" maxlength="7" pattern="[0-9]{7}">
+                        </div>
+                        <input type="hidden" id="telefonoCliente2" name="telefono2" value="">
                     </div>
 
                     <div class="mb-3">
-                        <label for="direccionCliente" class="form-label">Direccion</label>
-                        <textarea id="direccionCliente" name="direccion" class="form-control" rows="2" placeholder="Ingrese la direccion"></textarea>
+                        <label for="correoCliente" class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
+                        <input type="email" id="correoCliente" name="correo" class="form-control" required placeholder="correo@ejemplo.com" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Ingrese un correo electrónico válido">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="direccionCliente" class="form-label">Dirección</label>
+                        <textarea id="direccionCliente" name="direccion" class="form-control" rows="2" placeholder="Ingrese la dirección"></textarea>
                     </div>
 
                     <div id="mensajeErrorCliente" class="alert alert-danger d-none"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" id="btnCancelarCliente" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" id="btnGuardarCliente" class="btn btn-primary">Guardar</button>
+                    <button type="button" id="btnCancelarCliente" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                    <button type="submit" id="btnGuardarCliente" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar</button>
                 </div>
             </form>
         </div>

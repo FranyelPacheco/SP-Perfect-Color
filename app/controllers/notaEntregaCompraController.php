@@ -45,7 +45,15 @@ if ($metodo === 'index') {
     verificarRolAdmin();
 
     $proveedores = $proveedorModel->listarTodos();
-    $insumos = $inventarioModel->listarTodos();
+    $todosInsumos = $inventarioModel->listarTodos();
+    $insumos = array_values(array_filter($todosInsumos, function($ins) {
+        $tipo = (int)($ins['id_tipo_producto'] ?? 2);
+        if ($tipo === 3) return false; // Excluir preparados
+        $frac = trim((string)($ins['fraccion'] ?? ''));
+        $padre = $ins['id_producto_padre'] ?? null;
+        // Solo productos padre de 1 galón o sin fracción
+        return (empty($padre) && ($frac === '' || $frac === '1'));
+    }));
     $tiposPago = (new TipoPagoModel())->listarTodos();
     $bancos = (new BancoModel())->listarTodos();
 
@@ -71,6 +79,13 @@ if ($metodo === 'index') {
     $idTipoPago = !empty($_POST['id_tipo_pago']) ? intval($_POST['id_tipo_pago']) : null;
     $idBanco = !empty($_POST['id_banco']) ? intval($_POST['id_banco']) : null;
     $referencia = !empty($_POST['referencia']) ? trim($_POST['referencia']) : null;
+
+    if ($condicionPago === 'contado' && $idTipoPago === 1) {
+        $idBanco = null;
+        if (empty($referencia)) {
+            $referencia = 'Efectivo';
+        }
+    }
 
     if ($idProveedor < 1) {
         respuestaJson('error', 'Debe seleccionar un proveedor');

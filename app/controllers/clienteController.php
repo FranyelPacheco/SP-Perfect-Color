@@ -90,6 +90,13 @@ if ($metodo === 'index') {
         $telefono = $operadora . $telefonoNum;
     }
 
+    $operadora2 = trim($_POST['operadora2'] ?? '');
+    $telefonoNum2 = trim($_POST['telefono_num2'] ?? '');
+    $telefono2 = trim($_POST['telefono2'] ?? '');
+    if (empty($telefono2) && !empty($telefonoNum2)) {
+        $telefono2 = $operadora2 . $telefonoNum2;
+    }
+
     $correo = trim($_POST['correo'] ?? '');
     $direccion = trim($_POST['direccion'] ?? '');
 
@@ -104,9 +111,15 @@ if ($metodo === 'index') {
     if (!validarRequerido($nombres)) {
         respuestaJson('error', 'El nombre es obligatorio');
     }
+    if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/u', $nombres)) {
+        respuestaJson('error', 'El nombre solo puede contener letras y espacios');
+    }
 
     if (!validarRequerido($apellidos)) {
         respuestaJson('error', 'El apellido es obligatorio');
+    }
+    if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/u', $apellidos)) {
+        respuestaJson('error', 'El apellido solo puede contener letras y espacios');
     }
 
     if (!validarRequerido($correo)) {
@@ -118,7 +131,11 @@ if ($metodo === 'index') {
     }
 
     if (!empty($telefono) && !validarTelefono($telefono)) {
-        respuestaJson('error', 'El telefono debe tener 11 digitos');
+        respuestaJson('error', 'El telefono principal debe tener 11 digitos');
+    }
+
+    if (!empty($telefono2) && !validarTelefono($telefono2)) {
+        respuestaJson('error', 'El segundo telefono debe tener 11 digitos');
     }
 
     if ($clienteModel->cedulaExiste($cedula)) {
@@ -128,9 +145,12 @@ if ($metodo === 'index') {
     $inactivoId = $clienteModel->buscarInactivoPorCedula($cedula);
     if ($inactivoId) {
         if ($clienteModel->actualizarCliente($inactivoId, $cedula, $nombres, $apellidos, $correo, $direccion)) {
+            $clienteModel->eliminarTelefonos($inactivoId);
             if (!empty($telefono)) {
-                $clienteModel->eliminarTelefonos($inactivoId);
                 $clienteModel->insertarTelefono($inactivoId, $telefono, 'movil');
+            }
+            if (!empty($telefono2)) {
+                $clienteModel->insertarTelefono($inactivoId, $telefono2, 'movil');
             }
             respuestaJson('exito', 'Cliente reactivado exitosamente');
         } else {
@@ -142,6 +162,9 @@ if ($metodo === 'index') {
     if ($nuevoId) {
         if (!empty($telefono)) {
             $clienteModel->insertarTelefono($nuevoId, $telefono, 'movil');
+        }
+        if (!empty($telefono2)) {
+            $clienteModel->insertarTelefono($nuevoId, $telefono2, 'movil');
         }
         respuestaJson('exito', 'Cliente creado exitosamente');
     } else {
@@ -176,6 +199,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
 
+    $id = intval($_POST['id'] ?? 0);
+
     $tipoDoc = trim($_POST['tipo_doc'] ?? 'V');
     $cedulaNum = trim($_POST['cedula_num'] ?? '');
     $cedula = trim($_POST['cedula'] ?? '');
@@ -191,6 +216,13 @@ if ($metodo === 'index') {
     $telefono = trim($_POST['telefono'] ?? '');
     if (empty($telefono) && !empty($telefonoNum)) {
         $telefono = $operadora . $telefonoNum;
+    }
+
+    $operadora2 = trim($_POST['operadora2'] ?? '');
+    $telefonoNum2 = trim($_POST['telefono_num2'] ?? '');
+    $telefono2 = trim($_POST['telefono2'] ?? '');
+    if (empty($telefono2) && !empty($telefonoNum2)) {
+        $telefono2 = $operadora2 . $telefonoNum2;
     }
 
     $correo = trim($_POST['correo'] ?? '');
@@ -211,9 +243,15 @@ if ($metodo === 'index') {
     if (!validarRequerido($nombres)) {
         respuestaJson('error', 'El nombre es obligatorio');
     }
+    if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/u', $nombres)) {
+        respuestaJson('error', 'El nombre solo puede contener letras y espacios');
+    }
 
     if (!validarRequerido($apellidos)) {
         respuestaJson('error', 'El apellido es obligatorio');
+    }
+    if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/u', $apellidos)) {
+        respuestaJson('error', 'El apellido solo puede contener letras y espacios');
     }
 
     if (!validarRequerido($correo)) {
@@ -225,7 +263,11 @@ if ($metodo === 'index') {
     }
 
     if (!empty($telefono) && !validarTelefono($telefono)) {
-        respuestaJson('error', 'El telefono debe tener 11 digitos');
+        respuestaJson('error', 'El telefono principal debe tener 11 digitos');
+    }
+
+    if (!empty($telefono2) && !validarTelefono($telefono2)) {
+        respuestaJson('error', 'El segundo telefono debe tener 11 digitos');
     }
 
     if ($clienteModel->cedulaExiste($cedula, $id)) {
@@ -236,6 +278,9 @@ if ($metodo === 'index') {
         $clienteModel->eliminarTelefonos($id);
         if (!empty($telefono)) {
             $clienteModel->insertarTelefono($id, $telefono, 'movil');
+        }
+        if (!empty($telefono2)) {
+            $clienteModel->insertarTelefono($id, $telefono2, 'movil');
         }
         respuestaJson('exito', 'Cliente actualizado exitosamente');
     } else {

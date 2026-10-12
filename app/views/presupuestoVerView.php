@@ -92,7 +92,7 @@
 <?php if ($presupuesto['estado'] == 'pendiente' || $presupuesto['estado'] == 'presupuesto' || (int)($presupuesto['id_estado_venta'] ?? 0) === 1): ?>
 <div class="d-flex justify-content-end gap-2">
     <button class="btn btn-outline-danger" onclick="cambiarEstado(<?php echo $presupuesto['id_presupuesto']; ?>, 'rechazado')"><i class="bi bi-x-lg me-1"></i>Rechazar</button>
-    <button class="btn btn-success" onclick="cambiarEstado(<?php echo $presupuesto['id_presupuesto']; ?>, 'aprobado')"><i class="bi bi-check-lg me-1"></i>Aprobar</button>
+    <a href="../notaEntrega/crearDesdePresupuesto?id=<?php echo $presupuesto['id_presupuesto']; ?>" class="btn btn-success"><i class="bi bi-cash-coin me-1"></i>Aprobar y Cobrar Entrega</a>
 </div>
 <?php endif; ?>
 
