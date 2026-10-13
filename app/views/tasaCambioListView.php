@@ -50,8 +50,8 @@
             <h4 class="mb-0 toolbar-title"><i class="bi bi-currency-exchange me-2 text-primary"></i>Tasas de Cambio</h4>
             <div class="d-flex gap-2 align-items-center flex-wrap">
                 <input type="text" id="busquedaTasas" class="form-control" style="width: 220px;" placeholder="Buscar por fecha...">
-                <button type="button" class="btn btn-success" id="btnNuevaTasa" data-bs-toggle="modal" data-bs-target="#modalTasaCambio">
-                    <i class="bi bi-plus-lg me-2"></i>Registrar Tasa
+                <button type="button" class="btn btn-success" id="btnNuevaTasa" data-bs-toggle="modal" data-bs-target="#modalTasaCambio" title="Registrar Tasa" data-bs-toggle="tooltip">
+                    <i class="bi bi-plus-lg"></i>
                 </button>
             </div>
         </div>
@@ -88,6 +88,7 @@
                     <div class="mb-3">
                         <label for="fechaTasa" class="form-label fw-semibold">Fecha de Vigencia <span class="text-danger">*</span></label>
                         <input type="date" id="fechaTasa" name="fecha" class="form-control" value="<?php echo date('Y-m-d'); ?>" required>
+                        <div id="feedbackFechaTasa" class="invalid-feedback d-none">Ya existe una tasa registrada para esta fecha</div>
                         <small class="text-muted">Fecha del día a la que aplica esta tasa oficial.</small>
                     </div>
 
@@ -105,7 +106,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-success" id="btnGuardarTasa">
-                        <i class="bi bi-check-lg me-1"></i><span id="textoBotonGuardar">Guardar Tasa</span>
+                        <i class="bi bi-check-lg me-1"></i><span id="textoBotonGuardar">Guardar</span>
                     </button>
                 </div>
             </form>

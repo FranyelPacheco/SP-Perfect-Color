@@ -152,7 +152,13 @@ class CuentaPagarModel extends ModeloBase
     // OBJETIVO: Ejecuta la consulta que lista todas las cuentas activas con datos del proveedor obtenido vía nota_entrega
     private function _ejecutarSelectAll(): array
     {
-        $consulta = "SELECT cp.*, cp.estado as activo, cp.situacion as estado, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif
+        $consulta = "SELECT cp.*, cp.estado as activo, cp.situacion as estado, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif,
+                            ne.fecha as nota_fecha,
+                            COALESCE(
+                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(ne.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
+                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                                0
+                            ) as tasa_bcv
                      FROM cuentas_pagar cp 
                      INNER JOIN nota_entrega ne ON cp.id_nota_entrega = ne.id_nota_entrega
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
@@ -167,7 +173,13 @@ class CuentaPagarModel extends ModeloBase
     private function _ejecutarSelectById(): array|false
     {
         $consulta = "SELECT cp.*, cp.estado as activo, cp.situacion as estado, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif,
-                            (SELECT GROUP_CONCAT(tp.telefono SEPARATOR ', ') FROM telefono_proveedor tp WHERE tp.id_proveedor = p.id_proveedor) as proveedor_telefonos
+                            ne.fecha as nota_fecha,
+                            (SELECT GROUP_CONCAT(tp.telefono SEPARATOR ', ') FROM telefono_proveedor tp WHERE tp.id_proveedor = p.id_proveedor) as proveedor_telefonos,
+                            COALESCE(
+                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(ne.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
+                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                                0
+                            ) as tasa_bcv
                      FROM cuentas_pagar cp 
                      INNER JOIN nota_entrega ne ON cp.id_nota_entrega = ne.id_nota_entrega
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
@@ -179,10 +191,15 @@ class CuentaPagarModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarSelectPagos
-    // OBJETIVO: Obtiene los pagos registrados para una cuenta, con tipo de pago y banco
+    // OBJETIVO: Obtiene los pagos registrados para una cuenta, con tipo de pago, banco y tasa BCV histórica de la fecha del pago
     private function _ejecutarSelectPagos(): array
     {
-        $consulta = "SELECT pr.*, tp.nombre as tipo_pago_nombre, b.nombre as banco_nombre
+        $consulta = "SELECT pr.*, tp.nombre as tipo_pago_nombre, b.nombre as banco_nombre,
+                            COALESCE(
+                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(pr.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
+                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                                0
+                            ) as tasa_bcv
                      FROM pagos_realizados pr
                      LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
                      LEFT JOIN banco b ON pr.id_banco = b.id_banco

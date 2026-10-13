@@ -109,15 +109,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     {
                         data: 'total',
-                        render: function(data) {
+                        render: function(data, type, row) {
                             var num = parseFloat(data || 0);
-                            return '<strong>$ ' + num.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</strong>';
+                            var tasa = parseFloat(row.tasa_bcv || window.TASA_CAMBIO_HOY || 0);
+                            var html = '<strong>$ ' + num.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</strong>';
+                            if (tasa > 0) {
+                                var bs = num * tasa;
+                                html += '<div class="text-muted small">Bs. ' + bs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</div>';
+                            }
+                            return html;
                         }
                     },
                     {
                         data: null,
                         render: function(data, type, row) {
-                            var esCredito = row.id_cuenta_pagar && parseFloat(row.saldo_pendiente) > 0;
+                            var esCredito = row.id_cuenta_pagar && (parseFloat(row.saldo_pendiente) > 0 || row.condicion_compra === 'credito');
                             return esCredito 
                                 ? '<span class="badge bg-warning text-dark">Crédito</span>' 
                                 : '<span class="badge bg-success">Contado</span>';
@@ -170,6 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var btnAgregar = document.getElementById('btnAgregarItem');
         var cuerpoDetalle = document.getElementById('cuerpoDetalleCompra');
         var totalDisplay = document.getElementById('totalCompraDisplay');
+        var totalBsDisplay = document.getElementById('totalCompraBsDisplay');
         var alertaError = document.getElementById('alertaErrorCompra');
 
         var inputBuscarProd = document.getElementById('inputBuscarProductoCompra');
@@ -178,14 +185,41 @@ document.addEventListener('DOMContentLoaded', function() {
         var contenedorBancoCompra = document.getElementById('contenedorBancoCompra');
         var contenedorReferenciaCompra = document.getElementById('contenedorReferenciaCompra');
         var idTipoPagoSelect = document.getElementById('idTipoPago');
+
+        // Campos de Abono Inicial (Crédito)
+        var montoInicialInput = document.getElementById('montoInicialCompra');
+        var montoInicialBsDisplay = document.getElementById('montoInicialCompraBsDisplay');
+        var saldoPendienteDisplay = document.getElementById('saldoPendienteCompraDisplay');
+        var saldoPendienteBsDisplay = document.getElementById('saldoPendienteCompraBsDisplay');
+        var contenedorMetodoInicial = document.getElementById('contenedorMetodoInicialCompra');
+        var idTipoPagoInicialSelect = document.getElementById('idTipoPagoInicialCompra');
+        var contenedorBancoInicial = document.getElementById('contenedorBancoInicialCompra');
+        var contenedorRefInicial = document.getElementById('contenedorRefInicialCompra');
+
         var itemsCompra = [];
+        var totalActualCompra = 0.00;
         var catalogoInsumos = Array.isArray(window.insumosCompraCatalogo) ? window.insumosCompraCatalogo : [];
 
-        // Toggle banco y referencia según método de pago (solo si no es efectivo)
+        // Bloquear decimales/puntos en cantidadItem y rapidoStockMinimo
+        [cantidadInput, document.getElementById('rapidoStockMinimo')].forEach(function(inp) {
+            if (!inp) return;
+            inp.addEventListener('keydown', function(e) {
+                if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === '+') {
+                    e.preventDefault();
+                }
+            });
+            inp.addEventListener('input', function() {
+                var limpio = this.value.replace(/[^0-9]/g, '');
+                if (this.value !== limpio) {
+                    this.value = limpio;
+                }
+            });
+        });
+
+        // Toggle banco y referencia según método de pago Contado (solo si no es efectivo)
         function toggleBancoRefCompra() {
             if (!idTipoPagoSelect) return;
             var val = parseInt(idTipoPagoSelect.value || 0);
-            // 1 = Efectivo
             if (val === 1 || val === 0) {
                 if (contenedorBancoCompra) contenedorBancoCompra.style.display = 'none';
                 if (contenedorReferenciaCompra) contenedorReferenciaCompra.style.display = 'none';
@@ -199,7 +233,58 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleBancoRefCompra();
         }
 
-        // Búsqueda integrada de productos al hacer clic / escribir en el selector
+        // Toggle banco y referencia para Abono Inicial en Crédito
+        function toggleBancoRefInicialCompra() {
+            if (!idTipoPagoInicialSelect) return;
+            var val = parseInt(idTipoPagoInicialSelect.value || 0);
+            if (val === 1 || val === 0) {
+                if (contenedorBancoInicial) contenedorBancoInicial.style.display = 'none';
+                if (contenedorRefInicial) contenedorRefInicial.style.display = 'none';
+            } else {
+                if (contenedorBancoInicial) contenedorBancoInicial.style.display = 'block';
+                if (contenedorRefInicial) contenedorRefInicial.style.display = 'block';
+            }
+        }
+        if (idTipoPagoInicialSelect) {
+            idTipoPagoInicialSelect.addEventListener('change', toggleBancoRefInicialCompra);
+            toggleBancoRefInicialCompra();
+        }
+
+        function actualizarCalculoAbonoInicial() {
+            var tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
+            var abono = parseFloat(montoInicialInput ? montoInicialInput.value : 0) || 0;
+            if (abono < 0) abono = 0;
+            if (totalActualCompra > 0 && abono > totalActualCompra) {
+                abono = totalActualCompra;
+                if (montoInicialInput) montoInicialInput.value = abono.toFixed(2);
+            }
+            var saldo = Math.max(0, totalActualCompra - abono);
+
+            if (saldoPendienteDisplay) {
+                saldoPendienteDisplay.textContent = '$ ' + saldo.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+            if (montoInicialBsDisplay) {
+                var bsAbono = abono * tasa;
+                montoInicialBsDisplay.textContent = 'Equiv: Bs. ' + bsAbono.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+            if (saldoPendienteBsDisplay) {
+                var bsSaldo = saldo * tasa;
+                saldoPendienteBsDisplay.textContent = '(Bs. ' + bsSaldo.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ')';
+            }
+            if (contenedorMetodoInicial) {
+                if (abono > 0) {
+                    contenedorMetodoInicial.style.display = 'block';
+                    toggleBancoRefInicialCompra();
+                } else {
+                    contenedorMetodoInicial.style.display = 'none';
+                }
+            }
+        }
+        if (montoInicialInput) {
+            montoInicialInput.addEventListener('input', actualizarCalculoAbonoInicial);
+        }
+
+        // Búsqueda integrada de productos con diseño limpio .buscador-dropdown-item
         if (inputBuscarProd && selectProducto && listaSugerenciasProd) {
             function renderizarSugerenciasCompra(filtro) {
                 listaSugerenciasProd.innerHTML = '';
@@ -211,25 +296,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 if (filtrados.length === 0) {
-                    listaSugerenciasProd.innerHTML = '<div class="p-2 text-muted small text-center">No se encontraron productos</div>';
+                    listaSugerenciasProd.innerHTML = '<div class="p-3 text-muted small text-center"><i class="bi bi-search me-1"></i>No se encontraron productos</div>';
                 } else {
                     filtrados.forEach(function(ins) {
-                        var stock = parseFloat(ins.stock_actual || 0);
-                        var precio = parseFloat(ins.precio_compra || 0);
-                        var item = document.createElement('a');
-                        item.className = 'dropdown-item d-flex justify-content-between align-items-center py-2 px-3 border-bottom small';
-                        item.href = '#';
-                        item.innerHTML = '<div><span class="badge bg-secondary me-1 font-monospace">' + ins.codigo + '</span> <strong>' + ins.nombre + '</strong></div>' +
-                                         '<span class="badge bg-light text-dark border">Stock: ' + stock + ' | $ ' + precio.toFixed(2) + '</span>';
+                        var stock = Math.floor(parseFloat(ins.stock_actual || 0));
+                        var pVenta = parseFloat(ins.precio_venta || 0);
+                        var pCompra = parseFloat(ins.precio_compra || 0);
+                        var item = document.createElement('div');
+                        item.className = 'buscador-dropdown-item';
+                        item.innerHTML =
+                            '<div class="item-titulo">' + (ins.nombre || '') + '</div>' +
+                            '<div class="item-meta">' +
+                                '<span class="badge-codigo">' + (ins.codigo || '') + '</span>' +
+                                '<span class="badge-stock ' + (stock <= 0 ? 'sin-stock' : '') + '">Stock actual: ' + stock + '</span>' +
+                                '<span class="badge-precio">P. Venta: $ ' + pVenta.toFixed(2) + '</span>' +
+                            '</div>';
                         item.addEventListener('click', function(ev) {
                             ev.preventDefault();
                             inputBuscarProd.value = ins.codigo + ' - ' + ins.nombre;
                             selectProducto.value = ins.id_producto;
                             selectProducto.setAttribute('data-nombre', ins.nombre);
                             selectProducto.setAttribute('data-codigo', ins.codigo);
-                            selectProducto.setAttribute('data-precio', ins.precio_compra || '0.00');
+                            selectProducto.setAttribute('data-precio', pCompra > 0 ? pCompra.toFixed(2) : '');
                             
-                            precioInput.value = precio > 0 ? precio.toFixed(2) : '';
+                            precioInput.value = pCompra > 0 ? pCompra.toFixed(2) : '';
                             if (btnLimpiarProd) btnLimpiarProd.classList.remove('d-none');
                             listaSugerenciasProd.classList.remove('show');
                             cantidadInput.focus();
@@ -275,6 +365,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.value === 'credito') {
                 campoVencimiento.classList.remove('d-none');
                 camposContado.classList.add('d-none');
+                actualizarCalculoAbonoInicial();
             } else {
                 campoVencimiento.classList.add('d-none');
                 camposContado.classList.remove('d-none');
@@ -290,11 +381,11 @@ document.addEventListener('DOMContentLoaded', function() {
             var precio = parseFloat(precioInput.value);
 
             if (!idProd || isNaN(idProd)) {
-                mostrarError('Seleccione un producto o insumo.');
+                mostrarError('Seleccione un producto o insumo de la lista.');
                 inputBuscarProd.focus();
                 return;
             }
-            if (isNaN(cant) || cant <= 0) {
+            if (isNaN(cant) || cant < 1) {
                 mostrarError('Ingrese una cantidad entera válida (mínimo 1).');
                 cantidadInput.focus();
                 return;
@@ -359,18 +450,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     if (res.estado === 'exito') {
                         var prodNuevo = res.datos || {};
-                        var nuevoOpt = document.createElement('option');
-                        nuevoOpt.value = prodNuevo.id_producto;
-                        nuevoOpt.setAttribute('data-codigo', prodNuevo.codigo);
-                        nuevoOpt.setAttribute('data-nombre', prodNuevo.nombre);
                         var costoEst = parseFloat(fd.get('precio_compra') || 0);
-                        nuevoOpt.setAttribute('data-precio', costoEst.toFixed(2));
-                        nuevoOpt.setAttribute('data-stock', '0');
-                        nuevoOpt.textContent = prodNuevo.codigo + ' - ' + prodNuevo.nombre + ' (Stock actual: 0)';
+                        catalogoInsumos.push({
+                            id_producto: prodNuevo.id_producto,
+                            codigo: prodNuevo.codigo,
+                            nombre: prodNuevo.nombre,
+                            stock_actual: 0,
+                            precio_compra: costoEst
+                        });
 
-                        selectProducto.appendChild(nuevoOpt);
                         selectProducto.value = prodNuevo.id_producto;
-                        precioInput.value = costoEst > 0 ? costoEst : '';
+                        selectProducto.setAttribute('data-codigo', prodNuevo.codigo);
+                        selectProducto.setAttribute('data-nombre', prodNuevo.nombre);
+                        selectProducto.setAttribute('data-precio', costoEst.toFixed(2));
+                        if (inputBuscarProd) {
+                            inputBuscarProd.value = prodNuevo.codigo + ' - ' + prodNuevo.nombre;
+                        }
+                        if (btnLimpiarProd) btnLimpiarProd.classList.remove('d-none');
+                        precioInput.value = costoEst > 0 ? costoEst.toFixed(2) : '';
                         cantidadInput.value = 1;
 
                         // Cerrar modal
@@ -402,10 +499,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Renderizar tabla de detalle
         function renderizarTablaDetalle() {
+            var tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
             cuerpoDetalle.innerHTML = '';
             if (itemsCompra.length === 0) {
                 cuerpoDetalle.innerHTML = '<tr id="filaVacia"><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-inbox fs-3 d-block mb-1"></i>Añada los insumos recibidos del proveedor usando el formulario superior.</td></tr>';
+                totalActualCompra = 0.00;
                 totalDisplay.textContent = '$ 0,00';
+                if (totalBsDisplay) totalBsDisplay.textContent = 'Bs. 0,00';
+                actualizarCalculoAbonoInicial();
                 return;
             }
 
@@ -414,14 +515,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 total += item.subtotal;
                 var tr = document.createElement('tr');
                 tr.innerHTML = '<td><span class="badge bg-secondary font-monospace me-2">' + item.codigo + '</span><strong>' + item.nombre + '</strong></td>' +
-                    '<td class="text-center fw-bold text-primary">+' + item.cantidad.toLocaleString('es-VE') + '</td>' +
+                    '<td class="text-center fw-bold text-primary">+' + Math.floor(item.cantidad) + '</td>' +
                     '<td class="text-end">$ ' + item.precio_compra.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
                     '<td class="text-end fw-bold">$ ' + item.subtotal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
                     '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-quitar-item" data-index="' + idx + '"><i class="bi bi-trash"></i></button></td>';
                 cuerpoDetalle.appendChild(tr);
             });
 
-            totalDisplay.textContent = '$ ' + total.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            totalActualCompra = Math.round(total * 100) / 100;
+            totalDisplay.textContent = '$ ' + totalActualCompra.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (totalBsDisplay) {
+                var bsTotal = totalActualCompra * tasa;
+                totalBsDisplay.textContent = 'Bs. ' + bsTotal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+            actualizarCalculoAbonoInicial();
 
             // Enlazar botones quitar
             var btnsQuitar = cuerpoDetalle.querySelectorAll('.btn-quitar-item');
@@ -448,6 +555,30 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!idProv) {
                 mostrarError('Seleccione un proveedor.');
                 return;
+            }
+
+            // Validar abono inicial si es crédito
+            if (condicionSelect.value === 'credito' && montoInicialInput) {
+                var abonoVal = parseFloat(montoInicialInput.value || 0);
+                if (abonoVal > totalActualCompra) {
+                    mostrarError('El abono inicial no puede ser mayor al total de la compra.');
+                    return;
+                }
+                if (abonoVal > 0 && idTipoPagoInicialSelect) {
+                    var tpIni = parseInt(idTipoPagoInicialSelect.value || 1);
+                    if (tpIni !== 1) {
+                        var bcoIni = document.getElementById('idBancoInicialCompra');
+                        var refIni = document.getElementById('referenciaInicialCompra');
+                        if (!bcoIni || !bcoIni.value) {
+                            mostrarError('Seleccione el banco para el abono inicial.');
+                            return;
+                        }
+                        if (!refIni || !refIni.value.trim()) {
+                            mostrarError('Ingrese la referencia del abono inicial.');
+                            return;
+                        }
+                    }
+                }
             }
 
             var fd = new FormData(formNotaCompra);

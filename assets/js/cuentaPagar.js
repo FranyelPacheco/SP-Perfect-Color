@@ -28,17 +28,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     { data: 'proveedor_rif' },
                     {
                         data: 'monto_total',
-                        render: function(data) {
+                        render: function(data, type, row) {
                             if (data == null) return '';
-                            return '$ ' + formatearMoneda(data);
+                            var usd = parseFloat(data) || 0;
+                            var tasa = parseFloat((row && row.tasa_bcv) ? row.tasa_bcv : (window.TASA_CAMBIO_HOY || 0));
+                            var html = '$ ' + formatearMoneda(usd);
+                            if (tasa > 0) {
+                                html += '<div class="text-muted small">Bs. ' + formatearMoneda(usd * tasa) + '</div>';
+                            }
+                            return html;
                         }
                     },
                     {
                         data: 'saldo_pendiente',
                         render: function(data) {
                             if (data == null) return '';
-                            var cls = parseFloat(data) > 0 ? 'saldo-pendiente-positivo' : 'saldo-pendiente-cero';
-                            return '<span class="' + cls + '">$ ' + formatearMoneda(data) + '</span>';
+                            var usd = parseFloat(data) || 0;
+                            var cls = usd > 0 ? 'saldo-pendiente-positivo' : 'saldo-pendiente-cero';
+                            var tasaHoy = parseFloat(window.TASA_CAMBIO_HOY || 0);
+                            var html = '<span class="' + cls + '">$ ' + formatearMoneda(usd) + '</span>';
+                            if (usd > 0 && tasaHoy > 0) {
+                                html += '<div class="text-muted small">Bs. ' + formatearMoneda(usd * tasaHoy) + '</div>';
+                            }
+                            return html;
                         }
                     },
                     {

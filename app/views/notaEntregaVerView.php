@@ -6,11 +6,11 @@
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0"><i class="bi bi-receipt-cutoff me-2 text-primary"></i>Nota de Entrega #<?php echo $nota['id_nota_entrega']; ?></h2>
     <div class="d-flex gap-2">
-        <a href="/SP%20Perfect%20Color/notaEntrega/pdf?id=<?php echo $nota['id_nota_entrega']; ?>" target="_blank" class="btn btn-primary shadow-sm">
-            <i class="bi bi-file-earmark-pdf-fill me-2"></i>Imprimir / PDF
+        <a href="/SP%20Perfect%20Color/notaEntrega/pdf?id=<?php echo $nota['id_nota_entrega']; ?>" target="_blank" class="btn btn-primary shadow-sm" title="Ver PDF" data-bs-toggle="tooltip">
+            <i class="bi bi-file-earmark-pdf-fill"></i>
         </a>
-        <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Volver
+        <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-outline-secondary" title="Volver" data-bs-toggle="tooltip">
+            <i class="bi bi-arrow-left"></i>
         </a>
     </div>
 </div>
@@ -49,9 +49,20 @@
                 <span><?php echo htmlspecialchars($nota['cliente_telefonos']); ?></span>
             </div>
             <?php endif; ?>
+<?php
+$tasaDocNota = !empty($nota['tasa_bcv']) ? (float)$nota['tasa_bcv'] : (float)($tasaCambioGlobal ?? 0);
+$totalUsdNota = (float)($nota['total'] ?? 0);
+$totalBsNota = $totalUsdNota * $tasaDocNota;
+?>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Total:</small>
-                <span class="fw-bold fs-5">$ <?php echo number_format((float)$nota['total'], 2, ',', '.'); ?></span>
+                <span class="fw-bold fs-5">$ <?php echo number_format($totalUsdNota, 2, ',', '.'); ?></span>
+                <?php if ($tasaDocNota > 0): ?>
+                    <div class="text-muted small">
+                        Bs. <?php echo number_format($totalBsNota, 2, ',', '.'); ?>
+                        <span class="badge bg-light text-secondary border ms-1">Tasa fecha: Bs. <?php echo number_format($tasaDocNota, 2, ',', '.'); ?></span>
+                    </div>
+                <?php endif; ?>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Condicion de Pago:</small>
@@ -93,7 +104,7 @@
                     <tr>
                         <td><?php echo $item['insumo_codigo']; ?></td>
                         <td><?php echo $item['insumo_nombre']; ?></td>
-                        <td><?php echo number_format($item['cantidad'], 2, ',', '.'); ?></td>
+                        <td><?php echo (int)round((float)$item['cantidad']); ?></td>
                         <td>$ <?php echo number_format($item['precio_unitario'], 2, ',', '.'); ?></td>
                         <td>$ <?php echo number_format($item['subtotal'], 2, ',', '.'); ?></td>
                     </tr>
@@ -102,7 +113,12 @@
                 <tfoot>
                     <tr>
                         <td colspan="4" class="text-end fw-bold">Total:</td>
-                        <td class="fw-bold">$ <?php echo number_format($nota['total'], 2, ',', '.'); ?></td>
+                        <td>
+                            <div class="fw-bold">$ <?php echo number_format($totalUsdNota, 2, ',', '.'); ?></div>
+                            <?php if ($tasaDocNota > 0): ?>
+                                <div class="text-muted small">Bs. <?php echo number_format($totalBsNota, 2, ',', '.'); ?></div>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 </tfoot>
             </table>

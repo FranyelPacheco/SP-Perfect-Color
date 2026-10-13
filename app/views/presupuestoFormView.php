@@ -8,8 +8,8 @@
         <h4 class="mb-0 fw-bold text-dark"><i class="bi bi-file-earmark-plus me-2 text-primary"></i>Nuevo Presupuesto</h4>
         <small class="text-muted">Seleccione el cliente y agregue los insumos del catálogo interactivo</small>
     </div>
-    <a href="/SP%20Perfect%20Color/presupuesto" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i>Volver a la Lista
+    <a href="/SP%20Perfect%20Color/presupuesto" class="btn btn-outline-secondary" title="Volver" data-bs-toggle="tooltip">
+        <i class="bi bi-arrow-left"></i>
     </a>
 </div>
 
@@ -40,8 +40,8 @@
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-tipo" data-tipo="2"><i class="bi bi-box-seam me-1"></i>Simples</button>
                 </div>
 
-                <!-- Sub-filtro por tamaño/fracción para bases -->
-                <div class="d-flex gap-1 mb-3 overflow-auto pb-1 d-none" id="filtrosFraccionBase">
+                <!-- Sub-filtro por tamaño/fracción -->
+                <div class="d-flex gap-1 mb-3 overflow-auto pb-1" id="filtrosFraccionBase">
                     <button type="button" class="btn btn-sm btn-outline-primary active btn-filtro-fraccion" data-fraccion="todos">Todas</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-fraccion" data-fraccion="1">1 Gal</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-fraccion" data-fraccion="1/2">1/2 Gal</button>
@@ -145,11 +145,11 @@
             <div id="mensajeErrorPresupuesto" class="alert alert-danger d-none mb-0"></div>
 
             <div class="d-flex justify-content-end gap-2 mt-1">
-                <a href="/SP%20Perfect%20Color/presupuesto" class="btn btn-light border px-4">
-                    <i class="bi bi-x-lg me-1"></i>Cancelar
+                <a href="/SP%20Perfect%20Color/presupuesto" class="btn btn-light border px-3" title="Volver" data-bs-toggle="tooltip">
+                    <i class="bi bi-arrow-left"></i>
                 </a>
                 <button type="submit" class="btn btn-primary btn-lg px-4 shadow-sm" id="btnGuardarPresupuesto">
-                    <i class="bi bi-check-circle-fill me-2"></i>Crear Presupuesto
+                    <i class="bi bi-check-circle-fill me-1"></i>Guardar
                 </button>
             </div>
         </div>

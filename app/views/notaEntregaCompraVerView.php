@@ -4,14 +4,14 @@
 ?>
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <div class="d-flex align-items-center gap-3">
-        <a href="/SP%20Perfect%20Color/notaEntregaCompra" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Volver
+        <a href="/SP%20Perfect%20Color/notaEntregaCompra" class="btn btn-outline-secondary" title="Volver" data-bs-toggle="tooltip">
+            <i class="bi bi-arrow-left"></i>
         </a>
         <h2 class="h4 mb-0">Nota de Entrega (Compra) #<?php echo str_pad((string)$nota['id_nota_entrega'], 5, '0', STR_PAD_LEFT); ?></h2>
     </div>
     <div class="d-flex gap-2">
-        <button type="button" class="btn btn-outline-primary" onclick="window.print();">
-            <i class="bi bi-printer me-1"></i>Imprimir Comprobante
+        <button type="button" class="btn btn-outline-primary" onclick="window.print();" title="Imprimir" data-bs-toggle="tooltip">
+            <i class="bi bi-printer"></i>
         </button>
     </div>
 </div>
@@ -49,14 +49,29 @@
                 <span><?php echo htmlspecialchars($nota['proveedor_direccion']); ?></span>
             </div>
             <?php endif; ?>
+<?php
+$tasaDocCompra = !empty($nota['tasa_bcv']) ? (float)$nota['tasa_bcv'] : (float)($tasaCambioGlobal ?? 0);
+$totalUsdCompra = (float)($nota['total'] ?? 0);
+$totalBsCompra = $totalUsdCompra * $tasaDocCompra;
+$saldoUsdCompra = (float)($nota['saldo_pendiente'] ?? 0);
+$saldoBsCompra = $saldoUsdCompra * $tasaDocCompra;
+?>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Condición de Pago:</small>
-                <span class="badge bg-light text-dark border"><?php echo !empty($nota['id_cuenta_pagar']) && (float)$nota['saldo_pendiente'] > 0 ? 'A Crédito' : 'Contado'; ?></span>
+                <span class="badge bg-light text-dark border"><?php echo !empty($nota['id_cuenta_pagar']) && $saldoUsdCompra > 0 ? 'A Crédito' : 'Contado'; ?></span>
+                <?php if (!empty($nota['id_cuenta_pagar'])): ?>
+                    <a href="/SP%20Perfect%20Color/cuentaPagar/ver?id=<?php echo (int)$nota['id_cuenta_pagar']; ?>" class="btn btn-link btn-sm p-0 ms-2 text-decoration-none">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Ver Cuenta/Pagos
+                    </a>
+                <?php endif; ?>
             </div>
-            <?php if (!empty($nota['id_cuenta_pagar']) && (float)$nota['saldo_pendiente'] > 0): ?>
+            <?php if (!empty($nota['id_cuenta_pagar']) && $saldoUsdCompra > 0): ?>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Saldo Pendiente CxP:</small>
-                <span class="text-danger fw-bold">$ <?php echo number_format((float)$nota['saldo_pendiente'], 2, ',', '.'); ?></span>
+                <span class="text-danger fw-bold">$ <?php echo number_format($saldoUsdCompra, 2, ',', '.'); ?></span>
+                <?php if ($tasaDocCompra > 0): ?>
+                    <small class="text-muted d-block">Equiv. Fecha: Bs. <?php echo number_format($saldoBsCompra, 2, ',', '.'); ?></small>
+                <?php endif; ?>
                 <?php if (!empty($nota['fecha_vencimiento'])): ?>
                 <small class="text-muted d-block">Vence: <?php echo date('d/m/Y', strtotime($nota['fecha_vencimiento'])); ?></small>
                 <?php endif; ?>
@@ -64,7 +79,13 @@
             <?php endif; ?>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Monto Total:</small>
-                <span class="fw-bold fs-5 text-success">$ <?php echo number_format((float)$nota['total'], 2, ',', '.'); ?></span>
+                <span class="fw-bold fs-5 text-success">$ <?php echo number_format($totalUsdCompra, 2, ',', '.'); ?></span>
+                <?php if ($tasaDocCompra > 0): ?>
+                    <div class="text-muted small">
+                        Bs. <?php echo number_format($totalBsCompra, 2, ',', '.'); ?>
+                        <span class="badge bg-light text-secondary border ms-1">Tasa fecha: Bs. <?php echo number_format($tasaDocCompra, 2, ',', '.'); ?></span>
+                    </div>
+                <?php endif; ?>
             </div>
             <?php if (!empty($nota['observaciones'])): ?>
             <div class="col-12 mt-2">
@@ -100,7 +121,7 @@
                         <td><span class="badge bg-secondary font-monospace"><?php echo htmlspecialchars($item['producto_codigo']); ?></span></td>
                         <td class="fw-semibold"><?php echo htmlspecialchars($item['producto_nombre']); ?></td>
                         <td class="text-center fw-bold text-primary">
-                            +<?php echo number_format((float)$item['cantidad'], 2, ',', '.'); ?>
+                            +<?php echo (int)round((float)$item['cantidad']); ?>
                         </td>
                         <td class="text-end">$ <?php echo number_format((float)$item['precio_compra'], 2, ',', '.'); ?></td>
                         <td class="text-end fw-bold">$ <?php echo number_format((float)$item['subtotal'], 2, ',', '.'); ?></td>
@@ -110,7 +131,12 @@
                 <tfoot>
                     <tr class="table-light fw-bold">
                         <td colspan="5" class="text-end">TOTAL DE LA NOTA DE ENTREGA:</td>
-                        <td class="text-end fs-5 text-primary">$ <?php echo number_format((float)$nota['total'], 2, ',', '.'); ?></td>
+                        <td class="text-end">
+                            <div class="fs-5 text-primary">$ <?php echo number_format($totalUsdCompra, 2, ',', '.'); ?></div>
+                            <?php if ($tasaDocCompra > 0): ?>
+                                <div class="text-muted small fw-normal">Bs. <?php echo number_format($totalBsCompra, 2, ',', '.'); ?></div>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 </tfoot>
             </table>

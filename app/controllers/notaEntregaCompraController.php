@@ -80,10 +80,29 @@ if ($metodo === 'index') {
     $idBanco = !empty($_POST['id_banco']) ? intval($_POST['id_banco']) : null;
     $referencia = !empty($_POST['referencia']) ? trim($_POST['referencia']) : null;
 
+    // Abono inicial si es crédito
+    $montoInicial = floatval($_POST['monto_inicial'] ?? 0);
+    $idTipoPagoInicial = !empty($_POST['id_tipo_pago_inicial']) ? intval($_POST['id_tipo_pago_inicial']) : null;
+    $idBancoInicial = !empty($_POST['id_banco_inicial']) ? intval($_POST['id_banco_inicial']) : null;
+    $referenciaInicial = !empty($_POST['referencia_inicial']) ? trim($_POST['referencia_inicial']) : null;
+
     if ($condicionPago === 'contado' && $idTipoPago === 1) {
         $idBanco = null;
         if (empty($referencia)) {
             $referencia = 'Efectivo';
+        }
+    }
+
+    if ($condicionPago === 'credito' && $montoInicial > 0) {
+        if ($idTipoPagoInicial === 1) {
+            $idBancoInicial = null;
+            if (empty($referenciaInicial)) {
+                $referenciaInicial = 'Efectivo (Abono Inicial)';
+            }
+        } else {
+            if (empty($idBancoInicial) || empty($referenciaInicial)) {
+                respuestaJson('error', 'Debe indicar banco y referencia para el abono inicial.');
+            }
         }
     }
 
@@ -102,6 +121,15 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Debe agregar al menos un producto recibido a la nota de entrega');
     }
 
+    foreach ($items as &$it) {
+        $cantRaw = $it['cantidad'] ?? 0;
+        if (!is_numeric($cantRaw) || floor((float)$cantRaw) != (float)$cantRaw || (int)$cantRaw < 1) {
+            respuestaJson('error', 'Las cantidades deben ser números enteros mayores o iguales a 1.');
+        }
+        $it['cantidad'] = (int)$cantRaw;
+    }
+    unset($it);
+
     try {
         $idNota = $notaEntregaCompraModel->crearNotaCompra(
             $idProveedor,
@@ -112,7 +140,11 @@ if ($metodo === 'index') {
             $items,
             $idTipoPago,
             $idBanco,
-            $referencia
+            $referencia,
+            $montoInicial,
+            $idTipoPagoInicial,
+            $idBancoInicial,
+            $referenciaInicial
         );
 
         respuestaJson('exito', 'Nota de entrega de compra #' . $idNota . ' registrada con éxito. Stock de inventario actualizado.', [

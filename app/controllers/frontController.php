@@ -25,7 +25,6 @@ class frontController
         'banco'             => 'banco',
         'tipopago'          => 'tipoPago',
         'reporte'           => 'reporte',
-        'configpago'        => 'configPago',
         'perfil'            => 'perfil',
         'tasacambio'        => 'tasaCambio',
     ];
@@ -46,7 +45,6 @@ class frontController
         'banco'             => ['Bancos', 'Gestión de bancos - SP Perfect Color'],
         'tipopago'          => ['Tipos de Pago', 'Gestión de tipos de pago - SP Perfect Color'],
         'reporte'           => ['Reportes', 'Reportes de ventas, ingresos y egresos - SP Perfect Color'],
-        'configpago'        => ['Config. de Pago', 'Configuración de bancos y tipos de pago - SP Perfect Color'],
         'tasacambio'        => ['Tasa de Cambio', 'Gestión diaria de tasa de cambio USD/Bs - SP Perfect Color'],
     ];
 

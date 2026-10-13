@@ -10,15 +10,79 @@ document.addEventListener('DOMContentLoaded', function() {
     var textoBotonGuardar = document.getElementById('textoBotonGuardar');
     var inputId = document.getElementById('idTasaCambio');
     var inputFecha = document.getElementById('fechaTasa');
+    var feedbackFechaTasa = document.getElementById('feedbackFechaTasa');
     var inputTasa = document.getElementById('valorTasa');
     var mensajeError = document.getElementById('mensajeErrorTasa');
     var btnNuevaTasa = document.getElementById('btnNuevaTasa');
+    var btnGuardarTasa = document.getElementById('btnGuardarTasa');
+    var temporizadorFecha;
 
     cargarTasas();
+
+    function limpiarEstadoFecha() {
+        if (inputFecha) {
+            inputFecha.classList.remove('is-invalid', 'is-valid');
+        }
+        if (feedbackFechaTasa) {
+            feedbackFechaTasa.classList.add('d-none');
+            feedbackFechaTasa.classList.remove('d-block');
+        }
+        if (btnGuardarTasa) {
+            btnGuardarTasa.disabled = false;
+        }
+    }
+
+    function verificarFechaEnTiempoReal() {
+        clearTimeout(temporizadorFecha);
+        if (!inputFecha) return;
+        var fecha = inputFecha.value.trim();
+        if (!fecha) {
+            limpiarEstadoFecha();
+            return;
+        }
+        var idActual = inputId ? inputId.value.trim() : '';
+
+        temporizadorFecha = setTimeout(function() {
+            fetch('/SP%20Perfect%20Color/tasaCambio/verificarFechaAjax?fecha=' + encodeURIComponent(fecha) + '&id=' + encodeURIComponent(idActual))
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (res.estado === 'exito' && res.datos) {
+                        if (res.datos.existe) {
+                            inputFecha.classList.add('is-invalid');
+                            inputFecha.classList.remove('is-valid');
+                            if (feedbackFechaTasa) {
+                                var fTxt = res.datos.fecha_formateada || fecha;
+                                feedbackFechaTasa.textContent = 'Ya existe una tasa registrada para la fecha ' + fTxt;
+                                feedbackFechaTasa.classList.remove('d-none');
+                                feedbackFechaTasa.classList.add('d-block');
+                            }
+                            if (btnGuardarTasa) btnGuardarTasa.disabled = true;
+                        } else {
+                            inputFecha.classList.remove('is-invalid');
+                            inputFecha.classList.add('is-valid');
+                            if (feedbackFechaTasa) {
+                                feedbackFechaTasa.classList.add('d-none');
+                                feedbackFechaTasa.classList.remove('d-block');
+                            }
+                            if (btnGuardarTasa) btnGuardarTasa.disabled = false;
+                        }
+                    }
+                })
+                .catch(function(err) {
+                    console.error('[TasaCambio] Error al verificar fecha:', err);
+                });
+        }, 200);
+    }
+
+    if (inputFecha) {
+        inputFecha.addEventListener('change', verificarFechaEnTiempoReal);
+        inputFecha.addEventListener('input', verificarFechaEnTiempoReal);
+    }
 
     if (btnNuevaTasa) {
         btnNuevaTasa.addEventListener('click', function() {
             limpiarFormulario();
+            verificarFechaEnTiempoReal();
         });
     }
 
@@ -32,6 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function limpiarFormulario() {
         if (formTasa) formTasa.reset();
         if (inputId) inputId.value = '';
+        limpiarEstadoFecha();
         if (inputFecha) {
             var hoy = new Date().toISOString().split('T')[0];
             inputFecha.value = hoy;
@@ -110,8 +175,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (!row) return '';
                             // Solo botón de edición. Cero botones de eliminación según regla de negocio.
                             return '<div class="d-flex gap-2">' +
-                                '<button type="button" class="btn btn-sm btn-outline-primary btn-editar-tasa" data-id="' + row.id_tasa_cambio + '" title="Editar Tasa">' +
-                                '<i class="bi bi-pencil me-1"></i>Editar' +
+                                '<button type="button" class="btn btn-sm btn-outline-primary btn-editar-tasa" data-id="' + row.id_tasa_cambio + '" title="Editar Tasa" data-bs-toggle="tooltip">' +
+                                '<i class="bi bi-pencil"></i>' +
                                 '</button>' +
                                 '</div>';
                         }
@@ -134,6 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var id = $(this).attr('data-id') || $(this).data('id');
         if (!id) return;
 
+        limpiarEstadoFecha();
         if (mensajeError) {
             mensajeError.textContent = '';
             mensajeError.classList.add('d-none');

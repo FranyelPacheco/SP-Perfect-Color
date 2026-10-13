@@ -5,7 +5,7 @@
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0">Presupuesto #<?php echo $presupuesto['id_presupuesto']; ?></h2>
-    <a href="../presupuesto" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Volver</a>
+    <a href="../presupuesto" class="btn btn-outline-secondary" title="Volver" data-bs-toggle="tooltip"><i class="bi bi-arrow-left"></i></a>
 </div>
 
 <div class="card border-0 shadow-sm mb-4">
@@ -36,9 +36,20 @@
                     <?php echo ucfirst($presupuesto['estado'] ?? ''); ?>
                 </span>
             </div>
+<?php
+$tasaDocPres = !empty($presupuesto['tasa_bcv']) ? (float)$presupuesto['tasa_bcv'] : (float)($tasaCambioGlobal ?? 0);
+$totalUsdPres = (float)($presupuesto['total'] ?? 0);
+$totalBsPres = $totalUsdPres * $tasaDocPres;
+?>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Total:</small>
-                <span class="fw-bold fs-5">$ <?php echo number_format((float)$presupuesto['total'], 2, ',', '.'); ?></span>
+                <span class="fw-bold fs-5">$ <?php echo number_format($totalUsdPres, 2, ',', '.'); ?></span>
+                <?php if ($tasaDocPres > 0): ?>
+                    <div class="text-muted small">
+                        Bs. <?php echo number_format($totalBsPres, 2, ',', '.'); ?>
+                        <span class="badge bg-light text-secondary border ms-1">Tasa fecha: Bs. <?php echo number_format($tasaDocPres, 2, ',', '.'); ?></span>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -72,7 +83,7 @@
                     <tr>
                         <td><?php echo $item['insumo_codigo']; ?></td>
                         <td><?php echo $item['insumo_nombre']; ?></td>
-                        <td><?php echo number_format($item['cantidad'], 2, ',', '.'); ?></td>
+                        <td><?php echo (int)round((float)$item['cantidad']); ?></td>
                         <td>$ <?php echo number_format($item['precio_unitario'], 2, ',', '.'); ?></td>
                         <td>$ <?php echo number_format($item['subtotal'], 2, ',', '.'); ?></td>
                     </tr>
@@ -81,7 +92,12 @@
                 <tfoot>
                     <tr>
                         <td colspan="4" class="text-end fw-bold">Total:</td>
-                        <td class="fw-bold">$ <?php echo number_format($presupuesto['total'], 2, ',', '.'); ?></td>
+                        <td>
+                            <div class="fw-bold">$ <?php echo number_format($totalUsdPres, 2, ',', '.'); ?></div>
+                            <?php if ($tasaDocPres > 0): ?>
+                                <div class="text-muted small">Bs. <?php echo number_format($totalBsPres, 2, ',', '.'); ?></div>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 </tfoot>
             </table>
@@ -92,13 +108,13 @@
 <?php if ($presupuesto['estado'] == 'pendiente' || $presupuesto['estado'] == 'presupuesto' || (int)($presupuesto['id_estado_venta'] ?? 0) === 1): ?>
 <div class="d-flex justify-content-end gap-2">
     <button class="btn btn-outline-danger" onclick="cambiarEstado(<?php echo $presupuesto['id_presupuesto']; ?>, 'rechazado')"><i class="bi bi-x-lg me-1"></i>Rechazar</button>
-    <a href="../notaEntrega/crearDesdePresupuesto?id=<?php echo $presupuesto['id_presupuesto']; ?>" class="btn btn-success"><i class="bi bi-cash-coin me-1"></i>Aprobar y Cobrar Entrega</a>
+    <a href="../notaEntrega/crearDesdePresupuesto?id=<?php echo $presupuesto['id_presupuesto']; ?>" class="btn btn-success"><i class="bi bi-check-lg me-1"></i>Aprobar</a>
 </div>
 <?php endif; ?>
 
 <?php if ($presupuesto['estado'] == 'aprobado' || (int)($presupuesto['id_estado_venta'] ?? 0) === 2): ?>
 <div class="d-flex justify-content-end">
-    <a href="../notaEntrega/crearDesdePresupuesto?id=<?php echo $presupuesto['id_presupuesto']; ?>" class="btn btn-primary btn-lg"><i class="bi bi-receipt-cutoff me-2"></i>Crear Nota de Entrega</a>
+    <a href="../notaEntrega/crearDesdePresupuesto?id=<?php echo $presupuesto['id_presupuesto']; ?>" class="btn btn-primary"><i class="bi bi-receipt-cutoff me-1"></i>Procesar Entrega</a>
 </div>
 <?php endif; ?>
 

@@ -133,12 +133,13 @@ if ($metodo === 'index') {
     $detalle = [];
     
     foreach ($items as $item) {
-        $cantidad = floatval($item['cantidad'] ?? 0);
+        $cantidadRaw = $item['cantidad'] ?? 0;
+        $cantidad = intval($cantidadRaw);
         $precioUnitario = floatval($item['precio_unitario'] ?? 0);
         $subtotal = $cantidad * $precioUnitario;
         
-        if ($cantidad <= 0 || $precioUnitario <= 0) {
-            respuestaJson('error', 'Datos invalidos en uno de los items (cantidad y precio deben ser mayores a 0)');
+        if ($cantidad < 1 || floatval($cantidadRaw) != $cantidad || $precioUnitario <= 0) {
+            respuestaJson('error', 'La cantidad debe ser un número entero mayor o igual a 1 y el precio debe ser válido.');
         }
         
         $esMezcla = (!empty($item['tipo']) && $item['tipo'] === 'mezcla') || !empty($item['mezclas']);
@@ -164,6 +165,12 @@ if ($metodo === 'index') {
                 if ($idBase < 1 || $fraccion < 1 || $consumo <= 0) {
                     respuestaJson('error', 'Componente de mezcla invalido');
                 }
+                $baseInfo = $inventarioModel->buscarPorId($idBase);
+                $stockBase = (float)($baseInfo['stock_actual'] ?? 0);
+                $consumoTotalBase = $consumo * $cantidad;
+                if ($consumoTotalBase > $stockBase) {
+                    respuestaJson('error', 'El consumo de la base "' . ($baseInfo['nombre'] ?? '') . '" (' . round($consumoTotalBase, 2) . ' gal) supera el stock disponible (' . floor($stockBase) . ' gal).');
+                }
                 $mezclasValidadas[] = [
                     'id_producto_base' => $idBase,
                     'fraccion_128' => $fraccion,
@@ -185,9 +192,16 @@ if ($metodo === 'index') {
                 respuestaJson('error', 'Datos invalidos en uno de los items');
             }
             $insumoInfo = $inventarioModel->buscarPorId($insumoId);
+            if (!$insumoInfo) {
+                respuestaJson('error', 'Uno de los productos seleccionados no existe en el inventario.');
+            }
+            $stockDisponible = (int)floor((float)($insumoInfo['stock_actual'] ?? 0));
+            if ($cantidad > $stockDisponible) {
+                respuestaJson('error', 'La cantidad solicitada de "' . $insumoInfo['nombre'] . '" (' . $cantidad . ') supera el stock disponible (' . $stockDisponible . ').');
+            }
             $descripcion = !empty($item['descripcion']) ? $item['descripcion'] : ($insumoInfo['nombre'] ?? 'Producto');
             // Precio del catálogo oficial (no editable por el vendedor)
-            if ($insumoInfo && isset($insumoInfo['precio_venta']) && (float)$insumoInfo['precio_venta'] > 0) {
+            if (isset($insumoInfo['precio_venta']) && (float)$insumoInfo['precio_venta'] > 0) {
                 $precioUnitario = (float)$insumoInfo['precio_venta'];
                 $subtotal = $cantidad * $precioUnitario;
             }

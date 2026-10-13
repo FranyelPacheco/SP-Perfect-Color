@@ -17,22 +17,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var resumenConteoItems = document.getElementById('resumenConteoItems');
     var btnGuardarPresupuesto = document.getElementById('btnGuardarPresupuesto');
 
-    // Referencias al Modal de Preparar Mezcla
-    var modalPrepararMezcla = document.getElementById('modalPrepararMezcla');
-    var btnModalPrepararMezcla = document.getElementById('btnModalPrepararMezcla');
-    var formularioMezcla = document.getElementById('formularioMezcla');
-    var mezclaNombre = document.getElementById('mezclaNombre');
-    var mezclaPresentacion = document.getElementById('mezclaPresentacion');
-    var mezclaCantidad = document.getElementById('mezclaCantidad');
-    var cuerpoBasesMezcla = document.getElementById('cuerpoBasesMezcla');
-    var btnAgregarFilaBase = document.getElementById('btnAgregarFilaBase');
-    var contadorBasesMezcla = document.getElementById('contadorBasesMezcla');
-    var mezclaPrecioVenta = document.getElementById('mezclaPrecioVenta');
-    var ayudaPrecioMezcla = document.getElementById('ayudaPrecioMezcla');
-    var mezclaSubtotalEstimado = document.getElementById('mezclaSubtotalEstimado');
-    var totalGalonesMezcla = document.getElementById('totalGalonesMezcla');
-    var mensajeErrorMezcla = document.getElementById('mensajeErrorMezcla');
-
     // Array para almacenar los items del presupuesto y catalogo
     var itemsPresupuesto = [];
     var insumosDisponibles = [];
@@ -85,12 +69,12 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('btn-primary', 'active');
             tipoFiltroActual = this.dataset.tipo;
 
-            if (tipoFiltroActual === '1') {
-                if (contenedorFiltrosFraccion) contenedorFiltrosFraccion.classList.remove('d-none');
-            } else {
+            if (tipoFiltroActual === '2') {
                 if (contenedorFiltrosFraccion) contenedorFiltrosFraccion.classList.add('d-none');
                 fraccionFiltroActual = 'todos';
                 resetBotonesFraccion();
+            } else {
+                if (contenedorFiltrosFraccion) contenedorFiltrosFraccion.classList.remove('d-none');
             }
 
             aplicarFiltros();
@@ -214,15 +198,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 coincideTipo = (tipoId === parseInt(tipoFiltroActual));
             }
 
-            // Filtro por fraccion / presentacion (cuando tipo es Base)
+            // Filtro por fraccion / presentacion (funciona en Todos y en Bases)
             var coincideFraccion = true;
-            if (tipoFiltroActual === '1' && fraccionFiltroActual !== 'todos') {
+            if (fraccionFiltroActual !== 'todos') {
                 var frac = (insumo.fraccion || '').trim();
                 var nom = (insumo.nombre || '').toLowerCase();
                 var um = (insumo.unidad_medida || '').toLowerCase();
-                coincideFraccion = (frac === fraccionFiltroActual) ||
-                                   (nom.indexOf(fraccionFiltroActual) !== -1) ||
-                                   (um.indexOf(fraccionFiltroActual) !== -1);
+                if (fraccionFiltroActual === '1') {
+                    var esGalon = (parseInt(insumo.id_tipo_producto) === 1) || nom.indexOf('galon') !== -1 || nom.indexOf('galón') !== -1 || um === 'galon' || um === 'galón';
+                    coincideFraccion = esGalon && (frac === '1') && (nom.indexOf('1/') === -1);
+                } else {
+                    coincideFraccion = (frac === fraccionFiltroActual);
+                }
             }
 
             return coincideTexto && coincideTipo && coincideFraccion;
@@ -262,16 +249,38 @@ document.addEventListener('DOMContentLoaded', function() {
             var badgeTipoClass = tipoId === 1 ? 'badge-tipo-base' : 'badge-tipo-simple';
             var iconTipo = tipoId === 1 ? 'bi-droplet-half' : 'bi-box-seam';
 
-            // Indicador de stock
-            var stockVal = parseFloat(insumo.stock_actual) || 0;
-            var stockMin = parseFloat(insumo.stock_minimo) || 0;
-            var stockCls = stockVal <= stockMin ? 'catalogo-stock-alerta' : 'catalogo-stock-ok';
-            var stockIcon = stockVal <= stockMin ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill';
-            var stockTexto = (stockVal <= stockMin ? 'Stock bajo: ' : 'Stock: ') + Math.round(stockVal);
+            // Indicador de stock físico y comprometido
+            var stockVal = Math.floor(parseFloat(insumo.stock_actual) || 0);
+            var stockMin = Math.floor(parseFloat(insumo.stock_minimo) || 0);
+            var stockComp = Math.floor(parseFloat(insumo.stock_comprometido) || 0);
+            var stockLibre = Math.max(0, stockVal - stockComp);
+            var sinStockFisico = stockVal <= 0;
+
+            var stockCls = (stockVal <= stockMin || stockLibre <= 0) ? 'catalogo-stock-alerta' : 'catalogo-stock-ok';
+            var stockIcon = (stockVal <= stockMin || stockLibre <= 0) ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill';
+            var stockTexto = (stockVal <= stockMin ? 'Stock bajo: ' : 'Stock: ') + stockVal;
+
+            var badgeComprometidoHtml = '';
+            if (stockComp > 0) {
+                var agotadoPorCompromiso = stockLibre <= 0;
+                badgeComprometidoHtml =
+                    '<span class="badge ' + (agotadoPorCompromiso ? 'bg-danger text-white' : 'bg-warning text-dark') + ' border" style="font-size: 0.7rem;" title="Unidades en presupuestos pendientes de aprobar">' +
+                        '<i class="bi bi-clock-history me-1"></i>Comprometido: ' + stockComp + (agotadoPorCompromiso ? ' (Todo reservado)' : '') +
+                    '</span>';
+            }
 
             var div = document.createElement('div');
             div.className = 'catalogo-card-item' + (yaAgregado ? ' item-agregado' : '');
             div.id = 'catalogo-item-' + insumo.id_insumo;
+
+            var botonHtml = '';
+            if (yaAgregado) {
+                botonHtml = '<button type="button" class="btn btn-sm btn-secondary btn-catalogo-add disabled" disabled><i class="bi bi-check2 me-1"></i>Agregado</button>';
+            } else if (sinStockFisico) {
+                botonHtml = '<button type="button" class="btn btn-sm btn-outline-danger btn-catalogo-add disabled" disabled><i class="bi bi-slash-circle me-1"></i>Agotado</button>';
+            } else {
+                botonHtml = '<button type="button" class="btn btn-sm btn-outline-primary btn-catalogo-add btn-agregar"><i class="bi bi-plus-lg me-1"></i>Agregar</button>';
+            }
 
             div.innerHTML =
                 '<div class="catalogo-info">' +
@@ -280,17 +289,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<span class="' + badgeTipoClass + '"><i class="bi ' + iconTipo + ' me-1"></i>' + tipoNom + '</span>' +
                     '</div>' +
                     '<div class="catalogo-nombre" title="' + insumo.nombre + '">' + insumo.nombre + '</div>' +
-                    '<div class="catalogo-meta">' +
+                    '<div class="catalogo-meta flex-wrap">' +
                         '<span class="catalogo-stock-pill ' + stockCls + '"><i class="bi ' + stockIcon + '"></i>' + stockTexto + '</span>' +
+                        badgeComprometidoHtml +
                         (insumo.rubro_nombre ? '<span class="text-muted small"><i class="bi bi-tag me-1"></i>' + insumo.rubro_nombre + '</span>' : '') +
                     '</div>' +
                 '</div>' +
                 '<div class="catalogo-precio-box">' +
                     '<span class="catalogo-precio-val">$ ' + formatearMoneda(insumo.precio_venta) + '</span>' +
-                    (yaAgregado
-                        ? '<button type="button" class="btn btn-sm btn-secondary btn-catalogo-add disabled" disabled><i class="bi bi-check2 me-1"></i>Agregado</button>'
-                        : '<button type="button" class="btn btn-sm btn-outline-primary btn-catalogo-add btn-agregar"><i class="bi bi-plus-lg me-1"></i>Agregar</button>'
-                    ) +
+                    botonHtml +
                 '</div>';
 
             var btnAdd = div.querySelector('.btn-agregar');
@@ -315,6 +322,23 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        var stockFisico = Math.floor(parseFloat(insumo.stock_actual) || 0);
+        var stockComprometido = Math.floor(parseFloat(insumo.stock_comprometido) || 0);
+        var stockLibre = Math.max(0, stockFisico - stockComprometido);
+
+        if (stockFisico <= 0) {
+            mostrarNotificacion('No hay stock físico disponible de "' + insumo.nombre + '".', 'error');
+            return;
+        }
+
+        if (stockComprometido > 0 && (1 > stockLibre)) {
+            mostrarNotificacion(
+                '¡Advertencia! "' + insumo.nombre + '" ya tiene ' + stockComprometido +
+                ' unidad(es) comprometida(s) en presupuestos pendientes de aprobación (Stock físico total: ' + stockFisico + ').',
+                'error'
+            );
+        }
+
         var nuevoItem = {
             es_mezcla: false,
             id_insumo: insumo.id_insumo,
@@ -322,6 +346,8 @@ document.addEventListener('DOMContentLoaded', function() {
             insumo_nombre: insumo.nombre,
             id_tipo_producto: insumo.id_tipo_producto,
             tipo_producto_nombre: parseInt(insumo.id_tipo_producto) === 1 ? 'Base' : 'Simple',
+            stock_actual: stockFisico,
+            stock_comprometido: stockComprometido,
             cantidad: 1,
             precio_unitario: parseFloat(insumo.precio_venta) || 0,
             subtotal: parseFloat(insumo.precio_venta) || 0
@@ -402,19 +428,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 var tipoId = parseInt(item.id_tipo_producto);
                 var tipoNom = tipoId === 1 ? 'Base' : 'Simple';
                 var badgeCls = tipoId === 1 ? 'badge-tipo-base' : 'badge-tipo-simple';
+                var maxStock = item.stock_actual || 1;
+                var stockComp = item.stock_comprometido || 0;
+                var stockLibre = Math.max(0, maxStock - stockComp);
+                var superaComprometido = (stockComp > 0 && item.cantidad > stockLibre);
 
                 fila.innerHTML =
                     '<td>' +
                         '<div class="fw-semibold text-dark text-truncate" style="max-width: 250px;" title="' + item.insumo_nombre + '">' + item.insumo_nombre + '</div>' +
-                        '<div class="d-flex align-items-center gap-1 mt-1">' +
+                        '<div class="d-flex align-items-center flex-wrap gap-1 mt-1">' +
                             '<span class="badge bg-light text-muted border" style="font-size: 0.7rem;">' + item.insumo_codigo + '</span>' +
                             '<span class="' + badgeCls + '" style="font-size: 0.68rem; padding: 0.2em 0.5em;">' + tipoNom + '</span>' +
+                            '<span class="badge bg-light text-dark border" style="font-size: 0.68rem;">Máx: ' + maxStock + '</span>' +
                         '</div>' +
-                    '</td>' +
+                        '<div class="aviso-comprometido-item small text-danger fw-semibold mt-1 ' + (superaComprometido ? '' : 'd-none') + '" style="font-size: 0.72rem;">' +
+                            '<i class="bi bi-exclamation-triangle-fill me-1"></i>¡Comprometido en otro presupuesto! (' + stockComp + ' reservadas, ' + stockLibre + ' libres)' +
+                        '</div>' +
                     '</td>' +
                     '<td class="text-center">' +
                         '<input type="number" class="form-control form-control-sm item-presupuesto-cantidad mx-auto" ' +
-                               'value="' + item.cantidad + '" min="1" step="1" data-indice="' + indice + '">' +
+                               'value="' + item.cantidad + '" min="1" max="' + maxStock + '" step="1" data-indice="' + indice + '">' +
                     '</td>' +
                     '<td class="text-end">' +
                         '<span class="fw-semibold text-secondary">$ ' + formatearMoneda(item.precio_unitario) + '</span>' +
@@ -429,15 +462,45 @@ document.addEventListener('DOMContentLoaded', function() {
                     '</td>';
             }
 
-            // Evento para cambiar cantidad
+            // Evento para cambiar cantidad (solo enteros y respetando límite de stock)
             var inputCant = fila.querySelector('.item-presupuesto-cantidad');
+            inputCant.addEventListener('keydown', function(e) {
+                if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === '+') {
+                    e.preventDefault();
+                }
+            });
             inputCant.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '');
                 var idx = parseInt(this.dataset.indice);
-                var val = parseFloat(this.value);
-                if (!isNaN(val) && val > 0) {
-                    itemsPresupuesto[idx].cantidad = val;
-                    itemsPresupuesto[idx].subtotal = val * itemsPresupuesto[idx].precio_unitario;
-                    fila.querySelector('.item-presupuesto-subtotal').textContent = '$ ' + formatearMoneda(itemsPresupuesto[idx].subtotal);
+                var val = parseInt(this.value, 10);
+                var it = itemsPresupuesto[idx];
+                if (!it) return;
+
+                if (!isNaN(val) && val >= 1) {
+                    if (!it.es_mezcla && it.stock_actual && val > it.stock_actual) {
+                        val = it.stock_actual;
+                        this.value = val;
+                        mostrarNotificacion('No puede superar el límite de stock disponible (' + it.stock_actual + ' unidades).', 'error');
+                    }
+
+                    if (!it.es_mezcla && it.stock_comprometido > 0) {
+                        var libre = Math.max(0, it.stock_actual - it.stock_comprometido);
+                        var divAviso = fila.querySelector('.aviso-comprometido-item');
+                        if (val > libre) {
+                            if (divAviso) divAviso.classList.remove('d-none');
+                            mostrarNotificacion(
+                                '¡Atención! "' + it.insumo_nombre + '" tiene ' + it.stock_comprometido +
+                                ' unidad(es) comprometida(s) en otros presupuestos pendientes (Libres: ' + libre + ').',
+                                'error'
+                            );
+                        } else {
+                            if (divAviso) divAviso.classList.add('d-none');
+                        }
+                    }
+
+                    it.cantidad = val;
+                    it.subtotal = val * it.precio_unitario;
+                    fila.querySelector('.item-presupuesto-subtotal').textContent = '$ ' + formatearMoneda(it.subtotal);
                     recalcularTotalGlobal();
                 }
             });
@@ -483,7 +546,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (resumenConteoItems) {
             resumenConteoItems.textContent = cantidadTotalItems + ' item' + (cantidadTotalItems === 1 ? '' : 's') + ' en el presupuesto';
         }
-        totalPresupuesto.textContent = '$ ' + formatearMoneda(total);
+        var tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
+        if (tasa > 0) {
+            totalPresupuesto.innerHTML = '$ ' + formatearMoneda(total) + '<div class="text-white-50 fw-normal mt-1" style="font-size: 0.85rem;">Equiv: Bs. ' + formatearMoneda(total * tasa) + '</div>';
+        } else {
+            totalPresupuesto.textContent = '$ ' + formatearMoneda(total);
+        }
     }
 
     // Recalcula solo el total global sumando todos los subtotales
@@ -492,319 +560,12 @@ document.addEventListener('DOMContentLoaded', function() {
         itemsPresupuesto.forEach(function(item) {
             total += item.subtotal;
         });
-        totalPresupuesto.textContent = '$ ' + formatearMoneda(total);
-    }
-
-    // ==========================================
-    // DETALLE DE PAGO Y CONDICIÓN (CONTADO / CRÉDITO)
-    // El presupuesto no maneja pago directo (se maneja en Nota de Entrega)
-
-    // ==========================================
-    // LÓGICA DE PREPARACIÓN DE PINTURA (MEZCLAS)
-    // ==========================================
-
-    // Obtener lista de insumos base concentrados disponibles
-    function obtenerBasesDisponibles() {
-        return insumosDisponibles.filter(function(i) {
-            return parseInt(i.id_tipo_producto) === 1;
-        });
-    }
-
-    // Abrir el modal de preparación de pintura
-    if (btnModalPrepararMezcla) {
-        btnModalPrepararMezcla.addEventListener('click', function() {
-            var bases = obtenerBasesDisponibles();
-            if (bases.length === 0) {
-                mostrarNotificacion('No hay tintes base en el inventario para formular mezclas.', 'error');
-                return;
-            }
-
-            // Resetear formulario
-            if (formularioMezcla) formularioMezcla.reset();
-            if (cuerpoBasesMezcla) cuerpoBasesMezcla.innerHTML = '';
-            if (mezclaCantidad) mezclaCantidad.value = '1';
-            if (mezclaPresentacion) mezclaPresentacion.value = '1/4 Galón';
-            if (mensajeErrorMezcla) mensajeErrorMezcla.classList.add('d-none');
-
-            // Agregar primera fila de tinte base por defecto
-            agregarFilaBase();
-
-            recalcularCostosMezcla();
-
-            if (modalPrepararMezcla) {
-                bootstrap.Modal.getOrCreateInstance(modalPrepararMezcla).show();
-            }
-        });
-    }
-
-    // Boton agregar otra fila de base concentrada
-    if (btnAgregarFilaBase) {
-        btnAgregarFilaBase.addEventListener('click', function() {
-            agregarFilaBase();
-        });
-    }
-
-    // Agrega una fila de base concentrada a la tabla de formulación (hasta 6)
-    function agregarFilaBase() {
-        if (!cuerpoBasesMezcla) return;
-        var totalFilas = cuerpoBasesMezcla.querySelectorAll('tr').length;
-        if (totalFilas >= 6) {
-            mostrarNotificacion('El límite máximo es de 6 tintes base concentrados por mezcla.', 'error');
-            return;
+        var tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
+        if (tasa > 0) {
+            totalPresupuesto.innerHTML = '$ ' + formatearMoneda(total) + '<div class="text-white-50 fw-normal mt-1" style="font-size: 0.85rem;">Equiv: Bs. ' + formatearMoneda(total * tasa) + '</div>';
+        } else {
+            totalPresupuesto.textContent = '$ ' + formatearMoneda(total);
         }
-
-        var bases = obtenerBasesDisponibles();
-        var fila = document.createElement('tr');
-
-        // Construir opciones de bases
-        var opcionesBasesHtml = '<option value="">Seleccione base...</option>';
-        bases.forEach(function(b) {
-            var stockInt = Math.round(parseFloat(b.stock_actual) || 0);
-            opcionesBasesHtml += '<option value="' + b.id_insumo + '" data-precio="' + b.precio_venta + '" data-nombre="' + b.nombre + '" data-codigo="' + b.codigo + '">' +
-                                     b.codigo + ' - ' + b.nombre + ' (' + stockInt + ' gal)' +
-                                 '</option>';
-        });
-
-        fila.innerHTML =
-            '<td>' +
-                '<select class="form-select form-select-sm select-base-tinte" required>' +
-                    opcionesBasesHtml +
-                '</select>' +
-            '</td>' +
-            '<td>' +
-                '<div class="d-flex gap-1 align-items-center">' +
-                    '<select class="form-select form-select-sm select-fraccion-tinte" style="min-width: 140px;">' +
-                        '<option value="64">1/2 Galón (64/128)</option>' +
-                        '<option value="32" selected>1/4 Galón (32/128)</option>' +
-                        '<option value="16">1/8 Galón (16/128)</option>' +
-                        '<option value="8">1/16 Galón (8/128)</option>' +
-                        '<option value="4">1/32 Galón (4/128)</option>' +
-                        '<option value="2">1/64 Galón (2/128)</option>' +
-                        '<option value="1">1/128 Galón (1/128)</option>' +
-                        '<option value="custom">Otra fracc. (/128)</option>' +
-                    '</select>' +
-                    '<input type="number" class="form-control form-control-sm input-fraccion-custom d-none text-center" min="1" step="1" value="32" style="width: 70px;" placeholder="/128">' +
-                '</div>' +
-            '</td>' +
-            '<td class="text-end">' +
-                '<span class="badge bg-light text-dark border consumo-galon-text">0.2500 gal</span>' +
-            '</td>' +
-            '<td class="text-center">' +
-                '<button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-base" title="Quitar base"><i class="bi bi-x-lg"></i></button>' +
-            '</td>';
-
-        var selectBase = fila.querySelector('.select-base-tinte');
-        var selectFraccion = fila.querySelector('.select-fraccion-tinte');
-        var inputCustom = fila.querySelector('.input-fraccion-custom');
-        var labelConsumo = fila.querySelector('.consumo-galon-text');
-        var btnEliminar = fila.querySelector('.btn-eliminar-base');
-
-        function actualizarConsumoFila() {
-            var fraccion128 = selectFraccion.value === 'custom' ? (parseInt(inputCustom.value) || 0) : parseInt(selectFraccion.value);
-            var galones = fraccion128 / 128.0;
-            labelConsumo.textContent = galones.toFixed(4) + ' gal';
-            recalcularCostosMezcla();
-        }
-
-        selectBase.addEventListener('change', recalcularCostosMezcla);
-
-        selectFraccion.addEventListener('change', function() {
-            if (this.value === 'custom') {
-                inputCustom.classList.remove('d-none');
-                inputCustom.focus();
-            } else {
-                inputCustom.classList.add('d-none');
-                inputCustom.value = this.value;
-            }
-            actualizarConsumoFila();
-        });
-
-        inputCustom.addEventListener('input', function() {
-            actualizarConsumoFila();
-        });
-
-        btnEliminar.addEventListener('click', function() {
-            fila.remove();
-            actualizarContadorBases();
-            recalcularCostosMezcla();
-        });
-
-        cuerpoBasesMezcla.appendChild(fila);
-        actualizarContadorBases();
-        recalcularCostosMezcla();
-    }
-
-    function actualizarContadorBases() {
-        if (!cuerpoBasesMezcla || !contadorBasesMezcla) return;
-        var count = cuerpoBasesMezcla.querySelectorAll('tr').length;
-        contadorBasesMezcla.textContent = count + '/6 bases';
-        if (btnAgregarFilaBase) {
-            btnAgregarFilaBase.disabled = count >= 6;
-        }
-    }
-
-    // Recalcula el costo estimado de las bases y el subtotal
-    function recalcularCostosMezcla() {
-        if (!cuerpoBasesMezcla) return;
-        var filas = cuerpoBasesMezcla.querySelectorAll('tr');
-        var costoTotalBases = 0;
-        var galonesTotales = 0;
-
-        filas.forEach(function(fila) {
-            var selectBase = fila.querySelector('.select-base-tinte');
-            var selectFraccion = fila.querySelector('.select-fraccion-tinte');
-            var inputCustom = fila.querySelector('.input-fraccion-custom');
-
-            if (selectBase && selectBase.value) {
-                var option = selectBase.selectedOptions[0];
-                var precioGalon = parseFloat(option ? option.dataset.precio : 0) || 0;
-                var fraccion128 = selectFraccion.value === 'custom' ? (parseInt(inputCustom.value) || 0) : (parseInt(selectFraccion.value) || 0);
-                var consumoGalon = fraccion128 / 128.0;
-
-                costoTotalBases += (consumoGalon * precioGalon);
-                galonesTotales += consumoGalon;
-            }
-        });
-
-        if (totalGalonesMezcla) {
-            totalGalonesMezcla.textContent = 'Consumo total fórmula: ' + galonesTotales.toFixed(4) + ' gal';
-        }
-
-        if (ayudaPrecioMezcla) {
-            ayudaPrecioMezcla.textContent = 'Costo estimado bases: $ ' + formatearMoneda(costoTotalBases);
-        }
-
-        // Si el precio de venta está vacío o es 0, sugerir costo redondeado
-        if (mezclaPrecioVenta && (!mezclaPrecioVenta.value || parseFloat(mezclaPrecioVenta.value) === 0)) {
-            if (costoTotalBases > 0) {
-                mezclaPrecioVenta.value = (costoTotalBases * 1.3).toFixed(2); // Sugiere margen 30%
-            }
-        }
-
-        var cant = parseInt(mezclaCantidad.value) || 1;
-        var precio = parseFloat(mezclaPrecioVenta.value) || 0;
-        if (mezclaSubtotalEstimado) {
-            mezclaSubtotalEstimado.textContent = '$ ' + formatearMoneda(cant * precio);
-        }
-    }
-
-    if (mezclaCantidad) {
-        mezclaCantidad.addEventListener('input', recalcularCostosMezcla);
-    }
-    if (mezclaPrecioVenta) {
-        mezclaPrecioVenta.addEventListener('input', recalcularCostosMezcla);
-    }
-
-    // Guardar formulación de mezcla en la tabla de items
-    if (formularioMezcla) {
-        formularioMezcla.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            var nombre = mezclaNombre.value.trim();
-            if (!nombre) {
-                mostrarErrorMezcla('El nombre o identificación del color es obligatorio');
-                return;
-            }
-
-            var presentacion = mezclaPresentacion.value;
-            var cantidad = parseInt(mezclaCantidad.value, 10);
-            if (isNaN(cantidad) || cantidad < 1) {
-                mostrarErrorMezcla('La cantidad de envases debe ser al menos 1');
-                return;
-            }
-
-            var precioVenta = parseFloat(mezclaPrecioVenta.value);
-            if (isNaN(precioVenta) || precioVenta <= 0) {
-                mostrarErrorMezcla('El precio de venta por envase debe ser mayor a 0');
-                return;
-            }
-
-            var filasBases = cuerpoBasesMezcla.querySelectorAll('tr');
-            if (filasBases.length === 0) {
-                mostrarErrorMezcla('Debe agregar al menos un tinte base concentrado a la formulación');
-                return;
-            }
-
-            var mezclas = [];
-            var basesIds = [];
-            var resumenPartes = [];
-            var tieneError = false;
-
-            filasBases.forEach(function(fila) {
-                if (tieneError) return;
-                var selectBase = fila.querySelector('.select-base-tinte');
-                var selectFraccion = fila.querySelector('.select-fraccion-tinte');
-                var inputCustom = fila.querySelector('.input-fraccion-custom');
-
-                var idBase = parseInt(selectBase.value);
-                if (isNaN(idBase) || idBase < 1) {
-                    mostrarErrorMezcla('Debe seleccionar una base en cada fila de la formulación');
-                    tieneError = true;
-                    return;
-                }
-
-                if (basesIds.indexOf(idBase) !== -1) {
-                    mostrarErrorMezcla('No puede repetir el mismo tinte base en la mezcla. Ajuste la fracción.');
-                    tieneError = true;
-                    return;
-                }
-                basesIds.push(idBase);
-
-                var fraccion128 = selectFraccion.value === 'custom' ? (parseInt(inputCustom.value) || 0) : parseInt(selectFraccion.value);
-                if (fraccion128 < 1) {
-                    mostrarErrorMezcla('La fracción de tinte debe ser al menos 1/128');
-                    tieneError = true;
-                    return;
-                }
-
-                var opt = selectBase.selectedOptions[0];
-                var nombreBase = opt ? opt.dataset.nombre : 'Base';
-                var consumoGalon = fraccion128 / 128.0;
-
-                mezclas.push({
-                    id_producto_base: idBase,
-                    nombre_base: nombreBase,
-                    fraccion_128: fraccion128,
-                    cantidad_consumida: consumoGalon
-                });
-
-                resumenPartes.push(nombreBase + ' ' + fraccion128 + '/128');
-            });
-
-            if (tieneError) return;
-
-            // Crear item de mezcla para la cotización
-            var nuevoItemMezcla = {
-                es_mezcla: true,
-                id_insumo: null,
-                insumo_codigo: 'MEZCLA',
-                insumo_nombre: nombre,
-                descripcion: 'Pintura Preparada: ' + nombre + ' (' + presentacion + ')',
-                presentacion: presentacion,
-                id_tipo_producto: 3,
-                tipo_producto_nombre: 'Preparado',
-                resumen_formula: resumenPartes.join(', '),
-                cantidad: cantidad,
-                precio_unitario: precioVenta,
-                subtotal: cantidad * precioVenta,
-                mezclas: mezclas
-            };
-
-            itemsPresupuesto.push(nuevoItemMezcla);
-            actualizarTablaItems();
-
-            bootstrap.Modal.getInstance(modalPrepararMezcla).hide();
-            mostrarNotificacion('Pintura preparada agregada al presupuesto', 'exito');
-        });
-    }
-
-    function mostrarErrorMezcla(msg) {
-        if (!mensajeErrorMezcla) return;
-        mensajeErrorMezcla.textContent = msg;
-        mensajeErrorMezcla.classList.remove('d-none');
-        setTimeout(function() {
-            mensajeErrorMezcla.classList.add('d-none');
-        }, 4000);
     }
 
     // ==========================================
@@ -833,20 +594,6 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('id_cliente', clientePresupuesto.value);
         formData.append('observaciones', document.getElementById('observacionesPresupuesto').value);
 
-        var condicionPagoPresupuesto = document.getElementById('condicionPagoPresupuesto');
-        var tipoPagoPresupuesto = document.getElementById('tipoPagoPresupuesto');
-        var bancoPresupuesto = document.getElementById('bancoPresupuesto');
-        var referenciaPresupuesto = document.getElementById('referenciaPresupuesto');
-
-        if (condicionPagoPresupuesto) {
-            formData.append('condicion_pago', condicionPagoPresupuesto.value);
-            if (condicionPagoPresupuesto.value === 'contado') {
-                if (tipoPagoPresupuesto) formData.append('id_tipo_pago', tipoPagoPresupuesto.value);
-                if (bancoPresupuesto && tipoPagoPresupuesto && tipoPagoPresupuesto.value !== '1') formData.append('id_banco', bancoPresupuesto.value);
-                if (referenciaPresupuesto && tipoPagoPresupuesto && tipoPagoPresupuesto.value !== '1') formData.append('referencia', referenciaPresupuesto.value.trim());
-            }
-        }
-
         var itemsSimplificados = itemsPresupuesto.map(function(item) {
             return {
                 id_insumo: item.id_insumo,
@@ -872,7 +619,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 mostrarError(resultado.mensaje);
                 if (btnGuardarPresupuesto) {
                     btnGuardarPresupuesto.disabled = false;
-                    btnGuardarPresupuesto.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Crear Presupuesto';
+                    btnGuardarPresupuesto.innerHTML = '<i class="bi bi-check-lg me-1"></i>Guardar';
                 }
             }
         })
@@ -881,7 +628,7 @@ document.addEventListener('DOMContentLoaded', function() {
             mostrarError('Error de conexion al guardar el presupuesto');
             if (btnGuardarPresupuesto) {
                 btnGuardarPresupuesto.disabled = false;
-                btnGuardarPresupuesto.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Crear Presupuesto';
+                btnGuardarPresupuesto.innerHTML = '<i class="bi bi-check-lg me-1"></i>Guardar';
             }
         });
     }

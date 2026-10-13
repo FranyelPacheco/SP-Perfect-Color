@@ -135,7 +135,12 @@ class PresupuestoModel extends ModeloBase
         $consulta = "SELECT v.*, v.id_venta as id_presupuesto, v.estado as activo, ev.nombre as estado,
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
-                            'Sistema' as usuario_nombre
+                            'Sistema' as usuario_nombre,
+                            COALESCE(
+                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(v.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
+                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                                0
+                            ) as tasa_bcv
                      FROM ventas v 
                      INNER JOIN clientes c ON v.id_cliente = c.id_cliente
                      INNER JOIN estado_venta ev ON v.id_estado_venta = ev.id_estado_venta
@@ -152,7 +157,12 @@ class PresupuestoModel extends ModeloBase
         $consulta = "SELECT v.*, v.id_venta as id_presupuesto, v.estado as activo, ev.nombre as estado,
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
-                            'Sistema' as usuario_nombre
+                            'Sistema' as usuario_nombre,
+                            COALESCE(
+                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(v.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
+                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                                0
+                            ) as tasa_bcv
                      FROM ventas v 
                      INNER JOIN clientes c ON v.id_cliente = c.id_cliente
                      INNER JOIN estado_venta ev ON v.id_estado_venta = ev.id_estado_venta
