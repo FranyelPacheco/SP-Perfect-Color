@@ -61,6 +61,12 @@ class InventarioModel extends ModeloBase
     {
         $consulta = "SELECT p.*, p.estado as activo, tp.nombre as tipo_producto_nombre,
                             p.id_producto as id_insumo,
+                            (SELECT COALESCE(SUM(vd.cantidad), 0)
+                             FROM venta_detalle vd
+                             INNER JOIN ventas v ON vd.id_venta = v.id_venta
+                             WHERE vd.id_producto = p.id_producto
+                               AND v.id_estado_venta = 1
+                               AND v.estado = 1) as stock_comprometido,
                             GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
                             GROUP_CONCAT(DISTINCT pr.nombre_empresa SEPARATOR ', ') as proveedores_nombre,
                             GROUP_CONCAT(DISTINCT pr.id_proveedor SEPARATOR ',') as proveedores_id
@@ -91,6 +97,12 @@ class InventarioModel extends ModeloBase
     {
         $consulta = "SELECT p.*, p.estado as activo, tp.nombre as tipo_producto_nombre,
                             p.id_producto as id_insumo,
+                            (SELECT COALESCE(SUM(vd.cantidad), 0)
+                             FROM venta_detalle vd
+                             INNER JOIN ventas v ON vd.id_venta = v.id_venta
+                             WHERE vd.id_producto = p.id_producto
+                               AND v.id_estado_venta = 1
+                               AND v.estado = 1) as stock_comprometido,
                             GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
                             GROUP_CONCAT(DISTINCT pr.nombre_empresa SEPARATOR ', ') as proveedores_nombre,
                             GROUP_CONCAT(DISTINCT pr.id_proveedor SEPARATOR ',') as proveedores_id

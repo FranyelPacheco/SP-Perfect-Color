@@ -144,6 +144,24 @@ if ($metodo === 'index') {
         ]);
     }
 
+// FUNCIÓN: verificarFechaAjax
+// OBJETIVO: Verifica en tiempo real si ya existe una tasa registrada para la fecha dada
+} elseif ($metodo === 'verificarFechaAjax') {
+    verificarRolAdmin();
+
+    $fecha = trim($_GET['fecha'] ?? '');
+    $idExcluir = intval($_GET['id'] ?? 0);
+
+    if (empty($fecha) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+        respuestaJson('exito', 'Fecha no válida aún', ['existe' => false]);
+    }
+
+    $existe = $tasaCambioModel->fechaExiste($fecha, $idExcluir > 0 ? $idExcluir : null);
+    respuestaJson('exito', 'Verificación completada', [
+        'existe' => $existe,
+        'fecha_formateada' => date('d/m/Y', strtotime($fecha))
+    ]);
+
 } else {
     require_once __DIR__ . '/../views/error404View.php';
 }

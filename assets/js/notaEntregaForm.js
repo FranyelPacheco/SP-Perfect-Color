@@ -135,8 +135,8 @@ document.addEventListener('DOMContentLoaded', function() {
             fila.innerHTML = 
                 '<td><span class="badge bg-light text-secondary border font-monospace">' + item.insumo_codigo + '</span></td>' +
                 '<td class="fw-semibold">' + item.insumo_nombre + '</td>' +
-                '<td class="text-secondary">' + item.stock_actual.toFixed(2) + '</td>' +
-                '<td><span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 fs-6">' + item.cantidad.toFixed(2) + '</span></td>' +
+                '<td class="text-secondary">' + Math.floor(item.stock_actual) + '</td>' +
+                '<td><span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 fs-6">' + Math.floor(item.cantidad) + '</span></td>' +
                 '<td>$ ' + formatearMoneda(item.precio_unitario) + '</td>' +
                 '<td class="fw-bold text-dark">$ ' + formatearMoneda(item.subtotal) + '</td>';
 
@@ -144,7 +144,13 @@ document.addEventListener('DOMContentLoaded', function() {
             total += item.subtotal;
         });
 
-        totalNota.textContent = '$ ' + formatearMoneda(total);
+        var tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
+        if (tasa > 0) {
+            var bsTotal = total * tasa;
+            totalNota.innerHTML = '<div>$ ' + formatearMoneda(total) + '</div><div class="text-muted small fw-normal">Bs. ' + bsTotal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</div>';
+        } else {
+            totalNota.textContent = '$ ' + formatearMoneda(total);
+        }
         actualizarCalculoInicial(total);
     }
 
@@ -158,6 +164,15 @@ document.addEventListener('DOMContentLoaded', function() {
         var ini = parseFloat(montoInicialInput.value) || 0;
         var restante = Math.max(0, total - ini);
         textoSaldoRestante.textContent = '$ ' + formatearMoneda(restante);
+        var tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
+        var textoSaldoBs = document.getElementById('textoSaldoRestanteBs');
+        var montoIniBs = document.getElementById('montoInicialBsTexto');
+        if (textoSaldoBs && tasa > 0) {
+            textoSaldoBs.textContent = 'Equiv: Bs. ' + (restante * tasa).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        if (montoIniBs && tasa > 0) {
+            montoIniBs.textContent = 'Bs. ' + (ini * tasa).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
     }
 
     if (montoInicialInput) {

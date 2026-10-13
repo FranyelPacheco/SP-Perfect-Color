@@ -267,39 +267,6 @@ if ($metodo === 'index') {
         'clientes' => $clientes
     ]);
 
-// FUNCIÓN: obtenerPresupuestosAprobadosAjax
-// OBJETIVO: Obtiene presupuestos aprobados para crear nota de entrega
-} elseif ($metodo === 'obtenerPresupuestosAprobadosAjax') {
-    verificarAutenticacion();
-    
-    $presupuestos = $presupuestoModel->buscarPresupuestos('', 'aprobado');
-    
-    respuestaJson('exito', 'Presupuestos obtenidos correctamente', [
-        'presupuestos' => $presupuestos
-    ]);
-
-// FUNCIÓN: obtenerDetallePresupuestoAjax
-// OBJETIVO: Obtiene el detalle de un presupuesto para precargar los items en el formulario
-} elseif ($metodo === 'obtenerDetallePresupuestoAjax') {
-    verificarAutenticacion();
-    
-    $presupuestoId = intval($_GET['id_presupuesto'] ?? 0);
-    if ($presupuestoId < 1) {
-        respuestaJson('error', 'ID de presupuesto invalido');
-    }
-    
-    $detalle = $presupuestoModel->obtenerDetalle($presupuestoId);
-    $presupuesto = $presupuestoModel->buscarPorId($presupuestoId);
-    
-    if (!$presupuesto || $presupuesto['estado'] !== 'aprobado') {
-        respuestaJson('error', 'Presupuesto no disponible');
-    }
-    
-    respuestaJson('exito', 'Detalle obtenido correctamente', [
-        'detalle' => $detalle,
-        'presupuesto' => $presupuesto
-    ]);
-
 // FUNCIÓN: obtenerTiposPagoAjax
 // OBJETIVO: Obtiene los tipos de pago activos para el formulario
 } elseif ($metodo === 'obtenerTiposPagoAjax') {
@@ -353,71 +320,6 @@ if ($metodo === 'index') {
     $descargar = isset($_GET['descargar']) && $_GET['descargar'] == '1';
     \App\Helpers\generarPdfNotaEntrega($nota, $detalle, $tasaBs, $descargar);
     exit;
-
-// FUNCIÓN: editar (Desactivado: las notas despachadas son inmutables)
-} elseif ($metodo === 'editar') {
-    $id = intval($_GET['id'] ?? 0);
-    header('Location: /SP%20Perfect%20Color/notaEntrega/ver?id=' . $id);
-    exit;
-
-// FUNCIÓN: actualizar
-// OBJETIVO: Guarda los cambios de items de una nota de entrega
-} elseif ($metodo === 'actualizar') {
-    verificarRolVendedor();
-
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
-
-    $id = intval($_POST['id_nota_entrega'] ?? 0);
-    $items = json_decode($_POST['items'] ?? '[]', true);
-
-    if ($id < 1) {
-        respuestaJson('error', 'ID de nota invalido');
-    }
-
-    $nota = $notaEntregaModel->buscarPorId($id);
-    if (!$nota) {
-        respuestaJson('error', 'Nota de entrega no encontrada');
-    }
-
-    if (empty($items)) {
-        respuestaJson('error', 'Debe agregar al menos un item');
-    }
-
-    $detalle = [];
-    foreach ($items as $item) {
-        $presupuestoDetalleId = intval($item['id_presupuesto_detalle'] ?? 0);
-        $idInsumo = intval($item['id_insumo'] ?? $item['id_producto'] ?? 0);
-        $cantidad = floatval($item['cantidad'] ?? 0);
-        $precioUnitario = floatval($item['precio_unitario'] ?? 0);
-        $subtotal = $cantidad * $precioUnitario;
-
-        if ($cantidad <= 0 || $precioUnitario <= 0) {
-            respuestaJson('error', 'Datos invalidos en uno de los items');
-        }
-        if ($idInsumo < 1 && $presupuestoDetalleId < 1) {
-            respuestaJson('error', 'Datos invalidos en uno de los items');
-        }
-
-        $detalle[] = [
-            'id_presupuesto_detalle' => $presupuestoDetalleId,
-            'id_insumo' => $idInsumo,
-            'id_producto' => $idInsumo,
-            'cantidad' => $cantidad,
-            'precio_unitario' => $precioUnitario,
-            'subtotal' => $subtotal
-        ];
-    }
-
-    try {
-        $notaEntregaModel->actualizarDetalleNota($id, $detalle);
-        respuestaJson('exito', 'Nota de entrega actualizada exitosamente', ['id_nota_entrega' => $id]);
-    } catch (PDOException $e) {
-        respuestaJson('error', 'Error al actualizar: ' . $e->getMessage());
-    } catch (\Throwable $e) {
-        respuestaJson('error', 'Error al actualizar la nota: ' . $e->getMessage());
-    }
 
 } else {
     require_once __DIR__ . '/../views/error404View.php';

@@ -32,7 +32,12 @@ class NotaEntregaCompraModel extends ModeloBase
                             cp.id_cuenta_pagar, 
                             COALESCE(cp.situacion, 'pagado') as situacion_pago,
                             COALESCE(cp.saldo_pendiente, 0.00) as saldo_pendiente,
-                            cp.fecha_vencimiento
+                            cp.fecha_vencimiento,
+                            COALESCE(
+                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(ne.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
+                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                                0
+                            ) as tasa_bcv
                      FROM nota_entrega ne
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
                      LEFT JOIN cuentas_pagar cp ON cp.id_nota_entrega = ne.id_nota_entrega AND cp.estado = 1
@@ -52,7 +57,12 @@ class NotaEntregaCompraModel extends ModeloBase
                             cp.id_cuenta_pagar, 
                             COALESCE(cp.situacion, 'pagado') as situacion_pago,
                             COALESCE(cp.saldo_pendiente, 0.00) as saldo_pendiente,
-                            cp.fecha_vencimiento
+                            cp.fecha_vencimiento,
+                            COALESCE(
+                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(ne.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
+                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                                0
+                            ) as tasa_bcv
                      FROM nota_entrega ne
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
                      LEFT JOIN cuentas_pagar cp ON cp.id_nota_entrega = ne.id_nota_entrega AND cp.estado = 1
@@ -82,7 +92,7 @@ class NotaEntregaCompraModel extends ModeloBase
     }
 
     // FUNCIÓN: crearNotaCompra
-    // OBJETIVO: Registra la recepción de compra, aumenta el stock de cada insumo y genera CxP si es crédito
+    // OBJETIVO: Registra la recepción de compra, aumenta el stock de cada insumo y genera CxP si es crédito (con opción de abono inicial)
     public function crearNotaCompra(
         int $idProveedor,
         string $fecha,
@@ -92,7 +102,11 @@ class NotaEntregaCompraModel extends ModeloBase
         array $items,
         ?int $idTipoPago = null,
         ?int $idBanco = null,
-        ?string $referencia = null
+        ?string $referencia = null,
+        float $montoInicial = 0.00,
+        ?int $idTipoPagoInicial = null,
+        ?int $idBancoInicial = null,
+        ?string $referenciaInicial = null
     ): int {
         if ($idProveedor < 1 || empty($items)) {
             throw new PDOException('Debe especificar un proveedor válido y al menos un producto.');
@@ -104,12 +118,16 @@ class NotaEntregaCompraModel extends ModeloBase
             // 1. Calcular total de la compra
             $totalCompra = 0.00;
             foreach ($items as $item) {
-                $cant = floatval($item['cantidad'] ?? 0);
+                $cant = intval($item['cantidad'] ?? 0);
                 $precio = floatval($item['precio_compra'] ?? 0);
                 if ($cant <= 0 || $precio < 0) {
-                    throw new PDOException('La cantidad y precio de cada producto deben ser mayores a cero.');
+                    throw new PDOException('La cantidad entera y el precio de cada producto deben ser mayores a cero.');
                 }
                 $totalCompra += round($cant * $precio, 2);
+            }
+
+            if ($condicionPago === 'credito' && $montoInicial > $totalCompra) {
+                throw new PDOException('El abono inicial no puede superar el monto total de la compra.');
             }
 
             // 2. Insertar cabecera en nota_entrega
@@ -124,7 +142,7 @@ class NotaEntregaCompraModel extends ModeloBase
 
             $idNotaEntrega = (int)$this->conexion->lastInsertId();
 
-            // 3. Insertar detalle en nota_entrega_producto y SUMAR stock a cada producto
+            // 3. Insertar detalle en nota_entrega_producto y SUMAR stock a cada producto inmediatamente
             $sqlDetalle = "INSERT INTO nota_entrega_producto (id_nota_entrega, id_producto, cantidad, precio_compra, subtotal, estado)
                            VALUES (:id_nota_entrega, :id_producto, :cantidad, :precio_compra, :subtotal, 1)";
             $stmtDetalle = $this->conexion->prepare($sqlDetalle);
@@ -136,20 +154,20 @@ class NotaEntregaCompraModel extends ModeloBase
 
             foreach ($items as $item) {
                 $idProducto = intval($item['id_producto']);
-                $cant = floatval($item['cantidad']);
+                $cant = intval($item['cantidad']);
                 $precio = floatval($item['precio_compra']);
                 $subtotal = round($cant * $precio, 2);
 
                 // Insertar ítem
                 $stmtDetalle->bindParam(':id_nota_entrega', $idNotaEntrega, PDO::PARAM_INT);
                 $stmtDetalle->bindParam(':id_producto', $idProducto, PDO::PARAM_INT);
-                $stmtDetalle->bindParam(':cantidad', $cant);
+                $stmtDetalle->bindParam(':cantidad', $cant, PDO::PARAM_INT);
                 $stmtDetalle->bindParam(':precio_compra', $precio);
                 $stmtDetalle->bindParam(':subtotal', $subtotal);
                 $stmtDetalle->execute();
 
                 // Sumar stock
-                $stmtStock->bindParam(':cantidad', $cant);
+                $stmtStock->bindParam(':cantidad', $cant, PDO::PARAM_INT);
                 $stmtStock->bindParam(':id_producto', $idProducto, PDO::PARAM_INT);
                 $stmtStock->execute();
             }
@@ -157,14 +175,41 @@ class NotaEntregaCompraModel extends ModeloBase
             // 4. Integración con Cuentas por Pagar
             if ($condicionPago === 'credito') {
                 $fechaVenc = !empty($fechaVencimiento) ? $fechaVencimiento : date('Y-m-d H:i:s', strtotime('+15 days'));
+                $abonoInicial = max(0.00, round($montoInicial, 2));
+                $saldoPendiente = max(0.00, round($totalCompra - $abonoInicial, 2));
+                $situacionCxp = ($saldoPendiente <= 0) ? 'pagado' : 'pendiente';
+
                 $sqlCxp = "INSERT INTO cuentas_pagar (id_nota_entrega, monto_total, saldo_pendiente, fecha_vencimiento, situacion, created_at, estado)
-                           VALUES (:id_nota_entrega, :monto_total, :saldo_pendiente, :fecha_vencimiento, 'pendiente', NOW(), 1)";
+                           VALUES (:id_nota_entrega, :monto_total, :saldo_pendiente, :fecha_vencimiento, :situacion, NOW(), 1)";
                 $stmtCxp = $this->conexion->prepare($sqlCxp);
                 $stmtCxp->bindParam(':id_nota_entrega', $idNotaEntrega, PDO::PARAM_INT);
                 $stmtCxp->bindParam(':monto_total', $totalCompra);
-                $stmtCxp->bindParam(':saldo_pendiente', $totalCompra);
+                $stmtCxp->bindParam(':saldo_pendiente', $saldoPendiente);
                 $stmtCxp->bindParam(':fecha_vencimiento', $fechaVenc, PDO::PARAM_STR);
+                $stmtCxp->bindParam(':situacion', $situacionCxp, PDO::PARAM_STR);
                 $stmtCxp->execute();
+
+                $idCxp = (int)$this->conexion->lastInsertId();
+
+                // Si hubo pago/abono inicial en crédito, registrarlo en pagos_realizados
+                if ($abonoInicial > 0) {
+                    $sqlPagoIni = "INSERT INTO pagos_realizados (id_cuenta_pagar, id_tipo_pago, id_banco, monto, fecha, referencia, estado)
+                                   VALUES (:id_cuenta_pagar, :id_tipo_pago, :id_banco, :monto, :fecha, :referencia, 1)";
+                    $stmtPagoIni = $this->conexion->prepare($sqlPagoIni);
+                    $tipoPagoIniVal = $idTipoPagoInicial ?? 1;
+                    $bcoIniVal = ($tipoPagoIniVal === 1) ? null : ($idBancoInicial ?: null);
+                    $refIniVal = ($tipoPagoIniVal === 1)
+                        ? ($referenciaInicial ?: 'Efectivo (Abono Inicial)')
+                        : ($referenciaInicial ?: 'ABONO INICIAL');
+
+                    $stmtPagoIni->bindParam(':id_cuenta_pagar', $idCxp, PDO::PARAM_INT);
+                    $stmtPagoIni->bindParam(':id_tipo_pago', $tipoPagoIniVal, PDO::PARAM_INT);
+                    $stmtPagoIni->bindValue(':id_banco', $bcoIniVal, $bcoIniVal ? PDO::PARAM_INT : PDO::PARAM_NULL);
+                    $stmtPagoIni->bindParam(':monto', $abonoInicial);
+                    $stmtPagoIni->bindParam(':fecha', $fecha, PDO::PARAM_STR);
+                    $stmtPagoIni->bindValue(':referencia', $refIniVal, PDO::PARAM_STR);
+                    $stmtPagoIni->execute();
+                }
             } else {
                 // Contado: registrar cuenta saldada y pago realizado inmediato
                 $sqlCxp = "INSERT INTO cuentas_pagar (id_nota_entrega, monto_total, saldo_pendiente, fecha_vencimiento, situacion, created_at, estado)

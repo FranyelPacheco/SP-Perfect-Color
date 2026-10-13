@@ -4,8 +4,8 @@
 ?>
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-    <h2 class="h4 mb-0">Nueva Nota de Entrega desde Presupuesto #<?php echo $presupuesto['id_presupuesto']; ?></h2>
-    <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Volver</a>
+    <h2 class="h4 mb-0">Nota de Entrega #<?php echo $presupuesto['id_presupuesto']; ?></h2>
+    <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-outline-secondary" title="Volver" data-bs-toggle="tooltip"><i class="bi bi-arrow-left"></i></a>
 </div>
 
 <form id="formularioNotaEntrega">
@@ -54,9 +54,20 @@
                     <small class="text-muted d-block">Presupuesto de origen:</small>
                     <a href="/SP%20Perfect%20Color/presupuesto/ver?id=<?php echo $presupuesto['id_presupuesto']; ?>" class="text-decoration-none fw-semibold">#<?php echo $presupuesto['id_presupuesto']; ?> - <?php echo $presupuesto['cliente_nombre']; ?></a>
                 </div>
+<?php
+$tasaHoyNotaForm = (float)($tasaCambioGlobal ?? 0);
+$totalNotaFormUsd = (float)($presupuesto['total'] ?? 0);
+$totalNotaFormBs = $totalNotaFormUsd * $tasaHoyNotaForm;
+?>
                 <div class="col-md-4">
                     <small class="text-muted d-block">Total a Pagar:</small>
-                    <span class="fw-bold fs-4 text-success" id="totalPresupuestoTexto">$ <?php echo number_format($presupuesto['total'], 2, ',', '.'); ?></span>
+                    <span class="fw-bold fs-4 text-success" id="totalPresupuestoTexto">$ <?php echo number_format($totalNotaFormUsd, 2, ',', '.'); ?></span>
+                    <?php if ($tasaHoyNotaForm > 0): ?>
+                        <div class="text-muted small">
+                            Equiv: <strong class="text-primary" id="totalPresupuestoBsTexto">Bs. <?php echo number_format($totalNotaFormBs, 2, ',', '.'); ?></strong>
+                            <span class="badge bg-light text-secondary border ms-1">Tasa: <?php echo number_format($tasaHoyNotaForm, 2, ',', '.'); ?></span>
+                        </div>
+                    <?php endif; ?>
                 </div>
                 <div class="col-md-4">
                     <label for="condicionPago" class="form-label fw-semibold">Condición de Pago <span class="text-danger">*</span></label>
@@ -91,12 +102,16 @@
                 </div>
                 <div class="col-md-4" id="contenedorMontoInicial" style="display:none">
                     <label for="montoInicial" class="form-label fw-semibold">Pago / Abono Inicial ($)</label>
-                    <input type="number" step="0.01" min="0" max="<?php echo (float)$presupuesto['total']; ?>" id="montoInicial" name="monto_inicial" class="form-control" placeholder="0.00">
-                    <div class="form-text text-muted small">Opcional. Se registrará en pagos recibidos.</div>
+                    <input type="number" step="0.01" min="0" max="<?php echo $totalNotaFormUsd; ?>" id="montoInicial" name="monto_inicial" class="form-control" placeholder="0.00">
+                    <div class="d-flex justify-content-between align-items-center small mt-1">
+                        <span class="text-muted">Opcional (Pagos recibidos)</span>
+                        <span class="text-primary fw-semibold" id="montoInicialBsTexto">Bs. 0,00</span>
+                    </div>
                 </div>
                 <div class="col-md-4" id="contenedorSaldoRestante" style="display:none">
                     <label class="form-label fw-semibold">Saldo Pendiente a Cobrar</label>
-                    <div class="form-control bg-light fw-bold text-danger fs-5" id="textoSaldoRestante">$ <?php echo number_format($presupuesto['total'], 2, ',', '.'); ?></div>
+                    <div class="form-control bg-light fw-bold text-danger fs-5" id="textoSaldoRestante">$ <?php echo number_format($totalNotaFormUsd, 2, ',', '.'); ?></div>
+                    <div class="text-muted small mt-1" id="textoSaldoRestanteBs">Equiv: Bs. <?php echo number_format($totalNotaFormBs, 2, ',', '.'); ?></div>
                 </div>
                 <div class="col-md-4" id="contenedorTipoPagoInicial" style="display:none">
                     <label for="tipoPagoInicial" class="form-label fw-semibold">Método de Abono Inicial <span class="text-danger">*</span></label>
@@ -182,7 +197,7 @@ function toggleDecision() {
         if (clienteSelect) clienteSelect.required = false;
         if (btnSubmit) {
             btnSubmit.className = 'btn btn-danger btn-lg';
-            btnSubmit.innerHTML = '<i class="bi bi-x-circle-fill me-2"></i>Confirmar Rechazo de Nota';
+            btnSubmit.innerHTML = '<i class="bi bi-x-circle me-1"></i>Rechazar';
         }
     } else {
         if (seccionPago) seccionPago.style.display = 'block';
@@ -192,7 +207,7 @@ function toggleDecision() {
         if (clienteSelect) clienteSelect.required = true;
         if (btnSubmit) {
             btnSubmit.className = 'btn btn-success btn-lg';
-            btnSubmit.innerHTML = '<i class="bi bi-check-lg me-2"></i>Aprobar y Registrar Entrega';
+            btnSubmit.innerHTML = '<i class="bi bi-check-lg me-1"></i>Aprobar';
         }
         toggleCondicionPago();
     }
@@ -267,14 +282,25 @@ function toggleBancoRefContado() {
 }
 
 function actualizarCamposInicial() {
+    var tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
     var montoIni = parseFloat(document.getElementById('montoInicial')?.value || 0) || 0;
     var contTIni = document.getElementById('contenedorTipoPagoInicial');
     var selTIni = document.getElementById('tipoPagoInicial');
     var textoSaldo = document.getElementById('textoSaldoRestante');
+    var textoSaldoBs = document.getElementById('textoSaldoRestanteBs');
+    var montoIniBs = document.getElementById('montoInicialBsTexto');
     
     var saldoRestante = Math.max(0, totalVentaBase - montoIni);
     if (textoSaldo) {
         textoSaldo.textContent = '$ ' + saldoRestante.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    if (textoSaldoBs && tasa > 0) {
+        var bsRest = saldoRestante * tasa;
+        textoSaldoBs.textContent = 'Equiv: Bs. ' + bsRest.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    if (montoIniBs && tasa > 0) {
+        var bsIni = montoIni * tasa;
+        montoIniBs.textContent = 'Bs. ' + bsIni.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     if (montoIni > 0) {

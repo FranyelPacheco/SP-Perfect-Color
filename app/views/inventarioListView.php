@@ -9,8 +9,8 @@
             <div class="d-flex gap-2 align-items-center flex-wrap">
                 <input type="text" id="busquedaInsumos" class="form-control" style="width: 220px;" placeholder="Buscar por codigo, nombre...">
                 <?php if ($_SESSION['usuario_rol'] == 1): ?>
-                <button id="btnPrepararMezcla" class="btn btn-primary shadow-sm"><i class="bi bi-palette-fill me-2"></i>Preparar Mezcla</button>
-                <button id="btnAjusteMerma" class="btn btn-outline-danger"><i class="bi bi-dash-circle-fill me-2"></i>Ajuste por Merma</button>
+                <button id="btnPrepararMezcla" class="btn btn-primary shadow-sm"><i class="bi bi-palette-fill me-1"></i>Mezcla</button>
+                <button id="btnAjusteMerma" class="btn btn-outline-danger"><i class="bi bi-dash-circle-fill me-1"></i>Merma</button>
                 <?php endif; ?>
             </div>
         </div>
@@ -136,7 +136,7 @@
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title fw-bold" id="modalPrepararMezclaLabel">
-                    <i class="bi bi-palette-fill me-2"></i>Preparar Pintura Personalizada (Fórmula Taller)
+                    <i class="bi bi-palette-fill me-2"></i>Nueva Mezcla
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
@@ -169,12 +169,12 @@
                     <div class="card bg-light border mb-3">
                         <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
                             <span class="fw-bold text-dark small">
-                                <i class="bi bi-droplet-half text-primary me-1"></i>Composición de Tintes Base (Máximo 6 bases concentradas)
+                                <i class="bi bi-droplet-half text-primary me-1"></i>Tintes Base (Máx. 6)
                             </span>
                             <span id="contadorBasesMezcla" class="badge bg-light text-secondary border">0/6 bases</span>
                         </div>
                         <div class="card-body p-2">
-                            <div class="table-responsive">
+                            <div class="table-mezcla-wrapper">
                                 <table class="table table-sm align-middle mb-2" id="tablaBasesMezcla">
                                     <thead>
                                         <tr class="text-muted small">
@@ -189,8 +189,8 @@
                                 </table>
                             </div>
                             <div class="d-flex justify-content-between align-items-center pt-1">
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="btnAgregarFilaBase">
-                                    <i class="bi bi-plus-circle me-1"></i>Agregar Tinte Base
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="btnAgregarFilaBase" title="Agregar base" data-bs-toggle="tooltip">
+                                    <i class="bi bi-plus-lg"></i>
                                 </button>
                                 <div class="text-end">
                                     <div id="indicadorBalanceFormula" class="fw-semibold small text-muted">Volumen: 0.0000 / 1.0000 gal</div>
@@ -220,7 +220,7 @@
                 <div class="modal-footer bg-white border-top">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-success" id="btnGuardarMezcla">
-                        <i class="bi bi-check-lg me-1"></i>Registrar Mezcla en Inventario
+                        <i class="bi bi-check-lg me-1"></i>Guardar
                     </button>
                 </div>
             </form>
@@ -234,17 +234,21 @@
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title fw-bold" id="modalAjusteMermaLabel">
-                    <i class="bi bi-dash-circle-fill me-2"></i>Ajuste de Inventario por Merma o Daño
+                    <i class="bi bi-dash-circle-fill me-2"></i>Ajuste por Merma
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form id="formularioAjusteMerma">
                 <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label for="ajusteProducto" class="form-label fw-semibold text-dark">Producto / Insumo <span class="text-danger">*</span></label>
-                        <select id="ajusteProducto" class="form-select" required>
-                            <option value="">Seleccione el producto afectado...</option>
-                        </select>
+                    <div class="mb-3 position-relative" id="contenedorBuscadorAjuste">
+                        <label for="inputBuscarAjusteProducto" class="form-label fw-semibold text-dark">Producto / Insumo <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
+                            <input type="text" id="inputBuscarAjusteProducto" class="form-control" placeholder="Haga clic o escriba código / nombre del producto..." autocomplete="off">
+                            <button type="button" class="btn btn-outline-secondary d-none" id="btnLimpiarAjusteProducto" title="Limpiar selección"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                        <input type="hidden" id="ajusteProducto" value="" required>
+                        <div class="dropdown-menu w-100 buscador-dropdown-lista" id="listaSugerenciasAjusteProducto"></div>
                     </div>
 
                     <div class="mb-3 p-3 bg-light rounded border d-flex justify-content-between align-items-center">
@@ -275,7 +279,7 @@
                 <div class="modal-footer bg-white border-top">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-danger" id="btnGuardarAjuste">
-                        <i class="bi bi-dash-lg me-1"></i>Confirmar Descuento
+                        <i class="bi bi-dash-lg me-1"></i>descontar
                     </button>
                 </div>
             </form>

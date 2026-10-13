@@ -142,7 +142,12 @@ class CuentaCobrarModel extends ModeloBase
                         v.id_venta as id_nota_entrega,
                         v.id_venta as id_nota_venta,
                         v.id_venta,
-                        v.fecha as nota_fecha
+                        v.fecha as nota_fecha,
+                        COALESCE(
+                            (SELECT t.tasa FROM tasa_cambio t WHERE t.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND t.estado = 1 ORDER BY t.fecha DESC, t.id_tasa_cambio DESC LIMIT 1),
+                            (SELECT t2.tasa FROM tasa_cambio t2 WHERE t2.estado = 1 ORDER BY t2.fecha DESC, t2.id_tasa_cambio DESC LIMIT 1),
+                            0
+                        ) as tasa_bcv
                 FROM cuentas_cobrar cc 
                 INNER JOIN ventas v ON cc.id_venta = v.id_venta
                 INNER JOIN clientes c ON v.id_cliente = c.id_cliente
@@ -164,7 +169,12 @@ class CuentaCobrarModel extends ModeloBase
                         v.id_venta as id_nota_entrega,
                         v.id_venta as id_nota_venta,
                         v.id_venta,
-                        v.fecha as nota_fecha
+                        v.fecha as nota_fecha,
+                        COALESCE(
+                            (SELECT t.tasa FROM tasa_cambio t WHERE t.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND t.estado = 1 ORDER BY t.fecha DESC, t.id_tasa_cambio DESC LIMIT 1),
+                            (SELECT t2.tasa FROM tasa_cambio t2 WHERE t2.estado = 1 ORDER BY t2.fecha DESC, t2.id_tasa_cambio DESC LIMIT 1),
+                            0
+                        ) as tasa_bcv
                 FROM cuentas_cobrar cc 
                 INNER JOIN ventas v ON cc.id_venta = v.id_venta
                 INNER JOIN clientes c ON v.id_cliente = c.id_cliente
@@ -176,10 +186,15 @@ class CuentaCobrarModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarSelectPagos
-    // OBJETIVO: Obtiene los pagos registrados para una cuenta, con tipo de pago y banco
+    // OBJETIVO: Obtiene los pagos registrados para una cuenta, con tipo de pago, banco y tasa BCV histórica de la fecha del pago
     private function _ejecutarSelectPagos(): array
     {
-        $consulta = "SELECT pr.*, tp.nombre as tipo_pago_nombre, b.nombre as banco_nombre
+        $consulta = "SELECT pr.*, tp.nombre as tipo_pago_nombre, b.nombre as banco_nombre,
+                            COALESCE(
+                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(pr.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
+                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                                0
+                            ) as tasa_bcv
                      FROM pagos_recibidos pr
                      LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
                      LEFT JOIN banco b ON pr.id_banco = b.id_banco

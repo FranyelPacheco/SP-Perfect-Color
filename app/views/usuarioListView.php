@@ -31,9 +31,9 @@
                 <div id="areaAdminUsuarios" class="card border-0 shadow-sm mb-4">
                     <div class="card-body p-3 p-md-4">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                            <h4 class="mb-0 toolbar-title"><i class="bi bi-person-badge-fill me-2 text-primary"></i>Usuarios Registrados</h4>
+                            <h4 class="mb-0 toolbar-title"><i class="bi bi-person-badge-fill me-2 text-primary"></i>Usuarios / Roles</h4>
                             <div class="d-flex gap-2 align-items-center flex-wrap toolbar-actions">
-                                <button id="btnNuevoUsuario" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Nuevo Usuario</button>
+                                <button id="btnNuevoUsuario" class="btn btn-primary" title="Nuevo Usuario" data-bs-toggle="tooltip"><i class="bi bi-plus-lg"></i></button>
                             </div>
                         </div>
                         <div class="table-responsive">
@@ -60,11 +60,11 @@
                     <div class="card-body p-3 p-md-4">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                             <div>
-                                <h4 class="mb-0 toolbar-title"><i class="bi bi-shield-check me-2 text-primary"></i>Roles del Sistema</h4>
+                                <h4 class="mb-0 toolbar-title"><i class="bi bi-shield-check me-2 text-primary"></i>Roles</h4>
                                 <small class="text-muted">Configure los roles y asigne a qué módulos tiene acceso cada uno</small>
                             </div>
                             <div class="d-flex gap-2 align-items-center flex-wrap toolbar-actions">
-                                <button id="btnNuevoRol" class="btn btn-success"><i class="bi bi-plus-lg me-2"></i>Nuevo Rol</button>
+                                <button id="btnNuevoRol" class="btn btn-success" title="Nuevo Rol" data-bs-toggle="tooltip"><i class="bi bi-plus-lg"></i></button>
                             </div>
                         </div>
                         <div class="table-responsive">

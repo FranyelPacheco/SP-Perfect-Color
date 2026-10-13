@@ -17,8 +17,8 @@
             </div>
             <div class="d-flex gap-2 align-items-center flex-wrap">
                 <input type="text" id="busquedaPresupuestos" class="form-control" style="width: 220px;" placeholder="Buscar por cliente o cedula...">
-                <button type="button" class="btn btn-primary" onclick="location.href='/SP%20Perfect%20Color/presupuesto/nuevo'">
-                    <i class="bi bi-plus-lg me-2"></i>Nuevo Presupuesto
+                <button type="button" class="btn btn-primary" onclick="location.href='/SP%20Perfect%20Color/presupuesto/nuevo'" title="Nuevo Presupuesto" data-bs-toggle="tooltip">
+                    <i class="bi bi-plus-lg"></i>
                 </button>
             </div>
         </div>

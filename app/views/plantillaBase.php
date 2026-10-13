@@ -4,7 +4,15 @@
 $ctrlLower = strtolower($controlador ?? '');
 $isVentasActive = in_array($ctrlLower, ['presupuesto', 'notaentrega', 'cuentacobrar'], true);
 $isComprasActive = in_array($ctrlLower, ['notaentregacompra', 'cuentapagar'], true);
-$isConfigPagoActive = in_array($ctrlLower, ['banco', 'tipopago', 'configpago'], true);
+$isConfigPagoActive = in_array($ctrlLower, ['banco', 'tipopago'], true);
+
+$tasaCambioGlobal = 0.0;
+try {
+    $tasaModelGlobal = new \App\Models\TasaCambioModel();
+    $tasaCambioGlobal = $tasaModelGlobal->obtenerTasaVigenteValor();
+} catch (\Throwable $e) {
+    $tasaCambioGlobal = 0.0;
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -46,6 +54,15 @@ $isConfigPagoActive = in_array($ctrlLower, ['banco', 'tipopago', 'configpago'], 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/estiloBase.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/estiloBase.css'); ?>">
+    <script>
+        window.TASA_CAMBIO_HOY = <?php echo json_encode((float)$tasaCambioGlobal); ?>;
+        window.formatearBs = function(montoUsd, tasa) {
+            var t = (typeof tasa === 'number' && tasa > 0) ? tasa : (window.TASA_CAMBIO_HOY || 0);
+            var m = parseFloat(montoUsd) || 0;
+            var bs = m * t;
+            return 'Bs. ' + bs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
+    </script>
     <style>
         /* Regla de máxima prioridad para garantizar texto blanco en aside móvil */
         #offcanvasSidebar,

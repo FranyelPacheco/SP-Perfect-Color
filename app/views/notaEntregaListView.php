@@ -17,8 +17,8 @@
             </div>
             <div class="d-flex gap-2 align-items-center flex-wrap">
                 <input type="text" id="busquedaNotas" class="form-control" style="width: 220px;" placeholder="Buscar por cliente o cedula...">
-                <a href="/SP%20Perfect%20Color/presupuesto/nuevo" class="btn btn-primary">
-                    <i class="bi bi-plus-lg me-1"></i>Nueva Venta / Presupuesto
+                <a href="/SP%20Perfect%20Color/presupuesto/nuevo" class="btn btn-primary" title="Nueva Venta / Presupuesto" data-bs-toggle="tooltip">
+                    <i class="bi bi-plus-lg"></i>
                 </a>
             </div>
         </div>

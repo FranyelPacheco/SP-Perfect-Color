@@ -98,18 +98,6 @@ class NotaEntregaModel extends ModeloBase
         return $this->_ejecutarCrearNota();
     }
 
-    // FUNCIÓN: actualizarDetalleNota
-    // OBJETIVO: Reemplaza el detalle de una nota, restaurando y descontando stock según el nuevo detalle
-    public function actualizarDetalleNota(int $id, array $detalle): bool
-    {
-        if ($id <= 0) {
-            throw new PDOException('ID no válido');
-        }
-        $this->id = $id;
-        $this->detalle = $detalle;
-        return $this->_ejecutarActualizarDetalle();
-    }
-
     // FUNCIÓN: buscarNotas
     // OBJETIVO: Busca notas de venta por nombre/cédula del cliente
     public function buscarNotas(string $termino): array
@@ -133,7 +121,12 @@ class NotaEntregaModel extends ModeloBase
                             c.cedula as cliente_cedula,
                             'Sistema' as usuario_nombre,
                             COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre,
-                            COALESCE(ev.nombre, CASE WHEN v.id_estado_venta = 1 THEN 'En Espera' WHEN v.id_estado_venta = 2 THEN 'Aprobado' WHEN v.id_estado_venta = 3 THEN 'Rechazado' ELSE 'Otro' END) as estado_nombre
+                            COALESCE(ev.nombre, CASE WHEN v.id_estado_venta = 1 THEN 'En Espera' WHEN v.id_estado_venta = 2 THEN 'Aprobado' WHEN v.id_estado_venta = 3 THEN 'Rechazado' ELSE 'Otro' END) as estado_nombre,
+                            COALESCE(
+                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
+                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                                0
+                            ) as tasa_bcv
                      FROM ventas v 
                      INNER JOIN clientes c ON v.id_cliente = c.id_cliente
                      LEFT JOIN estado_venta ev ON v.id_estado_venta = ev.id_estado_venta
@@ -164,7 +157,12 @@ class NotaEntregaModel extends ModeloBase
                             c.direccion as cliente_direccion,
                             (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
                             'Sistema' as usuario_nombre,
-                            COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre
+                            COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre,
+                            COALESCE(
+                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
+                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                                0
+                            ) as tasa_bcv
                      FROM ventas v 
                      INNER JOIN clientes c ON v.id_cliente = c.id_cliente
                      LEFT JOIN tipo_pago tp_v ON v.id_tipo_pago = tp_v.id_tipo_pago
@@ -248,130 +246,6 @@ class NotaEntregaModel extends ModeloBase
             $this->conexion->commit();
             return $this->notaId;
 
-        } catch (PDOException $e) {
-            $this->conexion->rollback();
-            throw $e;
-        }
-    }
-
-    // FUNCIÓN: _ejecutarActualizarDetalle
-    // OBJETIVO: Reemplaza el detalle de la nota: restaura stock viejo, elimina detalle, verifica stock, inserta nuevo y descuenta
-    private function _ejecutarActualizarDetalle(): bool
-    {
-        try {
-            $this->conexion->beginTransaction();
-
-            $detalleAnterior = $this->_ejecutarSelectDetalle();
-            foreach ($detalleAnterior as $item) {
-                $idProd = (int)$item['id_producto'];
-                $cant = (float)$item['cantidad'];
-
-                $stmtMix = $this->conexion->prepare("SELECT id_producto_base, cantidad_galon FROM mezcla_producto WHERE id_producto_mezclado = :id_prod");
-                $stmtMix->bindValue(':id_prod', $idProd, PDO::PARAM_INT);
-                $stmtMix->execute();
-                $bases = $stmtMix->fetchAll();
-
-                if (!empty($bases)) {
-                    $stmtUpdBase = $this->conexion->prepare("UPDATE productos SET stock_actual = stock_actual + :cant WHERE id_producto = :id_base");
-                    foreach ($bases as $b) {
-                        $stmtUpdBase->bindValue(':cant', (float)$b['cantidad_galon'] * $cant);
-                        $stmtUpdBase->bindValue(':id_base', (int)$b['id_producto_base'], PDO::PARAM_INT);
-                        $stmtUpdBase->execute();
-                    }
-                } else {
-                    $stmtRestaurar = $this->conexion->prepare("UPDATE productos SET stock_actual = stock_actual + :cant WHERE id_producto = :id_prod");
-                    $stmtRestaurar->bindValue(':cant', $cant);
-                    $stmtRestaurar->bindValue(':id_prod', $idProd, PDO::PARAM_INT);
-                    $stmtRestaurar->execute();
-                }
-            }
-
-            $idPresupuesto = $this->id;
-
-            $consultaEliminar = "DELETE FROM venta_detalle WHERE id_venta = :id_venta";
-            $stmtEliminar = $this->conexion->prepare($consultaEliminar);
-            $stmtEliminar->bindValue(':id_venta', $idPresupuesto, PDO::PARAM_INT);
-            $stmtEliminar->execute();
-
-            $total = 0;
-            $consultaInsertVentaDetalle = "INSERT INTO venta_detalle (id_venta, id_producto, descripcion, cantidad, precio_unitario, subtotal) 
-                                           VALUES (:id_venta, :id_producto, :descripcion, :cantidad, :precio_unitario, :subtotal)";
-            $stmtInsertVentaDetalle = $this->conexion->prepare($consultaInsertVentaDetalle);
-
-            $consultaStockDirecto = "SELECT nombre, stock_actual FROM productos WHERE id_producto = :id_producto AND estado = 1 FOR UPDATE";
-            $stmtStockDirecto = $this->conexion->prepare($consultaStockDirecto);
-
-            $consultaDescontarDirecto = "UPDATE productos SET stock_actual = stock_actual - :cantidad WHERE id_producto = :id_producto";
-            $stmtDescontarDirecto = $this->conexion->prepare($consultaDescontarDirecto);
-
-            foreach ($this->detalle as $item) {
-                $idInsumo = (int)($item['id_producto'] ?? $item['id_insumo'] ?? 0);
-                if ($idInsumo < 1) {
-                    throw new PDOException('Item sin producto válido');
-                }
-
-                $stmtStockDirecto->bindValue(':id_producto', $idInsumo, PDO::PARAM_INT);
-                $stmtStockDirecto->execute();
-                $insumo = $stmtStockDirecto->fetch();
-
-                if (!$insumo || (float)$insumo['stock_actual'] < (float)$item['cantidad']) {
-                    throw new PDOException('Stock insuficiente para el producto: ' . ($insumo['nombre'] ?? $idInsumo));
-                }
-
-                $stmtInsertVentaDetalle->bindValue(':id_venta', $idPresupuesto, PDO::PARAM_INT);
-                $stmtInsertVentaDetalle->bindValue(':id_producto', $idInsumo, PDO::PARAM_INT);
-                $stmtInsertVentaDetalle->bindValue(':descripcion', $insumo['nombre'] ?? 'Producto');
-                $stmtInsertVentaDetalle->bindValue(':cantidad', $item['cantidad']);
-                $stmtInsertVentaDetalle->bindValue(':precio_unitario', $item['precio_unitario']);
-                $stmtInsertVentaDetalle->bindValue(':subtotal', $item['subtotal']);
-                $stmtInsertVentaDetalle->execute();
-
-                $stmtDescontarDirecto->bindValue(':cantidad', $item['cantidad']);
-                $stmtDescontarDirecto->bindValue(':id_producto', $idInsumo, PDO::PARAM_INT);
-                $stmtDescontarDirecto->execute();
-
-                $total += $item['subtotal'];
-            }
-
-            $consultaTotal = "UPDATE ventas SET total = :total WHERE id_venta = :id";
-            $stmtTotal = $this->conexion->prepare($consultaTotal);
-            $stmtTotal->bindValue(':total', $total);
-            $stmtTotal->bindValue(':id', $this->id, PDO::PARAM_INT);
-            $stmtTotal->execute();
-
-            // Sincronizar cuenta por cobrar si existe
-            $consultaCxc = "SELECT id_cuenta_cobrar, monto_total, saldo_pendiente FROM cuentas_cobrar WHERE id_venta = :id AND estado = 1";
-            $stmtCxc = $this->conexion->prepare($consultaCxc);
-            $stmtCxc->bindValue(':id', $this->id, PDO::PARAM_INT);
-            $stmtCxc->execute();
-            $cxc = $stmtCxc->fetch();
-
-            if ($cxc) {
-                $totalViejo = (float)$cxc['monto_total'];
-                $saldoViejo = (float)$cxc['saldo_pendiente'];
-                $diferencia = (float)$total - $totalViejo;
-                $nuevoSaldo = round($saldoViejo + $diferencia, 2);
-
-                if ($nuevoSaldo <= 0.001) {
-                    $nuevoSaldo = 0;
-                    $nuevaSituacion = 'pagado';
-                } else {
-                    $nuevaSituacion = 'pendiente';
-                }
-
-                $consultaUpdCxc = "UPDATE cuentas_cobrar 
-                                   SET monto_total = :monto_total, saldo_pendiente = :saldo_pendiente, situacion = :situacion 
-                                   WHERE id_cuenta_cobrar = :id_cxc";
-                $stmtUpdCxc = $this->conexion->prepare($consultaUpdCxc);
-                $stmtUpdCxc->bindValue(':monto_total', $total);
-                $stmtUpdCxc->bindValue(':saldo_pendiente', $nuevoSaldo);
-                $stmtUpdCxc->bindValue(':situacion', $nuevaSituacion);
-                $stmtUpdCxc->bindValue(':id_cxc', $cxc['id_cuenta_cobrar'], PDO::PARAM_INT);
-                $stmtUpdCxc->execute();
-            }
-
-            $this->conexion->commit();
-            return true;
         } catch (PDOException $e) {
             $this->conexion->rollback();
             throw $e;

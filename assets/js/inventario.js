@@ -234,8 +234,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: null,
                     render: function(data, type, row) {
                         if (!row) return '';
-                        var stockStyle = parseFloat(row.stock_actual) <= parseFloat(row.stock_minimo) ? 'stock-bajo' : 'stock-normal';
-                        return '<span class="' + stockStyle + '">' + formatearMoneda(row.stock_actual) + '</span>';
+                        var stockVal = Math.floor(parseFloat(row.stock_actual) || 0);
+                        var stockMin = Math.floor(parseFloat(row.stock_minimo) || 0);
+                        var stockStyle = stockVal <= stockMin ? 'stock-bajo' : 'stock-normal';
+                        return '<span class="' + stockStyle + '">' + stockVal + '</span>';
                     }
                 },
                 {
@@ -316,7 +318,9 @@ document.addEventListener('DOMContentLoaded', function() {
         alertas.forEach(function(alerta) {
             const div = document.createElement('div');
             div.className = 'alerta-item';
-            div.textContent = alerta.codigo + ' - ' + alerta.nombre + ' (Stock: ' + formatearMoneda(alerta.stock_actual) + ', Minimo: ' + formatearMoneda(alerta.stock_minimo) + ')';
+            const stockEnt = Math.floor(parseFloat(alerta.stock_actual) || 0);
+            const minEnt = Math.floor(parseFloat(alerta.stock_minimo) || 0);
+            div.textContent = alerta.codigo + ' - ' + alerta.nombre + ' (Stock: ' + stockEnt + ', Mínimo: ' + minEnt + ')';
             contenidoAlertas.appendChild(div);
         });
     }
@@ -590,7 +594,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     '<button type="button" class="btn btn-outline-secondary btn-limpiar-base d-none" title="Limpiar"><i class="bi bi-x"></i></button>' +
                 '</div>' +
                 '<input type="hidden" class="select-base-tinte" value="" required>' +
-                '<div class="dropdown-menu w-100 p-0 lista-sugerencias-base shadow border" style="max-height: 220px; overflow-y: auto; z-index: 1055;"></div>' +
+                '<div class="dropdown-menu w-100 lista-sugerencias-base buscador-dropdown-lista"></div>' +
             '</td>' +
             '<td>' +
                 '<select class="form-select form-select-sm select-fraccion-tinte">' +
@@ -619,7 +623,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const labelConsumo = fila.querySelector('.consumo-galon-text');
         const btnElim = fila.querySelector('.btn-eliminar-base-fila');
 
+        const tdBuscador = fila.querySelector('td.position-relative');
+
         function renderizarSugerencias(filtro) {
+            if (cuerpoBasesMezcla) {
+                cuerpoBasesMezcla.querySelectorAll('.lista-sugerencias-base.show').forEach(function(el) {
+                    if (el !== listaSug) el.classList.remove('show');
+                });
+                cuerpoBasesMezcla.querySelectorAll('td.celda-buscador-activa').forEach(function(td) {
+                    if (td !== tdBuscador) td.classList.remove('celda-buscador-activa');
+                });
+            }
+            if (tdBuscador) tdBuscador.classList.add('celda-buscador-activa');
+
             listaSug.innerHTML = '';
             const q = (filtro || '').toLowerCase().trim();
             const filtradas = basesGlobal.filter(function(b) {
@@ -629,15 +645,20 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (filtradas.length === 0) {
-                listaSug.innerHTML = '<div class="p-2 text-muted small text-center">No se encontraron tintes base</div>';
+                listaSug.innerHTML = '<div class="p-3 text-muted small text-center">No se encontraron tintes base</div>';
             } else {
                 filtradas.forEach(function(b) {
-                    const stock = parseFloat(b.stock_actual) || 0;
+                    const stock = Math.floor(parseFloat(b.stock_actual) || 0);
+                    const min = Math.floor(parseFloat(b.stock_minimo) || 0);
                     const item = document.createElement('a');
-                    item.className = 'dropdown-item d-flex justify-content-between align-items-center py-2 px-3 border-bottom small';
+                    item.className = 'buscador-dropdown-item';
                     item.href = '#';
-                    item.innerHTML = '<div><span class="badge bg-secondary me-1">' + b.codigo + '</span> <strong>' + b.nombre + '</strong></div>' +
-                                     '<span class="badge bg-light text-dark border">' + stock.toFixed(2) + ' gal</span>';
+                    item.innerHTML =
+                        '<span class="item-titulo">' + b.nombre + '</span>' +
+                        '<div class="item-meta">' +
+                            '<span class="badge-codigo">' + b.codigo + '</span>' +
+                            '<span class="badge-stock ' + (stock <= min ? 'bajo' : '') + '">Stock: ' + stock + ' gal</span>' +
+                        '</div>';
                     item.addEventListener('click', function(ev) {
                         ev.preventDefault();
                         inputBuscar.value = b.codigo + ' - ' + b.nombre;
@@ -646,6 +667,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         inputHidden.dataset.nombre = b.nombre;
                         btnLimpiar.classList.remove('d-none');
                         listaSug.classList.remove('show');
+                        if (tdBuscador) tdBuscador.classList.remove('celda-buscador-activa');
                         recalcularTotalesMezcla();
                     });
                     listaSug.appendChild(item);
@@ -674,6 +696,7 @@ document.addEventListener('DOMContentLoaded', function() {
             inputHidden.dataset.precio = 0;
             btnLimpiar.classList.add('d-none');
             listaSug.classList.remove('show');
+            if (tdBuscador) tdBuscador.classList.remove('celda-buscador-activa');
             recalcularTotalesMezcla();
             inputBuscar.focus();
         });
@@ -681,6 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.addEventListener('click', function(e) {
             if (!fila.contains(e.target)) {
                 listaSug.classList.remove('show');
+                if (tdBuscador) tdBuscador.classList.remove('celda-buscador-activa');
             }
         });
 
@@ -846,48 +870,130 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalAjusteMerma = document.getElementById('modalAjusteMerma');
     const formAjusteMerma = document.getElementById('formularioAjusteMerma');
     const ajusteProducto = document.getElementById('ajusteProducto');
+    const inputBuscarAjusteProducto = document.getElementById('inputBuscarAjusteProducto');
+    const btnLimpiarAjusteProducto = document.getElementById('btnLimpiarAjusteProducto');
+    const listaSugerenciasAjusteProducto = document.getElementById('listaSugerenciasAjusteProducto');
     const ajusteStockDisponible = document.getElementById('ajusteStockDisponible');
     const ajusteCantidad = document.getElementById('ajusteCantidad');
     const ajusteMotivo = document.getElementById('ajusteMotivo');
     const ajusteObservacion = document.getElementById('ajusteObservacion');
     const mensajeErrorAjuste = document.getElementById('mensajeErrorAjuste');
 
+    // Bloquear puntos, comas y decimales en ajusteCantidad y mezclaCantidad
+    [ajusteCantidad, document.getElementById('mezclaCantidad')].forEach(function(inp) {
+        if (!inp) return;
+        inp.addEventListener('keydown', function(e) {
+            if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === '+') {
+                e.preventDefault();
+            }
+        });
+        inp.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    });
+
+    function renderizarSugerenciasAjuste(filtro) {
+        if (!listaSugerenciasAjusteProducto) return;
+        listaSugerenciasAjusteProducto.innerHTML = '';
+        const q = (filtro || '').toLowerCase().trim();
+
+        const productosConStock = insumosGlobal.filter(function(p) {
+            const stock = Math.floor(parseFloat(p.stock_actual) || 0);
+            if (stock <= 0) return false;
+            if (!q) return true;
+            const texto = ((p.codigo || '') + ' ' + (p.nombre || '')).toLowerCase();
+            return texto.includes(q);
+        });
+
+        if (productosConStock.length === 0) {
+            listaSugerenciasAjusteProducto.innerHTML = '<div class="p-3 text-muted small text-center">No se encontraron productos con stock disponible</div>';
+        } else {
+            productosConStock.forEach(function(p) {
+                const stock = Math.floor(parseFloat(p.stock_actual) || 0);
+                const min = Math.floor(parseFloat(p.stock_minimo) || 0);
+                const unidad = p.unidad_medida || '';
+                const item = document.createElement('a');
+                item.className = 'buscador-dropdown-item';
+                item.href = '#';
+                item.innerHTML =
+                    '<span class="item-titulo">' + p.nombre + '</span>' +
+                    '<div class="item-meta">' +
+                        '<span class="badge-codigo">' + p.codigo + '</span>' +
+                        '<span class="badge-stock ' + (stock <= min ? 'bajo' : '') + '">Stock: ' + stock + ' ' + unidad + '</span>' +
+                    '</div>';
+                item.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    if (inputBuscarAjusteProducto) inputBuscarAjusteProducto.value = p.codigo + ' - ' + p.nombre;
+                    if (ajusteProducto) {
+                        ajusteProducto.value = p.id_producto;
+                        ajusteProducto.dataset.stock = stock;
+                        ajusteProducto.dataset.unidad = unidad;
+                    }
+                    if (ajusteStockDisponible) ajusteStockDisponible.textContent = stock + ' ' + unidad;
+                    if (ajusteCantidad) ajusteCantidad.max = stock;
+                    if (btnLimpiarAjusteProducto) btnLimpiarAjusteProducto.classList.remove('d-none');
+                    listaSugerenciasAjusteProducto.classList.remove('show');
+                    if (ajusteCantidad) ajusteCantidad.focus();
+                });
+                listaSugerenciasAjusteProducto.appendChild(item);
+            });
+        }
+        listaSugerenciasAjusteProducto.classList.add('show');
+    }
+
+    if (inputBuscarAjusteProducto) {
+        inputBuscarAjusteProducto.addEventListener('focus', function() {
+            renderizarSugerenciasAjuste(this.value);
+        });
+        inputBuscarAjusteProducto.addEventListener('input', function() {
+            if (!this.value.trim()) {
+                if (ajusteProducto) {
+                    ajusteProducto.value = '';
+                    ajusteProducto.dataset.stock = '0';
+                }
+                if (ajusteStockDisponible) ajusteStockDisponible.textContent = '-';
+                if (btnLimpiarAjusteProducto) btnLimpiarAjusteProducto.classList.add('d-none');
+            }
+            renderizarSugerenciasAjuste(this.value);
+        });
+    }
+
+    if (btnLimpiarAjusteProducto) {
+        btnLimpiarAjusteProducto.addEventListener('click', function() {
+            if (inputBuscarAjusteProducto) inputBuscarAjusteProducto.value = '';
+            if (ajusteProducto) {
+                ajusteProducto.value = '';
+                ajusteProducto.dataset.stock = '0';
+            }
+            if (ajusteStockDisponible) ajusteStockDisponible.textContent = '-';
+            btnLimpiarAjusteProducto.classList.add('d-none');
+            if (listaSugerenciasAjusteProducto) listaSugerenciasAjusteProducto.classList.remove('show');
+            if (inputBuscarAjusteProducto) inputBuscarAjusteProducto.focus();
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        const cont = document.getElementById('contenedorBuscadorAjuste');
+        if (cont && listaSugerenciasAjusteProducto && !cont.contains(e.target)) {
+            listaSugerenciasAjusteProducto.classList.remove('show');
+        }
+    });
+
     if (btnAjusteMerma) {
         btnAjusteMerma.addEventListener('click', function() {
             if (formAjusteMerma) formAjusteMerma.reset();
             if (mensajeErrorAjuste) mensajeErrorAjuste.classList.add('d-none');
             if (ajusteStockDisponible) ajusteStockDisponible.textContent = '-';
-
+            if (inputBuscarAjusteProducto) inputBuscarAjusteProducto.value = '';
             if (ajusteProducto) {
-                ajusteProducto.innerHTML = '<option value="">Seleccione el producto afectado...</option>';
-                insumosGlobal.forEach(function(p) {
-                    const stock = parseFloat(p.stock_actual) || 0;
-                    if (stock > 0) {
-                        const opt = document.createElement('option');
-                        opt.value = p.id_producto;
-                        opt.textContent = p.codigo + ' - ' + p.nombre + ' (Stock: ' + stock + ' ' + (p.unidad_medida || '') + ')';
-                        opt.dataset.stock = stock;
-                        opt.dataset.unidad = p.unidad_medida || '';
-                        ajusteProducto.appendChild(opt);
-                    }
-                });
+                ajusteProducto.value = '';
+                ajusteProducto.dataset.stock = '0';
             }
+            if (btnLimpiarAjusteProducto) btnLimpiarAjusteProducto.classList.add('d-none');
+            if (listaSugerenciasAjusteProducto) listaSugerenciasAjusteProducto.classList.remove('show');
 
             if (modalAjusteMerma) {
                 bootstrap.Modal.getOrCreateInstance(modalAjusteMerma).show();
-            }
-        });
-    }
-
-    if (ajusteProducto) {
-        ajusteProducto.addEventListener('change', function() {
-            const opt = this.selectedOptions[0];
-            if (opt && opt.value) {
-                const stock = opt.dataset.stock || '0';
-                const unidad = opt.dataset.unidad || '';
-                ajusteStockDisponible.textContent = stock + ' ' + unidad;
-            } else {
-                ajusteStockDisponible.textContent = '-';
             }
         });
     }
@@ -897,7 +1003,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             mensajeErrorAjuste.classList.add('d-none');
 
-            const idProd = parseInt(ajusteProducto.value) || 0;
+            const idProd = parseInt(ajusteProducto ? ajusteProducto.value : 0) || 0;
             const cantRaw = ajusteCantidad.value.trim();
             const cant = Number(cantRaw);
             const motivoSel = ajusteMotivo.value;
@@ -905,13 +1011,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const motivoFinal = motivoSel + (obs ? ': ' + obs : '');
 
             if (!idProd) {
-                mensajeErrorAjuste.textContent = 'Seleccione un producto.';
+                mensajeErrorAjuste.textContent = 'Seleccione un producto afectado de la lista.';
                 mensajeErrorAjuste.classList.remove('d-none');
                 return;
             }
 
-            const opt = ajusteProducto.selectedOptions[0];
-            const stockActual = parseFloat(opt ? opt.dataset.stock : 0) || 0;
+            const stockActual = Math.floor(parseFloat(ajusteProducto ? ajusteProducto.dataset.stock : 0) || 0);
 
             if (!cantRaw || !Number.isInteger(cant) || cant < 1) {
                 mensajeErrorAjuste.textContent = 'La cantidad a descontar debe ser un número entero mayor o igual a 1.';
