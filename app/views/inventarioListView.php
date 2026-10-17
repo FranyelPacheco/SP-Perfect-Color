@@ -145,7 +145,7 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-5">
                             <label for="mezclaNombre" class="form-label fw-semibold text-dark">Nombre / Identificación del Color <span class="text-danger">*</span></label>
-                            <input type="text" id="mezclaNombre" class="form-control" placeholder="Ej: Azul Perla Fiesta" required>
+                            <input type="text" id="mezclaNombre" class="form-control" placeholder="Ej: Azul Perla Fiesta" maxlength="40" required>
                         </div>
                         <div class="col-md-4">
                             <label for="mezclaPresentacion" class="form-label fw-semibold text-dark">Presentación <span class="text-danger">*</span></label>
@@ -271,7 +271,8 @@
                             <option value="Defecto de fábrica">Defecto de fábrica detectado</option>
                             <option value="Otro">Otro motivo justificado</option>
                         </select>
-                        <textarea id="ajusteObservacion" class="form-control" rows="2" placeholder="Detalle adicional u observación sobre la pérdida..." required></textarea>
+                        <textarea id="ajusteObservacion" class="form-control" rows="2" maxlength="200" placeholder="Detalle adicional u observación sobre la pérdida..." required></textarea>
+                        <small id="contadorAjusteObservacion" class="text-muted d-block mt-1">0 / 200 caracteres (máx. 40 palabras)</small>
                     </div>
 
                     <div id="mensajeErrorAjuste" class="alert alert-danger d-none mb-0"></div>

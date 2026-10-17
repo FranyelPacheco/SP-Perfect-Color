@@ -29,8 +29,7 @@ if ($metodo === 'index') {
     ]);
 
 // FUNCIÓN: guardar
-// OBJETIVO: Crea un banco nuevo o reactiva uno inactivo con el mismo nombre
-// NOTA: Verifica existencia de banco inactivo antes de insertar
+// OBJETIVO: Crea un banco nuevo o reactiva uno inactivo delegando lógica al modelo
 } elseif ($metodo === 'guardar') {
     verificarRolAdmin();
 
@@ -38,25 +37,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
 
-    $nombre = trim($_POST['nombre'] ?? '');
-    if (empty($nombre)) {
-        respuestaJson('error', 'El nombre del banco es obligatorio');
-    }
-
-    $inactivoId = $bancoModel->buscarInactivoPorNombre($nombre);
-    if ($inactivoId) {
-        if ($bancoModel->actualizar($inactivoId, $nombre, 1)) {
-            respuestaJson('exito', 'Banco reactivado exitosamente');
-        } else {
-            respuestaJson('error', 'Error al reactivar el banco');
-        }
-    }
-
-    if ($bancoModel->insertar($nombre)) {
-        respuestaJson('exito', 'Banco creado exitosamente');
-    } else {
-        respuestaJson('error', 'Error al crear el banco');
-    }
+    $resultado = $bancoModel->registrar($_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // FUNCIÓN: obtener
 // OBJETIVO: Devuelve los datos de un banco por ID en formato JSON
@@ -74,7 +56,7 @@ if ($metodo === 'index') {
     }
 
 // FUNCIÓN: actualizar
-// OBJETIVO: Actualiza los datos de un banco existente
+// OBJETIVO: Actualiza los datos de un banco existente delegando validaciones al modelo
 } elseif ($metodo === 'actualizar') {
     verificarRolAdmin();
 
@@ -83,20 +65,11 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id'] ?? 0);
-    $nombre = trim($_POST['nombre'] ?? '');
-    $activo = intval($_POST['activo'] ?? 1);
-
-    if ($id < 1) respuestaJson('error', 'ID de banco no valido');
-    if (empty($nombre)) respuestaJson('error', 'El nombre del banco es obligatorio');
-
-    if ($bancoModel->actualizar($id, $nombre, $activo)) {
-        respuestaJson('exito', 'Banco actualizado exitosamente');
-    } else {
-        respuestaJson('error', 'Error al actualizar el banco');
-    }
+    $resultado = $bancoModel->modificar($id, $_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // FUNCIÓN: eliminar
-// OBJETIVO: Elimina (soft-delete) un banco por ID
+// OBJETIVO: Elimina (soft-delete) un banco por ID delegando al modelo
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
 
@@ -105,13 +78,8 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id'] ?? 0);
-    if ($id < 1) respuestaJson('error', 'ID de banco no valido');
-
-    if ($bancoModel->eliminar($id)) {
-        respuestaJson('exito', 'Banco eliminado exitosamente');
-    } else {
-        respuestaJson('error', 'Error al eliminar el banco');
-    }
+    $resultado = $bancoModel->darDeBaja($id);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // FUNCIÓN: toggleActivo
 // OBJETIVO: Alterna el estado activo/inactivo de un banco
@@ -123,13 +91,8 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id'] ?? 0);
-    if ($id < 1) respuestaJson('error', 'ID de banco no valido');
-
-    if ($bancoModel->toggleActivo($id)) {
-        respuestaJson('exito', 'Estado cambiado exitosamente');
-    } else {
-        respuestaJson('error', 'Error al cambiar el estado');
-    }
+    $resultado = $bancoModel->cambiarEstado($id);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // FUNCIÓN: 404
 // OBJETIVO: Muestra página de error 404 para método desconocido

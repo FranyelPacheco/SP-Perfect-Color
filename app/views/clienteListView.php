@@ -43,27 +43,27 @@
                     <input type="hidden" id="clienteId" name="id" value="">
 
                     <div class="mb-3">
-                        <label class="form-label">Cedula / Documento</label>
-                        <div class="input-group">
+                        <label class="form-label">Cédula / Documento <span class="text-danger">*</span></label>
+                        <div class="input-group has-validation">
                             <select id="tipoDocCliente" name="tipo_doc" class="form-select" style="max-width: 85px;">
                                 <option value="V" selected>V</option>
                                 <option value="E">E</option>
                                 <option value="J">J</option>
                             </select>
-                            <input type="text" id="cedulaCliente" name="cedula_num" class="form-control" required placeholder="Numero de documento" maxlength="9">
+                            <input type="text" id="cedulaCliente" name="cedula_num" class="form-control" required placeholder="Número de documento" maxlength="9">
+                            <div id="feedbackCedulaCliente" class="invalid-feedback"><i class="bi bi-exclamation-circle-fill me-1"></i>Cliente ya registrado</div>
                         </div>
                         <input type="hidden" id="cedulaCompletaCliente" name="cedula" value="">
-                        <div id="feedbackCedulaCliente" class="invalid-feedback d-none">Este documento ya existe en el sistema</div>
                     </div>
 
                     <div class="mb-3">
                         <label for="nombresCliente" class="form-label">Nombres <span class="text-danger">*</span></label>
-                        <input type="text" id="nombresCliente" name="nombres" class="form-control" required placeholder="Ingrese los nombres" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$" title="Solo letras y espacios">
+                        <input type="text" id="nombresCliente" name="nombres" class="form-control" required maxlength="40" placeholder="Ingrese los nombres" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$" title="Solo letras y espacios (máx. 40 caracteres)">
                     </div>
 
                     <div class="mb-3">
                         <label for="apellidosCliente" class="form-label">Apellidos <span class="text-danger">*</span></label>
-                        <input type="text" id="apellidosCliente" name="apellidos" class="form-control" required placeholder="Ingrese los apellidos" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$" title="Solo letras y espacios">
+                        <input type="text" id="apellidosCliente" name="apellidos" class="form-control" required maxlength="40" placeholder="Ingrese los apellidos" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$" title="Solo letras y espacios (máx. 40 caracteres)">
                     </div>
 
                     <div class="mb-3">
@@ -82,7 +82,7 @@
                                 <option value="0426">0426</option>
                                 <option value="0251">0251</option>
                             </select>
-                            <input type="text" id="telefonoNumeroCliente" name="telefono_num" class="form-control" placeholder="7 dígitos (ej: 1234567)" maxlength="7" pattern="[0-9]{7}">
+                            <input type="text" id="telefonoNumeroCliente" name="telefono_num" class="form-control" required placeholder="7 dígitos (ej: 1234567)" maxlength="7" pattern="[0-9]{7}">
                         </div>
                         <input type="hidden" id="telefonoCliente" name="telefono" value="">
                     </div>

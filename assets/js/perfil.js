@@ -99,8 +99,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            if (nuevaClave.length < 6) {
-                mostrarAlerta(alerta, 'danger', 'La nueva contraseña debe tener al menos 6 caracteres.');
+            if (nuevaClave.length < 6 || nuevaClave.length > 20) {
+                mostrarAlerta(alerta, 'danger', 'La nueva contraseña debe tener entre 6 y 20 caracteres.');
+                return;
+            }
+
+            if (/['"`;\\<>]|--|\/\*|\*\//.test(nuevaClave)) {
+                mostrarAlerta(alerta, 'danger', 'La nueva contraseña contiene caracteres no permitidos (sin comillas ni signos <, >, ;)');
+                return;
+            }
+
+            if (nuevaClave === claveActual) {
+                mostrarAlerta(alerta, 'danger', 'La nueva contraseña no puede ser igual a la contraseña actual.');
                 return;
             }
 

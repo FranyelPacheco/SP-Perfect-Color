@@ -85,6 +85,95 @@ class RolModel extends ModeloBase
         return $stmt->fetch();
     }
 
+    // FUNCIÓN: validarDatosRol
+    // OBJETIVO: Valida el nombre y los módulos de un rol
+    public function validarDatosRol(array $datos, ?int $idActual = null): array
+    {
+        $nombre = trim($datos['nombre'] ?? '');
+        $modulos = $datos['modulos'] ?? [];
+        if (!is_array($modulos)) {
+            $modulos = !empty($modulos) ? explode(',', (string)$modulos) : [];
+        }
+        $modulos = array_values(array_filter(array_map('trim', $modulos)));
+
+        if ($nombre === '') {
+            return ['valido' => false, 'mensaje' => 'El nombre del rol es obligatorio'];
+        }
+
+        if (empty($modulos)) {
+            return ['valido' => false, 'mensaje' => 'Debe seleccionar al menos un módulo para el rol'];
+        }
+
+        if ($this->nombreExiste($nombre, $idActual)) {
+            return ['valido' => false, 'mensaje' => ($idActual ? 'Ya existe otro rol con ese nombre' : 'Ya existe un rol con ese nombre')];
+        }
+
+        return ['valido' => true, 'nombre' => $nombre, 'modulos' => $modulos];
+    }
+
+    // FUNCIÓN: registrar
+    // OBJETIVO: Valida y registra o reactiva un rol
+    public function registrar(array $datos): array
+    {
+        $val = $this->validarDatosRol($datos, null);
+        if (!$val['valido']) {
+            return ['exito' => false, 'mensaje' => $val['mensaje']];
+        }
+
+        $nombre = $val['nombre'];
+        $modulos = $val['modulos'];
+
+        $inactivoId = $this->buscarInactivoPorNombre($nombre);
+        if ($inactivoId) {
+            if ($this->actualizarRol($inactivoId, $nombre, 1, $modulos)) {
+                return ['exito' => true, 'mensaje' => 'Rol reactivado exitosamente'];
+            }
+            return ['exito' => false, 'mensaje' => 'Error al reactivar el rol'];
+        }
+
+        if ($this->insertarRol($nombre, $modulos, 1)) {
+            return ['exito' => true, 'mensaje' => 'Rol creado exitosamente'];
+        }
+        return ['exito' => false, 'mensaje' => 'Error al crear el rol'];
+    }
+
+    // FUNCIÓN: modificar
+    // OBJETIVO: Valida y actualiza los datos de un rol
+    public function modificar(int $id, array $datos): array
+    {
+        if ($id < 1) {
+            return ['exito' => false, 'mensaje' => 'ID de rol no válido'];
+        }
+
+        $val = $this->validarDatosRol($datos, $id);
+        if (!$val['valido']) {
+            return ['exito' => false, 'mensaje' => $val['mensaje']];
+        }
+
+        $activo = isset($datos['activo']) ? intval($datos['activo']) : 1;
+
+        if ($this->actualizarRol($id, $val['nombre'], $activo, $val['modulos'])) {
+            return ['exito' => true, 'mensaje' => 'Rol actualizado exitosamente'];
+        }
+        return ['exito' => false, 'mensaje' => 'Error al actualizar el rol'];
+    }
+
+    // FUNCIÓN: darDeBaja
+    // OBJETIVO: Soft-delete de un rol
+    public function darDeBaja(int $id): array
+    {
+        if ($id < 1) {
+            return ['exito' => false, 'mensaje' => 'ID de rol no válido'];
+        }
+        if ($id === 1) {
+            return ['exito' => false, 'mensaje' => 'No se puede eliminar el rol de Administrador'];
+        }
+        if ($this->eliminarRol($id)) {
+            return ['exito' => true, 'mensaje' => 'Rol eliminado exitosamente'];
+        }
+        return ['exito' => false, 'mensaje' => 'No se puede eliminar un rol que tiene usuarios asignados'];
+    }
+
     // FUNCIÓN: insertarRol
     // OBJETIVO: Registra un nuevo rol y asocia sus módulos en la tabla relacional rol_modulo
     public function insertarRol(string $nombre, array|string $modulos, int $activo = 1): bool

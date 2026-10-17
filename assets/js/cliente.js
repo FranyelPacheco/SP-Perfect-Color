@@ -104,9 +104,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function limpiarEstadoCedula() {
         if (cedulaCliente) {
             cedulaCliente.classList.remove('is-invalid', 'is-valid');
+            cedulaCliente.removeAttribute('title');
         }
         if (feedbackCedulaCliente) {
             feedbackCedulaCliente.classList.add('d-none');
+            feedbackCedulaCliente.removeAttribute('title');
         }
         if (btnGuardarCliente) {
             btnGuardarCliente.disabled = false;
@@ -135,16 +137,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (res.datos.existe) {
                         cedulaCliente.classList.add('is-invalid');
                         cedulaCliente.classList.remove('is-valid');
+                        cedulaCliente.setAttribute('title', 'Cliente ya registrado');
                         if (feedbackCedulaCliente) {
-                            feedbackCedulaCliente.textContent = 'El cliente con ' + cedulaCompleta + ' ya existe en el sistema';
+                            feedbackCedulaCliente.textContent = 'Cliente ya registrado';
+                            feedbackCedulaCliente.setAttribute('title', 'Cliente ya registrado');
                             feedbackCedulaCliente.classList.remove('d-none');
                         }
                         if (btnGuardarCliente) btnGuardarCliente.disabled = true;
                     } else {
                         cedulaCliente.classList.remove('is-invalid');
                         cedulaCliente.classList.add('is-valid');
+                        cedulaCliente.removeAttribute('title');
                         if (feedbackCedulaCliente) {
                             feedbackCedulaCliente.classList.add('d-none');
+                            feedbackCedulaCliente.removeAttribute('title');
                         }
                         if (btnGuardarCliente) btnGuardarCliente.disabled = false;
                     }
@@ -364,6 +370,11 @@ document.addEventListener('DOMContentLoaded', function() {
             nombresCliente.focus();
             return;
         }
+        if (nombreVal.length > 40) {
+            mostrarError('El nombre no puede exceder los 40 caracteres');
+            nombresCliente.focus();
+            return;
+        }
         const soloLetrasRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
         if (!soloLetrasRegex.test(nombreVal)) {
             mostrarError('El nombre solo puede contener letras y espacios (sin caracteres especiales)');
@@ -374,6 +385,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const apellidoVal = apellidosCliente.value.trim();
         if (!apellidoVal) {
             mostrarError('El apellido es obligatorio');
+            apellidosCliente.focus();
+            return;
+        }
+        if (apellidoVal.length > 40) {
+            mostrarError('El apellido no puede exceder los 40 caracteres');
             apellidosCliente.focus();
             return;
         }
@@ -396,35 +412,50 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Armar telefono 1 si tiene numero
+        // Armar telefono 1 (obligatorio)
         const telNum = telefonoNumeroCliente ? telefonoNumeroCliente.value.trim() : '';
         const op = operadoraCliente ? operadoraCliente.value : '';
-        if (telNum && telNum.length !== 7) {
-            mostrarError('El numero de telefono debe tener exactamente 7 digitos');
+        if (!telNum) {
+            mostrarError('El teléfono principal es obligatorio');
             telefonoNumeroCliente.focus();
             return;
         }
-        if (telefonoCliente) {
-            telefonoCliente.value = telNum ? (op + telNum) : '';
+        if (telNum.length !== 7) {
+            mostrarError('El número de teléfono principal debe tener exactamente 7 dígitos');
+            telefonoNumeroCliente.focus();
+            return;
         }
-
-        const url = esEdicion ? '/SP%20Perfect%20Color/cliente/actualizar' : '/SP%20Perfect%20Color/cliente/guardar';
-        const formData = new FormData(formularioCliente);
-        formData.set('cedula', cedulaFinal);
-        if (telNum) {
-            formData.set('telefono', op + telNum);
+        const tel1Completo = op + telNum;
+        if (telefonoCliente) {
+            telefonoCliente.value = tel1Completo;
         }
 
         // Armar telefono 2 si tiene numero
         const telNum2 = telefonoNumeroCliente2 ? telefonoNumeroCliente2.value.trim() : '';
         const op2 = operadoraCliente2 ? operadoraCliente2.value : '';
+        let tel2Completo = '';
         if (telNum2) {
             if (telNum2.length !== 7) {
-                mostrarError('El segundo numero de telefono debe tener exactamente 7 digitos');
+                mostrarError('El segundo número de teléfono debe tener exactamente 7 dígitos');
                 telefonoNumeroCliente2.focus();
                 return;
             }
-            formData.set('telefono2', op2 + telNum2);
+            tel2Completo = op2 + telNum2;
+            if (tel1Completo === tel2Completo) {
+                mostrarError('El segundo teléfono no puede ser igual al teléfono principal');
+                telefonoNumeroCliente2.focus();
+                return;
+            }
+        }
+
+        const url = esEdicion ? '/SP%20Perfect%20Color/cliente/actualizar' : '/SP%20Perfect%20Color/cliente/guardar';
+        const formData = new FormData(formularioCliente);
+        formData.set('cedula', cedulaFinal);
+        formData.set('telefono', tel1Completo);
+        if (tel2Completo) {
+            formData.set('telefono2', tel2Completo);
+        } else {
+            formData.delete('telefono2');
         }
 
         if (esEdicion) {

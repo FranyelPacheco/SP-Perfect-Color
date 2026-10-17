@@ -10,6 +10,7 @@ use function App\Helpers\{
     obtenerSesionManager,
     validarCorreo,
     validarRequerido,
+    validarClave,
     enviarRecuperacionClave,
     enviarNotificacionCambioClave
 };
@@ -39,30 +40,13 @@ if ($metodo === 'index') {
     $correo = trim($_POST['correo'] ?? '');
     $clave = $_POST['clave'] ?? '';
 
-    if (empty($correo) || empty($clave)) {
-        respuestaJson('error', 'Todos los campos son obligatorios');
-    }
-
-    $usuario = $usuarioModel->buscarPorCorreo($correo);
-
-    if (!$usuario) {
-        respuestaJson('error', 'Correo o clave incorrectos');
-    }
-
-    if (!password_verify($clave, $usuario['password_hash'])) {
-        respuestaJson('error', 'Correo o clave incorrectos');
-    }
-
-    if (!$usuario['activo']) {
-        respuestaJson('error', 'Usuario inactivo. Contacte al administrador');
-    }
-
-    if (isset($usuario['rol_activo']) && (int)$usuario['rol_activo'] === 0) {
-        respuestaJson('error', 'Su rol asignado se encuentra deshabilitado. Contacte al administrador');
+    $resultado = $usuarioModel->autenticar($correo, $clave);
+    if (!$resultado['exito']) {
+        respuestaJson('error', $resultado['mensaje']);
     }
 
     // Iniciar sesión centralizada a través de SessionTrait
-    $sesionManager->iniciarSesion($usuario);
+    $sesionManager->iniciarSesion($resultado['usuario']);
 
     respuestaJson('exito', 'Inicio de sesion exitoso', [
         'redirect' => '/SP%20Perfect%20Color/dashboard'
@@ -158,45 +142,13 @@ if ($metodo === 'index') {
     $nuevaClave = $_POST['nueva_clave'] ?? '';
     $confirmarClave = $_POST['confirmar_clave'] ?? '';
 
-    if (empty($token)) {
-        respuestaJson('error', 'Token de recuperación no válido');
-    }
-
-    if (!validarRequerido($nuevaClave) || strlen($nuevaClave) < 6) {
-        respuestaJson('error', 'La nueva contraseña debe tener al menos 6 caracteres');
-    }
-
-    if ($nuevaClave !== $confirmarClave) {
-        respuestaJson('error', 'Las contraseñas ingresadas no coinciden');
-    }
-
-    $data = json_decode(base64_decode($token), true);
-    if (!$data || !isset($data['id'], $data['exp'], $data['hash'])) {
-        respuestaJson('error', 'Enlace de recuperación inválido');
-    }
-
-    if (time() > $data['exp']) {
-        respuestaJson('error', 'El enlace de recuperación ha expirado');
-    }
-
-    $usuario = $usuarioModel->buscarPorId((int)$data['id']);
-    if (!$usuario || (int)$usuario['activo'] !== 1) {
-        respuestaJson('error', 'Usuario no encontrado');
-    }
-
-    $firmaEsperada = hash_hmac('sha256', $usuario['id_usuario'] . $usuario['password_hash'] . $data['exp'], TOKEN_SECRET);
-    if (!hash_equals($firmaEsperada, $data['hash'])) {
-        respuestaJson('error', 'Este enlace ya fue utilizado o no es válido');
-    }
-
-    $nuevoHash = password_hash($nuevaClave, PASSWORD_DEFAULT);
-    if ($usuarioModel->actualizarClave((int)$usuario['id_usuario'], $nuevoHash)) {
-        enviarNotificacionCambioClave($usuario['correo'], $usuario['nombre']);
-        respuestaJson('exito', 'Contraseña restablecida exitosamente. Redirigiendo...', [
+    $resultado = $usuarioModel->restablecerClaveConToken($token, $nuevaClave, $confirmarClave, TOKEN_SECRET);
+    if ($resultado['exito']) {
+        respuestaJson('exito', $resultado['mensaje'], [
             'redirect' => '/SP%20Perfect%20Color/login'
         ]);
     } else {
-        respuestaJson('error', 'Error al guardar la nueva contraseña');
+        respuestaJson('error', $resultado['mensaje']);
     }
 
 // FUNCIÓN: 404

@@ -36,7 +36,7 @@
                     <input type="hidden" id="bancoId" name="id">
                     <div class="mb-3">
                         <label for="nombreBanco" class="form-label">Nombre del Banco</label>
-                        <input type="text" id="nombreBanco" name="nombre" class="form-control" required placeholder="Ej: Banco de Venezuela">
+                        <input type="text" id="nombreBanco" name="nombre" class="form-control" required placeholder="Ej: Banco de Venezuela" maxlength="50">
                     </div>
                     <div class="mb-3 form-check">
                         <input type="checkbox" id="activoBanco" name="activo" class="form-check-input" value="1" checked>

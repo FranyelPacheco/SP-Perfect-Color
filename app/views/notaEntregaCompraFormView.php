@@ -57,7 +57,7 @@
                             </label>
                             <div class="input-group input-group-sm mb-1">
                                 <span class="input-group-text">$</span>
-                                <input type="number" id="montoInicialCompra" name="monto_inicial" class="form-control" step="0.01" min="0" value="0.00" placeholder="0.00">
+                                <input type="text" id="montoInicialCompra" name="monto_inicial" class="form-control" value="0.00" placeholder="0.00" maxlength="10" autocomplete="off">
                             </div>
                             <div class="d-flex justify-content-between align-items-center small mb-2">
                                 <span class="text-muted" id="montoInicialCompraBsDisplay">Equiv: Bs. 0,00</span>
@@ -118,7 +118,8 @@
 
                     <div class="mb-3">
                         <label for="observaciones" class="form-label fw-semibold">Observaciones</label>
-                        <textarea id="observaciones" name="observaciones" class="form-control" rows="3" placeholder="Detalles de la entrega, factura del proveedor, etc..."></textarea>
+                        <textarea id="observaciones" name="observaciones" class="form-control" rows="3" maxlength="250" placeholder="Detalles de la entrega, factura del proveedor, etc..."></textarea>
+                        <small id="contadorObservacionesCompra" class="text-muted d-block mt-1">0 / 250 caracteres (máx. 50 palabras)</small>
                     </div>
                 </div>
             </div>

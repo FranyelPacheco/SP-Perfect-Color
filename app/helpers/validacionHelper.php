@@ -63,3 +63,27 @@ function validarLongitudMaxima($valor, $maximo)
 {
     return strlen(trim($valor)) <= $maximo;
 }
+
+// FUNCIÓN: validarClave
+// OBJETIVO: Verificar que la contraseña tenga entre 6 y 20 caracteres y no contenga caracteres de inyección SQL / scripts
+function validarClave(string $clave, ?string &$error = null): bool
+{
+    $longitud = strlen($clave);
+    if ($longitud < 6) {
+        $error = 'La contraseña debe tener al menos 6 caracteres';
+        return false;
+    }
+    if ($longitud > 20) {
+        $error = 'La contraseña no puede exceder los 20 caracteres';
+        return false;
+    }
+
+    // Prohibir caracteres de inyección SQL y XSS: comillas ', ", `, punto y coma ;, barras \, secuencias --, /*, */, <, >
+    if (preg_match('/[\'"`;\\\\<>]/', $clave) || str_contains($clave, '--') || str_contains($clave, '/*') || str_contains($clave, '*/')) {
+        $error = 'La contraseña contiene caracteres no permitidos (evite comillas, punto y coma, barras invertidas o símbolos < >)';
+        return false;
+    }
+
+    return true;
+}
+

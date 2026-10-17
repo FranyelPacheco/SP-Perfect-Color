@@ -88,41 +88,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
     
-    $cuentaId = intval($_POST['cuenta_id'] ?? 0);
-    $monto = floatval($_POST['monto'] ?? 0);
-    $tipoPagoId = intval($_POST['id_tipo_pago'] ?? 0);
-    $bancoId = !empty($_POST['id_banco']) ? intval($_POST['id_banco']) : null;
-    $referencia = trim($_POST['referencia'] ?? '');
-    $fecha = $_POST['fecha'] ?? date('Y-m-d');
-    
-    if ($cuentaId < 1) {
-        respuestaJson('error', 'Cuenta no valida');
-    }
-    
-    if ($monto <= 0) {
-        respuestaJson('error', 'El monto debe ser mayor a cero');
-    }
-    
-    if ($tipoPagoId < 1) {
-        respuestaJson('error', 'Debe seleccionar un tipo de pago');
-    }
-    
-    if ($tipoPagoId === 2 || $tipoPagoId === 3) {
-        if (empty($bancoId) || $bancoId < 1) {
-            respuestaJson('error', 'Debe seleccionar un banco para transferencia o pago movil');
-        }
-        if (empty($referencia)) {
-            respuestaJson('error', 'Debe ingresar el numero de referencia para transferencia o pago movil');
-        }
-    }
-    
-    try {
-        $cuentaCobrarModel->registrarPago($cuentaId, $monto, $tipoPagoId, $bancoId, $referencia, $fecha);
-        respuestaJson('exito', 'Pago registrado exitosamente');
-    } catch (PDOException $e) {
-        error_log('Error al registrar pago CxC: ' . $e->getMessage());
-        respuestaJson('error', 'Error al registrar el pago');
-    }
+    $resultado = $cuentaCobrarModel->procesarPago($_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // FUNCIÓN: obtenerDatosPagoAjax
 // OBJETIVO: Obtiene tipos de pago y bancos para el modal de registro de pago
@@ -147,28 +114,8 @@ if ($metodo === 'index') {
     }
     
     $id = intval($_POST['id'] ?? 0);
-    if ($id < 1) {
-        respuestaJson('error', 'ID invalido');
-    }
-    
-    $cuenta = $cuentaCobrarModel->buscarPorId($id);
-    if (!$cuenta) {
-        respuestaJson('error', 'Cuenta por cobrar no encontrada');
-    }
-
-    $saldo = floatval($cuenta['saldo_pendiente'] ?? 0);
-    $situacion = strtolower($cuenta['situacion'] ?? ($cuenta['estado'] ?? ''));
-    if ($saldo > 0 || $situacion !== 'pagado') {
-        respuestaJson('error', 'No se puede eliminar una cuenta por cobrar que no esté totalmente pagada');
-    }
-    
-    try {
-        $cuentaCobrarModel->eliminarCuenta($id);
-        respuestaJson('exito', 'Cuenta eliminada correctamente');
-    } catch (PDOException $e) {
-        error_log('Error al eliminar CxC: ' . $e->getMessage());
-        respuestaJson('error', 'Error al eliminar la cuenta');
-    }
+    $resultado = $cuentaCobrarModel->darDeBaja($id);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 } else {
     require_once __DIR__ . '/../views/error404View.php';

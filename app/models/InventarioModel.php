@@ -139,6 +139,159 @@ class InventarioModel extends ModeloBase
         return $stmt->fetch();
     }
 
+    // FUNCIÓN: validarDatosInsumo
+    // OBJETIVO: Valida reglas de negocio para creación o actualización de productos
+    public function validarDatosInsumo(array $datos, ?int $idActual = null, bool $esCreacion = false): array
+    {
+        $codigo = strtoupper(trim($datos['codigo'] ?? ''));
+        $nombre = trim($datos['nombre'] ?? '');
+        $idTipoProducto = !empty($datos['id_tipo_producto']) ? intval($datos['id_tipo_producto']) : 2;
+        $unidadMedida = trim($datos['unidad_medida'] ?? '');
+        $stockActualRaw = $datos['stock_actual'] ?? '0';
+        $stockMinimoRaw = $datos['stock_minimo'] ?? '0';
+        $precioVenta = floatval($datos['precio_venta'] ?? 0);
+        $precioCompra = floatval($datos['precio_compra'] ?? 0);
+        $proveedorId = !empty($datos['id_proveedor']) ? intval($datos['id_proveedor']) : null;
+        $rubroId = !empty($datos['id_rubro']) ? intval($datos['id_rubro']) : null;
+
+        if ($idTipoProducto !== 1 && $idTipoProducto !== 2) {
+            return ['valido' => false, 'mensaje' => 'Tipo de producto no valido (solo Base o Simple)'];
+        }
+
+        if ($idTipoProducto === 1) {
+            $unidadMedida = 'Galon';
+        } else {
+            if (!in_array($unidadMedida, ['Unidad', 'KG'], true)) {
+                return ['valido' => false, 'mensaje' => 'Para productos simples la unidad de medida debe ser Unidad o KG'];
+            }
+        }
+
+        if ($esCreacion) {
+            if (!is_numeric($stockActualRaw) || floor((float)$stockActualRaw) != (float)$stockActualRaw || (float)$stockActualRaw < 0) {
+                return ['valido' => false, 'mensaje' => 'El stock actual debe ser un numero entero no negativo'];
+            }
+            $stockActual = (float)intval($stockActualRaw);
+        } else {
+            $stockActual = (float)$stockActualRaw;
+        }
+
+        if (!is_numeric($stockMinimoRaw) || floor((float)$stockMinimoRaw) != (float)$stockMinimoRaw || (float)$stockMinimoRaw < 0) {
+            return ['valido' => false, 'mensaje' => 'El stock minimo debe ser un numero entero no negativo'];
+        }
+        $stockMinimo = (float)intval($stockMinimoRaw);
+
+        if ($codigo === '') {
+            return ['valido' => false, 'mensaje' => 'El codigo es obligatorio'];
+        }
+
+        if ($nombre === '') {
+            return ['valido' => false, 'mensaje' => 'El nombre del insumo es obligatorio'];
+        }
+
+        if ($precioVenta <= 0) {
+            return ['valido' => false, 'mensaje' => 'El precio de venta debe ser un numero positivo'];
+        }
+
+        if ($this->codigoExiste($codigo, $idActual)) {
+            return ['valido' => false, 'mensaje' => ($idActual ? 'Ya existe otro insumo con ese codigo' : 'Ya existe un insumo con ese codigo')];
+        }
+
+        return [
+            'valido' => true,
+            'codigo' => $codigo,
+            'nombre' => $nombre,
+            'rubro_id' => $rubroId,
+            'unidad_medida' => $unidadMedida,
+            'stock_actual' => $stockActual,
+            'stock_minimo' => $stockMinimo,
+            'precio_venta' => $precioVenta,
+            'precio_compra' => $precioCompra,
+            'proveedor_id' => $proveedorId,
+            'id_tipo_producto' => $idTipoProducto
+        ];
+    }
+
+    // FUNCIÓN: registrar
+    // OBJETIVO: Valida y registra un nuevo insumo o reactiva uno inactivo existente
+    public function registrar(array $datos): array
+    {
+        $val = $this->validarDatosInsumo($datos, null, true);
+        if (!$val['valido']) {
+            return ['exito' => false, 'mensaje' => $val['mensaje']];
+        }
+
+        $inactivoId = $this->buscarInactivoPorCodigo($val['codigo']);
+        if ($inactivoId) {
+            if ($this->actualizarInsumo($inactivoId, $val['codigo'], $val['nombre'], $val['rubro_id'], $val['unidad_medida'], $val['stock_actual'], $val['stock_minimo'], $val['precio_venta'], $val['precio_compra'], $val['id_tipo_producto'])) {
+                $this->eliminarProveedoresDeInsumo($inactivoId);
+                if ($val['proveedor_id']) {
+                    $this->asignarProveedorAInsumo($inactivoId, $val['proveedor_id']);
+                }
+                return ['exito' => true, 'mensaje' => 'Insumo reactivado exitosamente', 'datos' => ['id_producto' => $inactivoId]];
+            }
+            return ['exito' => false, 'mensaje' => 'Error al reactivar el insumo'];
+        }
+
+        $nuevoId = $this->insertarInsumo($val['codigo'], $val['nombre'], $val['rubro_id'], $val['unidad_medida'], $val['stock_actual'], $val['stock_minimo'], $val['precio_venta'], $val['precio_compra'], $val['id_tipo_producto']);
+        if ($nuevoId) {
+            if ($val['proveedor_id']) {
+                $this->asignarProveedorAInsumo($nuevoId, $val['proveedor_id']);
+            }
+            return [
+                'exito' => true,
+                'mensaje' => 'Insumo creado exitosamente',
+                'datos' => [
+                    'id_producto' => $nuevoId,
+                    'codigo' => $val['codigo'],
+                    'nombre' => $val['nombre'],
+                    'precio_venta' => $val['precio_venta']
+                ]
+            ];
+        }
+        return ['exito' => false, 'mensaje' => 'Error al crear el insumo'];
+    }
+
+    // FUNCIÓN: modificar
+    // OBJETIVO: Valida y actualiza los datos de un insumo existente
+    public function modificar(int $id, array $datos): array
+    {
+        if ($id < 1) {
+            return ['exito' => false, 'mensaje' => 'ID de insumo no valido'];
+        }
+
+        $insumoExistente = $this->buscarPorId($id);
+        if (!$insumoExistente) {
+            return ['exito' => false, 'mensaje' => 'Insumo no encontrado'];
+        }
+
+        // El stock actual es de solo lectura y se mantiene el actual
+        $datos['stock_actual'] = (float)$insumoExistente['stock_actual'];
+
+        $val = $this->validarDatosInsumo($datos, $id, false);
+        if (!$val['valido']) {
+            return ['exito' => false, 'mensaje' => $val['mensaje']];
+        }
+
+        if ($this->actualizarInsumo($id, $val['codigo'], $val['nombre'], $val['rubro_id'], $val['unidad_medida'], $val['stock_actual'], $val['stock_minimo'], $val['precio_venta'], 0, $val['id_tipo_producto'])) {
+            return ['exito' => true, 'mensaje' => 'Insumo actualizado exitosamente'];
+        }
+        return ['exito' => false, 'mensaje' => 'Error al actualizar el insumo'];
+    }
+
+    // FUNCIÓN: darDeBaja
+    // OBJETIVO: Realiza el soft-delete seguro de un insumo
+    public function darDeBaja(int $id): array
+    {
+        if ($id < 1) {
+            return ['exito' => false, 'mensaje' => 'ID de insumo no valido'];
+        }
+
+        if ($this->eliminarInsumo($id)) {
+            return ['exito' => true, 'mensaje' => 'Insumo eliminado exitosamente'];
+        }
+        return ['exito' => false, 'mensaje' => 'Error al eliminar el insumo'];
+    }
+
     // FUNCIÓN: insertarInsumo
     // OBJETIVO: Inserta un nuevo producto en la BD con los datos proporcionados
     public function insertarInsumo(string $codigo, string $nombre, ?int $idRubro = null, string $unidadMedida = 'Unidad', float $stockActual = 0, float $stockMinimo = 5, float $precioVenta = 0, float $precioCompra = 0, int $idTipoProducto = 2): int|false
@@ -461,8 +614,34 @@ class InventarioModel extends ModeloBase
 
     // FUNCIÓN: registrarMezclaTaller
     // OBJETIVO: Crea una pintura preparada (tipo 3), guarda su fórmula en mezcla_producto y descuenta el stock de las bases utilizadas
-    public function registrarMezclaTaller(string $nombre, string $presentacion, int $cantidadEnvases, float $precioVenta, array $bases): array
+    public function registrarMezclaTaller(array $datos): array
     {
+        $nombre = trim($datos['nombre'] ?? '');
+        $presentacion = trim($datos['presentacion'] ?? '1/4 Galón');
+        $cantidadEnvases = intval($datos['cantidad'] ?? 1);
+        $precioVenta = floatval($datos['precio_venta'] ?? 0);
+        $basesRaw = $datos['bases'] ?? '[]';
+        $bases = is_array($basesRaw) ? $basesRaw : json_decode((string)$basesRaw, true);
+
+        if ($nombre === '') {
+            return ['exito' => false, 'mensaje' => 'El nombre del color o fórmula es obligatorio'];
+        }
+        if (strlen($nombre) > 40) {
+            return ['exito' => false, 'mensaje' => 'El nombre de la mezcla no puede superar los 40 caracteres'];
+        }
+        if (preg_match('/[\'"`;\\\\<>]/', $nombre)) {
+            return ['exito' => false, 'mensaje' => 'El nombre de la mezcla contiene caracteres especiales no permitidos'];
+        }
+        if ($cantidadEnvases < 1) {
+            return ['exito' => false, 'mensaje' => 'La cantidad de envases debe ser al menos 1'];
+        }
+        if ($precioVenta <= 0) {
+            return ['exito' => false, 'mensaje' => 'El precio de venta debe ser mayor a 0'];
+        }
+        if (!is_array($bases) || count($bases) === 0) {
+            return ['exito' => false, 'mensaje' => 'Debe agregar al menos un tinte base a la mezcla'];
+        }
+
         try {
             $this->conexion->beginTransaction();
 
@@ -553,8 +732,29 @@ class InventarioModel extends ModeloBase
 
     // FUNCIÓN: registrarAjusteMerma
     // OBJETIVO: Descuenta stock de un producto por motivo de daño, evaporación o merma
-    public function registrarAjusteMerma(int $idProducto, float $cantidad, string $motivo): array
+    public function registrarAjusteMerma(array $datos): array
     {
+        $idProducto = intval($datos['id_producto'] ?? 0);
+        $cantidadRaw = trim((string)($datos['cantidad'] ?? '0'));
+        $cantidad = intval($cantidadRaw);
+        $motivo = trim($datos['motivo'] ?? '');
+
+        if ($idProducto < 1) {
+            return ['exito' => false, 'mensaje' => 'Debe seleccionar un producto'];
+        }
+        if (!ctype_digit($cantidadRaw) || $cantidad < 1) {
+            return ['exito' => false, 'mensaje' => 'La cantidad a descontar debe ser un número entero mayor a 0'];
+        }
+        if ($motivo === '') {
+            return ['exito' => false, 'mensaje' => 'Debe especificar el motivo del daño o merma'];
+        }
+        if (strlen($motivo) > 250) {
+            return ['exito' => false, 'mensaje' => 'El motivo del ajuste no puede superar los 250 caracteres'];
+        }
+        if (preg_match('/[\'"`;\\\\<>]/', $motivo)) {
+            return ['exito' => false, 'mensaje' => 'El motivo contiene caracteres no permitidos'];
+        }
+
         try {
             $this->conexion->beginTransaction();
 
@@ -577,7 +777,7 @@ class InventarioModel extends ModeloBase
             }
 
             $stmtUpdate = $this->conexion->prepare("UPDATE productos SET stock_actual = stock_actual - :cantidad WHERE id_producto = :id");
-            $stmtUpdate->bindParam(':cantidad', $cantidad);
+            $stmtUpdate->bindParam(':cantidad', (float)$cantidad);
             $stmtUpdate->bindParam(':id', $idProducto, PDO::PARAM_INT);
             $stmtUpdate->execute();
 

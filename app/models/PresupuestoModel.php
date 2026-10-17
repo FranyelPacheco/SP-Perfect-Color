@@ -46,6 +46,227 @@ class PresupuestoModel extends ModeloBase
         return $this->_ejecutarSelectById();
     }
 
+    // FUNCIÓN: validarDatosPresupuesto
+    // OBJETIVO: Valida cliente, ítems, stocks y cantidades para un nuevo presupuesto
+    public function validarDatosPresupuesto(array $datos): array
+    {
+        $clienteId = intval($datos['id_cliente'] ?? 0);
+        $observaciones = trim($datos['observaciones'] ?? '');
+        $condicionPago = trim($datos['condicion_pago'] ?? 'contado');
+        $idTipoPago = !empty($datos['id_tipo_pago']) ? intval($datos['id_tipo_pago']) : null;
+        $idBanco = !empty($datos['id_banco']) ? intval($datos['id_banco']) : null;
+        $referencia = trim($datos['referencia'] ?? '');
+
+        $itemsRaw = $datos['items'] ?? '[]';
+        $items = is_array($itemsRaw) ? $itemsRaw : json_decode((string)$itemsRaw, true);
+
+        if ($clienteId < 1) {
+            return ['valido' => false, 'mensaje' => 'Debe seleccionar un cliente'];
+        }
+
+        $stmtCli = $this->conexion->prepare("SELECT id_cliente FROM clientes WHERE id_cliente = :id AND estado = 1 LIMIT 1");
+        $stmtCli->bindParam(':id', $clienteId, PDO::PARAM_INT);
+        $stmtCli->execute();
+        if (!$stmtCli->fetch()) {
+            return ['valido' => false, 'mensaje' => 'El cliente seleccionado no existe o está inactivo'];
+        }
+
+        if (empty($items) || !is_array($items)) {
+            return ['valido' => false, 'mensaje' => 'Debe agregar al menos un insumo al presupuesto'];
+        }
+
+        $stmtProd = $this->conexion->prepare("SELECT id_producto, nombre, stock_actual, precio_venta FROM productos WHERE id_producto = :id AND estado = 1 LIMIT 1");
+
+        $total = 0;
+        $detalle = [];
+
+        foreach ($items as $item) {
+            $cantidadRaw = $item['cantidad'] ?? 0;
+            $cantidad = intval($cantidadRaw);
+            $precioUnitario = floatval($item['precio_unitario'] ?? 0);
+            $subtotal = $cantidad * $precioUnitario;
+
+            if ($cantidad < 1 || floatval($cantidadRaw) != $cantidad || $precioUnitario <= 0) {
+                return ['valido' => false, 'mensaje' => 'La cantidad debe ser un número entero mayor o igual a 1 y el precio debe ser válido.'];
+            }
+
+            $esMezcla = (!empty($item['tipo']) && $item['tipo'] === 'mezcla') || !empty($item['mezclas']);
+
+            if ($esMezcla) {
+                $descripcion = trim($item['descripcion'] ?? '');
+                if ($descripcion === '') {
+                    return ['valido' => false, 'mensaje' => 'La pintura preparada debe tener una descripcion valida'];
+                }
+                $mezclas = $item['mezclas'] ?? [];
+                if (empty($mezclas) || !is_array($mezclas)) {
+                    return ['valido' => false, 'mensaje' => 'La pintura preparada debe contener al menos un tinte base'];
+                }
+                if (count($mezclas) > 6) {
+                    return ['valido' => false, 'mensaje' => 'Una formulacion no puede contener mas de 6 tintes base'];
+                }
+
+                $mezclasValidadas = [];
+                foreach ($mezclas as $m) {
+                    $idBase = intval($m['id_producto_base'] ?? $m['id_producto'] ?? 0);
+                    $fraccion = intval($m['fraccion_128'] ?? 0);
+                    $consumo = floatval($m['cantidad_consumida'] ?? 0);
+                    if ($idBase < 1 || $fraccion < 1 || $consumo <= 0) {
+                        return ['valido' => false, 'mensaje' => 'Componente de mezcla invalido'];
+                    }
+
+                    $stmtProd->bindParam(':id', $idBase, PDO::PARAM_INT);
+                    $stmtProd->execute();
+                    $baseInfo = $stmtProd->fetch();
+
+                    $stockBase = (float)($baseInfo['stock_actual'] ?? 0);
+                    $consumoTotalBase = $consumo * $cantidad;
+                    if ($consumoTotalBase > $stockBase) {
+                        return [
+                            'valido' => false,
+                            'mensaje' => 'El consumo de la base "' . ($baseInfo['nombre'] ?? '') . '" (' . round($consumoTotalBase, 2) . ' gal) supera el stock disponible (' . floor($stockBase) . ' gal).'
+                        ];
+                    }
+                    $mezclasValidadas[] = [
+                        'id_producto_base' => $idBase,
+                        'fraccion_128' => $fraccion,
+                        'cantidad_consumida' => $consumo
+                    ];
+                }
+
+                $total += $subtotal;
+                $detalle[] = [
+                    'descripcion' => $descripcion,
+                    'cantidad' => $cantidad,
+                    'precio_unitario' => $precioUnitario,
+                    'subtotal' => $subtotal,
+                    'mezclas' => $mezclasValidadas
+                ];
+            } else {
+                $insumoId = intval($item['id_insumo'] ?? $item['id_producto'] ?? 0);
+                if ($insumoId < 1) {
+                    return ['valido' => false, 'mensaje' => 'Datos invalidos en uno de los items'];
+                }
+
+                $stmtProd->bindParam(':id', $insumoId, PDO::PARAM_INT);
+                $stmtProd->execute();
+                $insumoInfo = $stmtProd->fetch();
+
+                if (!$insumoInfo) {
+                    return ['valido' => false, 'mensaje' => 'Uno de los productos seleccionados no existe en el inventario.'];
+                }
+
+                $stockDisponible = (int)floor((float)($insumoInfo['stock_actual'] ?? 0));
+                if ($cantidad > $stockDisponible) {
+                    return [
+                        'valido' => false,
+                        'mensaje' => 'La cantidad solicitada de "' . $insumoInfo['nombre'] . '" (' . $cantidad . ') supera el stock disponible (' . $stockDisponible . ').'
+                    ];
+                }
+
+                $descripcion = !empty($item['descripcion']) ? $item['descripcion'] : ($insumoInfo['nombre'] ?? 'Producto');
+                if (isset($insumoInfo['precio_venta']) && (float)$insumoInfo['precio_venta'] > 0) {
+                    $precioUnitario = (float)$insumoInfo['precio_venta'];
+                    $subtotal = $cantidad * $precioUnitario;
+                }
+
+                $total += $subtotal;
+                $detalle[] = [
+                    'id_insumo' => $insumoId,
+                    'id_producto' => $insumoId,
+                    'descripcion' => $descripcion,
+                    'cantidad' => $cantidad,
+                    'precio_unitario' => $precioUnitario,
+                    'subtotal' => $subtotal
+                ];
+            }
+        }
+
+        return [
+            'valido' => true,
+            'id_cliente' => $clienteId,
+            'total' => $total,
+            'observaciones' => $observaciones,
+            'condicion_pago' => $condicionPago,
+            'id_tipo_pago' => $idTipoPago,
+            'id_banco' => $idBanco,
+            'referencia' => $referencia,
+            'detalle' => $detalle
+        ];
+    }
+
+    // FUNCIÓN: crearPresupuesto
+    // OBJETIVO: Valida reglas de negocio y persiste el presupuesto con su detalle
+    public function crearPresupuesto(array $datos, int $idUsuario): array
+    {
+        $val = $this->validarDatosPresupuesto($datos);
+        if (!$val['valido']) {
+            return ['exito' => false, 'mensaje' => $val['mensaje']];
+        }
+
+        try {
+            $presupuestoId = $this->insertarPresupuesto(
+                $val['id_cliente'],
+                $idUsuario,
+                $val['total'],
+                $val['observaciones'],
+                $val['detalle'],
+                $val['condicion_pago'],
+                $val['id_tipo_pago'],
+                $val['id_banco'],
+                $val['referencia']
+            );
+
+            return [
+                'exito' => true,
+                'mensaje' => 'Presupuesto creado exitosamente',
+                'datos' => [
+                    'id_presupuesto' => $presupuestoId,
+                    'total' => $val['total']
+                ]
+            ];
+        } catch (\PDOException $e) {
+            return ['exito' => false, 'mensaje' => 'Error al crear el presupuesto: ' . $e->getMessage()];
+        }
+    }
+
+    // FUNCIÓN: actualizarEstado
+    // OBJETIVO: Valida y actualiza el estado de un presupuesto
+    public function actualizarEstado(int $id, string|int $estado): array
+    {
+        $estadosValidos = ['pendiente', 'presupuesto', 'aprobado', 'rechazado', 'convertido', 'anulado'];
+        if ($id < 1 || !in_array((string)$estado, $estadosValidos, true)) {
+            return ['exito' => false, 'mensaje' => 'Datos invalidos'];
+        }
+
+        if ($this->cambiarEstado($id, $estado)) {
+            $mensajes = [
+                'aprobado' => 'Presupuesto aprobado exitosamente',
+                'rechazado' => 'Presupuesto rechazado',
+                'anulado' => 'Presupuesto anulado',
+                'convertido' => 'Presupuesto convertido a nota de entrega',
+                'pendiente' => 'Presupuesto vuelto a estado pendiente',
+                'presupuesto' => 'Presupuesto vuelto a estado pendiente'
+            ];
+            return ['exito' => true, 'mensaje' => $mensajes[$estado] ?? 'Estado actualizado'];
+        }
+        return ['exito' => false, 'mensaje' => 'Error al cambiar el estado'];
+    }
+
+    // FUNCIÓN: darDeBaja
+    // OBJETIVO: Valida y realiza el soft-delete de un presupuesto
+    public function darDeBaja(int $id): array
+    {
+        if ($id < 1) {
+            return ['exito' => false, 'mensaje' => 'ID invalido'];
+        }
+        try {
+            $this->eliminarPresupuesto($id);
+            return ['exito' => true, 'mensaje' => 'Presupuesto eliminado correctamente'];
+        } catch (\PDOException $e) {
+            return ['exito' => false, 'mensaje' => 'Error al eliminar el presupuesto: ' . $e->getMessage()];
+        }
+    }
+
     // FUNCIÓN: insertarPresupuesto
     // OBJETIVO: Crea un nuevo presupuesto con su detalle en una transacción
     // NOTA: Inserta el presupuesto y todos sus items en presupuesto_detalle

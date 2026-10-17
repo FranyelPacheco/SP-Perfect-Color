@@ -96,9 +96,9 @@
                         <label for="valorTasa" class="form-label fw-semibold">Valor de la Tasa (Bs. por cada 1 $) <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text fw-bold">Bs.</span>
-                            <input type="number" id="valorTasa" name="tasa" class="form-control" step="0.0001" min="0.0001" placeholder="Ej. 45.5000" required>
+                            <input type="text" id="valorTasa" name="tasa" class="form-control" placeholder="Ej. 45.50" maxlength="9" required autocomplete="off">
                         </div>
-                        <small class="text-muted">Ingrese el valor con coma o punto decimal (precisión de 4 decimales).</small>
+                        <small class="text-muted">Ingrese solo números con hasta 2 decimales (máx. 6 dígitos enteros, ej: 45.50).</small>
                     </div>
 
                     <div id="mensajeErrorTasa" class="alert alert-danger d-none"></div>

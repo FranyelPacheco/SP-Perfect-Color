@@ -13,29 +13,40 @@
             <div class="col-md-3">
                 <label for="tipoReporte" class="form-label">Tipo de Reporte</label>
                 <select id="tipoReporte" class="form-select">
-                    <option value="ventas">Notas de Entrega</option>
+                    <option value="ventas">Ventas (Notas de Entrega)</option>
+                    <option value="compras">Compras (Recepción de Insumos)</option>
+                    <option value="ambas">Ambas (Ventas y Compras - Flujo)</option>
                     <option value="carteraCxc">Cuentas por Cobrar Pendientes</option>
                 </select>
             </div>
             <div class="col-md-3">
                 <label for="fechaDesde" class="form-label">Desde</label>
-                <input type="date" id="fechaDesde" class="form-control" value="<?php echo date("Y-m-d"); ?>">
+                <input type="date" id="fechaDesde" class="form-control" value="<?php echo date("Y-m-d"); ?>" max="<?php echo date('Y-m-d'); ?>">
             </div>
             <div class="col-md-3">
                 <label for="fechaHasta" class="form-label">Hasta</label>
-                <input type="date" id="fechaHasta" class="form-control" value="<?php echo date('Y-m-d'); ?>">
+                <input type="date" id="fechaHasta" class="form-control" value="<?php echo date('Y-m-d'); ?>" max="<?php echo date('Y-m-d'); ?>">
             </div>
             <div class="col-md-3">
                 <button id="btnGenerarReporte" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Generar Reporte</button>
             </div>
         </div>
         <div class="row g-3 align-items-end mt-2">
-            <div class="col-md-3">
+            <div class="col-md-3" id="grupoCliente">
                 <label for="filtroCliente" class="form-label">Cliente</label>
                 <select id="filtroCliente" class="form-select">
                     <option value="">Todos los clientes</option>
                     <?php foreach ($clientes as $c): ?>
                     <option value="<?php echo $c['id_cliente']; ?>"><?php echo htmlspecialchars($c['cedula'] . ' - ' . $c['nombres'] . ' ' . $c['apellidos']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-3" id="grupoProveedor" style="display:none">
+                <label for="filtroProveedor" class="form-label">Proveedor</label>
+                <select id="filtroProveedor" class="form-select">
+                    <option value="">Todos los proveedores</option>
+                    <?php foreach ($proveedores as $p): ?>
+                    <option value="<?php echo $p['id_proveedor']; ?>"><?php echo htmlspecialchars($p['rif'] . ' - ' . $p['nombre_empresa']); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -79,16 +90,28 @@
 </div>
 
 <div id="resumenReporte" class="row g-3 mb-4" style="display:none">
-    <div class="col-md-3">
+    <div class="col-md-3" id="colResumen1">
         <div class="card border-0 shadow-sm text-center p-3">
             <small class="text-muted" id="labelResumen1">Total Registros</small>
             <span id="totalRegistros" class="fs-3 fw-bold">0</span>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-3" id="colResumen2">
         <div class="card border-0 shadow-sm text-center p-3">
             <small class="text-muted" id="labelResumen2">Monto Total</small>
             <span id="montoTotal" class="fs-3 fw-bold text-primary">$ 0.00</span>
+        </div>
+    </div>
+    <div class="col-md-3" id="colResumenEgresos" style="display:none">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Total Egresos (Compras)</small>
+            <span id="montoEgresos" class="fs-3 fw-bold text-danger">$ 0.00</span>
+        </div>
+    </div>
+    <div class="col-md-3" id="colResumenBalance" style="display:none">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Balance Neto</small>
+            <span id="montoBalance" class="fs-3 fw-bold text-success">$ 0.00</span>
         </div>
     </div>
 </div>
