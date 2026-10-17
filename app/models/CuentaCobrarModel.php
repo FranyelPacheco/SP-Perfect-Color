@@ -58,6 +58,116 @@ class CuentaCobrarModel extends ModeloBase
         return $this->_ejecutarSelectPagos();
     }
 
+    // FUNCIÓN: validarDatosPago
+    // OBJETIVO: Valida reglas de negocio para el registro de un pago de cuenta por cobrar
+    public function validarDatosPago(array $datos): array
+    {
+        $cuentaId = intval($datos['cuenta_id'] ?? 0);
+        $monto = floatval($datos['monto'] ?? 0);
+        $tipoPagoId = intval($datos['id_tipo_pago'] ?? 0);
+        $bancoId = !empty($datos['id_banco']) ? intval($datos['id_banco']) : null;
+        $referencia = trim($datos['referencia'] ?? '');
+        $fecha = !empty($datos['fecha']) ? trim($datos['fecha']) : date('Y-m-d');
+
+        if ($cuentaId < 1) {
+            return ['valido' => false, 'mensaje' => 'Cuenta no valida'];
+        }
+
+        $cuenta = $this->buscarPorId($cuentaId);
+        if (!$cuenta) {
+            return ['valido' => false, 'mensaje' => 'Cuenta por cobrar no encontrada'];
+        }
+
+        if ($monto <= 0) {
+            return ['valido' => false, 'mensaje' => 'El monto debe ser mayor a cero'];
+        }
+
+        if ($monto > (float)$cuenta['saldo_pendiente']) {
+            return ['valido' => false, 'mensaje' => 'El monto del pago supera el saldo pendiente'];
+        }
+
+        if ($tipoPagoId < 1) {
+            return ['valido' => false, 'mensaje' => 'Debe seleccionar un tipo de pago'];
+        }
+
+        if ($tipoPagoId === 1) {
+            $bancoId = null;
+            if ($referencia === '') {
+                $referencia = 'Efectivo';
+            }
+        } elseif ($tipoPagoId === 2 || $tipoPagoId === 3) {
+            if (empty($bancoId) || $bancoId < 1) {
+                return ['valido' => false, 'mensaje' => 'Debe seleccionar un banco para transferencia o pago movil'];
+            }
+            if ($referencia === '') {
+                return ['valido' => false, 'mensaje' => 'Debe ingresar el numero de referencia para transferencia o pago movil'];
+            }
+        }
+
+        return [
+            'valido' => true,
+            'cuenta_id' => $cuentaId,
+            'monto' => $monto,
+            'tipo_pago_id' => $tipoPagoId,
+            'banco_id' => $bancoId,
+            'referencia' => $referencia,
+            'fecha' => $fecha
+        ];
+    }
+
+    // FUNCIÓN: procesarPago
+    // OBJETIVO: Valida y aplica el pago recibido a la cuenta por cobrar
+    public function procesarPago(array $datos): array
+    {
+        $val = $this->validarDatosPago($datos);
+        if (!$val['valido']) {
+            return ['exito' => false, 'mensaje' => $val['mensaje']];
+        }
+
+        try {
+            $this->registrarPago(
+                $val['cuenta_id'],
+                $val['monto'],
+                $val['tipo_pago_id'],
+                $val['banco_id'],
+                $val['referencia'],
+                $val['fecha']
+            );
+            return ['exito' => true, 'mensaje' => 'Pago registrado exitosamente'];
+        } catch (\PDOException $e) {
+            error_log('Error al registrar pago CxC: ' . $e->getMessage());
+            return ['exito' => false, 'mensaje' => 'Error al registrar el pago: ' . $e->getMessage()];
+        }
+    }
+
+    // FUNCIÓN: darDeBaja
+    // OBJETIVO: Valida que la cuenta esté saldada antes de realizar soft-delete
+    public function darDeBaja(int $id): array
+    {
+        if ($id < 1) {
+            return ['exito' => false, 'mensaje' => 'ID invalido'];
+        }
+
+        $cuenta = $this->buscarPorId($id);
+        if (!$cuenta) {
+            return ['exito' => false, 'mensaje' => 'Cuenta por cobrar no encontrada'];
+        }
+
+        $saldo = floatval($cuenta['saldo_pendiente'] ?? 0);
+        $situacion = strtolower($cuenta['situacion'] ?? ($cuenta['estado'] ?? ''));
+        if ($saldo > 0 || $situacion !== 'pagado') {
+            return ['exito' => false, 'mensaje' => 'No se puede eliminar una cuenta por cobrar que no esté totalmente pagada'];
+        }
+
+        try {
+            $this->eliminarCuenta($id);
+            return ['exito' => true, 'mensaje' => 'Cuenta eliminada correctamente'];
+        } catch (\PDOException $e) {
+            error_log('Error al eliminar CxC: ' . $e->getMessage());
+            return ['exito' => false, 'mensaje' => 'Error al eliminar la cuenta'];
+        }
+    }
+
     // FUNCIÓN: registrarPago
     // OBJETIVO: Registra un pago parcial o total y actualiza el saldo/estado de la cuenta
     // NOTA: Transacción que valida que el monto no supere el saldo pendiente

@@ -47,7 +47,7 @@
                             <label for="nuevaClave" class="form-label fw-semibold">Nueva Contraseña</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                                <input type="password" id="nuevaClave" name="nueva_clave" class="form-control" required minlength="6" placeholder="Mínimo 6 caracteres">
+                                <input type="password" id="nuevaClave" name="nueva_clave" class="form-control" required minlength="6" maxlength="20" placeholder="Mínimo 6 caracteres, máx. 20">
                                 <button type="button" class="input-group-text btn-toggle-pass" data-target="nuevaClave"><i class="bi bi-eye-slash-fill"></i></button>
                             </div>
                         </div>
@@ -56,7 +56,7 @@
                             <label for="confirmarClave" class="form-label fw-semibold">Confirmar Contraseña</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-lock-check-fill"></i></span>
-                                <input type="password" id="confirmarClave" name="confirmar_clave" class="form-control" required minlength="6" placeholder="Repita la contraseña">
+                                <input type="password" id="confirmarClave" name="confirmar_clave" class="form-control" required minlength="6" maxlength="20" placeholder="Repita la contraseña">
                                 <button type="button" class="input-group-text btn-toggle-pass" data-target="confirmarClave"><i class="bi bi-eye-slash-fill"></i></button>
                             </div>
                         </div>

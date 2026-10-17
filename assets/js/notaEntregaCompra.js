@@ -281,7 +281,47 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         if (montoInicialInput) {
-            montoInicialInput.addEventListener('input', actualizarCalculoAbonoInicial);
+            montoInicialInput.addEventListener('keydown', function(e) {
+                if (['e', 'E', '+', '-'].includes(e.key)) {
+                    e.preventDefault();
+                }
+            });
+            montoInicialInput.addEventListener('input', function() {
+                var val = this.value.replace(/,/g, '.');
+                val = val.replace(/[^0-9.]/g, '');
+                var puntos = val.split('.');
+                if (puntos.length > 2) {
+                    val = puntos[0] + '.' + puntos.slice(1).join('');
+                }
+                var partes = val.split('.');
+                if (partes[0].length > 7) {
+                    partes[0] = partes[0].substring(0, 7);
+                }
+                if (partes.length > 1 && partes[1].length > 2) {
+                    partes[1] = partes[1].substring(0, 2);
+                }
+                this.value = partes.length > 1 ? partes[0] + '.' + partes[1] : partes[0];
+                actualizarCalculoAbonoInicial();
+            });
+        }
+
+        var observacionesCompra = document.getElementById('observaciones');
+        var contadorObsCompra = document.getElementById('contadorObservacionesCompra');
+        if (observacionesCompra) {
+            observacionesCompra.addEventListener('input', function() {
+                this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.\,\-\:\;\#\/]/g, '');
+                if (this.value.length > 250) {
+                    this.value = this.value.substring(0, 250);
+                }
+                var palabras = this.value.trim().split(/\s+/).filter(Boolean);
+                if (palabras.length > 50) {
+                    this.value = palabras.slice(0, 50).join(' ');
+                }
+                if (contadorObsCompra) {
+                    var countP = this.value.trim().split(/\s+/).filter(Boolean).length;
+                    contadorObsCompra.textContent = this.value.length + ' / 250 caracteres (' + countP + ' / 50 palabras)';
+                }
+            });
         }
 
         // Búsqueda integrada de productos con diseño limpio .buscador-dropdown-item

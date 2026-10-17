@@ -177,9 +177,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function limpiarEstadoRif() {
         if (rifProveedor) {
             rifProveedor.classList.remove('is-invalid', 'is-valid');
+            rifProveedor.removeAttribute('title');
         }
         if (feedbackRifProveedor) {
             feedbackRifProveedor.classList.add('d-none');
+            feedbackRifProveedor.removeAttribute('title');
         }
         if (btnGuardarProveedor) {
             btnGuardarProveedor.disabled = false;
@@ -207,16 +209,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (res.datos.existe) {
                         rifProveedor.classList.add('is-invalid');
                         rifProveedor.classList.remove('is-valid');
+                        rifProveedor.setAttribute('title', 'Proveedor ya registrado');
                         if (feedbackRifProveedor) {
-                            feedbackRifProveedor.textContent = 'El proveedor con RIF ' + rifCompleto + ' ya existe en el sistema';
+                            feedbackRifProveedor.textContent = 'Proveedor ya registrado';
+                            feedbackRifProveedor.setAttribute('title', 'Proveedor ya registrado');
                             feedbackRifProveedor.classList.remove('d-none');
                         }
                         if (btnGuardarProveedor) btnGuardarProveedor.disabled = true;
                     } else {
                         rifProveedor.classList.remove('is-invalid');
                         rifProveedor.classList.add('is-valid');
+                        rifProveedor.removeAttribute('title');
                         if (feedbackRifProveedor) {
                             feedbackRifProveedor.classList.add('d-none');
+                            feedbackRifProveedor.removeAttribute('title');
                         }
                         if (btnGuardarProveedor) btnGuardarProveedor.disabled = false;
                     }
@@ -418,8 +424,20 @@ document.addEventListener('DOMContentLoaded', function() {
             rifCompletoProveedor.value = rifFinal;
         }
 
-        if (!nombreEmpresaProveedor.value.trim()) {
+        const nombreEmpresaVal = nombreEmpresaProveedor.value.trim();
+        if (!nombreEmpresaVal) {
             mostrarError('El nombre de la empresa es obligatorio');
+            nombreEmpresaProveedor.focus();
+            return;
+        }
+        if (nombreEmpresaVal.length < 3 || nombreEmpresaVal.length > 60) {
+            mostrarError('El nombre de la empresa debe tener entre 3 y 60 caracteres');
+            nombreEmpresaProveedor.focus();
+            return;
+        }
+        const regexEmpresa = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-&]+$/;
+        if (!regexEmpresa.test(nombreEmpresaVal)) {
+            mostrarError('El nombre de la empresa contiene caracteres no permitidos (solo letras, números y signos . , - &)');
             nombreEmpresaProveedor.focus();
             return;
         }
@@ -439,24 +457,40 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Armar telefono 1 (obligatorio)
         const telNum = telefonoNumeroProveedor ? telefonoNumeroProveedor.value.trim() : '';
         const op = operadoraProveedor ? operadoraProveedor.value : '';
-        if (telNum && telNum.length !== 7) {
-            mostrarError('El numero de telefono debe tener exactamente 7 digitos');
+        if (!telNum) {
+            mostrarError('El teléfono principal es obligatorio');
             telefonoNumeroProveedor.focus();
             return;
         }
+        if (telNum.length !== 7) {
+            mostrarError('El número de teléfono debe tener exactamente 7 dígitos');
+            telefonoNumeroProveedor.focus();
+            return;
+        }
+        const tel1Completo = op + telNum;
         if (telefonoProveedor) {
-            telefonoProveedor.value = telNum ? (op + telNum) : '';
+            telefonoProveedor.value = tel1Completo;
         }
 
         // Telefono 2
         const telNum2 = telefonoNumeroProveedor2 ? telefonoNumeroProveedor2.value.trim() : '';
         const op2 = operadoraProveedor2 ? operadoraProveedor2.value : '';
-        if (telNum2 && telNum2.length !== 7) {
-            mostrarError('El segundo numero de telefono debe tener exactamente 7 digitos');
-            telefonoNumeroProveedor2.focus();
-            return;
+        let tel2Completo = '';
+        if (telNum2) {
+            if (telNum2.length !== 7) {
+                mostrarError('El segundo número de teléfono debe tener exactamente 7 dígitos');
+                telefonoNumeroProveedor2.focus();
+                return;
+            }
+            tel2Completo = op2 + telNum2;
+            if (tel1Completo === tel2Completo) {
+                mostrarError('El segundo teléfono no puede ser igual al teléfono principal');
+                telefonoNumeroProveedor2.focus();
+                return;
+            }
         }
 
         const selectsRubros = rubrosContainer.querySelectorAll('select[name="rubros[]"]');
@@ -473,11 +507,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const url = esEdicion ? '/SP%20Perfect%20Color/proveedor/actualizar' : '/SP%20Perfect%20Color/proveedor/guardar';
         const formData = new FormData(formularioProveedor);
         formData.set('rif', rifFinal);
-        if (telNum) {
-            formData.set('telefono', op + telNum);
-        }
-        if (telNum2) {
-            formData.set('telefono2', op2 + telNum2);
+        formData.set('telefono', tel1Completo);
+        if (tel2Completo) {
+            formData.set('telefono2', tel2Completo);
+        } else {
+            formData.delete('telefono2');
         }
 
         if (esEdicion) {

@@ -202,7 +202,11 @@ document.addEventListener('DOMContentLoaded', function () {
         var contRol = document.getElementById('contenedorRol');
         if (contRol) contRol.style.display = 'block';
         var contEst = document.getElementById('contenedorEstado');
-        if (contEst) contEst.style.display = 'block';
+        if (contEst) {
+            contEst.style.display = 'none'; // No permitir crearlo inactivo
+            var selectEstado = document.getElementById('estadoUsuario');
+            if (selectEstado) selectEstado.value = '1';
+        }
 
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalUsuario')).show();
     }
@@ -272,7 +276,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!esEdicion) {
             var clave = document.getElementById('claveUsuario').value.trim();
             if (!clave) { mostrarErrorUsuario('La contraseña es obligatoria'); return; }
-            if (clave.length < 6) { mostrarErrorUsuario('La clave debe tener al menos 6 caracteres'); return; }
+            if (clave.length < 6 || clave.length > 20) { mostrarErrorUsuario('La clave debe tener entre 6 y 20 caracteres'); return; }
+            if (/['"`;\\<>]|--|\/\*|\*\//.test(clave)) {
+                mostrarErrorUsuario('La contraseña contiene caracteres no permitidos (sin comillas ni signos <, >, ;)');
+                return;
+            }
         }
 
         var formData = new FormData(document.getElementById('formularioUsuario'));
@@ -282,8 +290,12 @@ document.addEventListener('DOMContentLoaded', function () {
             var cambiarClave = chk && chk.checked;
             if (cambiarClave) {
                 var nuevaClave = document.getElementById('nuevaClaveUsuario').value.trim();
-                if (!nuevaClave || nuevaClave.length < 6) {
-                    mostrarErrorUsuario('La nueva clave debe tener al menos 6 caracteres');
+                if (!nuevaClave || nuevaClave.length < 6 || nuevaClave.length > 20) {
+                    mostrarErrorUsuario('La nueva clave debe tener entre 6 y 20 caracteres');
+                    return;
+                }
+                if (/['"`;\\<>]|--|\/\*|\*\//.test(nuevaClave)) {
+                    mostrarErrorUsuario('La nueva contraseña contiene caracteres no permitidos');
                     return;
                 }
                 formData.set('cambiar_clave', '1');

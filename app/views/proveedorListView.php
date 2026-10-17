@@ -50,7 +50,7 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label">RIF / Documento <span class="text-danger">*</span></label>
-                            <div class="input-group">
+                            <div class="input-group has-validation">
                                 <select id="tipoRifProveedor" name="tipo_rif" class="form-select" style="max-width: 85px;">
                                     <option value="J" selected>J</option>
                                     <option value="V">V</option>
@@ -58,13 +58,13 @@
                                     <option value="G">G</option>
                                 </select>
                                 <input type="text" id="rifProveedor" name="rif_num" class="form-control" required placeholder="1-9 dígitos" maxlength="9">
+                                <div id="feedbackRifProveedor" class="invalid-feedback"><i class="bi bi-exclamation-circle-fill me-1"></i>Proveedor ya registrado</div>
                             </div>
                             <input type="hidden" id="rifCompletoProveedor" name="rif" value="">
-                            <div id="feedbackRifProveedor" class="invalid-feedback d-none">Este RIF ya existe en el sistema</div>
                         </div>
                         <div class="col-md-6">
                             <label for="nombreEmpresaProveedor" class="form-label">Nombre de la Empresa <span class="text-danger">*</span></label>
-                            <input type="text" id="nombreEmpresaProveedor" name="nombre_empresa" class="form-control" required placeholder="Ingrese el nombre de la empresa">
+                            <input type="text" id="nombreEmpresaProveedor" name="nombre_empresa" class="form-control" required maxlength="60" placeholder="Ingrese el nombre de la empresa" pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-&]+$" title="Solo letras, números y signos . , - & (máx. 60 caracteres)">
                         </div>
                     </div>
 
@@ -94,7 +94,7 @@
                                 <option value="0426">0426</option>
                                 <option value="0251">0251</option>
                             </select>
-                            <input type="text" id="telefonoNumeroProveedor" name="telefono_num" class="form-control" placeholder="7 dígitos" maxlength="7" pattern="[0-9]{7}">
+                            <input type="text" id="telefonoNumeroProveedor" name="telefono_num" class="form-control" required placeholder="7 dígitos" maxlength="7" pattern="[0-9]{7}">
                         </div>
                         <input type="hidden" id="telefonoProveedor" name="telefono" value="">
                     </div>

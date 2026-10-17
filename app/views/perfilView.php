@@ -89,7 +89,7 @@
                     <div class="mb-3">
                         <label for="claveActual" class="form-label fw-semibold">Contraseña Actual</label>
                         <div class="input-group">
-                            <input type="password" class="form-control" id="claveActual" name="clave_actual" placeholder="Ingrese su contraseña actual" required>
+                            <input type="password" class="form-control" id="claveActual" name="clave_actual" maxlength="20" placeholder="Ingrese su contraseña actual" required>
                             <button type="button" class="input-group-text btn-toggle-pass" data-target="claveActual"><i class="bi bi-eye-slash"></i></button>
                         </div>
                     </div>
@@ -98,14 +98,14 @@
                         <div class="col-md-6">
                             <label for="nuevaClave" class="form-label fw-semibold">Nueva Contraseña</label>
                             <div class="input-group">
-                                <input type="password" class="form-control" id="nuevaClave" name="nueva_clave" placeholder="Mínimo 6 caracteres" minlength="6" required>
+                                <input type="password" class="form-control" id="nuevaClave" name="nueva_clave" maxlength="20" placeholder="Mínimo 6 caracteres, máx. 20" minlength="6" required>
                                 <button type="button" class="input-group-text btn-toggle-pass" data-target="nuevaClave"><i class="bi bi-eye-slash"></i></button>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <label for="confirmarClave" class="form-label fw-semibold">Confirmar Nueva Contraseña</label>
                             <div class="input-group">
-                                <input type="password" class="form-control" id="confirmarClave" name="confirmar_clave" placeholder="Repita la nueva contraseña" minlength="6" required>
+                                <input type="password" class="form-control" id="confirmarClave" name="confirmar_clave" maxlength="20" placeholder="Repita la nueva contraseña" minlength="6" required>
                                 <button type="button" class="input-group-text btn-toggle-pass" data-target="confirmarClave"><i class="bi bi-eye-slash"></i></button>
                             </div>
                         </div>

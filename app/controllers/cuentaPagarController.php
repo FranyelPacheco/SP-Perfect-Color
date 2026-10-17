@@ -92,41 +92,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
     
-    $cuentaId = intval($_POST['cuenta_id'] ?? 0);
-    $monto = floatval($_POST['monto'] ?? 0);
-    $tipoPagoId = intval($_POST['id_tipo_pago'] ?? 0);
-    $bancoId = !empty($_POST['id_banco']) ? intval($_POST['id_banco']) : null;
-    $referencia = trim($_POST['referencia'] ?? '');
-    $fecha = $_POST['fecha'] ?? date('Y-m-d');
-    
-    if ($cuentaId < 1) {
-        respuestaJson('error', 'Cuenta no valida');
-    }
-    
-    if ($monto <= 0) {
-        respuestaJson('error', 'El monto debe ser mayor a cero');
-    }
-    
-    if ($tipoPagoId < 1) {
-        respuestaJson('error', 'Debe seleccionar un tipo de pago');
-    }
-    
-    if ($tipoPagoId === 2 || $tipoPagoId === 3) {
-        if (empty($bancoId) || $bancoId < 1) {
-            respuestaJson('error', 'Debe seleccionar un banco para transferencia o pago movil');
-        }
-        if (empty($referencia)) {
-            respuestaJson('error', 'Debe ingresar el numero de referencia para transferencia o pago movil');
-        }
-    }
-    
-    try {
-        $cuentaPagarModel->registrarPago($cuentaId, $monto, $tipoPagoId, $bancoId, $referencia, $fecha);
-        respuestaJson('exito', 'Pago registrado exitosamente');
-    } catch (PDOException $e) {
-        error_log('Error al registrar pago CxP: ' . $e->getMessage());
-        respuestaJson('error', 'Error al registrar el pago');
-    }
+    $resultado = $cuentaPagarModel->procesarPago($_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // FUNCIÓN: obtenerDatosPagoAjax
 // OBJETIVO: Obtiene tipos de pago y bancos para el modal de registro de pago
@@ -161,31 +128,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
     
-    $proveedorId = intval($_POST['id_proveedor'] ?? 0);
-    $montoTotal = floatval($_POST['monto_total'] ?? 0);
-    $fechaVencimiento = $_POST['fecha_vencimiento'] ?? '';
-    
-    if ($proveedorId < 1) {
-        respuestaJson('error', 'Debe seleccionar un proveedor');
-    }
-    
-    if ($montoTotal <= 0) {
-        respuestaJson('error', 'El monto total debe ser mayor a cero');
-    }
-    
-    if (empty($fechaVencimiento)) {
-        respuestaJson('error', 'Debe indicar una fecha de vencimiento');
-    }
-    
-    try {
-        $cuentaId = $cuentaPagarModel->crearCuenta($proveedorId, $montoTotal, $fechaVencimiento);
-        respuestaJson('exito', 'Cuenta por pagar creada exitosamente', [
-            'cuenta_id' => $cuentaId
-        ]);
-    } catch (PDOException $e) {
-        error_log('Error al crear CxP manual: ' . $e->getMessage());
-        respuestaJson('error', 'Error al crear la cuenta');
-    }
+    $resultado = $cuentaPagarModel->registrarCuentaManual($_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje'], $resultado['datos'] ?? null);
 
 // FUNCIÓN: eliminar
 // OBJETIVO: Eliminación lógica de una cuenta por pagar (soft-delete)
@@ -197,28 +141,8 @@ if ($metodo === 'index') {
     }
     
     $id = intval($_POST['id'] ?? 0);
-    if ($id < 1) {
-        respuestaJson('error', 'ID invalido');
-    }
-    
-    $cuenta = $cuentaPagarModel->buscarPorId($id);
-    if (!$cuenta) {
-        respuestaJson('error', 'Cuenta por pagar no encontrada');
-    }
-
-    $saldo = floatval($cuenta['saldo_pendiente'] ?? 0);
-    $situacion = strtolower($cuenta['situacion'] ?? ($cuenta['estado'] ?? ''));
-    if ($saldo > 0 || $situacion !== 'pagado') {
-        respuestaJson('error', 'No se puede eliminar una cuenta por pagar que no esté totalmente pagada');
-    }
-    
-    try {
-        $cuentaPagarModel->eliminarCuenta($id);
-        respuestaJson('exito', 'Cuenta eliminada correctamente');
-    } catch (PDOException $e) {
-        error_log('Error al eliminar CxP: ' . $e->getMessage());
-        respuestaJson('error', 'Error al eliminar la cuenta');
-    }
+    $resultado = $cuentaPagarModel->darDeBaja($id);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 } else {
     require_once __DIR__ . '/../views/error404View.php';

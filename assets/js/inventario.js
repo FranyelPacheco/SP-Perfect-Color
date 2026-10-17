@@ -545,6 +545,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const mezclaSubtotalEstimado = document.getElementById('mezclaSubtotalEstimado');
     const mensajeErrorMezcla = document.getElementById('mensajeErrorMezcla');
 
+    if (mezclaNombre) {
+        mezclaNombre.addEventListener('input', function() {
+            this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\-\/\#\.]/g, '');
+            if (this.value.length > 40) {
+                this.value = this.value.substring(0, 40);
+            }
+        });
+    }
+
     async function cargarBasesParaMezcla() {
         try {
             const resp = await fetch('/SP%20Perfect%20Color/inventario/listarBasesAjax');
@@ -782,6 +791,16 @@ document.addEventListener('DOMContentLoaded', function() {
             mensajeErrorMezcla.classList.add('d-none');
 
             const nombre = mezclaNombre.value.trim();
+            if (!nombre) {
+                mensajeErrorMezcla.textContent = 'El nombre o identificación del color es obligatorio.';
+                mensajeErrorMezcla.classList.remove('d-none');
+                return;
+            }
+            if (nombre.length > 40) {
+                mensajeErrorMezcla.textContent = 'El nombre de la mezcla no puede superar los 40 caracteres.';
+                mensajeErrorMezcla.classList.remove('d-none');
+                return;
+            }
             const presentacion = mezclaPresentacion.value;
             const capacidadObjetivo = parseFloat(mezclaPresentacion?.selectedOptions[0]?.dataset?.factor || 1.0);
             const cantidad = parseInt(mezclaCantidad.value) || 1;
@@ -979,6 +998,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    const contadorAjuste = document.getElementById('contadorAjusteObservacion');
+    if (ajusteObservacion) {
+        ajusteObservacion.addEventListener('input', function() {
+            // Permitir solo texto alfanumérico, espacios y puntuación estándar
+            this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.\,\-\:\;]/g, '');
+            if (this.value.length > 200) {
+                this.value = this.value.substring(0, 200);
+            }
+            const palabras = this.value.trim().split(/\s+/).filter(Boolean);
+            if (palabras.length > 40) {
+                this.value = palabras.slice(0, 40).join(' ');
+            }
+            if (contadorAjuste) {
+                const countPalabras = this.value.trim().split(/\s+/).filter(Boolean).length;
+                contadorAjuste.textContent = this.value.length + ' / 200 caracteres (' + countPalabras + ' / 40 palabras)';
+            }
+        });
+    }
+
     if (btnAjusteMerma) {
         btnAjusteMerma.addEventListener('click', function() {
             if (formAjusteMerma) formAjusteMerma.reset();
@@ -991,6 +1029,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (btnLimpiarAjusteProducto) btnLimpiarAjusteProducto.classList.add('d-none');
             if (listaSugerenciasAjusteProducto) listaSugerenciasAjusteProducto.classList.remove('show');
+            if (contadorAjuste) contadorAjuste.textContent = '0 / 200 caracteres (máx. 40 palabras)';
 
             if (modalAjusteMerma) {
                 bootstrap.Modal.getOrCreateInstance(modalAjusteMerma).show();
@@ -1008,6 +1047,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const cant = Number(cantRaw);
             const motivoSel = ajusteMotivo.value;
             const obs = ajusteObservacion.value.trim();
+
+            const palabrasObs = obs.split(/\s+/).filter(Boolean).length;
+            if (obs.length > 200 || palabrasObs > 40) {
+                mensajeErrorAjuste.textContent = 'La observación no puede superar los 200 caracteres ni 40 palabras.';
+                mensajeErrorAjuste.classList.remove('d-none');
+                return;
+            }
+
             const motivoFinal = motivoSel + (obs ? ': ' + obs : '');
 
             if (!idProd) {

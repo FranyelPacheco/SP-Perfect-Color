@@ -29,8 +29,7 @@ if ($metodo === 'index') {
     ]);
 
 // FUNCIÓN: guardar
-// OBJETIVO: Crea un tipo de pago nuevo o reactiva uno inactivo con el mismo nombre
-// NOTA: Verifica existencia de tipo inactivo antes de insertar
+// OBJETIVO: Crea un tipo de pago nuevo o reactiva uno inactivo delegando al modelo
 } elseif ($metodo === 'guardar') {
     verificarRolAdmin();
 
@@ -38,25 +37,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
 
-    $nombre = trim($_POST['nombre'] ?? '');
-    if (empty($nombre)) {
-        respuestaJson('error', 'El nombre del tipo de pago es obligatorio');
-    }
-
-    $inactivoId = $tipoPagoModel->buscarInactivoPorNombre($nombre);
-    if ($inactivoId) {
-        if ($tipoPagoModel->actualizar($inactivoId, $nombre, 1)) {
-            respuestaJson('exito', 'Tipo de pago reactivado exitosamente');
-        } else {
-            respuestaJson('error', 'Error al reactivar el tipo de pago');
-        }
-    }
-
-    if ($tipoPagoModel->insertar($nombre)) {
-        respuestaJson('exito', 'Tipo de pago creado exitosamente');
-    } else {
-        respuestaJson('error', 'Error al crear el tipo de pago');
-    }
+    $resultado = $tipoPagoModel->registrar($_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // FUNCIÓN: obtener
 // OBJETIVO: Devuelve los datos de un tipo de pago por ID en formato JSON
@@ -74,7 +56,7 @@ if ($metodo === 'index') {
     }
 
 // FUNCIÓN: actualizar
-// OBJETIVO: Actualiza los datos de un tipo de pago existente
+// OBJETIVO: Actualiza los datos de un tipo de pago existente delegando al modelo
 } elseif ($metodo === 'actualizar') {
     verificarRolAdmin();
 
@@ -83,20 +65,11 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id'] ?? 0);
-    $nombre = trim($_POST['nombre'] ?? '');
-    $activo = intval($_POST['activo'] ?? 1);
-
-    if ($id < 1) respuestaJson('error', 'ID de tipo de pago no valido');
-    if (empty($nombre)) respuestaJson('error', 'El nombre del tipo de pago es obligatorio');
-
-    if ($tipoPagoModel->actualizar($id, $nombre, $activo)) {
-        respuestaJson('exito', 'Tipo de pago actualizado exitosamente');
-    } else {
-        respuestaJson('error', 'Error al actualizar el tipo de pago');
-    }
+    $resultado = $tipoPagoModel->modificar($id, $_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // FUNCIÓN: eliminar
-// OBJETIVO: Elimina (soft-delete) un tipo de pago por ID
+// OBJETIVO: Elimina (soft-delete) un tipo de pago por ID delegando al modelo
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
 
@@ -105,13 +78,8 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id'] ?? 0);
-    if ($id < 1) respuestaJson('error', 'ID de tipo de pago no valido');
-
-    if ($tipoPagoModel->eliminar($id)) {
-        respuestaJson('exito', 'Tipo de pago eliminado exitosamente');
-    } else {
-        respuestaJson('error', 'Error al eliminar el tipo de pago');
-    }
+    $resultado = $tipoPagoModel->darDeBaja($id);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // FUNCIÓN: toggleActivo
 // OBJETIVO: Alterna el estado activo/inactivo de un tipo de pago
@@ -123,13 +91,8 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id'] ?? 0);
-    if ($id < 1) respuestaJson('error', 'ID de tipo de pago no valido');
-
-    if ($tipoPagoModel->toggleActivo($id)) {
-        respuestaJson('exito', 'Estado cambiado exitosamente');
-    } else {
-        respuestaJson('error', 'Error al cambiar el estado');
-    }
+    $resultado = $tipoPagoModel->cambiarEstado($id);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // FUNCIÓN: 404
 // OBJETIVO: Muestra página de error 404 para método desconocido

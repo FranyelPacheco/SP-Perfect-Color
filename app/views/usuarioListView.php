@@ -115,7 +115,7 @@
 
                     <div id="grupoClave" class="mb-3">
                         <label for="claveUsuario" class="form-label fw-semibold">Contraseña</label>
-                        <input type="password" id="claveUsuario" name="clave" class="form-control" placeholder="Mínimo 6 caracteres">
+                        <input type="password" id="claveUsuario" name="clave" class="form-control" maxlength="20" placeholder="Mínimo 6 caracteres, máx. 20">
                     </div>
 
                     <div id="grupoCambiarClave" class="mb-3" style="display:none">
@@ -125,7 +125,7 @@
                         </div>
                         <div id="grupoNuevaClave" class="mt-2" style="display:none">
                             <label for="nuevaClaveUsuario" class="form-label small text-muted">Nueva Contraseña</label>
-                            <input type="password" id="nuevaClaveUsuario" name="nueva_clave" class="form-control" placeholder="Mínimo 6 caracteres">
+                            <input type="password" id="nuevaClaveUsuario" name="nueva_clave" class="form-control" maxlength="20" placeholder="Mínimo 6 caracteres, máx. 20">
                         </div>
                     </div>
 

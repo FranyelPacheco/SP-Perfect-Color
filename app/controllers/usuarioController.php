@@ -16,6 +16,7 @@ use function App\Helpers\{
     verificarPermiso,
     validarRequerido,
     validarCorreo,
+    validarClave,
     verificarPropietario,
     enviarCredencialesUsuario
 };
@@ -78,42 +79,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
 
-    $nombre = trim($_POST['nombre'] ?? '');
-    $correo = trim($_POST['correo'] ?? '');
-    $clave = $_POST['clave'] ?? '';
-    $id_rol = intval($_POST['id_rol'] ?? 0);
-
-    if (!validarRequerido($nombre)) respuestaJson('error', 'El nombre es obligatorio');
-    if (!validarCorreo($correo)) respuestaJson('error', 'El correo electronico no es valido');
-    if (!validarRequerido($clave) || strlen($clave) < 6) respuestaJson('error', 'La clave debe tener al menos 6 caracteres');
-    if ($id_rol < 1) respuestaJson('error', 'Debe seleccionar un rol');
-
-    // Verificar que el rol seleccionado esté activo
-    $rolSeleccionado = $rolModel->buscarPorId($id_rol);
-    if (!$rolSeleccionado || (int)$rolSeleccionado['activo'] !== 1) {
-        respuestaJson('error', 'El rol seleccionado no está activo');
-    }
-
-    if ($usuarioModel->correoExiste($correo)) respuestaJson('error', 'El correo electronico ya esta registrado');
-
-    $passwordHash = password_hash($clave, PASSWORD_DEFAULT);
-
-    $inactivoId = $usuarioModel->buscarInactivoPorCorreo($correo);
-    if ($inactivoId) {
-        if ($usuarioModel->actualizarUsuario($inactivoId, $nombre, $correo, $id_rol, 1)) {
-            $usuarioModel->actualizarClave($inactivoId, $passwordHash);
-            respuestaJson('exito', 'Usuario reactivado exitosamente');
-        } else {
-            respuestaJson('error', 'Error al reactivar el usuario');
-        }
-    }
-
-    if ($usuarioModel->insertarUsuario($nombre, $correo, $passwordHash, $id_rol, 1)) {
-        enviarCredencialesUsuario($correo, $nombre, $clave);
-        respuestaJson('exito', 'Usuario creado exitosamente');
-    } else {
-        respuestaJson('error', 'Error al crear el usuario');
-    }
+    $resultado = $usuarioModel->registrar($_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // FUNCIÓN: obtener
 // OBJETIVO: Obtiene un usuario por ID (oculta password_hash) para edición
@@ -146,53 +113,21 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id'] ?? 0);
-    $nombre = trim($_POST['nombre'] ?? '');
-    $correo = trim($_POST['correo'] ?? '');
-
     if ($id < 1) respuestaJson('error', 'ID de usuario no valido');
-    if (!validarRequerido($nombre)) respuestaJson('error', 'El nombre es obligatorio');
-    if (!validarCorreo($correo)) respuestaJson('error', 'El correo electronico no es valido');
 
     if (!tienePermiso('usuario')) {
         verificarPropietario($id);
-        $usuarioActual = $usuarioModel->buscarPorId($id);
-        $id_rol = (int)$usuarioActual['id_rol'];
-        $activo = (int)$usuarioActual['activo'];
-    } else {
-        $id_rol = intval($_POST['id_rol'] ?? 0);
-        $activo = intval($_POST['activo'] ?? 1);
-        if ($id_rol < 1) respuestaJson('error', 'Debe seleccionar un rol');
-
-        // Verificar que el rol seleccionado esté activo
-        $rolSeleccionado = $rolModel->buscarPorId($id_rol);
-        if (!$rolSeleccionado || (int)$rolSeleccionado['activo'] !== 1) {
-            respuestaJson('error', 'El rol seleccionado no está activo');
-        }
     }
 
-    if ($usuarioModel->correoExiste($correo, $id)) {
-        respuestaJson('error', 'El correo electronico ya esta registrado en otro usuario');
-    }
-
-    if ($usuarioModel->actualizarUsuario($id, $nombre, $correo, $id_rol, $activo)) {
+    $resultado = $usuarioModel->modificar($id, $_POST, tienePermiso('usuario'));
+    if ($resultado['exito']) {
         if ($id == $_SESSION['id_usuario']) {
-            $_SESSION['usuario_nombre'] = $nombre;
-            $_SESSION['usuario_correo'] = $correo;
+            $_SESSION['usuario_nombre'] = trim($_POST['nombre'] ?? $_SESSION['usuario_nombre']);
+            $_SESSION['usuario_correo'] = trim($_POST['correo'] ?? $_SESSION['usuario_correo']);
         }
-
-        $cambiarClave = isset($_POST['cambiar_clave']) && $_POST['cambiar_clave'] == '1';
-        $nuevaClave = $_POST['nueva_clave'] ?? '';
-
-        if ($cambiarClave && validarRequerido($nuevaClave)) {
-            if (strlen($nuevaClave) < 6) {
-                respuestaJson('error', 'La nueva clave debe tener al menos 6 caracteres');
-            }
-            $usuarioModel->actualizarClave($id, password_hash($nuevaClave, PASSWORD_DEFAULT));
-        }
-
-        respuestaJson('exito', 'Usuario actualizado exitosamente');
+        respuestaJson('exito', $resultado['mensaje']);
     } else {
-        respuestaJson('error', 'Error al actualizar el usuario');
+        respuestaJson('error', $resultado['mensaje']);
     }
 
 // FUNCIÓN: eliminar
@@ -205,14 +140,8 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id'] ?? 0);
-    if ($id < 1) respuestaJson('error', 'ID de usuario no valido');
-    if ($id == $_SESSION['id_usuario']) respuestaJson('error', 'No puede eliminar su propio usuario');
-
-    if ($usuarioModel->eliminarUsuario($id)) {
-        respuestaJson('exito', 'Usuario eliminado exitosamente');
-    } else {
-        respuestaJson('error', 'No se puede eliminar al unico administrador del sistema');
-    }
+    $resultado = $usuarioModel->darDeBaja($id, (int)$_SESSION['id_usuario']);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // ============================================================
 // ENDPOINTS PARA ROLES Y MÓDULOS
@@ -259,36 +188,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Método no permitido');
     }
 
-    $nombre = trim($_POST['nombre'] ?? '');
-    $modulos = $_POST['modulos'] ?? [];
-
-    if (!validarRequerido($nombre)) {
-        respuestaJson('error', 'El nombre del rol es obligatorio');
-    }
-
-    if (empty($modulos)) {
-        respuestaJson('error', 'Debe seleccionar al menos un módulo para el rol');
-    }
-
-    // Comprobar si existe un rol inactivo con el mismo nombre para reactivarlo
-    $inactivoId = $rolModel->buscarInactivoPorNombre($nombre);
-    if ($inactivoId) {
-        if ($rolModel->actualizarRol($inactivoId, $nombre, 1, $modulos)) {
-            respuestaJson('exito', 'Rol reactivado exitosamente');
-        } else {
-            respuestaJson('error', 'Error al reactivar el rol');
-        }
-    }
-
-    if ($rolModel->nombreExiste($nombre)) {
-        respuestaJson('error', 'Ya existe un rol con ese nombre');
-    }
-
-    if ($rolModel->insertarRol($nombre, $modulos, 1)) {
-        respuestaJson('exito', 'Rol creado exitosamente');
-    } else {
-        respuestaJson('error', 'Error al crear el rol');
-    }
+    $resultado = $rolModel->registrar($_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // FUNCIÓN: actualizarRol
 // OBJETIVO: Actualiza el nombre, módulos y estado de un rol
@@ -303,34 +204,15 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id'] ?? 0);
-    $nombre = trim($_POST['nombre'] ?? '');
-    $activo = isset($_POST['activo']) ? intval($_POST['activo']) : 1;
-    $modulos = $_POST['modulos'] ?? [];
-
-    if ($id < 1) respuestaJson('error', 'ID de rol no válido');
-    if (!validarRequerido($nombre)) respuestaJson('error', 'El nombre del rol es obligatorio');
-    if (empty($modulos)) respuestaJson('error', 'Debe seleccionar al menos un módulo para el rol');
-
-    if ($rolModel->nombreExiste($nombre, $id)) {
-        respuestaJson('error', 'Ya existe otro rol con ese nombre');
-    }
-
-    // Si es Administrador raíz (ID 1), asegurar que conserve el módulo 'usuario' y permanezca activo
-    if ($id === 1) {
-        $activo = 1;
-        if (is_array($modulos) && !in_array('usuario', $modulos)) {
-            $modulos[] = 'usuario';
-        }
-    }
-
-    if ($rolModel->actualizarRol($id, $nombre, $activo, $modulos)) {
-        // Si se actualizó el rol del usuario actualmente en sesión, actualizar sus módulos en sesión
+    $resultado = $rolModel->modificar($id, $_POST);
+    if ($resultado['exito']) {
         if ($id === (int)$_SESSION['usuario_rol']) {
+            $modulos = $_POST['modulos'] ?? [];
             $_SESSION['usuario_modulos'] = is_array($modulos) ? implode(',', $modulos) : $modulos;
         }
-        respuestaJson('exito', 'Rol actualizado exitosamente');
+        respuestaJson('exito', $resultado['mensaje']);
     } else {
-        respuestaJson('error', 'Error al actualizar el rol');
+        respuestaJson('error', $resultado['mensaje']);
     }
 
 // FUNCIÓN: toggleRol
@@ -373,24 +255,8 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id'] ?? 0);
-
-    if ($id < 1) {
-        respuestaJson('error', 'ID de rol no válido');
-    }
-
-    if ($id === 1) {
-        respuestaJson('error', 'El rol de Administrador no puede ser eliminado');
-    }
-
-    try {
-        if ($rolModel->eliminarRol($id)) {
-            respuestaJson('exito', 'Rol eliminado exitosamente');
-        } else {
-            respuestaJson('error', 'Error al eliminar el rol');
-        }
-    } catch (\PDOException $e) {
-        respuestaJson('error', $e->getMessage());
-    }
+    $resultado = $rolModel->darDeBaja($id);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 } else {
     require_once __DIR__ . '/../views/error404View.php';

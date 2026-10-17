@@ -33,7 +33,7 @@ if ($metodo === 'index') {
     ]);
 
 // FUNCIÓN: guardar
-// OBJETIVO: Registra una nueva tasa de cambio diaria
+// OBJETIVO: Registra una nueva tasa de cambio diaria delegando la lógica al modelo
 } elseif ($metodo === 'guardar') {
     verificarRolAdmin();
 
@@ -41,37 +41,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Método no permitido');
     }
 
-    $tasaRaw = trim($_POST['tasa'] ?? '');
-    $fecha = trim($_POST['fecha'] ?? '');
-
-    // Si no envían fecha, asumir la fecha actual
-    if (empty($fecha)) {
-        $fecha = date('Y-m-d');
-    }
-
-    // Normalizar coma a punto decimal
-    $tasaRaw = str_replace(',', '.', $tasaRaw);
-    $tasa = floatval($tasaRaw);
-
-    if ($tasa <= 0) {
-        respuestaJson('error', 'El valor de la tasa debe ser mayor a 0 (ej. 45.50)');
-    }
-
-    // Validar formato de fecha AAAA-MM-DD
-    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
-        respuestaJson('error', 'El formato de fecha es inválido (debe ser AAAA-MM-DD)');
-    }
-
-    // Verificar si ya existe tasa para este día
-    if ($tasaCambioModel->fechaExiste($fecha)) {
-        respuestaJson('error', 'Ya existe una tasa registrada para la fecha ' . date('d/m/Y', strtotime($fecha)) . '. Puede editarla desde el listado.');
-    }
-
-    if ($tasaCambioModel->insertar($tasa, $fecha)) {
-        respuestaJson('exito', 'Tasa de cambio registrada exitosamente para el ' . date('d/m/Y', strtotime($fecha)));
-    } else {
-        respuestaJson('error', 'Error al registrar la tasa de cambio en la base de datos');
-    }
+    $resultado = $tasaCambioModel->registrar($_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // FUNCIÓN: obtener
 // OBJETIVO: Obtiene una tasa por ID para cargarla en el modal de edición
@@ -91,7 +62,7 @@ if ($metodo === 'index') {
     }
 
 // FUNCIÓN: actualizar
-// OBJETIVO: Actualiza el valor o fecha de una tasa existente
+// OBJETIVO: Actualiza el valor o fecha de una tasa existente delegando la lógica al modelo
 } elseif ($metodo === 'actualizar') {
     verificarRolAdmin();
 
@@ -100,35 +71,8 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id_tasa_cambio'] ?? 0);
-    $tasaRaw = trim($_POST['tasa'] ?? '');
-    $fecha = trim($_POST['fecha'] ?? '');
-    $estado = isset($_POST['estado']) ? intval($_POST['estado']) : 1;
-
-    if ($id < 1) {
-        respuestaJson('error', 'ID de tasa no válido');
-    }
-
-    $tasaRaw = str_replace(',', '.', $tasaRaw);
-    $tasa = floatval($tasaRaw);
-
-    if ($tasa <= 0) {
-        respuestaJson('error', 'El valor de la tasa debe ser mayor a 0');
-    }
-
-    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
-        respuestaJson('error', 'Formato de fecha inválido');
-    }
-
-    // Verificar si la fecha pertenece a otro registro
-    if ($tasaCambioModel->fechaExiste($fecha, $id)) {
-        respuestaJson('error', 'Ya existe otro registro con la fecha ' . date('d/m/Y', strtotime($fecha)));
-    }
-
-    if ($tasaCambioModel->actualizar($id, $tasa, $fecha, $estado)) {
-        respuestaJson('exito', 'Tasa de cambio actualizada correctamente');
-    } else {
-        respuestaJson('error', 'Error al actualizar la tasa de cambio');
-    }
+    $resultado = $tasaCambioModel->modificar($id, $_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // FUNCIÓN: obtenerHoy
 // OBJETIVO: Endpoint público/interno para consultar la tasa vigente de hoy

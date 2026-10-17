@@ -52,6 +52,240 @@ class ProveedorModel extends ModeloBase
         return $this->_ejecutarSelectById();
     }
 
+    // FUNCIÓN: procesarTelefonosPayload
+    // OBJETIVO: Extrae y compone los números de teléfono principal y secundario desde el arreglo de datos
+    private function procesarTelefonosPayload(array $datos): array
+    {
+        $operadora = trim($datos['operadora'] ?? '');
+        $telefonoNum = trim($datos['telefono_num'] ?? '');
+        $telefono = trim($datos['telefono'] ?? '');
+        if (empty($telefono) && !empty($telefonoNum)) {
+            $telefono = $operadora . $telefonoNum;
+        }
+
+        $operadora2 = trim($datos['operadora2'] ?? '');
+        $telefonoNum2 = trim($datos['telefono_num2'] ?? '');
+        $telefono2 = trim($datos['telefono2'] ?? '');
+        if (empty($telefono2) && !empty($telefonoNum2)) {
+            $telefono2 = $operadora2 . $telefonoNum2;
+        }
+
+        return [$telefono, $telefono2];
+    }
+
+    // FUNCIÓN: procesarRifPayload
+    // OBJETIVO: Compone el RIF en mayúsculas desde el arreglo de datos
+    private function procesarRifPayload(array $datos): string
+    {
+        $tipoRif = strtoupper(trim($datos['tipo_rif'] ?? 'J'));
+        $rifNum = trim($datos['rif_num'] ?? '');
+        $rif = strtoupper(trim($datos['rif'] ?? ''));
+        if (empty($rif) && !empty($rifNum)) {
+            $rif = $tipoRif . '-' . $rifNum;
+        }
+        return $rif;
+    }
+
+    // FUNCIÓN: validarDatosProveedor
+    // OBJETIVO: Valida campos y reglas de negocio para un proveedor
+    public function validarDatosProveedor(array $datos, ?int $idActual = null): array
+    {
+        $rif = $this->procesarRifPayload($datos);
+        $nombreEmpresa = trim($datos['nombre_empresa'] ?? '');
+        $direccion = trim($datos['direccion'] ?? '');
+        $correo = trim($datos['correo'] ?? '');
+        $rubros = $datos['rubros'] ?? [];
+        if (!is_array($rubros)) {
+            $rubros = !empty($rubros) ? [$rubros] : [];
+        }
+        [$telefono, $telefono2] = $this->procesarTelefonosPayload($datos);
+
+        if ($rif === '') {
+            return ['valido' => false, 'mensaje' => 'El RIF es obligatorio'];
+        }
+        if (!preg_match('/^[JVEG]-\d{1,9}$/', $rif)) {
+            return ['valido' => false, 'mensaje' => 'El RIF debe tener formato valido (Ej: J-123456789)'];
+        }
+
+        if ($nombreEmpresa === '') {
+            return ['valido' => false, 'mensaje' => 'El nombre de la empresa es obligatorio'];
+        }
+        if (mb_strlen($nombreEmpresa) < 3 || mb_strlen($nombreEmpresa) > 60) {
+            return ['valido' => false, 'mensaje' => 'El nombre de la empresa debe tener entre 3 y 60 caracteres'];
+        }
+        if (!preg_match('/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-&]+$/u', $nombreEmpresa)) {
+            return ['valido' => false, 'mensaje' => 'El nombre de la empresa contiene caracteres no permitidos (solo letras, números y signos . , - &)'];
+        }
+
+        if ($correo === '') {
+            return ['valido' => false, 'mensaje' => 'El correo electronico es obligatorio'];
+        }
+        if (filter_var($correo, FILTER_VALIDATE_EMAIL) === false) {
+            return ['valido' => false, 'mensaje' => 'El correo electronico no es valido'];
+        }
+
+        if ($telefono === '') {
+            return ['valido' => false, 'mensaje' => 'El teléfono principal es obligatorio'];
+        }
+        if (!preg_match('/^\d{11}$/', $telefono)) {
+            return ['valido' => false, 'mensaje' => 'El teléfono debe tener 11 dígitos'];
+        }
+
+        if ($telefono2 !== '') {
+            if (!preg_match('/^\d{11}$/', $telefono2)) {
+                return ['valido' => false, 'mensaje' => 'El segundo teléfono debe tener 11 dígitos'];
+            }
+            if ($telefono === $telefono2) {
+                return ['valido' => false, 'mensaje' => 'El segundo teléfono no puede ser igual al teléfono principal'];
+            }
+        }
+
+        if ($this->telefonoExiste($telefono, $idActual)) {
+            return ['valido' => false, 'mensaje' => 'El teléfono principal ya se encuentra registrado en otro proveedor'];
+        }
+
+        if ($telefono2 !== '' && $this->telefonoExiste($telefono2, $idActual)) {
+            return ['valido' => false, 'mensaje' => 'El segundo teléfono ya se encuentra registrado en otro proveedor'];
+        }
+
+        if ($this->rifExiste($rif, $idActual)) {
+            return ['valido' => false, 'mensaje' => ($idActual ? 'Ya existe otro proveedor con ese RIF' : 'Ya existe un proveedor con ese RIF')];
+        }
+
+        return [
+            'valido' => true,
+            'datos' => [
+                'rif' => $rif,
+                'nombre_empresa' => $nombreEmpresa,
+                'direccion' => $direccion,
+                'correo' => $correo,
+                'telefono' => $telefono,
+                'telefono2' => $telefono2,
+                'rubros' => $rubros
+            ]
+        ];
+    }
+
+    // FUNCIÓN: registrar
+    // OBJETIVO: Valida y registra o reactiva un proveedor junto con sus teléfonos y rubros de forma atómica
+    public function registrar(array $datos): array
+    {
+        $val = $this->validarDatosProveedor($datos, null);
+        if (!$val['valido']) {
+            return ['exito' => false, 'mensaje' => $val['mensaje']];
+        }
+
+        $d = $val['datos'];
+
+        try {
+            $this->conexion->beginTransaction();
+
+            $inactivoId = $this->buscarInactivoPorRIF($d['rif']);
+            if ($inactivoId) {
+                if (!$this->actualizarProveedor($inactivoId, $d['rif'], $d['nombre_empresa'], $d['direccion'], null, $d['correo'])) {
+                    $this->conexion->rollBack();
+                    return ['exito' => false, 'mensaje' => 'Error al reactivar el proveedor'];
+                }
+
+                $this->eliminarTelefonos($inactivoId);
+                $this->insertarTelefono($inactivoId, $d['telefono'], 'movil');
+                if (!empty($d['telefono2'])) {
+                    $this->insertarTelefono($inactivoId, $d['telefono2'], 'movil');
+                }
+
+                $this->eliminarRubros($inactivoId);
+                foreach ($d['rubros'] as $rubroId) {
+                    $this->insertarRubro($inactivoId, (int)$rubroId);
+                }
+
+                $this->conexion->commit();
+                return ['exito' => true, 'mensaje' => 'Proveedor reactivado exitosamente'];
+            }
+
+            $nuevoId = $this->insertarProveedor($d['rif'], $d['nombre_empresa'], $d['direccion'], null, $d['correo']);
+            if (!$nuevoId) {
+                $this->conexion->rollBack();
+                return ['exito' => false, 'mensaje' => 'Error al crear el proveedor'];
+            }
+
+            $this->insertarTelefono($nuevoId, $d['telefono'], 'movil');
+            if (!empty($d['telefono2'])) {
+                $this->insertarTelefono($nuevoId, $d['telefono2'], 'movil');
+            }
+
+            foreach ($d['rubros'] as $rubroId) {
+                $this->insertarRubro($nuevoId, (int)$rubroId);
+            }
+
+            $this->conexion->commit();
+            return ['exito' => true, 'mensaje' => 'Proveedor creado exitosamente'];
+        } catch (\Throwable $e) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
+            return ['exito' => false, 'mensaje' => 'Error en base de datos: ' . $e->getMessage()];
+        }
+    }
+
+    // FUNCIÓN: modificar
+    // OBJETIVO: Valida y actualiza los datos, teléfonos y rubros de un proveedor existente
+    public function modificar(int $id, array $datos): array
+    {
+        if ($id < 1) {
+            return ['exito' => false, 'mensaje' => 'ID de proveedor no valido'];
+        }
+
+        $val = $this->validarDatosProveedor($datos, $id);
+        if (!$val['valido']) {
+            return ['exito' => false, 'mensaje' => $val['mensaje']];
+        }
+
+        $d = $val['datos'];
+
+        try {
+            $this->conexion->beginTransaction();
+
+            if (!$this->actualizarProveedor($id, $d['rif'], $d['nombre_empresa'], $d['direccion'], null, $d['correo'])) {
+                $this->conexion->rollBack();
+                return ['exito' => false, 'mensaje' => 'Error al actualizar el proveedor'];
+            }
+
+            $this->eliminarTelefonos($id);
+            $this->insertarTelefono($id, $d['telefono'], 'movil');
+            if (!empty($d['telefono2'])) {
+                $this->insertarTelefono($id, $d['telefono2'], 'movil');
+            }
+
+            $this->eliminarRubros($id);
+            foreach ($d['rubros'] as $rubroId) {
+                $this->insertarRubro($id, (int)$rubroId);
+            }
+
+            $this->conexion->commit();
+            return ['exito' => true, 'mensaje' => 'Proveedor actualizado exitosamente'];
+        } catch (\Throwable $e) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
+            return ['exito' => false, 'mensaje' => 'Error en base de datos: ' . $e->getMessage()];
+        }
+    }
+
+    // FUNCIÓN: eliminar
+    // OBJETIVO: Valida que el proveedor no tenga cuentas pendientes ni insumos y ejecuta soft-delete
+    public function eliminar(int $id): array
+    {
+        if ($id < 1) {
+            return ['exito' => false, 'mensaje' => 'ID de proveedor no valido'];
+        }
+
+        if ($this->eliminarProveedor($id)) {
+            return ['exito' => true, 'mensaje' => 'Proveedor eliminado exitosamente'];
+        }
+
+        return ['exito' => false, 'mensaje' => 'No se puede eliminar el proveedor. Tiene cuentas por pagar pendientes o productos asociados.'];
+    }
+
     // FUNCIÓN: insertarProveedor
     // OBJETIVO: Crea un nuevo proveedor; retorna el ID insertado o false
     public function insertarProveedor(string $rif, string $nombreEmpresa, ?string $direccion = null, ?string $contacto = null, ?string $correo = null): int|false
@@ -119,6 +353,26 @@ class ProveedorModel extends ModeloBase
         if ($this->rif === '') return false;
 
         return $this->_ejecutarCheckRif();
+    }
+
+    // FUNCIÓN: telefonoExiste
+    // OBJETIVO: Verifica si un número de teléfono ya está registrado en proveedores activos (excluyendo opcionalmente a un proveedor)
+    public function telefonoExiste(string $telefono, ?int $idExcluir = null): bool
+    {
+        $consulta = "SELECT COUNT(*) as total 
+                     FROM telefono_proveedor tp 
+                     INNER JOIN proveedores p ON tp.id_proveedor = p.id_proveedor 
+                     WHERE tp.telefono = :telefono AND p.estado = 1";
+        if ($idExcluir !== null) {
+            $consulta .= " AND tp.id_proveedor != :id_excluir";
+        }
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':telefono', $telefono, PDO::PARAM_STR);
+        if ($idExcluir !== null) {
+            $stmt->bindParam(':id_excluir', $idExcluir, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        return (int)$stmt->fetch()['total'] > 0;
     }
 
     // FUNCIÓN: buscarInactivoPorRIF

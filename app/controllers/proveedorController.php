@@ -60,8 +60,17 @@ if ($metodo === 'index') {
     $existe = !empty($rif) && $proveedorModel->rifExiste($rif, $id);
     respuestaJson('exito', 'Verificacion realizada', ['existe' => $existe]);
 
+// FUNCIÓN: verificarTelefonoAjax
+// OBJETIVO: Verifica en tiempo real si un teléfono ya está registrado en proveedores
+} elseif ($metodo === 'verificarTelefonoAjax') {
+    verificarAcceso([1]);
+    $telefono = trim($_GET['telefono'] ?? '');
+    $id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : null;
+    $existe = !empty($telefono) && $proveedorModel->telefonoExiste($telefono, $id);
+    respuestaJson('exito', 'Verificacion realizada', ['existe' => $existe]);
+
 // FUNCIÓN: guardar
-// OBJETIVO: Crea un nuevo proveedor o reactiva uno inactivo, con teléfonos y rubros
+// OBJETIVO: Crea un nuevo proveedor o reactiva uno inactivo, delegando validaciones y transacción al modelo
 } elseif ($metodo === 'guardar') {
     verificarRolAdmin();
 
@@ -69,100 +78,9 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
 
-    $tipoRif = strtoupper(trim($_POST['tipo_rif'] ?? 'J'));
-    $rifNum = trim($_POST['rif_num'] ?? '');
-    $rif = strtoupper(trim($_POST['rif'] ?? ''));
-    if (empty($rif) && !empty($rifNum)) {
-        $rif = $tipoRif . '-' . $rifNum;
-    }
+    $resultado = $proveedorModel->registrar($_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
-    $nombreEmpresa = trim($_POST['nombre_empresa'] ?? '');
-    $direccion = trim($_POST['direccion'] ?? '');
-
-    $operadora = trim($_POST['operadora'] ?? '');
-    $telefonoNum = trim($_POST['telefono_num'] ?? '');
-    $telefono = trim($_POST['telefono'] ?? '');
-    if (empty($telefono) && !empty($telefonoNum)) {
-        $telefono = $operadora . $telefonoNum;
-    }
-    $telefono2 = trim($_POST['telefono2'] ?? '');
-
-    $correo = trim($_POST['correo'] ?? '');
-    $rubros = $_POST['rubros'] ?? [];
-
-    if (!validarRequerido($rif)) {
-        respuestaJson('error', 'El RIF es obligatorio');
-    }
-
-    if (!validarRIF($rif)) {
-        respuestaJson('error', 'El RIF debe tener formato valido (Ej: J-123456789)');
-    }
-
-    if (!validarRequerido($nombreEmpresa)) {
-        respuestaJson('error', 'El nombre de la empresa es obligatorio');
-    }
-
-    if (!validarRequerido($correo)) {
-        respuestaJson('error', 'El correo electronico es obligatorio');
-    }
-
-    if (!validarCorreo($correo)) {
-        respuestaJson('error', 'El correo electronico no es valido');
-    }
-
-    if (!empty($telefono) && !validarTelefono($telefono)) {
-        respuestaJson('error', 'El telefono debe tener 11 digitos');
-    }
-
-    if (!empty($telefono2) && !validarTelefono($telefono2)) {
-        respuestaJson('error', 'El segundo telefono debe tener 11 digitos');
-    }
-
-    if ($proveedorModel->rifExiste($rif)) {
-        respuestaJson('error', 'Ya existe un proveedor con ese RIF');
-    }
-
-    $inactivoId = $proveedorModel->buscarInactivoPorRIF($rif);
-    if ($inactivoId) {
-        if ($proveedorModel->actualizarProveedor($inactivoId, $rif, $nombreEmpresa, $direccion, null, $correo)) {
-            $proveedorModel->eliminarTelefonos($inactivoId);
-            if (!empty($telefono)) {
-                $proveedorModel->insertarTelefono($inactivoId, $telefono);
-            }
-            if (!empty($telefono2) && $telefono2 !== $telefono) {
-                $proveedorModel->insertarTelefono($inactivoId, $telefono2);
-            }
-            $proveedorModel->eliminarRubros($inactivoId);
-            foreach ($rubros as $rubroId) {
-                $rubroId = intval($rubroId);
-                if ($rubroId > 0) {
-                    $proveedorModel->insertarRubro($inactivoId, $rubroId);
-                }
-            }
-            respuestaJson('exito', 'Proveedor reactivado exitosamente');
-        } else {
-            respuestaJson('error', 'Error al reactivar el proveedor');
-        }
-    }
-
-    $nuevoId = $proveedorModel->insertarProveedor($rif, $nombreEmpresa, $direccion, null, $correo);
-    if ($nuevoId) {
-        if (!empty($telefono)) {
-            $proveedorModel->insertarTelefono($nuevoId, $telefono);
-        }
-        if (!empty($telefono2) && $telefono2 !== $telefono) {
-            $proveedorModel->insertarTelefono($nuevoId, $telefono2);
-        }
-        foreach ($rubros as $rubroId) {
-            $rubroId = intval($rubroId);
-            if ($rubroId > 0) {
-                $proveedorModel->insertarRubro($nuevoId, $rubroId);
-            }
-        }
-        respuestaJson('exito', 'Proveedor creado exitosamente');
-    } else {
-        respuestaJson('error', 'Error al crear el proveedor');
-    }
 // FUNCIÓN: obtener
 // OBJETIVO: Obtiene un proveedor por ID para edición
 } elseif ($metodo === 'obtener') {
@@ -181,8 +99,9 @@ if ($metodo === 'index') {
     } else {
         respuestaJson('error', 'Proveedor no encontrado');
     }
+
 // FUNCIÓN: actualizar
-// OBJETIVO: Actualiza un proveedor existente con sus teléfonos y rubros
+// OBJETIVO: Actualiza un proveedor existente delegando al modelo
 } elseif ($metodo === 'actualizar') {
     verificarRolAdmin();
 
@@ -191,85 +110,11 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id'] ?? 0);
-    $tipoRif = strtoupper(trim($_POST['tipo_rif'] ?? 'J'));
-    $rifNum = trim($_POST['rif_num'] ?? '');
-    $rif = strtoupper(trim($_POST['rif'] ?? ''));
-    if (empty($rif) && !empty($rifNum)) {
-        $rif = $tipoRif . '-' . $rifNum;
-    }
+    $resultado = $proveedorModel->modificar($id, $_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
-    $nombreEmpresa = trim($_POST['nombre_empresa'] ?? '');
-    $direccion = trim($_POST['direccion'] ?? '');
-    $contacto = trim($_POST['contacto'] ?? '');
-
-    $operadora = trim($_POST['operadora'] ?? '');
-    $telefonoNum = trim($_POST['telefono_num'] ?? '');
-    $telefono = trim($_POST['telefono'] ?? '');
-    if (empty($telefono) && !empty($telefonoNum)) {
-        $telefono = $operadora . $telefonoNum;
-    }
-    $telefono2 = trim($_POST['telefono2'] ?? '');
-
-    $correo = trim($_POST['correo'] ?? '');
-    $rubros = $_POST['rubros'] ?? [];
-
-    if ($id < 1) {
-        respuestaJson('error', 'ID de proveedor no valido');
-    }
-
-    if (!validarRequerido($rif)) {
-        respuestaJson('error', 'El RIF es obligatorio');
-    }
-
-    if (!validarRIF($rif)) {
-        respuestaJson('error', 'El RIF debe tener formato valido (Ej: J-123456789)');
-    }
-
-    if (!validarRequerido($nombreEmpresa)) {
-        respuestaJson('error', 'El nombre de la empresa es obligatorio');
-    }
-
-    if (!validarRequerido($correo)) {
-        respuestaJson('error', 'El correo electronico es obligatorio');
-    }
-
-    if (!validarCorreo($correo)) {
-        respuestaJson('error', 'El correo electronico no es valido');
-    }
-
-    if (!empty($telefono) && !validarTelefono($telefono)) {
-        respuestaJson('error', 'El telefono debe tener 11 digitos');
-    }
-
-    if (!empty($telefono2) && !validarTelefono($telefono2)) {
-        respuestaJson('error', 'El segundo telefono debe tener 11 digitos');
-    }
-
-    if ($proveedorModel->rifExiste($rif, $id)) {
-        respuestaJson('error', 'Ya existe otro proveedor con ese RIF');
-    }
-
-    if ($proveedorModel->actualizarProveedor($id, $rif, $nombreEmpresa, $direccion, null, $correo)) {
-        $proveedorModel->eliminarTelefonos($id);
-        if (!empty($telefono)) {
-            $proveedorModel->insertarTelefono($id, $telefono);
-        }
-        if (!empty($telefono2) && $telefono2 !== $telefono) {
-            $proveedorModel->insertarTelefono($id, $telefono2);
-        }
-        $proveedorModel->eliminarRubros($id);
-        foreach ($rubros as $rubroId) {
-            $rubroId = intval($rubroId);
-            if ($rubroId > 0) {
-                $proveedorModel->insertarRubro($id, $rubroId);
-            }
-        }
-        respuestaJson('exito', 'Proveedor actualizado exitosamente');
-    } else {
-        respuestaJson('error', 'Error al actualizar el proveedor');
-    }
 // FUNCIÓN: eliminar
-// OBJETIVO: Eliminación lógica de un proveedor (soft-delete)
+// OBJETIVO: Eliminación lógica de un proveedor delegando al modelo
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
 
@@ -278,16 +123,9 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id'] ?? 0);
+    $resultado = $proveedorModel->eliminar($id);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
-    if ($id < 1) {
-        respuestaJson('error', 'ID de proveedor no valido');
-    }
-
-    if ($proveedorModel->eliminarProveedor($id)) {
-        respuestaJson('exito', 'Proveedor eliminado exitosamente');
-    } else {
-        respuestaJson('error', 'No se puede eliminar el proveedor. Tiene cuentas por pagar pendientes o insumos asociados.');
-    }
 } else {
     require_once __DIR__ . '/../views/error404View.php';
 }

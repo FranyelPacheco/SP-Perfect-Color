@@ -98,6 +98,148 @@ class NotaEntregaModel extends ModeloBase
         return $this->_ejecutarCrearNota();
     }
 
+    // FUNCIÓN: procesarNotaEntrega
+    // OBJETIVO: Valida de forma integral la aprobación o rechazo de una nota de entrega desde un presupuesto
+    public function procesarNotaEntrega(array $datos, int $idUsuario): array
+    {
+        $presupuestoId = intval($datos['id_presupuesto'] ?? 0);
+        if ($presupuestoId < 1) {
+            return ['exito' => false, 'mensaje' => 'Debe seleccionar un presupuesto'];
+        }
+
+        $presupuesto = $this->buscarPorId($presupuestoId);
+        if (!$presupuesto) {
+            return ['exito' => false, 'mensaje' => 'Presupuesto asociado no encontrado'];
+        }
+
+        $decision = trim($datos['decision'] ?? 'aprobar');
+        if ($decision === 'rechazar') {
+            $stmtRechazar = $this->conexion->prepare("UPDATE ventas SET id_estado_venta = 3 WHERE id_venta = :id");
+            $stmtRechazar->bindParam(':id', $presupuestoId, PDO::PARAM_INT);
+            if ($stmtRechazar->execute()) {
+                return ['exito' => true, 'mensaje' => 'Nota de entrega / Presupuesto #' . $presupuestoId . ' rechazada correctamente'];
+            }
+            return ['exito' => false, 'mensaje' => 'No se pudo rechazar la nota de entrega'];
+        }
+
+        $clienteId = intval($presupuesto['id_cliente'] ?? 0);
+        if ($clienteId < 1) {
+            $clienteId = intval($datos['id_cliente'] ?? 0);
+        }
+        if ($clienteId < 1) {
+            return ['exito' => false, 'mensaje' => 'No se pudo identificar el cliente del presupuesto'];
+        }
+
+        $condicionPago = $datos['condicion_pago'] ?? 'contado';
+        $tipoPagoId = !empty($datos['id_tipo_pago']) ? intval($datos['id_tipo_pago']) : null;
+        $bancoId = !empty($datos['id_banco']) ? intval($datos['id_banco']) : null;
+        $referencia = trim($datos['referencia'] ?? '');
+        $fechaVencimiento = $datos['fecha_vencimiento'] ?? '';
+        $montoInicial = floatval($datos['monto_inicial'] ?? 0);
+        $tipoPagoInicial = !empty($datos['id_tipo_pago_inicial']) ? intval($datos['id_tipo_pago_inicial']) : null;
+        $bancoInicial = !empty($datos['id_banco_inicial']) ? intval($datos['id_banco_inicial']) : null;
+        $referenciaInicial = trim($datos['referencia_inicial'] ?? '');
+
+        $itemsRaw = $datos['items'] ?? '[]';
+        $items = is_array($itemsRaw) ? $itemsRaw : json_decode((string)$itemsRaw, true);
+
+        if (empty($items)) {
+            return ['exito' => false, 'mensaje' => 'Debe agregar al menos un item'];
+        }
+
+        if ($condicionPago === 'credito') {
+            if (empty($fechaVencimiento)) {
+                return ['exito' => false, 'mensaje' => 'Debe seleccionar una fecha de vencimiento para pagos a credito'];
+            }
+            if ($montoInicial > 0) {
+                if (empty($tipoPagoInicial)) {
+                    return ['exito' => false, 'mensaje' => 'Debe seleccionar el método de pago para el abono inicial'];
+                }
+                if ($tipoPagoInicial === 1) {
+                    $bancoInicial = null;
+                    if (empty($referenciaInicial)) $referenciaInicial = 'Efectivo';
+                } else {
+                    if (empty($bancoInicial)) {
+                        return ['exito' => false, 'mensaje' => 'Debe seleccionar el banco receptor para el abono inicial'];
+                    }
+                    if (empty($referenciaInicial)) {
+                        return ['exito' => false, 'mensaje' => 'Debe ingresar la referencia para el abono inicial'];
+                    }
+                }
+            }
+        }
+
+        if ($condicionPago === 'contado') {
+            if (empty($tipoPagoId) || $tipoPagoId < 1) {
+                return ['exito' => false, 'mensaje' => 'Debe seleccionar un tipo de pago para aprobar la entrega'];
+            }
+            if ($tipoPagoId === 1) {
+                $bancoId = null;
+                if (empty($referencia)) $referencia = 'Efectivo';
+            } else {
+                if (empty($bancoId) || $bancoId < 1) {
+                    return ['exito' => false, 'mensaje' => 'Debe seleccionar un banco para el pago por transferencia o pago móvil'];
+                }
+                if (empty($referencia)) {
+                    return ['exito' => false, 'mensaje' => 'Debe ingresar el número de referencia para el pago'];
+                }
+            }
+        }
+
+        $total = 0;
+        $detalle = [];
+
+        foreach ($items as $item) {
+            $presupuestoDetalleId = intval($item['id_presupuesto_detalle'] ?? 0);
+            $cantidad = floatval($item['cantidad'] ?? 0);
+            $precioUnitario = floatval($item['precio_unitario'] ?? 0);
+            $subtotal = $cantidad * $precioUnitario;
+
+            if ($presupuestoDetalleId < 1 || $cantidad <= 0 || $precioUnitario <= 0) {
+                return ['exito' => false, 'mensaje' => 'Datos invalidos en uno de los items'];
+            }
+
+            $total += $subtotal;
+            $detalle[] = [
+                'id_presupuesto_detalle' => $presupuestoDetalleId,
+                'cantidad' => $cantidad,
+                'precio_unitario' => $precioUnitario,
+                'subtotal' => $subtotal
+            ];
+        }
+
+        try {
+            $notaId = $this->crearNotaEntrega(
+                $clienteId,
+                $idUsuario,
+                $total,
+                $presupuestoId,
+                $condicionPago,
+                $detalle,
+                $tipoPagoId,
+                $bancoId,
+                $referencia !== '' ? $referencia : null,
+                $fechaVencimiento !== '' ? $fechaVencimiento : null,
+                $montoInicial,
+                $tipoPagoInicial,
+                $bancoInicial,
+                $referenciaInicial !== '' ? $referenciaInicial : null
+            );
+
+            return [
+                'exito' => true,
+                'mensaje' => 'Nota de entrega creada exitosamente',
+                'datos' => [
+                    'id_nota_entrega' => $notaId,
+                    'total' => $total
+                ]
+            ];
+        } catch (\Throwable $e) {
+            error_log('ERROR CRITICO AL CREAR NOTA: ' . $e->getMessage() . ' (en ' . $e->getFile() . ':' . $e->getLine() . ')');
+            return ['exito' => false, 'mensaje' => 'Error al crear la nota de entrega: ' . $e->getMessage()];
+        }
+    }
+
     // FUNCIÓN: buscarNotas
     // OBJETIVO: Busca notas de venta por nombre/cédula del cliente
     public function buscarNotas(string $termino): array

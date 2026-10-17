@@ -112,132 +112,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Metodo no permitido');
     }
     
-    $clienteId = intval($_POST['id_cliente'] ?? 0);
-    $observaciones = trim($_POST['observaciones'] ?? '');
-    $condicionPago = trim($_POST['condicion_pago'] ?? 'contado');
-    $idTipoPago = !empty($_POST['id_tipo_pago']) ? intval($_POST['id_tipo_pago']) : null;
-    $idBanco = !empty($_POST['id_banco']) ? intval($_POST['id_banco']) : null;
-    $referencia = trim($_POST['referencia'] ?? '');
-    
-    $items = json_decode($_POST['items'] ?? '[]', true);
-    
-    if ($clienteId < 1) {
-        respuestaJson('error', 'Debe seleccionar un cliente');
-    }
-    
-    if (empty($items)) {
-        respuestaJson('error', 'Debe agregar al menos un insumo al presupuesto');
-    }
-    
-    $total = 0;
-    $detalle = [];
-    
-    foreach ($items as $item) {
-        $cantidadRaw = $item['cantidad'] ?? 0;
-        $cantidad = intval($cantidadRaw);
-        $precioUnitario = floatval($item['precio_unitario'] ?? 0);
-        $subtotal = $cantidad * $precioUnitario;
-        
-        if ($cantidad < 1 || floatval($cantidadRaw) != $cantidad || $precioUnitario <= 0) {
-            respuestaJson('error', 'La cantidad debe ser un número entero mayor o igual a 1 y el precio debe ser válido.');
-        }
-        
-        $esMezcla = (!empty($item['tipo']) && $item['tipo'] === 'mezcla') || !empty($item['mezclas']);
-        
-        if ($esMezcla) {
-            $descripcion = trim($item['descripcion'] ?? '');
-            if (empty($descripcion)) {
-                respuestaJson('error', 'La pintura preparada debe tener una descripcion valida');
-            }
-            $mezclas = $item['mezclas'] ?? [];
-            if (empty($mezclas) || !is_array($mezclas)) {
-                respuestaJson('error', 'La pintura preparada debe contener al menos un tinte base');
-            }
-            if (count($mezclas) > 6) {
-                respuestaJson('error', 'Una formulacion no puede contener mas de 6 tintes base');
-            }
-            
-            $mezclasValidadas = [];
-            foreach ($mezclas as $m) {
-                $idBase = intval($m['id_producto_base'] ?? $m['id_producto'] ?? 0);
-                $fraccion = intval($m['fraccion_128'] ?? 0);
-                $consumo = floatval($m['cantidad_consumida'] ?? 0);
-                if ($idBase < 1 || $fraccion < 1 || $consumo <= 0) {
-                    respuestaJson('error', 'Componente de mezcla invalido');
-                }
-                $baseInfo = $inventarioModel->buscarPorId($idBase);
-                $stockBase = (float)($baseInfo['stock_actual'] ?? 0);
-                $consumoTotalBase = $consumo * $cantidad;
-                if ($consumoTotalBase > $stockBase) {
-                    respuestaJson('error', 'El consumo de la base "' . ($baseInfo['nombre'] ?? '') . '" (' . round($consumoTotalBase, 2) . ' gal) supera el stock disponible (' . floor($stockBase) . ' gal).');
-                }
-                $mezclasValidadas[] = [
-                    'id_producto_base' => $idBase,
-                    'fraccion_128' => $fraccion,
-                    'cantidad_consumida' => $consumo
-                ];
-            }
-            
-            $total += $subtotal;
-            $detalle[] = [
-                'descripcion' => $descripcion,
-                'cantidad' => $cantidad,
-                'precio_unitario' => $precioUnitario,
-                'subtotal' => $subtotal,
-                'mezclas' => $mezclasValidadas
-            ];
-        } else {
-            $insumoId = intval($item['id_insumo'] ?? 0);
-            if ($insumoId < 1) {
-                respuestaJson('error', 'Datos invalidos en uno de los items');
-            }
-            $insumoInfo = $inventarioModel->buscarPorId($insumoId);
-            if (!$insumoInfo) {
-                respuestaJson('error', 'Uno de los productos seleccionados no existe en el inventario.');
-            }
-            $stockDisponible = (int)floor((float)($insumoInfo['stock_actual'] ?? 0));
-            if ($cantidad > $stockDisponible) {
-                respuestaJson('error', 'La cantidad solicitada de "' . $insumoInfo['nombre'] . '" (' . $cantidad . ') supera el stock disponible (' . $stockDisponible . ').');
-            }
-            $descripcion = !empty($item['descripcion']) ? $item['descripcion'] : ($insumoInfo['nombre'] ?? 'Producto');
-            // Precio del catálogo oficial (no editable por el vendedor)
-            if (isset($insumoInfo['precio_venta']) && (float)$insumoInfo['precio_venta'] > 0) {
-                $precioUnitario = (float)$insumoInfo['precio_venta'];
-                $subtotal = $cantidad * $precioUnitario;
-            }
-            
-            $total += $subtotal;
-            $detalle[] = [
-                'id_insumo' => $insumoId,
-                'id_producto' => $insumoId,
-                'descripcion' => $descripcion,
-                'cantidad' => $cantidad,
-                'precio_unitario' => $precioUnitario,
-                'subtotal' => $subtotal
-            ];
-        }
-    }
-    
-    try {
-        $presupuestoId = $presupuestoModel->insertarPresupuesto(
-            $clienteId,
-            (int)$_SESSION['id_usuario'],
-            $total,
-            $observaciones,
-            $detalle,
-            $condicionPago,
-            $idTipoPago,
-            $idBanco,
-            $referencia
-        );
-        
-        respuestaJson('exito', 'Presupuesto creado exitosamente', [
-            'id_presupuesto' => $presupuestoId,
-            'total' => $total
-        ]);
-    } catch (PDOException $e) {
-        respuestaJson('error', 'Error al crear el presupuesto: ' . $e->getMessage());
-    }
+    $resultado = $presupuestoModel->crearPresupuesto($_POST, (int)$_SESSION['id_usuario']);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje'], $resultado['datos'] ?? null);
 
 // FUNCIÓN: ver
 // OBJETIVO: Renderiza la vista de detalle de un presupuesto con sus items
@@ -277,26 +153,8 @@ if ($metodo === 'index') {
     $id = intval($_POST['id'] ?? 0);
     $estado = $_POST['estado'] ?? '';
     
-    $estadosValidos = ['pendiente', 'presupuesto', 'aprobado', 'rechazado', 'convertido', 'anulado'];
-    
-    if ($id < 1 || !in_array($estado, $estadosValidos)) {
-        respuestaJson('error', 'Datos invalidos');
-    }
-    
-    if ($presupuestoModel->cambiarEstado($id, $estado)) {
-        $mensajes = [
-            'aprobado' => 'Presupuesto aprobado exitosamente',
-            'rechazado' => 'Presupuesto rechazado',
-            'anulado' => 'Presupuesto anulado',
-            'convertido' => 'Presupuesto convertido a nota de entrega',
-            'pendiente' => 'Presupuesto vuelto a estado pendiente',
-            'presupuesto' => 'Presupuesto vuelto a estado pendiente'
-        ];
-        
-        respuestaJson('exito', $mensajes[$estado] ?? 'Estado actualizado');
-    } else {
-        respuestaJson('error', 'Error al cambiar el estado');
-    }
+    $resultado = $presupuestoModel->actualizarEstado($id, $estado);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 // FUNCIÓN: eliminar
 // OBJETIVO: Eliminación lógica de un presupuesto (soft-delete)
@@ -308,16 +166,8 @@ if ($metodo === 'index') {
     }
     
     $id = intval($_POST['id'] ?? 0);
-    if ($id < 1) {
-        respuestaJson('error', 'ID invalido');
-    }
-    
-    try {
-        $presupuestoModel->eliminarPresupuesto($id);
-        respuestaJson('exito', 'Presupuesto eliminado correctamente');
-    } catch (PDOException $e) {
-        respuestaJson('error', 'Error al eliminar el presupuesto: ' . $e->getMessage());
-    }
+    $resultado = $presupuestoModel->darDeBaja($id);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 } else {
     require_once __DIR__ . '/../views/error404View.php';

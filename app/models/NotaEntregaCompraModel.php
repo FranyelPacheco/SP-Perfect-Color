@@ -91,6 +91,160 @@ class NotaEntregaCompraModel extends ModeloBase
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // FUNCIÓN: validarDatosCompra
+    // OBJETIVO: Valida reglas de negocio para el registro de una nota de entrega de compra
+    public function validarDatosCompra(array $datos): array
+    {
+        $idProveedor = intval($datos['id_proveedor'] ?? 0);
+        $fecha = trim($datos['fecha'] ?? '');
+        $observaciones = trim($datos['observaciones'] ?? '');
+        $condicionPago = trim($datos['condicion_pago'] ?? 'contado');
+        $fechaVencimiento = !empty($datos['fecha_vencimiento']) ? trim($datos['fecha_vencimiento']) : null;
+        $idTipoPago = !empty($datos['id_tipo_pago']) ? intval($datos['id_tipo_pago']) : null;
+        $idBanco = !empty($datos['id_banco']) ? intval($datos['id_banco']) : null;
+        $referencia = !empty($datos['referencia']) ? trim($datos['referencia']) : null;
+
+        $montoInicial = floatval($datos['monto_inicial'] ?? 0);
+        $idTipoPagoInicial = !empty($datos['id_tipo_pago_inicial']) ? intval($datos['id_tipo_pago_inicial']) : null;
+        $idBancoInicial = !empty($datos['id_banco_inicial']) ? intval($datos['id_banco_inicial']) : null;
+        $referenciaInicial = !empty($datos['referencia_inicial']) ? trim($datos['referencia_inicial']) : null;
+
+        if ($idProveedor < 1) {
+            return ['valido' => false, 'mensaje' => 'Debe seleccionar un proveedor'];
+        }
+
+        $stmtProv = $this->conexion->prepare("SELECT id_proveedor FROM proveedores WHERE id_proveedor = :id AND estado = 1 LIMIT 1");
+        $stmtProv->bindParam(':id', $idProveedor, PDO::PARAM_INT);
+        $stmtProv->execute();
+        if (!$stmtProv->fetch()) {
+            return ['valido' => false, 'mensaje' => 'El proveedor seleccionado no existe o está inactivo'];
+        }
+
+        if (strlen($observaciones) > 250) {
+            return ['valido' => false, 'mensaje' => 'Las observaciones no pueden superar los 250 caracteres'];
+        }
+        if (preg_match('/[\'"`;\\\\<>]/', $observaciones)) {
+            return ['valido' => false, 'mensaje' => 'Las observaciones contienen caracteres no permitidos'];
+        }
+
+        if (empty($fecha)) {
+            $fecha = date('Y-m-d H:i:s');
+        }
+
+        if ($condicionPago === 'contado' && $idTipoPago === 1) {
+            $idBanco = null;
+            if (empty($referencia)) {
+                $referencia = 'Efectivo';
+            }
+        }
+
+        if ($condicionPago === 'credito' && $montoInicial > 0) {
+            if ($idTipoPagoInicial === 1) {
+                $idBancoInicial = null;
+                if (empty($referenciaInicial)) {
+                    $referenciaInicial = 'Efectivo (Abono Inicial)';
+                }
+            } else {
+                if (empty($idBancoInicial) || empty($referenciaInicial)) {
+                    return ['valido' => false, 'mensaje' => 'Debe indicar banco y referencia para el abono inicial.'];
+                }
+            }
+        }
+
+        $itemsRaw = $datos['items'] ?? '[]';
+        $items = is_array($itemsRaw) ? $itemsRaw : json_decode((string)$itemsRaw, true);
+
+        if (empty($items) || !is_array($items)) {
+            return ['valido' => false, 'mensaje' => 'Debe agregar al menos un producto recibido a la nota de entrega'];
+        }
+
+        foreach ($items as &$it) {
+            $cantRaw = $it['cantidad'] ?? 0;
+            if (!is_numeric($cantRaw) || floor((float)$cantRaw) != (float)$cantRaw || (int)$cantRaw < 1) {
+                return ['valido' => false, 'mensaje' => 'Las cantidades deben ser números enteros mayores o iguales a 1.'];
+            }
+            $it['cantidad'] = (int)$cantRaw;
+            $precioRaw = floatval($it['precio_compra'] ?? 0);
+            if ($precioRaw <= 0) {
+                return ['valido' => false, 'mensaje' => 'El precio de compra debe ser mayor a 0'];
+            }
+        }
+        unset($it);
+
+        return [
+            'valido' => true,
+            'id_proveedor' => $idProveedor,
+            'fecha' => $fecha,
+            'observaciones' => $observaciones,
+            'condicion_pago' => $condicionPago,
+            'fecha_vencimiento' => $fechaVencimiento,
+            'items' => $items,
+            'id_tipo_pago' => $idTipoPago,
+            'id_banco' => $idBanco,
+            'referencia' => $referencia,
+            'monto_inicial' => $montoInicial,
+            'id_tipo_pago_inicial' => $idTipoPagoInicial,
+            'id_banco_inicial' => $idBancoInicial,
+            'referencia_inicial' => $referenciaInicial
+        ];
+    }
+
+    // FUNCIÓN: registrarCompra
+    // OBJETIVO: Valida y procesa la recepción de compra completa
+    public function registrarCompra(array $datos): array
+    {
+        $val = $this->validarDatosCompra($datos);
+        if (!$val['valido']) {
+            return ['exito' => false, 'mensaje' => $val['mensaje']];
+        }
+
+        try {
+            $idNota = $this->crearNotaCompra(
+                $val['id_proveedor'],
+                $val['fecha'],
+                $val['observaciones'],
+                $val['condicion_pago'],
+                $val['fecha_vencimiento'],
+                $val['items'],
+                $val['id_tipo_pago'],
+                $val['id_banco'],
+                $val['referencia'],
+                $val['monto_inicial'],
+                $val['id_tipo_pago_inicial'],
+                $val['id_banco_inicial'],
+                $val['referencia_inicial']
+            );
+
+            return [
+                'exito' => true,
+                'mensaje' => 'Nota de entrega de compra #' . $idNota . ' registrada con éxito. Stock de inventario actualizado.',
+                'datos' => ['id_nota_entrega' => $idNota]
+            ];
+        } catch (\PDOException $e) {
+            error_log('Error al guardar nota de compra: ' . $e->getMessage());
+            return ['exito' => false, 'mensaje' => 'Error al procesar la compra: ' . $e->getMessage()];
+        }
+    }
+
+    // FUNCIÓN: anularNota
+    // OBJETIVO: Valida y revierte la nota de entrega de compra
+    public function anularNota(int $id): array
+    {
+        if ($id < 1) {
+            return ['exito' => false, 'mensaje' => 'ID no válido'];
+        }
+
+        try {
+            if ($this->anular($id)) {
+                return ['exito' => true, 'mensaje' => 'Nota de entrega anulada y stock revertido correctamente'];
+            }
+            return ['exito' => false, 'mensaje' => 'No se pudo anular la nota de entrega'];
+        } catch (\PDOException $e) {
+            error_log('Error al anular nota de compra: ' . $e->getMessage());
+            return ['exito' => false, 'mensaje' => 'Error al anular nota de compra'];
+        }
+    }
+
     // FUNCIÓN: crearNotaCompra
     // OBJETIVO: Registra la recepción de compra, aumenta el stock de cada insumo y genera CxP si es crédito (con opción de abono inicial)
     public function crearNotaCompra(

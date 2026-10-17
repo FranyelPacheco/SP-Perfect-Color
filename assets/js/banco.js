@@ -8,6 +8,15 @@ document.addEventListener('DOMContentLoaded', function() {
     var mensajeError = document.getElementById('mensajeErrorBanco');
     var tituloModal = document.getElementById('tituloModalBanco');
 
+    if (nombreBanco) {
+        nombreBanco.addEventListener('input', function() {
+            this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.\-]/g, '');
+            if (this.value.length > 50) {
+                this.value = this.value.substring(0, 50);
+            }
+        });
+    }
+
     cargarBancos();
 
     if (formulario) {
@@ -62,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 language: window.DATATABLES_SPANISH,
                 columns: [
                     { data: 'nombre' },
-                    { data: 'activo', render: function(d) { return d == 1 ? '<span class="badge bg-success">Si</span>' : '<span class="badge bg-secondary">No</span>'; } },
+                    { data: 'activo', render: function(d) { return d == 1 ? '<span class="badge bg-success">Si</span>' : '<span class="badge bg-danger">No</span>'; } },
                     { data: null, render: function(d, t, row) {
                         var activo = row.activo == 1;
                         return '<div class="d-flex gap-2">' +

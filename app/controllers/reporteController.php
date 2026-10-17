@@ -4,6 +4,7 @@ namespace App\Controllers;
 use App\Models\{
     ReporteModel,
     ClienteModel,
+    ProveedorModel,
     TipoPagoModel
 };
 use function App\Helpers\{
@@ -23,8 +24,10 @@ if ($metodo === 'index') {
     verificarPermiso('reporte');
 
     $clienteModel = new ClienteModel();
+    $proveedorModel = new ProveedorModel();
     $tipoPagoModel = new TipoPagoModel();
     $clientes = $clienteModel->listarTodos();
+    $proveedores = $proveedorModel->listarTodos();
     $tiposPago = $tipoPagoModel->listarTodos();
 
     $contenidoVista = __DIR__ . '/../views/reporteListView.php';
@@ -44,6 +47,10 @@ if ($metodo === 'index') {
     if (!validarFecha($desde) || !validarFecha($hasta)) {
         respuestaJson('error', 'Formato de fecha invalido (use YYYY-MM-DD)');
     }
+    $hoy = date('Y-m-d');
+    if ($desde > $hoy || $hasta > $hoy) {
+        respuestaJson('error', 'Las fechas no pueden ser posteriores a la fecha actual (' . $hoy . ')');
+    }
 
     $ventas = $reporteModel->ventasPorRango($desde, $hasta, $idCliente, $condicion, $idTipoPago);
 
@@ -54,6 +61,69 @@ if ($metodo === 'index') {
         'ventas' => $ventas,
         'total' => $total,
         'cantidad' => count($ventas)
+    ]);
+
+// FUNCIÓN: comprasAjax
+// OBJETIVO: Devuelve JSON con las recepciones de compras a proveedores filtradas por rango de fechas
+} elseif ($metodo === 'comprasAjax') {
+    verificarPermiso('reporte');
+
+    $desde = $_GET['desde'] ?? date('Y-m-01');
+    $hasta = $_GET['hasta'] ?? date('Y-m-d');
+    $idProveedor = !empty($_GET['id_proveedor']) ? intval($_GET['id_proveedor']) : null;
+    $condicion = !empty($_GET['condicion']) ? $_GET['condicion'] : null;
+
+    if (!validarFecha($desde) || !validarFecha($hasta)) {
+        respuestaJson('error', 'Formato de fecha invalido (use YYYY-MM-DD)');
+    }
+    $hoy = date('Y-m-d');
+    if ($desde > $hoy || $hasta > $hoy) {
+        respuestaJson('error', 'Las fechas no pueden ser posteriores a la fecha actual (' . $hoy . ')');
+    }
+
+    $compras = $reporteModel->comprasPorRango($desde, $hasta, $idProveedor, $condicion);
+
+    $total = 0;
+    foreach ($compras as $c) { $total += floatval($c['total']); }
+
+    respuestaJson('exito', 'Compras obtenidas', [
+        'compras' => $compras,
+        'total' => $total,
+        'cantidad' => count($compras)
+    ]);
+
+// FUNCIÓN: ambasAjax
+// OBJETIVO: Devuelve JSON consolidado con ventas y compras para ver balance y flujo operativo
+} elseif ($metodo === 'ambasAjax') {
+    verificarPermiso('reporte');
+
+    $desde = $_GET['desde'] ?? date('Y-m-01');
+    $hasta = $_GET['hasta'] ?? date('Y-m-d');
+
+    if (!validarFecha($desde) || !validarFecha($hasta)) {
+        respuestaJson('error', 'Formato de fecha invalido (use YYYY-MM-DD)');
+    }
+    $hoy = date('Y-m-d');
+    if ($desde > $hoy || $hasta > $hoy) {
+        respuestaJson('error', 'Las fechas no pueden ser posteriores a la fecha actual (' . $hoy . ')');
+    }
+
+    $ambas = $reporteModel->ambasPorRango($desde, $hasta);
+
+    $totalIngresos = 0;
+    $totalEgresos = 0;
+    foreach ($ambas as $row) {
+        $totalIngresos += floatval($row['monto_ingreso']);
+        $totalEgresos += floatval($row['monto_egreso']);
+    }
+    $balanceNeto = $totalIngresos - $totalEgresos;
+
+    respuestaJson('exito', 'Flujo consolidado obtenido', [
+        'items' => $ambas,
+        'total_ingresos' => $totalIngresos,
+        'total_egresos' => $totalEgresos,
+        'balance_neto' => $balanceNeto,
+        'cantidad' => count($ambas)
     ]);
 
 // FUNCIÓN: carteraCxcAjax
@@ -69,6 +139,10 @@ if ($metodo === 'index') {
     if (!validarFecha($desde) || !validarFecha($hasta)) {
         respuestaJson('error', 'Formato de fecha invalido (use YYYY-MM-DD)');
     }
+    $hoy = date('Y-m-d');
+    if ($desde > $hoy || $hasta > $hoy) {
+        respuestaJson('error', 'Las fechas no pueden ser posteriores a la fecha actual (' . $hoy . ')');
+    }
 
     $cuentas = $reporteModel->carteraCxc($desde, $hasta, $idCliente, $estado);
 
@@ -82,23 +156,27 @@ if ($metodo === 'index') {
     ]);
 
 // FUNCIÓN: exportarPdfAjax
-// OBJETIVO: Genera y descarga un archivo PDF del reporte seleccionado (ventas o carteraCxc)
-// NOTA: Usa window.location.href desde el cliente porque la respuesta es binaria; Dompdf renderiza en horizontal
+// OBJETIVO: Genera y descarga un archivo PDF del reporte seleccionado (ventas, compras, ambas o carteraCxc)
 } elseif ($metodo === 'exportarPdfAjax') {
     verificarPermiso('reporte');
     $tipo = $_GET['tipo'] ?? '';
     $desde = $_GET['desde'] ?? date('Y-m-01');
     $hasta = $_GET['hasta'] ?? date('Y-m-d');
 
-    $tiposValidos = ['ventas', 'carteraCxc'];
+    $tiposValidos = ['ventas', 'compras', 'ambas', 'carteraCxc'];
     if (!in_array($tipo, $tiposValidos)) {
         respuestaJson('error', 'Tipo de reporte no valido');
     }
     if (!validarFecha($desde) || !validarFecha($hasta)) {
         respuestaJson('error', 'Formato de fecha invalido (use YYYY-MM-DD)');
     }
+    $hoy = date('Y-m-d');
+    if ($desde > $hoy || $hasta > $hoy) {
+        respuestaJson('error', 'Las fechas no pueden ser posteriores a la fecha actual (' . $hoy . ')');
+    }
     $filtros = [
         'id_cliente' => !empty($_GET['id_cliente']) ? intval($_GET['id_cliente']) : null,
+        'id_proveedor' => !empty($_GET['id_proveedor']) ? intval($_GET['id_proveedor']) : null,
         'condicion' => !empty($_GET['condicion']) ? $_GET['condicion'] : null,
         'id_tipo_pago' => !empty($_GET['id_tipo_pago']) ? intval($_GET['id_tipo_pago']) : null,
         'estado_cxc' => !empty($_GET['estado_cxc']) ? $_GET['estado_cxc'] : null,
@@ -106,23 +184,27 @@ if ($metodo === 'index') {
     generarPDF($tipo, $desde, $hasta, $filtros);
 
 // FUNCIÓN: exportarExcelAjax
-// OBJETIVO: Genera y descarga un archivo Excel (XLSX) del reporte seleccionado (ventas o carteraCxc)
-// NOTA: Usa OpenSpout Writer; la descarga se maneja desde el servidor con headers adecuados
+// OBJETIVO: Genera y descarga un archivo Excel (XLSX) del reporte seleccionado (ventas, compras, ambas o carteraCxc)
 } elseif ($metodo === 'exportarExcelAjax') {
     verificarPermiso('reporte');
     $tipo = $_GET['tipo'] ?? '';
     $desde = $_GET['desde'] ?? date('Y-m-01');
     $hasta = $_GET['hasta'] ?? date('Y-m-d');
 
-    $tiposValidos = ['ventas', 'carteraCxc'];
+    $tiposValidos = ['ventas', 'compras', 'ambas', 'carteraCxc'];
     if (!in_array($tipo, $tiposValidos)) {
         respuestaJson('error', 'Tipo de reporte no valido');
     }
     if (!validarFecha($desde) || !validarFecha($hasta)) {
         respuestaJson('error', 'Formato de fecha invalido (use YYYY-MM-DD)');
     }
+    $hoy = date('Y-m-d');
+    if ($desde > $hoy || $hasta > $hoy) {
+        respuestaJson('error', 'Las fechas no pueden ser posteriores a la fecha actual (' . $hoy . ')');
+    }
     $filtros = [
         'id_cliente' => !empty($_GET['id_cliente']) ? intval($_GET['id_cliente']) : null,
+        'id_proveedor' => !empty($_GET['id_proveedor']) ? intval($_GET['id_proveedor']) : null,
         'condicion' => !empty($_GET['condicion']) ? $_GET['condicion'] : null,
         'id_tipo_pago' => !empty($_GET['id_tipo_pago']) ? intval($_GET['id_tipo_pago']) : null,
         'estado_cxc' => !empty($_GET['estado_cxc']) ? $_GET['estado_cxc'] : null,

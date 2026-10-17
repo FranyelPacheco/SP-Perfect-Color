@@ -133,6 +133,308 @@ class UsuarioModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
+    // FUNCIÓN: validarDatosUsuario
+    // OBJETIVO: Valida nombre, correo, clave y rol para un usuario
+    public function validarDatosUsuario(array $datos, ?int $idActual = null, bool $esCreacion = true): array
+    {
+        $nombre = trim($datos['nombre'] ?? '');
+        $correo = trim($datos['correo'] ?? '');
+        $idRol = intval($datos['id_rol'] ?? 0);
+        $activo = isset($datos['activo']) ? intval($datos['activo']) : 1;
+
+        if ($nombre === '') {
+            return ['valido' => false, 'mensaje' => 'El nombre es obligatorio'];
+        }
+        if ($correo === '' || filter_var($correo, FILTER_VALIDATE_EMAIL) === false) {
+            return ['valido' => false, 'mensaje' => 'El correo electronico no es valido'];
+        }
+
+        if ($esCreacion) {
+            $clave = $datos['clave'] ?? '';
+            $errorClave = null;
+            if (!\App\Helpers\validarClave($clave, $errorClave)) {
+                return ['valido' => false, 'mensaje' => $errorClave ?? 'Contraseña inválida'];
+            }
+        }
+
+        if ($idRol < 1) {
+            return ['valido' => false, 'mensaje' => 'Debe seleccionar un rol'];
+        }
+
+        // Verificar que el rol seleccionado esté activo
+        $rolModel = new RolModel();
+        $rolSeleccionado = $rolModel->buscarPorId($idRol);
+        if (!$rolSeleccionado || (int)$rolSeleccionado['activo'] !== 1) {
+            return ['valido' => false, 'mensaje' => 'El rol seleccionado no está activo'];
+        }
+
+        if ($this->correoExiste($correo, $idActual)) {
+            return ['valido' => false, 'mensaje' => ($idActual ? 'El correo electronico ya esta registrado en otro usuario' : 'El correo electronico ya esta registrado')];
+        }
+
+        return [
+            'valido' => true,
+            'nombre' => $nombre,
+            'correo' => $correo,
+            'id_rol' => $idRol,
+            'activo' => $activo,
+            'clave' => $datos['clave'] ?? ''
+        ];
+    }
+
+    // FUNCIÓN: registrar
+    // OBJETIVO: Valida y registra o reactiva un usuario
+    public function registrar(array $datos): array
+    {
+        $val = $this->validarDatosUsuario($datos, null, true);
+        if (!$val['valido']) {
+            return ['exito' => false, 'mensaje' => $val['mensaje']];
+        }
+
+        $passwordHash = password_hash($val['clave'], PASSWORD_DEFAULT);
+        $inactivoId = $this->buscarInactivoPorCorreo($val['correo']);
+        if ($inactivoId) {
+            if ($this->actualizarUsuario($inactivoId, $val['nombre'], $val['correo'], $val['id_rol'], 1)) {
+                $this->actualizarClave($inactivoId, $passwordHash);
+                return ['exito' => true, 'mensaje' => 'Usuario reactivado exitosamente'];
+            }
+            return ['exito' => false, 'mensaje' => 'Error al reactivar el usuario'];
+        }
+
+        if ($this->insertarUsuario($val['nombre'], $val['correo'], $passwordHash, $val['id_rol'], 1)) {
+            \App\Helpers\enviarCredencialesUsuario($val['correo'], $val['nombre'], $val['clave']);
+            return ['exito' => true, 'mensaje' => 'Usuario creado exitosamente'];
+        }
+        return ['exito' => false, 'mensaje' => 'Error al crear el usuario'];
+    }
+
+    // FUNCIÓN: modificar
+    // OBJETIVO: Valida y actualiza los datos de un usuario existente, incluyendo cambio de clave opcional
+    public function modificar(int $id, array $datos, bool $puedeGestionarRoles = true): array
+    {
+        if ($id < 1) {
+            return ['exito' => false, 'mensaje' => 'ID de usuario no valido'];
+        }
+
+        $usuarioActual = $this->buscarPorId($id);
+        if (!$usuarioActual) {
+            return ['exito' => false, 'mensaje' => 'Usuario no encontrado'];
+        }
+
+        if (!$puedeGestionarRoles) {
+            $datos['id_rol'] = (int)$usuarioActual['id_rol'];
+            $datos['activo'] = (int)$usuarioActual['activo'];
+        }
+
+        $val = $this->validarDatosUsuario($datos, $id, false);
+        if (!$val['valido']) {
+            return ['exito' => false, 'mensaje' => $val['mensaje']];
+        }
+
+        if (!$this->actualizarUsuario($id, $val['nombre'], $val['correo'], $val['id_rol'], $val['activo'])) {
+            return ['exito' => false, 'mensaje' => 'Error al actualizar el usuario'];
+        }
+
+        $cambiarClave = isset($datos['cambiar_clave']) && $datos['cambiar_clave'] == '1';
+        $nuevaClave = $datos['nueva_clave'] ?? '';
+
+        if ($cambiarClave && \App\Helpers\validarRequerido($nuevaClave)) {
+            $errorClave = null;
+            if (!\App\Helpers\validarClave($nuevaClave, $errorClave)) {
+                return ['exito' => false, 'mensaje' => $errorClave ?? 'La nueva clave no cumple los requisitos'];
+            }
+            if (password_verify($nuevaClave, $usuarioActual['password_hash'])) {
+                return ['exito' => false, 'mensaje' => 'La nueva contraseña no puede ser igual a la contraseña actual'];
+            }
+            $this->actualizarClave($id, password_hash($nuevaClave, PASSWORD_DEFAULT));
+        }
+
+        return ['exito' => true, 'mensaje' => 'Usuario actualizado exitosamente'];
+    }
+
+    // FUNCIÓN: darDeBaja
+    // OBJETIVO: Soft-delete seguro de un usuario evitando dejar al sistema sin administradores
+    public function darDeBaja(int $id, int $idSesionActual): array
+    {
+        if ($id < 1) {
+            return ['exito' => false, 'mensaje' => 'ID de usuario no valido'];
+        }
+        if ($id === $idSesionActual) {
+            return ['exito' => false, 'mensaje' => 'No puede eliminar su propio usuario'];
+        }
+
+        if ($this->eliminarUsuario($id)) {
+            return ['exito' => true, 'mensaje' => 'Usuario eliminado exitosamente'];
+        }
+        return ['exito' => false, 'mensaje' => 'No se puede eliminar al unico administrador del sistema'];
+    }
+
+    // FUNCIÓN: autenticar
+    // OBJETIVO: Valida credenciales, seguridad contra inyecciones y estado del usuario y su rol
+    public function autenticar(string $correo, string $clave): array
+    {
+        $correo = trim($correo);
+        if ($correo === '' || $clave === '') {
+            return ['exito' => false, 'mensaje' => 'Todos los campos son obligatorios'];
+        }
+
+        if (strlen($clave) > 20 || preg_match('/[\'"`;\\\\<>]/', $clave) || str_contains($clave, '--') || str_contains($clave, '/*') || str_contains($clave, '*/')) {
+            return ['exito' => false, 'mensaje' => 'Correo o clave incorrectos'];
+        }
+
+        $usuario = $this->buscarPorCorreo($correo);
+        if (!$usuario) {
+            return ['exito' => false, 'mensaje' => 'Correo o clave incorrectos'];
+        }
+
+        if (!password_verify($clave, $usuario['password_hash'])) {
+            return ['exito' => false, 'mensaje' => 'Correo o clave incorrectos'];
+        }
+
+        if (!$usuario['activo']) {
+            return ['exito' => false, 'mensaje' => 'Usuario inactivo. Contacte al administrador'];
+        }
+
+        if (isset($usuario['rol_activo']) && (int)$usuario['rol_activo'] === 0) {
+            return ['exito' => false, 'mensaje' => 'Su rol asignado se encuentra deshabilitado. Contacte al administrador'];
+        }
+
+        return ['exito' => true, 'usuario' => $usuario];
+    }
+
+    // FUNCIÓN: actualizarPerfil
+    // OBJETIVO: Valida y actualiza los datos básicos (nombre y correo) del perfil propio
+    public function actualizarPerfil(int $idUsuario, array $datos): array
+    {
+        $nombre = trim($datos['nombre'] ?? '');
+        $correo = trim($datos['correo'] ?? '');
+
+        if ($nombre === '') {
+            return ['exito' => false, 'mensaje' => 'El nombre es obligatorio'];
+        }
+        if ($correo === '' || filter_var($correo, FILTER_VALIDATE_EMAIL) === false) {
+            return ['exito' => false, 'mensaje' => 'El correo electrónico no es válido'];
+        }
+
+        if ($this->correoExiste($correo, $idUsuario)) {
+            return ['exito' => false, 'mensaje' => 'El correo electrónico ya se encuentra registrado por otro usuario'];
+        }
+
+        $usuarioActual = $this->buscarPorId($idUsuario);
+        if (!$usuarioActual) {
+            return ['exito' => false, 'mensaje' => 'Usuario no encontrado'];
+        }
+
+        $idRol = (int)$usuarioActual['id_rol'];
+        $activo = (int)$usuarioActual['activo'];
+
+        if ($this->actualizarUsuario($idUsuario, $nombre, $correo, $idRol, $activo)) {
+            return [
+                'exito' => true,
+                'mensaje' => 'Datos de perfil actualizados exitosamente',
+                'datos' => ['nombre' => $nombre, 'correo' => $correo]
+            ];
+        }
+        return ['exito' => false, 'mensaje' => 'Error al actualizar los datos de perfil'];
+    }
+
+    // FUNCIÓN: cambiarClavePerfil
+    // OBJETIVO: Valida la contraseña actual, requisitos de la nueva y actualiza la clave del perfil
+    public function cambiarClavePerfil(int $idUsuario, array $datos): array
+    {
+        $claveActual = $datos['clave_actual'] ?? '';
+        $nuevaClave = $datos['nueva_clave'] ?? '';
+        $confirmarClave = $datos['confirmar_clave'] ?? '';
+
+        if ($claveActual === '') {
+            return ['exito' => false, 'mensaje' => 'Debe ingresar su contraseña actual'];
+        }
+        if ($nuevaClave === '') {
+            return ['exito' => false, 'mensaje' => 'Debe ingresar la nueva contraseña'];
+        }
+
+        $errorClave = null;
+        if (!\App\Helpers\validarClave($nuevaClave, $errorClave)) {
+            return ['exito' => false, 'mensaje' => $errorClave ?? 'La nueva contraseña no cumple los requisitos'];
+        }
+
+        if ($nuevaClave !== $confirmarClave) {
+            return ['exito' => false, 'mensaje' => 'La confirmación de la nueva contraseña no coincide'];
+        }
+
+        $usuarioActual = $this->buscarPorId($idUsuario);
+        if (!$usuarioActual) {
+            return ['exito' => false, 'mensaje' => 'Usuario no encontrado'];
+        }
+
+        if (!password_verify($claveActual, $usuarioActual['password_hash'])) {
+            return ['exito' => false, 'mensaje' => 'La contraseña actual ingresada es incorrecta'];
+        }
+
+        if ($nuevaClave === $claveActual || password_verify($nuevaClave, $usuarioActual['password_hash'])) {
+            return ['exito' => false, 'mensaje' => 'La nueva contraseña no puede ser igual a la contraseña actual'];
+        }
+
+        $nuevoHash = password_hash($nuevaClave, PASSWORD_DEFAULT);
+        if ($this->actualizarClave($idUsuario, $nuevoHash)) {
+            \App\Helpers\enviarNotificacionCambioClave($usuarioActual['correo'], $usuarioActual['nombre']);
+            return ['exito' => true, 'mensaje' => 'Contraseña modificada exitosamente. Se ha enviado un aviso a su correo.'];
+        }
+        return ['exito' => false, 'mensaje' => 'Error al actualizar la contraseña'];
+    }
+
+    // FUNCIÓN: restablecerClaveConToken
+    // OBJETIVO: Valida el token de recuperación y actualiza la contraseña
+    public function restablecerClaveConToken(string $token, string $nuevaClave, string $confirmarClave, string $tokenSecret): array
+    {
+        if (empty($token)) {
+            return ['exito' => false, 'mensaje' => 'Token de recuperación no válido'];
+        }
+
+        if ($nuevaClave === '') {
+            return ['exito' => false, 'mensaje' => 'La nueva contraseña es obligatoria'];
+        }
+
+        $errorClave = null;
+        if (!\App\Helpers\validarClave($nuevaClave, $errorClave)) {
+            return ['exito' => false, 'mensaje' => $errorClave ?? 'La nueva contraseña no cumple los requisitos'];
+        }
+
+        if ($nuevaClave !== $confirmarClave) {
+            return ['exito' => false, 'mensaje' => 'Las contraseñas ingresadas no coinciden'];
+        }
+
+        $data = json_decode(base64_decode($token), true);
+        if (!$data || !isset($data['id'], $data['exp'], $data['hash'])) {
+            return ['exito' => false, 'mensaje' => 'Enlace de recuperación inválido'];
+        }
+
+        if (time() > $data['exp']) {
+            return ['exito' => false, 'mensaje' => 'El enlace de recuperación ha expirado'];
+        }
+
+        $usuario = $this->buscarPorId((int)$data['id']);
+        if (!$usuario || (int)$usuario['activo'] !== 1) {
+            return ['exito' => false, 'mensaje' => 'Usuario no encontrado'];
+        }
+
+        $firmaEsperada = hash_hmac('sha256', $usuario['id_usuario'] . $usuario['password_hash'] . $data['exp'], $tokenSecret);
+        if (!hash_equals($firmaEsperada, $data['hash'])) {
+            return ['exito' => false, 'mensaje' => 'Este enlace ya fue utilizado o no es válido'];
+        }
+
+        if (password_verify($nuevaClave, $usuario['password_hash'])) {
+            return ['exito' => false, 'mensaje' => 'La nueva contraseña no puede ser igual a la contraseña anterior'];
+        }
+
+        $nuevoHash = password_hash($nuevaClave, PASSWORD_DEFAULT);
+        if ($this->actualizarClave((int)$usuario['id_usuario'], $nuevoHash)) {
+            \App\Helpers\enviarNotificacionCambioClave($usuario['correo'], $usuario['nombre']);
+            return ['exito' => true, 'mensaje' => 'Contraseña restablecida exitosamente. Redirigiendo...'];
+        }
+        return ['exito' => false, 'mensaje' => 'Error al guardar la nueva contraseña'];
+    }
+
     // FUNCIÓN: insertarUsuario
     // OBJETIVO: Inserta un nuevo usuario con nombre, correo, contraseña hash y rol
     public function insertarUsuario(string $nombre, string $correo, string $passwordHash, int $idRol, int $activo = 1): bool

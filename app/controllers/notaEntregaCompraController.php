@@ -71,89 +71,8 @@ if ($metodo === 'index') {
         respuestaJson('error', 'Método no permitido');
     }
 
-    $idProveedor = intval($_POST['id_proveedor'] ?? 0);
-    $fecha = trim($_POST['fecha'] ?? '');
-    $observaciones = trim($_POST['observaciones'] ?? '');
-    $condicionPago = trim($_POST['condicion_pago'] ?? 'contado');
-    $fechaVencimiento = !empty($_POST['fecha_vencimiento']) ? trim($_POST['fecha_vencimiento']) : null;
-    $idTipoPago = !empty($_POST['id_tipo_pago']) ? intval($_POST['id_tipo_pago']) : null;
-    $idBanco = !empty($_POST['id_banco']) ? intval($_POST['id_banco']) : null;
-    $referencia = !empty($_POST['referencia']) ? trim($_POST['referencia']) : null;
-
-    // Abono inicial si es crédito
-    $montoInicial = floatval($_POST['monto_inicial'] ?? 0);
-    $idTipoPagoInicial = !empty($_POST['id_tipo_pago_inicial']) ? intval($_POST['id_tipo_pago_inicial']) : null;
-    $idBancoInicial = !empty($_POST['id_banco_inicial']) ? intval($_POST['id_banco_inicial']) : null;
-    $referenciaInicial = !empty($_POST['referencia_inicial']) ? trim($_POST['referencia_inicial']) : null;
-
-    if ($condicionPago === 'contado' && $idTipoPago === 1) {
-        $idBanco = null;
-        if (empty($referencia)) {
-            $referencia = 'Efectivo';
-        }
-    }
-
-    if ($condicionPago === 'credito' && $montoInicial > 0) {
-        if ($idTipoPagoInicial === 1) {
-            $idBancoInicial = null;
-            if (empty($referenciaInicial)) {
-                $referenciaInicial = 'Efectivo (Abono Inicial)';
-            }
-        } else {
-            if (empty($idBancoInicial) || empty($referenciaInicial)) {
-                respuestaJson('error', 'Debe indicar banco y referencia para el abono inicial.');
-            }
-        }
-    }
-
-    if ($idProveedor < 1) {
-        respuestaJson('error', 'Debe seleccionar un proveedor');
-    }
-
-    if (empty($fecha)) {
-        $fecha = date('Y-m-d H:i:s');
-    }
-
-    $itemsRaw = $_POST['items'] ?? '[]';
-    $items = is_array($itemsRaw) ? $itemsRaw : json_decode($itemsRaw, true);
-
-    if (empty($items) || !is_array($items)) {
-        respuestaJson('error', 'Debe agregar al menos un producto recibido a la nota de entrega');
-    }
-
-    foreach ($items as &$it) {
-        $cantRaw = $it['cantidad'] ?? 0;
-        if (!is_numeric($cantRaw) || floor((float)$cantRaw) != (float)$cantRaw || (int)$cantRaw < 1) {
-            respuestaJson('error', 'Las cantidades deben ser números enteros mayores o iguales a 1.');
-        }
-        $it['cantidad'] = (int)$cantRaw;
-    }
-    unset($it);
-
-    try {
-        $idNota = $notaEntregaCompraModel->crearNotaCompra(
-            $idProveedor,
-            $fecha,
-            $observaciones,
-            $condicionPago,
-            $fechaVencimiento,
-            $items,
-            $idTipoPago,
-            $idBanco,
-            $referencia,
-            $montoInicial,
-            $idTipoPagoInicial,
-            $idBancoInicial,
-            $referenciaInicial
-        );
-
-        respuestaJson('exito', 'Nota de entrega de compra #' . $idNota . ' registrada con éxito. Stock de inventario actualizado.', [
-            'id_nota_entrega' => $idNota
-        ]);
-    } catch (PDOException $e) {
-        error_log('Error al guardar nota de compra: ' . $e->getMessage());
-        respuestaJson('error', 'Error al procesar la compra: ' . $e->getMessage());
-    }
+    $resultado = $notaEntregaCompraModel->registrarCompra($_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje'], $resultado['datos'] ?? null);
 
 // FUNCIÓN: ver
 // OBJETIVO: Muestra el detalle completo de la nota de compra y sus productos recibidos
@@ -189,20 +108,8 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id'] ?? 0);
-    if ($id < 1) {
-        respuestaJson('error', 'ID no válido');
-    }
-
-    try {
-        if ($notaEntregaCompraModel->anular($id)) {
-            respuestaJson('exito', 'Nota de entrega anulada y stock revertido correctamente');
-        } else {
-            respuestaJson('error', 'No se pudo anular la nota de entrega');
-        }
-    } catch (PDOException $e) {
-        error_log('Error al anular nota de compra: ' . $e->getMessage());
-        respuestaJson('error', 'Error al anular nota de compra');
-    }
+    $resultado = $notaEntregaCompraModel->anularNota($id);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 } else {
     require_once __DIR__ . '/../views/error404View.php';

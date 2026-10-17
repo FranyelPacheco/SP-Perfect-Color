@@ -10,6 +10,7 @@ use function App\Helpers\{
     verificarAutenticacion,
     validarRequerido,
     validarCorreo,
+    validarClave,
     enviarNotificacionCambioClave
 };
 
@@ -44,34 +45,13 @@ if ($metodo === 'index') {
     }
 
     $idUsuario = (int)($_SESSION['id_usuario'] ?? 0);
-    $nombre = trim($_POST['nombre'] ?? '');
-    $correo = trim($_POST['correo'] ?? '');
-
-    if (!validarRequerido($nombre)) {
-        respuestaJson('error', 'El nombre es obligatorio');
-    }
-    if (!validarCorreo($correo)) {
-        respuestaJson('error', 'El correo electrónico no es válido');
-    }
-
-    if ($usuarioModel->correoExiste($correo, $idUsuario)) {
-        respuestaJson('error', 'El correo electrónico ya se encuentra registrado por otro usuario');
-    }
-
-    $usuarioActual = $usuarioModel->buscarPorId($idUsuario);
-    if (!$usuarioActual) {
-        respuestaJson('error', 'Usuario no encontrado');
-    }
-
-    $idRol = (int)$usuarioActual['id_rol'];
-    $activo = (int)$usuarioActual['activo'];
-
-    if ($usuarioModel->actualizarUsuario($idUsuario, $nombre, $correo, $idRol, $activo)) {
-        $_SESSION['usuario_nombre'] = $nombre;
-        $_SESSION['usuario_correo'] = $correo;
-        respuestaJson('exito', 'Datos de perfil actualizados exitosamente');
+    $resultado = $usuarioModel->actualizarPerfil($idUsuario, $_POST);
+    if ($resultado['exito']) {
+        $_SESSION['usuario_nombre'] = $resultado['datos']['nombre'];
+        $_SESSION['usuario_correo'] = $resultado['datos']['correo'];
+        respuestaJson('exito', $resultado['mensaje']);
     } else {
-        respuestaJson('error', 'Error al actualizar los datos de perfil');
+        respuestaJson('error', $resultado['mensaje']);
     }
 
 // FUNCIÓN: cambiarClave
@@ -84,40 +64,8 @@ if ($metodo === 'index') {
     }
 
     $idUsuario = (int)($_SESSION['id_usuario'] ?? 0);
-    $claveActual = $_POST['clave_actual'] ?? '';
-    $nuevaClave = $_POST['nueva_clave'] ?? '';
-    $confirmarClave = $_POST['confirmar_clave'] ?? '';
-
-    if (!validarRequerido($claveActual)) {
-        respuestaJson('error', 'Debe ingresar su contraseña actual');
-    }
-    if (!validarRequerido($nuevaClave)) {
-        respuestaJson('error', 'Debe ingresar la nueva contraseña');
-    }
-    if (strlen($nuevaClave) < 6) {
-        respuestaJson('error', 'La nueva contraseña debe tener al menos 6 caracteres');
-    }
-    if ($nuevaClave !== $confirmarClave) {
-        respuestaJson('error', 'La confirmación de la nueva contraseña no coincide');
-    }
-
-    $usuarioActual = $usuarioModel->buscarPorId($idUsuario);
-    if (!$usuarioActual) {
-        respuestaJson('error', 'Usuario no encontrado');
-    }
-
-    if (!password_verify($claveActual, $usuarioActual['password_hash'])) {
-        respuestaJson('error', 'La contraseña actual ingresada es incorrecta');
-    }
-
-    $nuevoHash = password_hash($nuevaClave, PASSWORD_DEFAULT);
-    if ($usuarioModel->actualizarClave($idUsuario, $nuevoHash)) {
-        // Enviar notificación de seguridad por correo vía SMTP (PHPMailer)
-        enviarNotificacionCambioClave($usuarioActual['correo'], $usuarioActual['nombre']);
-        respuestaJson('exito', 'Contraseña modificada exitosamente. Se ha enviado un aviso a su correo.');
-    } else {
-        respuestaJson('error', 'Error al actualizar la contraseña');
-    }
+    $resultado = $usuarioModel->cambiarClavePerfil($idUsuario, $_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
 
 } else {
     require_once __DIR__ . '/../views/error404View.php';

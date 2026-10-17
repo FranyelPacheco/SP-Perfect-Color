@@ -12,6 +12,33 @@ document.addEventListener('DOMContentLoaded', function() {
     var inputFecha = document.getElementById('fechaTasa');
     var feedbackFechaTasa = document.getElementById('feedbackFechaTasa');
     var inputTasa = document.getElementById('valorTasa');
+    if (inputTasa) {
+        inputTasa.addEventListener('keydown', function(e) {
+            if (['e', 'E', '+', '-'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+        inputTasa.addEventListener('input', function() {
+            // Reemplazar comas por puntos
+            var val = this.value.replace(/,/g, '.');
+            // Permitir solo números y un único punto decimal
+            val = val.replace(/[^0-9.]/g, '');
+            var puntos = val.split('.');
+            if (puntos.length > 2) {
+                val = puntos[0] + '.' + puntos.slice(1).join('');
+            }
+            // Limitar a máximo 6 dígitos enteros y máximo 2 decimales
+            var partes = val.split('.');
+            if (partes[0].length > 6) {
+                partes[0] = partes[0].substring(0, 6);
+            }
+            if (partes.length > 1 && partes[1].length > 2) {
+                partes[1] = partes[1].substring(0, 2);
+            }
+            this.value = partes.length > 1 ? partes[0] + '.' + partes[1] : partes[0];
+        });
+    }
+
     var mensajeError = document.getElementById('mensajeErrorTasa');
     var btnNuevaTasa = document.getElementById('btnNuevaTasa');
     var btnGuardarTasa = document.getElementById('btnGuardarTasa');
@@ -147,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         render: function(data) {
                             if (data == null) return '-';
                             var num = parseFloat(data);
-                            return '<strong>Bs. ' + num.toLocaleString('es-VE', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + '</strong>';
+                            return '<strong>Bs. ' + num.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</strong>';
                         }
                     },
                     {
@@ -251,47 +278,86 @@ document.addEventListener('DOMContentLoaded', function() {
 
         var tasaNum = parseFloat(tasa.replace(',', '.'));
         if (isNaN(tasaNum) || tasaNum <= 0) {
-            mostrarErrorEnModal('El valor de la tasa debe ser un número mayor a 0 (ej. 45.5000).');
+            mostrarErrorEnModal('El valor de la tasa debe ser un número mayor a 0 (ej. 45.50).');
+            return;
+        }
+
+        if (tasaNum > 999999.99) {
+            mostrarErrorEnModal('El valor de la tasa no puede superar 999.999,99.');
             return;
         }
 
         var fd = new FormData();
         fd.append('fecha', fecha);
-        fd.append('tasa', tasaNum);
+        fd.append('tasa', tasaNum.toFixed(2));
 
         var url = '/SP%20Perfect%20Color/tasaCambio/guardar';
-        if (id && parseInt(id) > 0) {
+        var esEdicion = (id && parseInt(id) > 0);
+        if (esEdicion) {
             url = '/SP%20Perfect%20Color/tasaCambio/actualizar';
             fd.append('id_tasa_cambio', id);
         }
 
-        fetch(url, {
-            method: 'POST',
-            body: fd
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(res) {
-            if (res.estado === 'exito') {
-                if (modalInstancia) modalInstancia.hide();
-                if (typeof mostrarNotificacion === 'function') {
-                    mostrarNotificacion(res.mensaje, 'exito');
+        function ejecutarEnvio() {
+            if (btnGuardarTasa) btnGuardarTasa.disabled = true;
+
+            fetch(url, {
+                method: 'POST',
+                body: fd
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (btnGuardarTasa) btnGuardarTasa.disabled = false;
+                if (res.estado === 'exito') {
+                    if (modalInstancia) modalInstancia.hide();
+                    if (typeof mostrarNotificacion === 'function') {
+                        mostrarNotificacion(res.mensaje, 'exito');
+                    }
+                    cargarTasas();
+                    // Si la fecha editada o creada es hoy, recargar la página tras 1s para actualizar las tarjetas de resumen
+                    var hoy = new Date().toISOString().split('T')[0];
+                    if (fecha === hoy) {
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1200);
+                    }
+                } else {
+                    mostrarErrorEnModal(res.mensaje || 'No fue posible guardar la tasa.');
                 }
-                cargarTasas();
-                // Si la fecha editada o creada es hoy, recargar la página tras 1s para actualizar las tarjetas de resumen
-                var hoy = new Date().toISOString().split('T')[0];
-                if (fecha === hoy) {
-                    setTimeout(function() {
-                        window.location.reload();
-                    }, 1200);
-                }
-            } else {
-                mostrarErrorEnModal(res.mensaje || 'No fue posible guardar la tasa.');
+            })
+            .catch(function(err) {
+                if (btnGuardarTasa) btnGuardarTasa.disabled = false;
+                console.error('[TasaCambio] Error al guardar:', err);
+                mostrarErrorEnModal('Error de comunicación con el servidor.');
+            });
+        }
+
+        if (esEdicion) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: '¿Confirmar actualización?',
+                    text: '¿Está seguro de actualizar la tasa de cambio para la fecha ' + fecha + '? Esta modificación actualizará los cálculos asociados.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, actualizar',
+                    cancelButtonText: 'Cancelar'
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        ejecutarEnvio();
+                    }
+                });
+            } else if (typeof confirmarConModal === 'function') {
+                confirmarConModal('Actualizar Tasa', '¿Está seguro de actualizar la tasa para la fecha ' + fecha + '?', function() {
+                    ejecutarEnvio();
+                });
+            } else if (confirm('¿Está seguro de actualizar la tasa para la fecha ' + fecha + '?')) {
+                ejecutarEnvio();
             }
-        })
-        .catch(function(err) {
-            console.error('[TasaCambio] Error al guardar:', err);
-            mostrarErrorEnModal('Error de comunicación con el servidor.');
-        });
+        } else {
+            ejecutarEnvio();
+        }
     }
 
     function mostrarErrorEnModal(texto) {
