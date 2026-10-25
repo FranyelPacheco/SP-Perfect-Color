@@ -38,7 +38,44 @@ class ReporteModel extends ModeloBase
         $this->desde = $desde;
         $this->hasta = $hasta;
         $this->_validarRangoFechas();
-        return $this->_ejecutarAmbasPorRango();
+        $consulta = "SELECT 'Venta' as tipo_transaccion,
+                            v.id_venta as doc_numero,
+                            DATE(COALESCE(v.fecha_aprobacion, v.fecha)) as fecha,
+                            CONCAT(c.nombres, ' ', c.apellidos) as tercero_nombre,
+                            c.cedula as tercero_doc,
+                            CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END as condicion,
+                            v.total as monto_ingreso,
+                            0.00 as monto_egreso,
+                            v.total as balance_fila
+                     FROM ventas v
+                     INNER JOIN clientes c ON v.id_cliente = c.id_cliente
+                     WHERE v.estado = 1 AND v.id_estado_venta = 2 AND DATE(COALESCE(v.fecha_aprobacion, v.fecha)) BETWEEN :desde1 AND :hasta1
+
+                     UNION ALL
+
+                     SELECT 'Compra' as tipo_transaccion,
+                            ne.id_nota_entrega as doc_numero,
+                            DATE(ne.fecha) as fecha,
+                            p.nombre_empresa as tercero_nombre,
+                            p.rif as tercero_doc,
+                            CASE WHEN cp.id_cuenta_pagar IS NOT NULL AND cp.saldo_pendiente > 0 THEN 'Crédito' ELSE 'Contado' END as condicion,
+                            0.00 as monto_ingreso,
+                            ne.total as monto_egreso,
+                            -ne.total as balance_fila
+                     FROM nota_entrega ne
+                     INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
+                     LEFT JOIN cuentas_pagar cp ON cp.id_nota_entrega = ne.id_nota_entrega AND cp.estado = 1
+                     WHERE ne.estado = 1 AND DATE(ne.fecha) BETWEEN :desde2 AND :hasta2
+
+                     ORDER BY fecha DESC, doc_numero DESC";
+
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':desde1', $this->desde, PDO::PARAM_STR);
+        $stmt->bindParam(':hasta1', $this->hasta, PDO::PARAM_STR);
+        $stmt->bindParam(':desde2', $this->desde, PDO::PARAM_STR);
+        $stmt->bindParam(':hasta2', $this->hasta, PDO::PARAM_STR);
+        $stmt->execute();
+        return $stmt->fetchAll();
     }
 
     // FUNCIÓN: carteraCxc
@@ -181,45 +218,4 @@ class ReporteModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-    private function _ejecutarAmbasPorRango(): array
-    {
-        $consulta = "SELECT 'Venta' as tipo_transaccion,
-                            v.id_venta as doc_numero,
-                            DATE(COALESCE(v.fecha_aprobacion, v.fecha)) as fecha,
-                            CONCAT(c.nombres, ' ', c.apellidos) as tercero_nombre,
-                            c.cedula as tercero_doc,
-                            CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END as condicion,
-                            v.total as monto_ingreso,
-                            0.00 as monto_egreso,
-                            v.total as balance_fila
-                     FROM ventas v
-                     INNER JOIN clientes c ON v.id_cliente = c.id_cliente
-                     WHERE v.estado = 1 AND v.id_estado_venta = 2 AND DATE(COALESCE(v.fecha_aprobacion, v.fecha)) BETWEEN :desde1 AND :hasta1
-
-                     UNION ALL
-
-                     SELECT 'Compra' as tipo_transaccion,
-                            ne.id_nota_entrega as doc_numero,
-                            DATE(ne.fecha) as fecha,
-                            p.nombre_empresa as tercero_nombre,
-                            p.rif as tercero_doc,
-                            CASE WHEN cp.id_cuenta_pagar IS NOT NULL AND cp.saldo_pendiente > 0 THEN 'Crédito' ELSE 'Contado' END as condicion,
-                            0.00 as monto_ingreso,
-                            ne.total as monto_egreso,
-                            -ne.total as balance_fila
-                     FROM nota_entrega ne
-                     INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
-                     LEFT JOIN cuentas_pagar cp ON cp.id_nota_entrega = ne.id_nota_entrega AND cp.estado = 1
-                     WHERE ne.estado = 1 AND DATE(ne.fecha) BETWEEN :desde2 AND :hasta2
-
-                     ORDER BY fecha DESC, doc_numero DESC";
-
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':desde1', $this->desde, PDO::PARAM_STR);
-        $stmt->bindParam(':hasta1', $this->hasta, PDO::PARAM_STR);
-        $stmt->bindParam(':desde2', $this->desde, PDO::PARAM_STR);
-        $stmt->bindParam(':hasta2', $this->hasta, PDO::PARAM_STR);
-        $stmt->execute();
-        return $stmt->fetchAll();
     }
-}

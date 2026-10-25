@@ -17,11 +17,6 @@ class RolModel extends ModeloBase
     // OBJETIVO: Retorna todos los roles con su estado, módulos (desde rol_modulo) y total de usuarios activos asociados
     public function listarTodos(): array
     {
-        return $this->_ejecutarSelectAll();
-    }
-
-    private function _ejecutarSelectAll(): array
-    {
         $consulta = "SELECT r.id_rol, r.nombre, r.estado, r.estado as activo, r.created_at,
                             (SELECT GROUP_CONCAT(m.codigo ORDER BY m.id_modulo SEPARATOR ',') 
                              FROM rol_modulo rm 
@@ -35,14 +30,9 @@ class RolModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-    // FUNCIÓN: listarActivos
+        // FUNCIÓN: listarActivos
     // OBJETIVO: Retorna únicamente los roles activos para poblar el <select> en usuarios
     public function listarActivos(): array
-    {
-        return $this->_ejecutarSelectActivos();
-    }
-
-    private function _ejecutarSelectActivos(): array
     {
         $consulta = "SELECT r.id_rol, r.nombre,
                             (SELECT GROUP_CONCAT(m.codigo ORDER BY m.id_modulo SEPARATOR ',') 
@@ -56,16 +46,11 @@ class RolModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-    // FUNCIÓN: buscarPorId
+        // FUNCIÓN: buscarPorId
     // OBJETIVO: Busca un rol por su clave primaria e incluye sus módulos asignados
     public function buscarPorId(int $id): array|false
     {
         $this->id_rol = $id;
-        return $this->_ejecutarSelectById();
-    }
-
-    private function _ejecutarSelectById(): array|false
-    {
         $consulta = "SELECT r.id_rol, r.nombre, r.estado, r.estado as activo, r.created_at,
                             (SELECT GROUP_CONCAT(m.codigo ORDER BY m.id_modulo SEPARATOR ',') 
                              FROM rol_modulo rm 
@@ -80,7 +65,7 @@ class RolModel extends ModeloBase
         return $stmt->fetch();
     }
 
-    // FUNCIÓN: validarDatosRol
+        // FUNCIÓN: validarDatosRol
     // OBJETIVO: Valida el nombre y los módulos de un rol
     public function validarDatosRol(array $datos, ?int $idActual = null): array
     {
@@ -178,11 +163,6 @@ class RolModel extends ModeloBase
             ? array_values(array_filter(array_map('trim', $modulos))) 
             : array_values(array_filter(array_map('trim', explode(',', $modulos))));
         $this->activo = $activo;
-        return $this->_ejecutarInsert();
-    }
-
-    private function _ejecutarInsert(): bool
-    {
         $this->conexion->beginTransaction();
         try {
             $consulta = "INSERT INTO roles (nombre, estado) VALUES (:nombre, :activo)";
@@ -202,7 +182,7 @@ class RolModel extends ModeloBase
         }
     }
 
-    // FUNCIÓN: actualizarRol
+        // FUNCIÓN: actualizarRol
     // OBJETIVO: Actualiza el nombre, estado y sincroniza los módulos de un rol (protege Administrador)
     public function actualizarRol(int $id, string $nombre, int $activo, array|string $modulos): bool
     {
@@ -212,11 +192,6 @@ class RolModel extends ModeloBase
         $this->modulosArray = is_array($modulos) 
             ? array_values(array_filter(array_map('trim', $modulos))) 
             : array_values(array_filter(array_map('trim', explode(',', $modulos))));
-        return $this->_ejecutarUpdate();
-    }
-
-    private function _ejecutarUpdate(): bool
-    {
         $this->conexion->beginTransaction();
         try {
             $consulta = "UPDATE roles SET nombre = :nombre, estado = :activo WHERE id_rol = :id";
@@ -236,7 +211,7 @@ class RolModel extends ModeloBase
         }
     }
 
-    // FUNCIÓN: _sincronizarModulos
+        // FUNCIÓN: _sincronizarModulos
     // OBJETIVO: Sincroniza las asignaciones de módulos en la tabla rol_modulo para el rol actual
     private function _sincronizarModulos(): void
     {
@@ -279,11 +254,6 @@ class RolModel extends ModeloBase
         }
         $this->id_rol = $id;
         $this->activo = $activo ? 1 : 0;
-        return $this->_ejecutarToggleActivo();
-    }
-
-    private function _ejecutarToggleActivo(): bool
-    {
         $consulta = "UPDATE roles SET estado = :activo WHERE id_rol = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':activo', $this->activo, PDO::PARAM_INT);
@@ -291,17 +261,12 @@ class RolModel extends ModeloBase
         return $stmt->execute();
     }
 
-    // FUNCIÓN: nombreExiste
+        // FUNCIÓN: nombreExiste
     // OBJETIVO: Verifica si ya existe un rol con el mismo nombre
     public function nombreExiste(string $nombre, ?int $idExcluir = null): bool
     {
         $this->nombre = trim($nombre);
         $this->idExcluir = $idExcluir;
-        return $this->_ejecutarCheckNombre();
-    }
-
-    private function _ejecutarCheckNombre(): bool
-    {
         $consulta = "SELECT COUNT(*) as total FROM roles WHERE LOWER(nombre) = LOWER(:nombre) AND estado = 1";
         if ($this->idExcluir !== null) {
             $consulta .= " AND id_rol != :id";
@@ -316,16 +281,11 @@ class RolModel extends ModeloBase
         return ($resultado['total'] ?? 0) > 0;
     }
 
-    // FUNCIÓN: buscarInactivoPorNombre
+        // FUNCIÓN: buscarInactivoPorNombre
     // OBJETIVO: Busca si existe un rol inactivo con el nombre dado para reactivación
     public function buscarInactivoPorNombre(string $nombre): int|false
     {
         $this->nombre = trim($nombre);
-        return $this->_ejecutarBuscarInactivo();
-    }
-
-    private function _ejecutarBuscarInactivo(): int|false
-    {
         $consulta = "SELECT id_rol FROM roles WHERE LOWER(nombre) = LOWER(:nombre) AND estado = 0 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':nombre', $this->nombre, PDO::PARAM_STR);
@@ -334,7 +294,7 @@ class RolModel extends ModeloBase
         return $fila ? (int)$fila['id_rol'] : false;
     }
 
-    // FUNCIÓN: eliminarRol
+        // FUNCIÓN: eliminarRol
     // OBJETIVO: Eliminación lógica (soft-delete) de un rol (marca estado = 0)
     // NOTA: Protege el rol Administrador (id_rol = 1) y valida que no tenga usuarios activos asignados
     public function eliminarRol(int $id): bool
@@ -343,11 +303,6 @@ class RolModel extends ModeloBase
             return false;
         }
         $this->id_rol = $id;
-        return $this->_ejecutarDelete();
-    }
-
-    private function _ejecutarDelete(): bool
-    {
         $consultaCheck = "SELECT COUNT(*) as total FROM usuarios WHERE id_rol = :id AND estado = 1";
         $stmtCheck = $this->conexion->prepare($consultaCheck);
         $stmtCheck->bindParam(':id', $this->id_rol, PDO::PARAM_INT);
@@ -362,4 +317,5 @@ class RolModel extends ModeloBase
         $stmt->bindParam(':id', $this->id_rol, PDO::PARAM_INT);
         return $stmt->execute();
     }
-}
+
+    }

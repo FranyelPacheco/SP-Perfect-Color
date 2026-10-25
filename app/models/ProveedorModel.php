@@ -24,14 +24,28 @@ class ProveedorModel extends ModeloBase
     // OBJETIVO: Devuelve la cantidad de proveedores activos
     public function contarTodos(): int
     {
-        return $this->_ejecutarCountAll();
+        $consulta = "SELECT COUNT(*) as total FROM proveedores WHERE estado = 1";
+        $stmt = $this->conexion->query($consulta);
+        return (int)$stmt->fetch()['total'];
     }
 
     // FUNCIÓN: listarTodos
     // OBJETIVO: Obtiene todos los proveedores activos con teléfonos y rubros
     public function listarTodos(): array
     {
-        return $this->_ejecutarSelectAll();
+        $consulta = "SELECT p.*, p.estado as activo,
+                            GROUP_CONCAT(DISTINCT tp.telefono SEPARATOR ', ') as telefonos,
+                            GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubros,
+                            GROUP_CONCAT(DISTINCT rp.id_rubro SEPARATOR ',') as rubros_id
+                     FROM proveedores p
+                     LEFT JOIN telefono_proveedor tp ON tp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
+                     WHERE p.estado = 1
+                     GROUP BY p.id_proveedor
+                     ORDER BY p.nombre_empresa ASC";
+        $stmt = $this->conexion->query($consulta);
+        return $stmt->fetchAll();
     }
 
     // FUNCIÓN: buscarPorId
@@ -42,7 +56,20 @@ class ProveedorModel extends ModeloBase
 
         if ($this->id < 1) return false;
 
-        return $this->_ejecutarSelectById();
+        $consulta = "SELECT p.*, p.estado as activo,
+                            GROUP_CONCAT(DISTINCT tp.telefono SEPARATOR ', ') as telefonos,
+                            GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubros,
+                            GROUP_CONCAT(DISTINCT rp.id_rubro SEPARATOR ',') as rubros_id
+                     FROM proveedores p
+                     LEFT JOIN telefono_proveedor tp ON tp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
+                     LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
+                     WHERE p.id_proveedor = :id AND p.estado = 1
+                     GROUP BY p.id_proveedor LIMIT 1";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch();
     }
 
     // FUNCIÓN: procesarTelefonosPayload
@@ -294,7 +321,15 @@ class ProveedorModel extends ModeloBase
 
         if ($this->rif === '' || $this->nombreEmpresa === '') return false;
 
-        return $this->_ejecutarInsert();
+        $consulta = "INSERT INTO proveedores (rif, nombre_empresa, direccion, correo, estado)
+                     VALUES (:rif, :nombre_empresa, :direccion, :correo, 1)";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':rif', $this->rif, PDO::PARAM_STR);
+        $stmt->bindParam(':nombre_empresa', $this->nombreEmpresa, PDO::PARAM_STR);
+        $stmt->bindParam(':direccion', $this->direccion, PDO::PARAM_STR);
+        $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
+        if ($stmt->execute()) return (int)$this->conexion->lastInsertId();
+        return false;
     }
 
     // FUNCIÓN: actualizarProveedor
@@ -310,7 +345,17 @@ class ProveedorModel extends ModeloBase
 
         if ($this->id < 1 || $this->rif === '' || $this->nombreEmpresa === '') return false;
 
-        return $this->_ejecutarUpdate();
+        $consulta = "UPDATE proveedores
+                     SET rif = :rif, nombre_empresa = :nombre_empresa, direccion = :direccion,
+                         correo = :correo, estado = 1
+                     WHERE id_proveedor = :id";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':rif', $this->rif, PDO::PARAM_STR);
+        $stmt->bindParam(':nombre_empresa', $this->nombreEmpresa, PDO::PARAM_STR);
+        $stmt->bindParam(':direccion', $this->direccion, PDO::PARAM_STR);
+        $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        return $stmt->execute();
     }
 
     // FUNCIÓN: eliminarProveedor
@@ -336,7 +381,10 @@ class ProveedorModel extends ModeloBase
         $stmt->execute();
         if ((int)$stmt->fetch()['total'] > 0) return false;
 
-        return $this->_ejecutarDelete();
+        $consulta = "UPDATE proveedores SET estado = 0 WHERE id_proveedor = :id";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        return $stmt->execute();
     }
 
     // FUNCIÓN: rifExiste
@@ -348,7 +396,17 @@ class ProveedorModel extends ModeloBase
 
         if ($this->rif === '') return false;
 
-        return $this->_ejecutarCheckRif();
+        $consulta = "SELECT COUNT(*) as total FROM proveedores WHERE rif = :rif AND estado = 1";
+        if ($this->idExcluir !== null) {
+            $consulta .= " AND id_proveedor != :id";
+        }
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':rif', $this->rif, PDO::PARAM_STR);
+        if ($this->idExcluir !== null) {
+            $stmt->bindParam(':id', $this->idExcluir, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        return $stmt->fetch()['total'] > 0;
     }
 
     // FUNCIÓN: telefonoExiste
@@ -379,7 +437,12 @@ class ProveedorModel extends ModeloBase
 
         if ($this->rif === '') return false;
 
-        return $this->_ejecutarBuscarInactivo();
+        $consulta = "SELECT id_proveedor FROM proveedores WHERE rif = :rif AND estado = 0 LIMIT 1";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':rif', $this->rif, PDO::PARAM_STR);
+        $stmt->execute();
+        $fila = $stmt->fetch();
+        return $fila ? (int)$fila['id_proveedor'] : false;
     }
 
     // FUNCIÓN: buscarProveedores
@@ -390,161 +453,6 @@ class ProveedorModel extends ModeloBase
 
         if ($this->termino === '') return [];
 
-        return $this->_ejecutarSearch();
-    }
-
-    // FUNCIÓN: insertarTelefono
-    // OBJETIVO: Inserta un teléfono asociado a un proveedor
-    public function insertarTelefono(int $proveedorId, string $telefono, ?string $tipo = null): bool
-    {
-        $this->proveedorId = $proveedorId;
-        $this->telefono = $telefono;
-        $this->tipo = $tipo;
-
-        if ($this->proveedorId < 1 || $this->telefono === '') return false;
-
-        return $this->_ejecutarInsertTelefono();
-    }
-
-    // FUNCIÓN: eliminarTelefonos
-    // OBJETIVO: Elimina todos los teléfonos de un proveedor (reemplazo completo)
-    public function eliminarTelefonos(int $proveedorId): bool
-    {
-        $this->proveedorId = $proveedorId;
-
-        if ($this->proveedorId < 1) return false;
-
-        return $this->_ejecutarDeleteTelefonos();
-    }
-
-    // FUNCIÓN: insertarRubro
-    // OBJETIVO: Asigna un rubro a un proveedor
-    public function insertarRubro(int $proveedorId, int $rubroId): bool
-    {
-        $this->proveedorId = $proveedorId;
-        $this->rubroId = $rubroId;
-
-        if ($this->proveedorId < 1 || $this->rubroId < 1) return false;
-
-        return $this->_ejecutarInsertRubro();
-    }
-
-    // FUNCIÓN: eliminarRubros
-    // OBJETIVO: Elimina todos los rubros de un proveedor (reemplazo completo)
-    public function eliminarRubros(int $proveedorId): bool
-    {
-        $this->proveedorId = $proveedorId;
-
-        if ($this->proveedorId < 1) return false;
-
-        return $this->_ejecutarDeleteRubros();
-    }
-
-    private function _ejecutarCountAll(): int
-    {
-        $consulta = "SELECT COUNT(*) as total FROM proveedores WHERE estado = 1";
-        $stmt = $this->conexion->query($consulta);
-        return (int)$stmt->fetch()['total'];
-    }
-
-    private function _ejecutarSelectAll(): array
-    {
-        $consulta = "SELECT p.*, p.estado as activo,
-                            GROUP_CONCAT(DISTINCT tp.telefono SEPARATOR ', ') as telefonos,
-                            GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubros,
-                            GROUP_CONCAT(DISTINCT rp.id_rubro SEPARATOR ',') as rubros_id
-                     FROM proveedores p
-                     LEFT JOIN telefono_proveedor tp ON tp.id_proveedor = p.id_proveedor
-                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
-                     LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
-                     WHERE p.estado = 1
-                     GROUP BY p.id_proveedor
-                     ORDER BY p.nombre_empresa ASC";
-        $stmt = $this->conexion->query($consulta);
-        return $stmt->fetchAll();
-    }
-
-    private function _ejecutarSelectById(): array|false
-    {
-        $consulta = "SELECT p.*, p.estado as activo,
-                            GROUP_CONCAT(DISTINCT tp.telefono SEPARATOR ', ') as telefonos,
-                            GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubros,
-                            GROUP_CONCAT(DISTINCT rp.id_rubro SEPARATOR ',') as rubros_id
-                     FROM proveedores p
-                     LEFT JOIN telefono_proveedor tp ON tp.id_proveedor = p.id_proveedor
-                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
-                     LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
-                     WHERE p.id_proveedor = :id AND p.estado = 1
-                     GROUP BY p.id_proveedor LIMIT 1";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetch();
-    }
-
-    private function _ejecutarInsert(): int|false
-    {
-        $consulta = "INSERT INTO proveedores (rif, nombre_empresa, direccion, correo, estado)
-                     VALUES (:rif, :nombre_empresa, :direccion, :correo, 1)";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':rif', $this->rif, PDO::PARAM_STR);
-        $stmt->bindParam(':nombre_empresa', $this->nombreEmpresa, PDO::PARAM_STR);
-        $stmt->bindParam(':direccion', $this->direccion, PDO::PARAM_STR);
-        $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
-        if ($stmt->execute()) return (int)$this->conexion->lastInsertId();
-        return false;
-    }
-
-    private function _ejecutarUpdate(): bool
-    {
-        $consulta = "UPDATE proveedores
-                     SET rif = :rif, nombre_empresa = :nombre_empresa, direccion = :direccion,
-                         correo = :correo, estado = 1
-                     WHERE id_proveedor = :id";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':rif', $this->rif, PDO::PARAM_STR);
-        $stmt->bindParam(':nombre_empresa', $this->nombreEmpresa, PDO::PARAM_STR);
-        $stmt->bindParam(':direccion', $this->direccion, PDO::PARAM_STR);
-        $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
-        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
-        return $stmt->execute();
-    }
-
-    private function _ejecutarDelete(): bool
-    {
-        $consulta = "UPDATE proveedores SET estado = 0 WHERE id_proveedor = :id";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
-        return $stmt->execute();
-    }
-
-    private function _ejecutarCheckRif(): bool
-    {
-        $consulta = "SELECT COUNT(*) as total FROM proveedores WHERE rif = :rif AND estado = 1";
-        if ($this->idExcluir !== null) {
-            $consulta .= " AND id_proveedor != :id";
-        }
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':rif', $this->rif, PDO::PARAM_STR);
-        if ($this->idExcluir !== null) {
-            $stmt->bindParam(':id', $this->idExcluir, PDO::PARAM_INT);
-        }
-        $stmt->execute();
-        return $stmt->fetch()['total'] > 0;
-    }
-
-    private function _ejecutarBuscarInactivo(): int|false
-    {
-        $consulta = "SELECT id_proveedor FROM proveedores WHERE rif = :rif AND estado = 0 LIMIT 1";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':rif', $this->rif, PDO::PARAM_STR);
-        $stmt->execute();
-        $fila = $stmt->fetch();
-        return $fila ? (int)$fila['id_proveedor'] : false;
-    }
-
-    private function _ejecutarSearch(): array
-    {
         $terminoLike = '%' . $this->termino . '%';
         $consulta = "SELECT p.*, p.estado as activo,
                             GROUP_CONCAT(DISTINCT tp.telefono SEPARATOR ', ') as telefonos,
@@ -565,8 +473,16 @@ class ProveedorModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-    private function _ejecutarInsertTelefono(): bool
+    // FUNCIÓN: insertarTelefono
+    // OBJETIVO: Inserta un teléfono asociado a un proveedor
+    public function insertarTelefono(int $proveedorId, string $telefono, ?string $tipo = null): bool
     {
+        $this->proveedorId = $proveedorId;
+        $this->telefono = $telefono;
+        $this->tipo = $tipo;
+
+        if ($this->proveedorId < 1 || $this->telefono === '') return false;
+
         $consulta = "INSERT INTO telefono_proveedor (id_proveedor, telefono, estado) VALUES (:id_proveedor, :telefono, 1)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id_proveedor', $this->proveedorId, PDO::PARAM_INT);
@@ -574,16 +490,29 @@ class ProveedorModel extends ModeloBase
         return $stmt->execute();
     }
 
-    private function _ejecutarDeleteTelefonos(): bool
+    // FUNCIÓN: eliminarTelefonos
+    // OBJETIVO: Elimina todos los teléfonos de un proveedor (reemplazo completo)
+    public function eliminarTelefonos(int $proveedorId): bool
     {
+        $this->proveedorId = $proveedorId;
+
+        if ($this->proveedorId < 1) return false;
+
         $consulta = "DELETE FROM telefono_proveedor WHERE id_proveedor = :id_proveedor";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id_proveedor', $this->proveedorId, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
-    private function _ejecutarInsertRubro(): bool
+    // FUNCIÓN: insertarRubro
+    // OBJETIVO: Asigna un rubro a un proveedor
+    public function insertarRubro(int $proveedorId, int $rubroId): bool
     {
+        $this->proveedorId = $proveedorId;
+        $this->rubroId = $rubroId;
+
+        if ($this->proveedorId < 1 || $this->rubroId < 1) return false;
+
         $consulta = "INSERT INTO rubro_proveedor (id_proveedor, id_rubro) VALUES (:id_proveedor, :id_rubro)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id_proveedor', $this->proveedorId, PDO::PARAM_INT);
@@ -591,15 +520,21 @@ class ProveedorModel extends ModeloBase
         return $stmt->execute();
     }
 
-    private function _ejecutarDeleteRubros(): bool
+    // FUNCIÓN: eliminarRubros
+    // OBJETIVO: Elimina todos los rubros de un proveedor (reemplazo completo)
+    public function eliminarRubros(int $proveedorId): bool
     {
+        $this->proveedorId = $proveedorId;
+
+        if ($this->proveedorId < 1) return false;
+
         $consulta = "DELETE FROM rubro_proveedor WHERE id_proveedor = :id_proveedor";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id_proveedor', $this->proveedorId, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
-    // FUNCIÓN: correoExiste
+                                                        // FUNCIÓN: correoExiste
     // OBJETIVO: Verifica si un correo electrónico ya está registrado en proveedores activos
     public function correoExiste(string $correo, ?int $idExcluir = null): bool
     {
@@ -607,13 +542,6 @@ class ProveedorModel extends ModeloBase
         if ($correo === '') return false;
         $this->correo = $correo;
         $this->idExcluir = $idExcluir;
-        return $this->_ejecutarCheckCorreo();
-    }
-
-    // FUNCIÓN: _ejecutarCheckCorreo
-    // OBJETIVO: Ejecuta COUNT para verificar unicidad del correo electrónico en proveedores activos
-    private function _ejecutarCheckCorreo(): bool
-    {
         $consulta = "SELECT COUNT(*) as total FROM proveedores WHERE correo = :correo AND estado = 1";
         if ($this->idExcluir !== null) {
             $consulta .= " AND id_proveedor != :id";
@@ -627,4 +555,7 @@ class ProveedorModel extends ModeloBase
         $resultado = $stmt->fetch();
         return (int)$resultado['total'] > 0;
     }
-}
+
+    // FUNCIÓN: _ejecutarCheckCorreo
+    // OBJETIVO: Ejecuta COUNT para verificar unicidad del correo electrónico en proveedores activos
+    }

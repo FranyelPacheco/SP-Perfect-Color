@@ -19,11 +19,6 @@ class TasaCambioModel extends ModeloBase
     // OBJETIVO: Obtiene el histórico de tasas ordenado descendentemente por fecha
     public function listarTodas(): array
     {
-        return $this->_ejecutarSelectAll();
-    }
-
-    private function _ejecutarSelectAll(): array
-    {
         $consulta = "SELECT id_tasa_cambio, tasa, fecha, created_at, estado 
                      FROM tasa_cambio 
                      ORDER BY fecha DESC, id_tasa_cambio DESC";
@@ -31,17 +26,12 @@ class TasaCambioModel extends ModeloBase
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // FUNCIÓN: buscarPorId
+        // FUNCIÓN: buscarPorId
     // OBJETIVO: Obtiene una tasa por su clave primaria
     public function buscarPorId(int $id): array|false
     {
         $this->id_tasa_cambio = $id;
         if ($this->id_tasa_cambio < 1) return false;
-        return $this->_ejecutarSelectById();
-    }
-
-    private function _ejecutarSelectById(): array|false
-    {
         $consulta = "SELECT id_tasa_cambio, tasa, fecha, created_at, estado 
                      FROM tasa_cambio 
                      WHERE id_tasa_cambio = :id";
@@ -51,14 +41,9 @@ class TasaCambioModel extends ModeloBase
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // FUNCIÓN: obtenerTasaHoy
+        // FUNCIÓN: obtenerTasaHoy
     // OBJETIVO: Retorna la tasa registrada para la fecha actual (CURDATE())
     public function obtenerTasaHoy(): array|false
-    {
-        return $this->_ejecutarSelectHoy();
-    }
-
-    private function _ejecutarSelectHoy(): array|false
     {
         $consulta = "SELECT id_tasa_cambio, tasa, fecha, created_at, estado 
                      FROM tasa_cambio 
@@ -69,14 +54,9 @@ class TasaCambioModel extends ModeloBase
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // FUNCIÓN: obtenerUltimaTasa
+        // FUNCIÓN: obtenerUltimaTasa
     // OBJETIVO: Obtiene la tasa activa más reciente registrada en el sistema
     public function obtenerUltimaTasa(): array|false
-    {
-        return $this->_ejecutarSelectUltima();
-    }
-
-    private function _ejecutarSelectUltima(): array|false
     {
         $consulta = "SELECT id_tasa_cambio, tasa, fecha, created_at, estado 
                      FROM tasa_cambio 
@@ -87,7 +67,7 @@ class TasaCambioModel extends ModeloBase
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // FUNCIÓN: obtenerTasaVigenteValor
+        // FUNCIÓN: obtenerTasaVigenteValor
     // OBJETIVO: Retorna el valor numérico float de la tasa del día o la última activa
     public function obtenerTasaVigenteValor(): float
     {
@@ -198,11 +178,6 @@ class TasaCambioModel extends ModeloBase
         $this->tasa = $tasa;
         $this->fecha = $fecha;
         if ($this->tasa <= 0 || empty($this->fecha)) return false;
-        return $this->_ejecutarInsert();
-    }
-
-    private function _ejecutarInsert(): bool
-    {
         $consulta = "INSERT INTO tasa_cambio (tasa, fecha, created_at, estado) 
                      VALUES (:tasa, :fecha, NOW(), 1)";
         $stmt = $this->conexion->prepare($consulta);
@@ -211,7 +186,7 @@ class TasaCambioModel extends ModeloBase
         return $stmt->execute();
     }
 
-    // FUNCIÓN: actualizar
+        // FUNCIÓN: actualizar
     // OBJETIVO: Edita el valor de una tasa existente
     public function actualizar(int $id, float $tasa, string $fecha, int $estado = 1): bool
     {
@@ -220,11 +195,6 @@ class TasaCambioModel extends ModeloBase
         $this->fecha = $fecha;
         $this->estado = $estado;
         if ($this->id_tasa_cambio < 1 || $this->tasa <= 0 || empty($this->fecha)) return false;
-        return $this->_ejecutarUpdate();
-    }
-
-    private function _ejecutarUpdate(): bool
-    {
         $consulta = "UPDATE tasa_cambio 
                      SET tasa = :tasa, fecha = :fecha, estado = :estado 
                      WHERE id_tasa_cambio = :id";
@@ -235,4 +205,5 @@ class TasaCambioModel extends ModeloBase
         $stmt->bindParam(':id', $this->id_tasa_cambio, PDO::PARAM_INT);
         return $stmt->execute();
     }
-}
+
+    }
