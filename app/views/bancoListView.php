@@ -29,7 +29,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="tituloModalBanco">Nuevo Banco</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form id="formularioBanco">
                 <div class="modal-body">
@@ -37,6 +37,7 @@
                     <div class="mb-3">
                         <label for="nombreBanco" class="form-label">Nombre del Banco</label>
                         <input type="text" id="nombreBanco" name="nombre" class="form-control" required placeholder="Ej: Banco de Venezuela" maxlength="50">
+                        <div class="invalid-feedback" id="feedbackNombreBanco"></div>
                     </div>
                     <div class="mb-3 form-check">
                         <input type="checkbox" id="activoBanco" name="activo" class="form-check-input" value="1" checked>

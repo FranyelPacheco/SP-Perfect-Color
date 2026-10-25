@@ -777,7 +777,7 @@ class InventarioModel extends ModeloBase
             }
 
             $stmtUpdate = $this->conexion->prepare("UPDATE productos SET stock_actual = stock_actual - :cantidad WHERE id_producto = :id");
-            $stmtUpdate->bindParam(':cantidad', (float)$cantidad);
+            $stmtUpdate->bindValue(':cantidad', (float)$cantidad);
             $stmtUpdate->bindParam(':id', $idProducto, PDO::PARAM_INT);
             $stmtUpdate->execute();
 

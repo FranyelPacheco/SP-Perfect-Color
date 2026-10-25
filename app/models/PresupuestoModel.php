@@ -233,9 +233,15 @@ class PresupuestoModel extends ModeloBase
     // OBJETIVO: Valida y actualiza el estado de un presupuesto
     public function actualizarEstado(int $id, string|int $estado): array
     {
-        $estadosValidos = ['pendiente', 'presupuesto', 'aprobado', 'rechazado', 'convertido', 'anulado'];
-        if ($id < 1 || !in_array((string)$estado, $estadosValidos, true)) {
+        if ($id < 1 || !in_array((string)$estado, ['rechazado', 'anulado'], true)) {
             return ['exito' => false, 'mensaje' => 'Datos invalidos'];
+        }
+
+        $stmt = $this->conexion->prepare("SELECT id_estado_venta FROM ventas WHERE id_venta = :id AND estado = 1");
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        if ((int)$stmt->fetchColumn() !== 1) {
+            return ['exito' => false, 'mensaje' => 'Solo se puede cambiar el estado de un presupuesto pendiente'];
         }
 
         if ($this->cambiarEstado($id, $estado)) {

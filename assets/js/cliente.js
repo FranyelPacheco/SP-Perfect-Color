@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const telefonoCliente2 = document.getElementById('telefonoCliente2');
 
     const correoCliente = document.getElementById('correoCliente');
+    const feedbackCorreoCliente = document.getElementById('feedbackCorreoCliente');
     const direccionCliente = document.getElementById('direccionCliente');
     const mensajeError = document.getElementById('mensajeErrorCliente');
     const btnGuardarCliente = document.getElementById('btnGuardarCliente');
@@ -43,6 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formularioCliente.reset();
             clienteId.value = '';
             limpiarEstadoCedula();
+            limpiarEstadoCorreo();
             resetearSegundoTelefono();
             mensajeError.classList.add('d-none');
             tituloModal.textContent = 'Nuevo Cliente';
@@ -96,6 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
         modalCliente.addEventListener('hidden.bs.modal', function () {
             formularioCliente.reset();
             limpiarEstadoCedula();
+            limpiarEstadoCorreo();
             resetearSegundoTelefono();
             mensajeError.classList.add('d-none');
         });
@@ -110,9 +113,26 @@ document.addEventListener('DOMContentLoaded', function() {
             feedbackCedulaCliente.classList.add('d-none');
             feedbackCedulaCliente.removeAttribute('title');
         }
-        if (btnGuardarCliente) {
-            btnGuardarCliente.disabled = false;
+        actualizarBotonGuardarCliente();
+    }
+
+    function limpiarEstadoCorreo() {
+        if (correoCliente) {
+            correoCliente.classList.remove('is-invalid', 'is-valid');
+            correoCliente.removeAttribute('title');
         }
+        if (feedbackCorreoCliente) {
+            feedbackCorreoCliente.classList.add('d-none');
+            feedbackCorreoCliente.removeAttribute('title');
+        }
+        actualizarBotonGuardarCliente();
+    }
+
+    function actualizarBotonGuardarCliente() {
+        if (!btnGuardarCliente) return;
+        var hayInvalido = (cedulaCliente && cedulaCliente.classList.contains('is-invalid')) ||
+                          (correoCliente && correoCliente.classList.contains('is-invalid'));
+        btnGuardarCliente.disabled = hayInvalido;
     }
 
     // Verificacion en tiempo real de cedula existente
@@ -143,7 +163,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             feedbackCedulaCliente.setAttribute('title', 'Cliente ya registrado');
                             feedbackCedulaCliente.classList.remove('d-none');
                         }
-                        if (btnGuardarCliente) btnGuardarCliente.disabled = true;
                     } else {
                         cedulaCliente.classList.remove('is-invalid');
                         cedulaCliente.classList.add('is-valid');
@@ -152,11 +171,69 @@ document.addEventListener('DOMContentLoaded', function() {
                             feedbackCedulaCliente.classList.add('d-none');
                             feedbackCedulaCliente.removeAttribute('title');
                         }
-                        if (btnGuardarCliente) btnGuardarCliente.disabled = false;
                     }
+                    actualizarBotonGuardarCliente();
                 }
             } catch (e) {
                 console.error('Error al verificar cedula:', e);
+            }
+        }, 300);
+    }
+
+    // Verificacion en tiempo real de correo existente
+    var temporizadorCorreo;
+    function verificarCorreoEnTiempoReal() {
+        clearTimeout(temporizadorCorreo);
+        if (!correoCliente) return;
+        const correo = correoCliente.value.trim();
+        if (!correo) {
+            limpiarEstadoCorreo();
+            return;
+        }
+
+        const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!regexEmail.test(correo)) {
+            correoCliente.classList.add('is-invalid');
+            correoCliente.classList.remove('is-valid');
+            correoCliente.setAttribute('title', 'Formato de correo inválido');
+            if (feedbackCorreoCliente) {
+                feedbackCorreoCliente.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Formato de correo inválido (ej: usuario@correo.com)';
+                feedbackCorreoCliente.setAttribute('title', 'Formato de correo inválido');
+                feedbackCorreoCliente.classList.remove('d-none');
+            }
+            actualizarBotonGuardarCliente();
+            return;
+        }
+
+        const id = clienteId.value || '';
+
+        temporizadorCorreo = setTimeout(async function() {
+            try {
+                const resp = await fetch('/SP%20Perfect%20Color/cliente/verificarCorreoAjax?correo=' + encodeURIComponent(correo) + '&id=' + encodeURIComponent(id));
+                const res = await resp.json();
+                if (res.estado === 'exito') {
+                    if (res.datos.existe) {
+                        correoCliente.classList.add('is-invalid');
+                        correoCliente.classList.remove('is-valid');
+                        correoCliente.setAttribute('title', 'Correo ya registrado');
+                        if (feedbackCorreoCliente) {
+                            feedbackCorreoCliente.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Correo ya registrado';
+                            feedbackCorreoCliente.setAttribute('title', 'Correo ya registrado');
+                            feedbackCorreoCliente.classList.remove('d-none');
+                        }
+                    } else {
+                        correoCliente.classList.remove('is-invalid');
+                        correoCliente.classList.add('is-valid');
+                        correoCliente.removeAttribute('title');
+                        if (feedbackCorreoCliente) {
+                            feedbackCorreoCliente.classList.add('d-none');
+                            feedbackCorreoCliente.removeAttribute('title');
+                        }
+                    }
+                    actualizarBotonGuardarCliente();
+                }
+            } catch (e) {
+                console.error('Error al verificar correo:', e);
             }
         }, 300);
     }
@@ -170,12 +247,48 @@ document.addEventListener('DOMContentLoaded', function() {
     if (tipoDocCliente) {
         tipoDocCliente.addEventListener('change', verificarCedulaEnTiempoReal);
     }
+    if (correoCliente) {
+        correoCliente.addEventListener('input', verificarCorreoEnTiempoReal);
+        correoCliente.addEventListener('blur', verificarCorreoEnTiempoReal);
+    }
 
-    // Restringir caracteres especiales en nombres y apellidos (solo letras y espacios)
+    // Restringir caracteres especiales y números en nombres y apellidos (estrictamente solo letras y espacios)
     function restringirSoloLetras(input) {
         if (!input) return;
+
+        input.addEventListener('keydown', function(e) {
+            if (['Backspace', 'Tab', 'Enter', 'Escape', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key) || e.ctrlKey || e.metaKey || e.altKey) {
+                return;
+            }
+            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]$/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        input.addEventListener('beforeinput', function(e) {
+            if (e.data && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/.test(e.data)) {
+                e.preventDefault();
+            }
+        });
+
         input.addEventListener('input', function() {
-            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+            var cursorPos = this.selectionStart;
+            var limpio = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+            if (this.value !== limpio) {
+                this.value = limpio;
+                if (cursorPos !== null) {
+                    this.setSelectionRange(cursorPos - 1, cursorPos - 1);
+                }
+            }
+        });
+
+        input.addEventListener('paste', function(e) {
+            var textoPegado = (e.clipboardData || window.clipboardData).getData('text');
+            if (textoPegado && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(textoPegado)) {
+                e.preventDefault();
+                var limpio = textoPegado.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+                document.execCommand('insertText', false, limpio);
+            }
         });
     }
     restringirSoloLetras(nombresCliente);
@@ -234,8 +347,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (!row) return '';
                             var nomCompleto = ((row.nombres || '') + ' ' + (row.apellidos || '')).replace(/"/g, '&quot;');
                             return '<div class="d-flex gap-2">' +
-                                '<button class="btn btn-sm btn-warning btn-editar-cliente" data-id="' + row.id_cliente + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
-                                '<button class="btn btn-sm btn-danger btn-eliminar-cliente" data-id="' + row.id_cliente + '" data-nombre="' + nomCompleto + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>' +
+                                '<button class="btn btn-sm btn-warning btn-editar-cliente" data-id="' + row.id_cliente + '" title="Editar" aria-label="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
+                                '<button class="btn btn-sm btn-danger btn-eliminar-cliente" data-id="' + row.id_cliente + '" data-nombre="' + nomCompleto + '" title="Eliminar" aria-label="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>' +
                                 '</div>';
                         }
                     }
@@ -296,6 +409,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const c = resultado.datos;
                 formularioCliente.reset();
                 limpiarEstadoCedula();
+                limpiarEstadoCorreo();
                 mensajeError.classList.add('d-none');
                 clienteId.value = c.id_cliente;
 
@@ -408,6 +522,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         if (!emailRegex.test(correoVal)) {
             mostrarError('El correo electronico no es valido');
+            correoCliente.focus();
+            return;
+        }
+        if (correoCliente.classList.contains('is-invalid')) {
+            mostrarError('El correo electrónico es inválido o ya se encuentra registrado');
             correoCliente.focus();
             return;
         }

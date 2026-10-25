@@ -13,7 +13,7 @@ use App\Models\{
 };
 use function App\Helpers\{
     respuestaJson,
-    verificarAutenticacion,
+    verificarPermiso,
     verificarRolAdmin
 };
 
@@ -24,7 +24,7 @@ $inventarioModel = new InventarioModel();
 // FUNCIÓN: index
 // OBJETIVO: Renderiza la vista de listado de notas de entrega de compras a proveedores
 if ($metodo === 'index') {
-    verificarAutenticacion();
+    verificarPermiso('notaEntregaCompra');
 
     $contenidoVista = __DIR__ . '/../views/notaEntregaCompraListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
@@ -32,7 +32,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: listarAjax
 // OBJETIVO: Devuelve el listado de notas de compra en JSON para DataTables
 } elseif ($metodo === 'listarAjax') {
-    verificarAutenticacion();
+    verificarPermiso('notaEntregaCompra');
 
     $notas = $notaEntregaCompraModel->listarTodas();
     respuestaJson('exito', 'Notas de entrega de compras obtenidas correctamente', [
@@ -77,7 +77,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: ver
 // OBJETIVO: Muestra el detalle completo de la nota de compra y sus productos recibidos
 } elseif ($metodo === 'ver') {
-    verificarAutenticacion();
+    verificarPermiso('notaEntregaCompra');
 
     $id = intval($_GET['id'] ?? 0);
     if ($id < 1) {

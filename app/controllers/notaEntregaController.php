@@ -13,7 +13,7 @@ use App\Models\{
 };
 use function App\Helpers\{
     respuestaJson,
-    verificarAutenticacion,
+    verificarPermiso,
     verificarRolVendedor
 };
 
@@ -25,7 +25,7 @@ $inventarioModel = new InventarioModel();
 // FUNCIÓN: index
 // OBJETIVO: Renderiza la vista del listado de notas de entrega
 if ($metodo === 'index') {
-    verificarAutenticacion();
+    verificarPermiso('notaEntrega');
     
     $contenidoVista = __DIR__ . '/../views/notaEntregaListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
@@ -33,7 +33,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: listarAjax
 // OBJETIVO: Obtiene el listado completo de notas de entrega en JSON
 } elseif ($metodo === 'listarAjax') {
-    verificarAutenticacion();
+    verificarPermiso('notaEntrega');
     
     $notas = $notaEntregaModel->listarTodos();
     
@@ -44,7 +44,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: buscarAjax
 // OBJETIVO: Busca notas de entrega por término de búsqueda o devuelve todas
 } elseif ($metodo === 'buscarAjax') {
-    verificarAutenticacion();
+    verificarPermiso('notaEntrega');
     
     $termino = trim($_GET['termino'] ?? '');
     
@@ -101,7 +101,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: ver
 // OBJETIVO: Renderiza la vista de detalle de una nota de entrega con sus items
 } elseif ($metodo === 'ver') {
-    verificarAutenticacion();
+    verificarPermiso('notaEntrega');
     
     $id = intval($_GET['id'] ?? 0);
     
@@ -127,7 +127,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: obtenerClientesAjax
 // OBJETIVO: Obtiene los clientes disponibles para el formulario de nota de entrega
 } elseif ($metodo === 'obtenerClientesAjax') {
-    verificarAutenticacion();
+    verificarPermiso('notaEntrega');
     
     $clientes = $clienteModel->listarTodos();
     
@@ -138,7 +138,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: obtenerTiposPagoAjax
 // OBJETIVO: Obtiene los tipos de pago activos para el formulario
 } elseif ($metodo === 'obtenerTiposPagoAjax') {
-    verificarAutenticacion();
+    verificarPermiso('notaEntrega');
     
     $tiposPago = (new TipoPagoModel())->listarTodos();
     
@@ -149,7 +149,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: obtenerBancosAjax
 // OBJETIVO: Obtiene los bancos activos para el formulario
 } elseif ($metodo === 'obtenerBancosAjax') {
-    verificarAutenticacion();
+    verificarPermiso('notaEntrega');
     
     $bancos = (new BancoModel())->listarTodos();
     
@@ -160,7 +160,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: pdf
 // OBJETIVO: Genera y visualiza o descarga el comprobante formal en PDF de la nota de entrega
 } elseif ($metodo === 'pdf') {
-    verificarAutenticacion();
+    verificarPermiso('notaEntrega');
 
     $id = intval($_GET['id'] ?? 0);
     if ($id < 1) {

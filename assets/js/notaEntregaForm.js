@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
         tipoPagoInicialSelect.addEventListener('change', verificarTipoPagoInicial);
     }
 
-    function guardarNotaEntrega() {
+    function guardarNotaEntrega(confirmado) {
         try {
             var presupuestoInput = document.getElementById('presupuestoId');
             var decisionSelect = document.getElementById('decisionNota');
@@ -222,8 +222,8 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('decision', decision);
 
             if (decision === 'rechazar') {
-                // Confirmación para rechazar
-                if (!confirm('¿Está seguro de que desea rechazar este presupuesto / nota de entrega?')) {
+                if (confirmado !== true) {
+                    confirmarConModal('Rechazar presupuesto', '¿Está seguro de que desea rechazar este presupuesto / nota de entrega?', function() { guardarNotaEntrega(true); });
                     return;
                 }
             } else {
@@ -347,14 +347,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function mostrarError(mensaje) {
-        if (!mensajeError) { alert(mensaje); return; }
+        if (!mensajeError) { mostrarNotificacion(mensaje, 'error'); return; }
+        mensajeError.setAttribute('role', 'alert');
         mensajeError.textContent = mensaje;
         mensajeError.classList.remove('d-none');
         mensajeError.style.display = 'block';
         mensajeError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(function() { 
-            mensajeError.style.display = 'none'; 
-            mensajeError.classList.add('d-none');
-        }, 5000);
     }
 });

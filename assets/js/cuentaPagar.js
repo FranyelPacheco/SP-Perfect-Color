@@ -73,10 +73,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (!row) return '';
                             var estaPagado = (row.estado === 'pagado' || row.situacion === 'pagado' || parseFloat(row.saldo_pendiente || 0) <= 0);
                             var btnEliminar = estaPagado
-                                ? '<button class="btn btn-sm btn-outline-danger btn-eliminar-cxp" data-id="' + row.id_cuenta_pagar + '" title="Eliminar cuenta saldada" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>'
-                                : '<button class="btn btn-sm btn-outline-secondary" disabled title="No se puede eliminar una cuenta pendiente de pago" data-bs-toggle="tooltip"><i class="bi bi-lock-fill"></i></button>';
+                                ? '<button class="btn btn-sm btn-outline-danger btn-eliminar-cxp" data-id="' + row.id_cuenta_pagar + '" title="Eliminar cuenta saldada" aria-label="Eliminar cuenta saldada" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>'
+                                : '<button class="btn btn-sm btn-outline-secondary" disabled title="No se puede eliminar una cuenta pendiente de pago" aria-label="No se puede eliminar una cuenta pendiente de pago" data-bs-toggle="tooltip"><i class="bi bi-lock-fill"></i></button>';
                             return '<div class="d-flex gap-2">' +
-                                '<a href="/SP%20Perfect%20Color/cuentaPagar/ver?id=' + row.id_cuenta_pagar + '" class="btn btn-sm btn-info" title="Ver" data-bs-toggle="tooltip"><i class="bi bi-eye-fill"></i></a>' +
+                                '<a href="/SP%20Perfect%20Color/cuentaPagar/ver?id=' + row.id_cuenta_pagar + '" class="btn btn-sm btn-info" title="Ver" aria-label="Ver" data-bs-toggle="tooltip"><i class="bi bi-eye-fill"></i></a>' +
                                 btnEliminar +
                                 '</div>';
                         }

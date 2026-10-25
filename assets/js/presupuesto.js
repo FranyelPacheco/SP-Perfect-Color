@@ -70,13 +70,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         render: function(data, type, row) {
                             if (!row) return '';
                             var html = '<div class="d-flex gap-2">' +
-                                '<a href="/SP%20Perfect%20Color/presupuesto/ver?id=' + row.id_presupuesto + '" class="btn btn-sm btn-info text-white" title="Ver Detalle" data-bs-toggle="tooltip"><i class="bi bi-eye-fill"></i></a>';
+                                '<a href="/SP%20Perfect%20Color/presupuesto/ver?id=' + row.id_presupuesto + '" class="btn btn-sm btn-info text-white" title="Ver Detalle" aria-label="Ver Detalle" data-bs-toggle="tooltip"><i class="bi bi-eye-fill"></i></a>';
                             if (row.estado === 'pendiente' || row.estado === 'presupuesto' || (row.id_estado_venta && parseInt(row.id_estado_venta) === 1)) {
                                 html +=
-                                    '<button class="btn btn-sm btn-success btn-aprobar-presupuesto" data-id="' + row.id_presupuesto + '" title="Aprobar / Procesar Entrega" data-bs-toggle="tooltip"><i class="bi bi-check-lg"></i></button>' +
-                                    '<button class="btn btn-sm btn-danger btn-rechazar-presupuesto" data-id="' + row.id_presupuesto + '" title="Rechazar" data-bs-toggle="tooltip"><i class="bi bi-x-lg"></i></button>';
+                                    '<button class="btn btn-sm btn-success btn-aprobar-presupuesto" data-id="' + row.id_presupuesto + '" title="Aprobar / Procesar Entrega" aria-label="Aprobar / Procesar Entrega" data-bs-toggle="tooltip"><i class="bi bi-check-lg"></i></button>' +
+                                    '<button class="btn btn-sm btn-danger btn-rechazar-presupuesto" data-id="' + row.id_presupuesto + '" title="Rechazar" aria-label="Rechazar" data-bs-toggle="tooltip"><i class="bi bi-x-lg"></i></button>';
                             }
-                            html += '<button class="btn btn-sm btn-outline-danger btn-eliminar-presupuesto" data-id="' + row.id_presupuesto + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>';
+                            html += '<button class="btn btn-sm btn-outline-danger btn-eliminar-presupuesto" data-id="' + row.id_presupuesto + '" title="Eliminar" aria-label="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>';
                             html += '</div>';
                             return html;
                         }

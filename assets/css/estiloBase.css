@@ -1928,3 +1928,17 @@ table.dataTable button *,
   border-radius: 4px;
 }
 
+
+
+/* Toasts accesibles */
+.toast-contenedor { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+.toast-app { padding: 12px 24px; border-radius: 4px; color: #fff; transition: opacity 0.3s; max-width: 360px; }
+.toast-exito { background: #2e7d32; }
+.toast-error { background: #c62828; }
+.toast-info { background: #1565c0; }
+.toast-salida { opacity: 0; }
+
+:focus-visible { outline: 2px solid var(--brand-bright, #1d4ed8); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

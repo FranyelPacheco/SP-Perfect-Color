@@ -9,6 +9,21 @@ document.addEventListener('DOMContentLoaded', function () {
     var formUsuario = document.getElementById('formularioUsuario');
     var formRol = document.getElementById('formularioRol');
 
+    if (formRol) {
+        var validacionRol = validarUnico({
+            input: document.getElementById('nombreRol'),
+            feedback: document.getElementById('feedbackNombreRol'),
+            entidad: 'rol', campo: 'nombre',
+            getId: function () { return document.getElementById('rolId').value || null; },
+            boton: document.getElementById('btnGuardarRol')
+        });
+        var modalRolEl = document.getElementById('modalRol');
+        modalRolEl.addEventListener('hidden.bs.modal', validacionRol.limpiar);
+        modalRolEl.addEventListener('shown.bs.modal', function () {
+            if (document.getElementById('nombreRol').value) validacionRol.revalidar();
+        });
+    }
+
     // Nombres legibles para insignias de módulos
     var NOMBRES_MODULOS = {
         'dashboard': 'Inicio',
@@ -73,6 +88,17 @@ document.addEventListener('DOMContentLoaded', function () {
         var btnNuevo = document.getElementById('btnNuevoUsuario');
         if (btnNuevo) btnNuevo.addEventListener('click', abrirModalCrearUsuario);
 
+        var inputNombreUsuario = document.getElementById('nombreUsuario');
+        if (inputNombreUsuario) {
+            aplicarRestriccionSoloLetras(inputNombreUsuario);
+        }
+
+        var inputCorreoUsuario = document.getElementById('correoUsuario');
+        if (inputCorreoUsuario) {
+            inputCorreoUsuario.addEventListener('input', verificarCorreoUsuarioEnTiempoReal);
+            inputCorreoUsuario.addEventListener('blur', verificarCorreoUsuarioEnTiempoReal);
+        }
+
         var modalEl = document.getElementById('modalUsuario');
         if (modalEl) {
             modalEl.addEventListener('hidden.bs.modal', function () {
@@ -80,6 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.activeElement.blur();
                 }
                 document.getElementById('formularioUsuario').reset();
+                limpiarValidacionesUsuario();
                 var el = document.getElementById('mensajeErrorUsuario');
                 if (el) el.classList.add('d-none');
                 el = document.getElementById('grupoClave');
@@ -146,9 +173,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             usuarios.forEach(function (u) {
                 var acciones = '<div class="d-inline-flex gap-1">' +
-                    '<button class="btn btn-sm btn-warning btn-editar-usuario" data-id="' + u.id_usuario + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>';
+                    '<button class="btn btn-sm btn-warning btn-editar-usuario" data-id="' + u.id_usuario + '" title="Editar" aria-label="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>';
                 if (parseInt(u.id_usuario) !== parseInt(MI_ID)) {
-                    acciones += '<button class="btn btn-sm btn-danger btn-eliminar-usuario" data-id="' + u.id_usuario + '" data-nombre="' + u.nombre.replace(/"/g, '&quot;') + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>';
+                    acciones += '<button class="btn btn-sm btn-danger btn-eliminar-usuario" data-id="' + u.id_usuario + '" data-nombre="' + u.nombre.replace(/"/g, '&quot;') + '" title="Eliminar" aria-label="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>';
                 }
                 acciones += '</div>';
 
@@ -186,9 +213,136 @@ document.addEventListener('DOMContentLoaded', function () {
         if (valorActual) select.value = valorActual;
     }
 
+    function limpiarValidacionesUsuario() {
+        var inputCorreo = document.getElementById('correoUsuario');
+        if (inputCorreo) {
+            inputCorreo.classList.remove('is-invalid', 'is-valid');
+            inputCorreo.removeAttribute('title');
+        }
+        var fbCorreo = document.getElementById('feedbackCorreoUsuario');
+        if (fbCorreo) {
+            fbCorreo.classList.add('d-none');
+            fbCorreo.removeAttribute('title');
+        }
+        var inputNombre = document.getElementById('nombreUsuario');
+        if (inputNombre) {
+            inputNombre.classList.remove('is-invalid', 'is-valid');
+        }
+        var fbNombre = document.getElementById('feedbackNombreUsuario');
+        if (fbNombre) {
+            fbNombre.classList.add('d-none');
+        }
+        actualizarBotonGuardarUsuario();
+    }
+
+    function actualizarBotonGuardarUsuario() {
+        var btn = formUsuario ? formUsuario.querySelector('button[type="submit"]') : null;
+        if (!btn) return;
+        var hayInvalido = formUsuario && formUsuario.querySelector('.is-invalid') !== null;
+        btn.disabled = hayInvalido;
+    }
+
+    var temporizadorCorreoUsuario;
+    function verificarCorreoUsuarioEnTiempoReal() {
+        clearTimeout(temporizadorCorreoUsuario);
+        var input = document.getElementById('correoUsuario');
+        var fb = document.getElementById('feedbackCorreoUsuario');
+        if (!input) return;
+        var correo = input.value.trim();
+        if (!correo) {
+            input.classList.remove('is-invalid', 'is-valid');
+            input.removeAttribute('title');
+            if (fb) fb.classList.add('d-none');
+            actualizarBotonGuardarUsuario();
+            return;
+        }
+
+        var regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!regex.test(correo)) {
+            input.classList.add('is-invalid');
+            input.classList.remove('is-valid');
+            input.setAttribute('title', 'Formato de correo inválido');
+            if (fb) {
+                fb.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Formato de correo inválido (ej: usuario@correo.com)';
+                fb.classList.remove('d-none');
+            }
+            actualizarBotonGuardarUsuario();
+            return;
+        }
+
+        var id = document.getElementById('usuarioId') ? document.getElementById('usuarioId').value : '';
+
+        temporizadorCorreoUsuario = setTimeout(async function() {
+            try {
+                var resp = await fetch('/SP%20Perfect%20Color/usuario/verificarCorreoAjax?correo=' + encodeURIComponent(correo) + '&id=' + encodeURIComponent(id));
+                var res = await resp.json();
+                if (res.estado === 'exito') {
+                    if (res.datos.existe) {
+                        input.classList.add('is-invalid');
+                        input.classList.remove('is-valid');
+                        input.setAttribute('title', 'Correo ya registrado');
+                        if (fb) {
+                            fb.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Correo ya registrado';
+                            fb.setAttribute('title', 'Correo ya registrado');
+                            fb.classList.remove('d-none');
+                        }
+                    } else {
+                        input.classList.remove('is-invalid');
+                        input.classList.add('is-valid');
+                        input.removeAttribute('title');
+                        if (fb) fb.classList.add('d-none');
+                    }
+                    actualizarBotonGuardarUsuario();
+                }
+            } catch (e) {
+                console.error('Error al verificar correo de usuario:', e);
+            }
+        }, 300);
+    }
+
+    function aplicarRestriccionSoloLetras(input) {
+        if (!input) return;
+
+        input.addEventListener('keydown', function(e) {
+            if (['Backspace', 'Tab', 'Enter', 'Escape', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key) || e.ctrlKey || e.metaKey || e.altKey) {
+                return;
+            }
+            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]$/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        input.addEventListener('beforeinput', function(e) {
+            if (e.data && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/.test(e.data)) {
+                e.preventDefault();
+            }
+        });
+
+        input.addEventListener('input', function() {
+            var cursorPos = this.selectionStart;
+            var limpio = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+            if (this.value !== limpio) {
+                this.value = limpio;
+                if (cursorPos !== null) {
+                    this.setSelectionRange(cursorPos - 1, cursorPos - 1);
+                }
+            }
+        });
+
+        input.addEventListener('paste', function(e) {
+            var textoPegado = (e.clipboardData || window.clipboardData).getData('text');
+            if (textoPegado && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(textoPegado)) {
+                e.preventDefault();
+                var limpio = textoPegado.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+                document.execCommand('insertText', false, limpio);
+            }
+        });
+    }
+
     function abrirModalCrearUsuario() {
         document.getElementById('formularioUsuario').reset();
         document.getElementById('usuarioId').value = '';
+        limpiarValidacionesUsuario();
         var err = document.getElementById('mensajeErrorUsuario');
         if (err) err.classList.add('d-none');
         document.getElementById('tituloModalUsuario').textContent = 'Nuevo Usuario';
@@ -216,13 +370,13 @@ document.addEventListener('DOMContentLoaded', function () {
             var res = await fetch('/SP%20Perfect%20Color/usuario/obtener?id=' + id);
             var json = await res.json();
             if (json.estado !== 'exito') {
-                if (typeof mostrarNotificacion === 'function') mostrarNotificacion(json.mensaje, 'error');
-                else alert(json.mensaje);
+                mostrarNotificacion(json.mensaje, 'error');
                 return;
             }
 
             var u = json.datos;
             document.getElementById('formularioUsuario').reset();
+            limpiarValidacionesUsuario();
             var err = document.getElementById('mensajeErrorUsuario');
             if (err) err.classList.add('d-none');
 
@@ -271,7 +425,23 @@ document.addEventListener('DOMContentLoaded', function () {
         var correo = document.getElementById('correoUsuario').value.trim();
 
         if (!nombre) { mostrarErrorUsuario('El nombre es obligatorio'); return; }
+        if (nombre.length > 50) { mostrarErrorUsuario('El nombre no puede exceder los 50 caracteres'); return; }
+        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(nombre)) {
+            mostrarErrorUsuario('El nombre solo puede contener letras y espacios (sin números ni símbolos)');
+            return;
+        }
+
         if (!correo) { mostrarErrorUsuario('El correo electrónico es obligatorio'); return; }
+        var regexCorreo = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!regexCorreo.test(correo)) {
+            mostrarErrorUsuario('El correo electrónico no es válido');
+            return;
+        }
+        var inputCorreo = document.getElementById('correoUsuario');
+        if (inputCorreo && inputCorreo.classList.contains('is-invalid')) {
+            mostrarErrorUsuario('El correo electrónico es inválido o ya se encuentra registrado');
+            return;
+        }
 
         if (!esEdicion) {
             var clave = document.getElementById('claveUsuario').value.trim();
@@ -312,8 +482,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (json.estado === 'exito') {
                 bootstrap.Modal.getInstance(document.getElementById('modalUsuario')).hide();
                 if (GESTIONAR) cargarUsuarios();
-                if (typeof mostrarNotificacion === 'function') mostrarNotificacion(json.mensaje, 'exito');
-                else alert(json.mensaje);
+                mostrarNotificacion(json.mensaje, 'exito');
             } else {
                 mostrarErrorUsuario(json.mensaje);
             }
@@ -341,11 +510,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(function (json) {
                     if (json.estado === 'exito') {
                         cargarUsuarios();
-                        if (typeof mostrarNotificacion === 'function') mostrarNotificacion(json.mensaje, 'exito');
-                        else alert(json.mensaje);
+                        mostrarNotificacion(json.mensaje, 'exito');
                     } else {
-                        if (typeof mostrarNotificacion === 'function') mostrarNotificacion(json.mensaje, 'error');
-                        else alert(json.mensaje);
+                        mostrarNotificacion(json.mensaje, 'error');
                     }
                 })
                 .catch(function () {
@@ -437,7 +604,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Acciones
                 var acciones = '<div class="d-inline-flex gap-1">' +
-                    '<button class="btn btn-sm btn-warning btn-editar-rol" data-id="' + r.id_rol + '" title="Editar Rol" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>';
+                    '<button class="btn btn-sm btn-warning btn-editar-rol" data-id="' + r.id_rol + '" title="Editar Rol" aria-label="Editar Rol" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>';
 
                 if (esAdmin) {
                     acciones += '<span class="badge bg-light text-muted border d-flex align-items-center" title="Rol raíz protegido"><i class="bi bi-shield-lock-fill me-1"></i>Raíz</span>';
@@ -445,8 +612,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     var btnClass = r.activo == 1 ? 'btn-secondary' : 'btn-success';
                     var iconClass = r.activo == 1 ? 'bi-toggle-off' : 'bi-toggle-on';
                     var titleText = r.activo == 1 ? 'Deshabilitar Rol' : 'Habilitar Rol';
-                    acciones += '<button class="btn btn-sm ' + btnClass + ' btn-toggle-rol" data-id="' + r.id_rol + '" data-activo="' + r.activo + '" title="' + titleText + '" data-bs-toggle="tooltip"><i class="bi ' + iconClass + '"></i></button>';
-                    acciones += '<button class="btn btn-sm btn-danger btn-eliminar-rol" data-id="' + r.id_rol + '" data-nombre="' + r.nombre.replace(/"/g, '&quot;') + '" data-usuarios="' + (r.total_usuarios || 0) + '" title="Eliminar Rol" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>';
+                    acciones += '<button class="btn btn-sm ' + btnClass + ' btn-toggle-rol" data-id="' + r.id_rol + '" data-activo="' + r.activo + '" title="' + titleText + '" aria-label="' + titleText + '" data-bs-toggle="tooltip"><i class="bi ' + iconClass + '"></i></button>';
+                    acciones += '<button class="btn btn-sm btn-danger btn-eliminar-rol" data-id="' + r.id_rol + '" data-nombre="' + r.nombre.replace(/"/g, '&quot;') + '" data-usuarios="' + (r.total_usuarios || 0) + '" title="Eliminar Rol" aria-label="Eliminar Rol" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>';
                 }
                 acciones += '</div>';
 
@@ -514,8 +681,7 @@ document.addEventListener('DOMContentLoaded', function () {
             var res = await fetch('/SP%20Perfect%20Color/usuario/obtenerRol?id=' + id);
             var json = await res.json();
             if (json.estado !== 'exito') {
-                if (typeof mostrarNotificacion === 'function') mostrarNotificacion(json.mensaje, 'error');
-                else alert(json.mensaje);
+                mostrarNotificacion(json.mensaje, 'error');
                 return;
             }
 
@@ -587,8 +753,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Actualizar lista de roles en el select de usuarios
                 cargarUsuarios();
 
-                if (typeof mostrarNotificacion === 'function') mostrarNotificacion(json.mensaje, 'exito');
-                else alert(json.mensaje);
+                mostrarNotificacion(json.mensaje, 'exito');
             } else {
                 mostrarErrorRol(json.mensaje);
             }
@@ -625,11 +790,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (json.estado === 'exito') {
                         cargarRoles();
                         cargarUsuarios();
-                        if (typeof mostrarNotificacion === 'function') mostrarNotificacion(json.mensaje, 'exito');
-                        else alert(json.mensaje);
+                        mostrarNotificacion(json.mensaje, 'exito');
                     } else {
-                        if (typeof mostrarNotificacion === 'function') mostrarNotificacion(json.mensaje, 'error');
-                        else alert(json.mensaje);
+                        mostrarNotificacion(json.mensaje, 'error');
                     }
                 })
                 .catch(function () {
@@ -668,8 +831,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (json.estado === 'exito') {
                         cargarRoles();
                         cargarUsuarios();
-                        if (typeof mostrarNotificacion === 'function') mostrarNotificacion(json.mensaje, 'exito');
-                        else alert(json.mensaje);
+                        mostrarNotificacion(json.mensaje, 'exito');
                     } else {
                         confirmarConModal('Atención', json.mensaje, null, 'btn-secondary');
                     }

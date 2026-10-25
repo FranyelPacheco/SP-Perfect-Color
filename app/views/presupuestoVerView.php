@@ -82,7 +82,7 @@ $totalBsPres = $totalUsdPres * $tasaDocPres;
                     <?php foreach ($detalle as $item): ?>
                     <tr>
                         <td><?php echo $item['insumo_codigo']; ?></td>
-                        <td><?php echo $item['insumo_nombre']; ?></td>
+                        <td><?php echo htmlspecialchars($item['insumo_nombre'] ?? ''); ?></td>
                         <td><?php echo (int)round((float)$item['cantidad']); ?></td>
                         <td>$ <?php echo number_format($item['precio_unitario'], 2, ',', '.'); ?></td>
                         <td>$ <?php echo number_format($item['subtotal'], 2, ',', '.'); ?></td>

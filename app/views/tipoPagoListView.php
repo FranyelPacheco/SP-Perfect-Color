@@ -29,7 +29,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="tituloModalTipoPago">Nuevo Tipo de Pago</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form id="formularioTipoPago">
                 <div class="modal-body">
@@ -37,6 +37,7 @@
                     <div class="mb-3">
                         <label for="nombreTipoPago" class="form-label">Nombre del Tipo de Pago</label>
                         <input type="text" id="nombreTipoPago" name="nombre" class="form-control" required placeholder="Ej: Transferencia, Efectivo, etc.">
+                        <div class="invalid-feedback" id="feedbackNombreTipoPago"></div>
                     </div>
                     <div class="mb-3 form-check">
                         <input type="checkbox" id="activoTipoPago" name="activo" class="form-check-input" value="1" checked>

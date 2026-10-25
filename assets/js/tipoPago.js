@@ -8,6 +8,16 @@ document.addEventListener('DOMContentLoaded', function() {
     var mensajeError = document.getElementById('mensajeErrorTipoPago');
     var tituloModal = document.getElementById('tituloModalTipoPago');
 
+    var validacionNombre = validarUnico({
+        input: nombreTipoPago,
+        feedback: document.getElementById('feedbackNombreTipoPago'),
+        entidad: 'tipoPago', campo: 'nombre',
+        getId: function() { return tipoPagoId.value || null; },
+        boton: formulario.querySelector('[type="submit"]')
+    });
+    modal.addEventListener('hidden.bs.modal', validacionNombre.limpiar);
+    modal.addEventListener('shown.bs.modal', function() { if (nombreTipoPago.value) validacionNombre.revalidar(); });
+
     cargarTiposPago();
 
     if (formulario) {
