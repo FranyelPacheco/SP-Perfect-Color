@@ -11,13 +11,6 @@ class ReporteModel extends ModeloBase
     private ?string $desde;
     private ?string $hasta;
 
-    // FUNCIÓN: Constructor
-    // OBJETIVO: Inicializa la conexión a la BD
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     // FUNCIÓN: ventasPorRango
     // OBJETIVO: Obtiene todas las notas de venta activas en un rango de fechas, con filtros opcionales
     public function ventasPorRango(string $desde, string $hasta, ?int $idCliente = null, ?string $condicion = null, ?int $idTipoPago = null): array
@@ -26,26 +19,6 @@ class ReporteModel extends ModeloBase
         $this->hasta = $hasta;
         $this->_validarRangoFechas();
         return $this->_ejecutarVentasPorRango($idCliente, $condicion, $idTipoPago);
-    }
-
-    // FUNCIÓN: totalVentasPorTipoPago
-    // OBJETIVO: Agrupa ventas por condicion_pago (contado/crédito) en un rango
-    public function totalVentasPorTipoPago(string $desde, string $hasta): array
-    {
-        $this->desde = $desde;
-        $this->hasta = $hasta;
-        $this->_validarRangoFechas();
-        return $this->_ejecutarTotalVentasPorTipoPago();
-    }
-
-    // FUNCIÓN: totalVentasPorMetodoPago
-    // OBJETIVO: Agrupa ventas de contado por método de pago en un rango
-    public function totalVentasPorMetodoPago(string $desde, string $hasta): array
-    {
-        $this->desde = $desde;
-        $this->hasta = $hasta;
-        $this->_validarRangoFechas();
-        return $this->_ejecutarTotalVentasPorMetodoPago();
     }
 
     // FUNCIÓN: comprasPorRango
@@ -130,35 +103,6 @@ class ReporteModel extends ModeloBase
                      ORDER BY COALESCE(v.fecha_aprobacion, v.fecha) DESC, v.id_venta DESC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->execute($params);
-        return $stmt->fetchAll();
-    }
-
-    private function _ejecutarTotalVentasPorTipoPago(): array
-    {
-        $consulta = "SELECT COALESCE(condicion_pago, 'sin_asignar') as tipo, COUNT(*) as cantidad, SUM(total) as total
-                     FROM ventas
-                     WHERE estado = 1 AND id_estado_venta = 2 AND DATE(COALESCE(fecha_aprobacion, fecha)) BETWEEN :desde AND :hasta
-                     GROUP BY condicion_pago
-                     ORDER BY total DESC";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':desde', $this->desde, PDO::PARAM_STR);
-        $stmt->bindParam(':hasta', $this->hasta, PDO::PARAM_STR);
-        $stmt->execute();
-        return $stmt->fetchAll();
-    }
-
-    private function _ejecutarTotalVentasPorMetodoPago(): array
-    {
-        $consulta = "SELECT COALESCE(tp.nombre, 'sin_asignar') as metodo, COUNT(*) as cantidad, SUM(v.total) as total
-                     FROM ventas v
-                     LEFT JOIN tipo_pago tp ON v.id_tipo_pago = tp.id_tipo_pago
-                     WHERE v.estado = 1 AND v.id_estado_venta = 2 AND DATE(COALESCE(v.fecha_aprobacion, v.fecha)) BETWEEN :desde AND :hasta AND v.condicion_pago = 'contado'
-                     GROUP BY v.id_tipo_pago
-                     ORDER BY total DESC";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':desde', $this->desde, PDO::PARAM_STR);
-        $stmt->bindParam(':hasta', $this->hasta, PDO::PARAM_STR);
-        $stmt->execute();
         return $stmt->fetchAll();
     }
 

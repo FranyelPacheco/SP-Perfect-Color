@@ -21,13 +21,6 @@ class PresupuestoModel extends ModeloBase
     private ?int $idBanco = null;
     private ?string $referencia = null;
 
-    // FUNCIÓN: Constructor
-    // OBJETIVO: Inicializa la conexión a la BD
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     // FUNCIÓN: listarTodos
     // OBJETIVO: Obtiene todos los presupuestos activos con datos del cliente y usuario
     public function listarTodos(): array

@@ -66,20 +66,6 @@ function verificarAcceso($rolesPermitidos)
     return obtenerSesionManager()->verificarAcceso($rolesPermitidos);
 }
 
-// FUNCIÓN: obtenerUsuarioId
-// OBJETIVO: Devolver el ID del usuario actual en sesión, o null si no existe
-function obtenerUsuarioId()
-{
-    return obtenerSesionManager()->obtenerIdUsuario();
-}
-
-// FUNCIÓN: obtenerUsuarioRol
-// OBJETIVO: Devolver el rol del usuario actual en sesión, o null si no existe
-function obtenerUsuarioRol()
-{
-    return obtenerSesionManager()->obtenerRolUsuario();
-}
-
 // FUNCIÓN: verificarPropietario
 // OBJETIVO: Comprobar que el ID recibido coincida con el usuario en sesión
 function verificarPropietario($idSolicitado)

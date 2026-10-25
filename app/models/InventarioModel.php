@@ -25,13 +25,6 @@ class InventarioModel extends ModeloBase
     private int $idProveedor;
     private string $termino;
 
-    // FUNCIÓN: Constructor
-    // OBJETIVO: Inicializa la conexión a la BD
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     // FUNCIÓN: contarTodos
     // OBJETIVO: Retorna el total de productos activos en el sistema
     public function contarTodos(): int
@@ -116,25 +109,6 @@ class InventarioModel extends ModeloBase
                      GROUP BY p.id_producto LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetch();
-    }
-
-    // FUNCIÓN: buscarPorCodigo
-    // OBJETIVO: Busca un producto activo por su código único
-    public function buscarPorCodigo(string $codigo): array|false
-    {
-        $this->codigo = $codigo;
-        return $this->_ejecutarSelectByCodigo();
-    }
-
-    // FUNCIÓN: _ejecutarSelectByCodigo
-    // OBJETIVO: Ejecuta la búsqueda de producto por código
-    private function _ejecutarSelectByCodigo(): array|false
-    {
-        $consulta = "SELECT p.*, p.estado as activo, p.id_producto as id_insumo FROM productos p WHERE p.codigo = :codigo AND p.estado = 1 LIMIT 1";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':codigo', $this->codigo, PDO::PARAM_STR);
         $stmt->execute();
         return $stmt->fetch();
     }

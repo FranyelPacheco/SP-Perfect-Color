@@ -12,7 +12,9 @@ use App\Models\{
 };
 use function App\Helpers\{
     respuestaJson,
-    verificarRolAdmin
+    verificarRolAdmin,
+    soloPost,
+    responder
 };
 
 $cuentaCobrarModel = new CuentaCobrarModel();
@@ -84,12 +86,10 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'registrarPago') {
     verificarRolAdmin();
     
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
     
     $resultado = $cuentaCobrarModel->procesarPago($_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: obtenerDatosPagoAjax
 // OBJETIVO: Obtiene tipos de pago y bancos para el modal de registro de pago
@@ -109,13 +109,11 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
     
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
     
     $id = intval($_POST['id'] ?? 0);
     $resultado = $cuentaCobrarModel->darDeBaja($id);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 } else {
     require_once __DIR__ . '/../views/error404View.php';

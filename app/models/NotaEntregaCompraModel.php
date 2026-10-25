@@ -18,11 +18,6 @@ class NotaEntregaCompraModel extends ModeloBase
     private ?string $fechaVencimiento = null;
     private array $items = [];
 
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     // FUNCIÓN: listarTodas
     // OBJETIVO: Lista todas las notas de entrega de compras con datos del proveedor y situación de pago
     public function listarTodas(): array

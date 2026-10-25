@@ -5,9 +5,10 @@ namespace App\Controllers;
 use App\Models\ClienteModel;
 use function App\Helpers\{
     respuestaJson,
-    verificarAutenticacion,
     verificarPermiso,
-    verificarRolAdmin
+    verificarRolAdmin,
+    soloPost,
+    responder
 };
 
 $clienteModel = new ClienteModel();
@@ -68,14 +69,21 @@ if ($metodo === 'index') {
     $existe = !empty($telefono) && $clienteModel->telefonoExiste($telefono, $id);
     respuestaJson('exito', 'Verificacion realizada', ['existe' => $existe]);
 
+// FUNCIÓN: verificarCorreoAjax
+// OBJETIVO: Verifica en tiempo real si un correo ya está registrado en clientes
+} elseif ($metodo === 'verificarCorreoAjax') {
+    verificarPermiso('cliente');
+    $correo = trim($_GET['correo'] ?? '');
+    $id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : null;
+    $existe = !empty($correo) && $clienteModel->correoExiste($correo, $id);
+    respuestaJson('exito', 'Verificacion realizada', ['existe' => $existe]);
+
 // FUNCIÓN: guardar
 // OBJETIVO: Enruta la creación o reactivación de un cliente delegando validaciones y transacción al modelo
 } elseif ($metodo === 'guardar') {
     verificarPermiso('cliente');
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $resultado = $clienteModel->registrar($_POST);
     respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje'], $resultado);
@@ -104,26 +112,22 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'actualizar') {
     verificarPermiso('cliente');
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $id = intval($_POST['id'] ?? 0);
     $resultado = $clienteModel->modificar($id, $_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: eliminar
 // OBJETIVO: Enruta la eliminación lógica (soft-delete) de un cliente delegando las reglas de cuentas pendientes al modelo
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $id = intval($_POST['id'] ?? 0);
     $resultado = $clienteModel->eliminar($id);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: 404
 // OBJETIVO: Muestra página de error 404 para método desconocido

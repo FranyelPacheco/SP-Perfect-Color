@@ -16,13 +16,6 @@ class UsuarioModel extends ModeloBase
     private int $id;
     private ?int $idExcluir;
 
-    // FUNCIÓN: Constructor
-    // OBJETIVO: Inicializa la conexión a la BD
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     // FUNCIÓN: buscarPorCorreo
     // OBJETIVO: Busca un usuario activo por su correo electrónico
     // NOTA: Usado en el login para autenticación
@@ -144,6 +137,12 @@ class UsuarioModel extends ModeloBase
 
         if ($nombre === '') {
             return ['valido' => false, 'mensaje' => 'El nombre es obligatorio'];
+        }
+        if (mb_strlen($nombre) > 50) {
+            return ['valido' => false, 'mensaje' => 'El nombre no puede exceder 50 caracteres'];
+        }
+        if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/u', $nombre)) {
+            return ['valido' => false, 'mensaje' => 'El nombre solo puede contener letras y espacios'];
         }
         if ($correo === '' || filter_var($correo, FILTER_VALIDATE_EMAIL) === false) {
             return ['valido' => false, 'mensaje' => 'El correo electronico no es valido'];
@@ -311,6 +310,12 @@ class UsuarioModel extends ModeloBase
 
         if ($nombre === '') {
             return ['exito' => false, 'mensaje' => 'El nombre es obligatorio'];
+        }
+        if (mb_strlen($nombre) > 50) {
+            return ['exito' => false, 'mensaje' => 'El nombre no puede exceder 50 caracteres'];
+        }
+        if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/u', $nombre)) {
+            return ['exito' => false, 'mensaje' => 'El nombre solo puede contener letras y espacios'];
         }
         if ($correo === '' || filter_var($correo, FILTER_VALIDATE_EMAIL) === false) {
             return ['exito' => false, 'mensaje' => 'El correo electrónico no es válido'];

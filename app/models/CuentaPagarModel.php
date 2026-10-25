@@ -20,13 +20,6 @@ class CuentaPagarModel extends ModeloBase
     private string $fecha;
     private string $termino;
 
-    // FUNCIÓN: Constructor
-    // OBJETIVO: Inicializa la conexión a la BD
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     // FUNCIÓN: listarTodas
     // OBJETIVO: Obtiene todas las cuentas por pagar activas con datos del proveedor
     public function listarTodas(): array
@@ -258,13 +251,6 @@ class CuentaPagarModel extends ModeloBase
         return $this->_ejecutarInsert();
     }
 
-    // FUNCIÓN: obtenerTotalPendiente
-    // OBJETIVO: Suma los saldos pendientes de todas las CxP activas
-    public function obtenerTotalPendiente(): string
-    {
-        return $this->_ejecutarTotalPendiente();
-    }
-
     // FUNCIÓN: eliminarCuenta
     // OBJETIVO: Desactiva una cuenta por pagar (soft delete)
     public function eliminarCuenta(int $id): bool
@@ -285,17 +271,6 @@ class CuentaPagarModel extends ModeloBase
             throw new PDOException('Término de búsqueda no válido');
         }
         return $this->_ejecutarSearch();
-    }
-
-    // FUNCIÓN: _ejecutarTotalPendiente
-    // OBJETIVO: Suma saldo_pendiente de cuentas por pagar con situacion pendiente
-    private function _ejecutarTotalPendiente(): string
-    {
-        $consulta = "SELECT COALESCE(SUM(saldo_pendiente), 0) as total
-                     FROM cuentas_pagar
-                     WHERE estado = 1 AND situacion = 'pendiente'";
-        $stmt = $this->conexion->query($consulta);
-        return $stmt->fetchColumn();
     }
 
     // FUNCIÓN: obtenerTotalPagosHoy

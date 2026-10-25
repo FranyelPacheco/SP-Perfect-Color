@@ -14,10 +14,10 @@ use App\Models\{
 };
 use function App\Helpers\{
     respuestaJson,
-    verificarAutenticacion,
     verificarPermiso,
     verificarRolVendedor,
-    validarRequerido
+    soloPost,
+    responder
 };
 
 $presupuestoModel = new PresupuestoModel();
@@ -108,9 +108,7 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'guardar') {
     verificarRolVendedor();
     
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
     
     $resultado = $presupuestoModel->crearPresupuesto($_POST, (int)$_SESSION['id_usuario']);
     respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje'], $resultado['datos'] ?? null);
@@ -146,28 +144,24 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'cambiarEstado') {
     verificarRolVendedor();
     
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
     
     $id = intval($_POST['id'] ?? 0);
     $estado = $_POST['estado'] ?? '';
     
     $resultado = $presupuestoModel->actualizarEstado($id, $estado);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: eliminar
 // OBJETIVO: Eliminación lógica de un presupuesto (soft-delete)
 } elseif ($metodo === 'eliminar') {
     verificarRolVendedor();
     
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
     
     $id = intval($_POST['id'] ?? 0);
     $resultado = $presupuestoModel->darDeBaja($id);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 } else {
     require_once __DIR__ . '/../views/error404View.php';

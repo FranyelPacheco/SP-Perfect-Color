@@ -14,7 +14,8 @@ use App\Models\{
 use function App\Helpers\{
     respuestaJson,
     verificarPermiso,
-    verificarRolAdmin
+    verificarRolAdmin,
+    responder
 };
 
 $notaEntregaCompraModel = new NotaEntregaCompraModel();
@@ -109,7 +110,7 @@ if ($metodo === 'index') {
 
     $id = intval($_POST['id'] ?? 0);
     $resultado = $notaEntregaCompraModel->anularNota($id);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 } else {
     require_once __DIR__ . '/../views/error404View.php';

@@ -1,0 +1,137 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Models;
+
+use PDO;
+
+// OBJETIVO: Lógica común de los catálogos simples (nombre único + borrado lógico): Banco y TipoPago
+abstract class ModeloCatalogo extends ModeloBase
+{
+    protected string $tabla;
+    protected string $pk;
+    protected string $etiqueta;
+    protected string $etiquetaArticulo = 'el';
+
+    public function listarTodos(): array
+    {
+        return $this->conexion->query("SELECT {$this->pk}, nombre, estado, estado as activo FROM {$this->tabla} ORDER BY nombre ASC")->fetchAll();
+    }
+
+    public function buscarPorId(int $id): array|false
+    {
+        if ($id < 1) return false;
+        $stmt = $this->conexion->prepare("SELECT {$this->pk}, nombre, estado, estado as activo FROM {$this->tabla} WHERE {$this->pk} = :id");
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch();
+    }
+
+    protected function validarNombre(string $nombre): array
+    {
+        $nombre = trim($nombre);
+        if ($nombre === '') {
+            return ['valido' => false, 'mensaje' => "El nombre del {$this->etiqueta} es obligatorio"];
+        }
+        if (mb_strlen($nombre) > 50) {
+            return ['valido' => false, 'mensaje' => "El nombre del {$this->etiqueta} no puede superar los 50 caracteres"];
+        }
+        if (preg_match('/[\'"`;\\<>]/', $nombre)) {
+            return ['valido' => false, 'mensaje' => "El nombre del {$this->etiqueta} contiene caracteres no permitidos"];
+        }
+        return ['valido' => true, 'nombre' => $nombre];
+    }
+
+    public function registrar(array $datos): array
+    {
+        $val = $this->validarNombre($datos['nombre'] ?? '');
+        if (!$val['valido']) {
+            return ['exito' => false, 'mensaje' => $val['mensaje']];
+        }
+
+        $nombre = $val['nombre'];
+        if ($this->buscarDuplicado($this->tabla, 'nombre', $this->pk, $nombre)['activo'] ?? false) {
+            return ['exito' => false, 'mensaje' => "Ya existe un {$this->etiqueta} con este nombre"];
+        }
+
+        $inactivoId = $this->buscarInactivoPorNombre($nombre);
+        if ($inactivoId) {
+            return $this->actualizar($inactivoId, $nombre, 1)
+                ? ['exito' => true, 'mensaje' => ucfirst($this->etiqueta) . ' reactivado exitosamente']
+                : ['exito' => false, 'mensaje' => "Error al reactivar {$this->etiquetaArticulo} {$this->etiqueta}"];
+        }
+
+        return $this->insertar($nombre)
+            ? ['exito' => true, 'mensaje' => ucfirst($this->etiqueta) . ' creado exitosamente']
+            : ['exito' => false, 'mensaje' => "Error al crear {$this->etiquetaArticulo} {$this->etiqueta}"];
+    }
+
+    public function modificar(int $id, array $datos): array
+    {
+        if ($id < 1) {
+            return ['exito' => false, 'mensaje' => "ID de {$this->etiqueta} no valido"];
+        }
+        $val = $this->validarNombre($datos['nombre'] ?? '');
+        if (!$val['valido']) {
+            return ['exito' => false, 'mensaje' => $val['mensaje']];
+        }
+        if ($this->buscarDuplicado($this->tabla, 'nombre', $this->pk, $val['nombre'], $id, true) !== null) {
+            return ['exito' => false, 'mensaje' => "Ya existe un {$this->etiqueta} con este nombre"];
+        }
+
+        return $this->actualizar($id, $val['nombre'], intval($datos['activo'] ?? 1))
+            ? ['exito' => true, 'mensaje' => ucfirst($this->etiqueta) . ' actualizado exitosamente']
+            : ['exito' => false, 'mensaje' => "Error al actualizar {$this->etiquetaArticulo} {$this->etiqueta}"];
+    }
+
+    public function darDeBaja(int $id): array
+    {
+        if ($id < 1) {
+            return ['exito' => false, 'mensaje' => "ID de {$this->etiqueta} no valido"];
+        }
+        return $this->eliminar($id)
+            ? ['exito' => true, 'mensaje' => ucfirst($this->etiqueta) . ' eliminado exitosamente']
+            : ['exito' => false, 'mensaje' => "Error al eliminar {$this->etiquetaArticulo} {$this->etiqueta}"];
+    }
+
+    public function cambiarEstado(int $id): array
+    {
+        if ($id < 1) {
+            return ['exito' => false, 'mensaje' => "ID de {$this->etiqueta} no valido"];
+        }
+        return $this->toggleActivo($id)
+            ? ['exito' => true, 'mensaje' => 'Estado cambiado exitosamente']
+            : ['exito' => false, 'mensaje' => 'Error al cambiar el estado'];
+    }
+
+    public function insertar(string $nombre): bool
+    {
+        if ($nombre === '') return false;
+        return $this->conexion->prepare("INSERT INTO {$this->tabla} (nombre, estado) VALUES (:nombre, 1)")->execute([':nombre' => $nombre]);
+    }
+
+    public function actualizar(int $id, string $nombre, int $activo): bool
+    {
+        if ($id < 1 || $nombre === '') return false;
+        return $this->conexion->prepare("UPDATE {$this->tabla} SET nombre = :nombre, estado = :activo WHERE {$this->pk} = :id")
+            ->execute([':nombre' => $nombre, ':activo' => $activo, ':id' => $id]);
+    }
+
+    public function eliminar(int $id): bool
+    {
+        return $id >= 1 && $this->conexion->prepare("UPDATE {$this->tabla} SET estado = 0 WHERE {$this->pk} = :id")->execute([':id' => $id]);
+    }
+
+    public function toggleActivo(int $id): bool
+    {
+        return $id >= 1 && $this->conexion->prepare("UPDATE {$this->tabla} SET estado = 1 - estado WHERE {$this->pk} = :id")->execute([':id' => $id]);
+    }
+
+    public function buscarInactivoPorNombre(string $nombre): int|false
+    {
+        if ($nombre === '') return false;
+        $stmt = $this->conexion->prepare("SELECT {$this->pk} FROM {$this->tabla} WHERE nombre = :nombre AND estado = 0 LIMIT 1");
+        $stmt->execute([':nombre' => $nombre]);
+        $fila = $stmt->fetch();
+        return $fila ? (int)$fila[$this->pk] : false;
+    }
+}

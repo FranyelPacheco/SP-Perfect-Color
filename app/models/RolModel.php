@@ -13,11 +13,6 @@ class RolModel extends ModeloBase
     private array $modulosArray = [];
     private ?int $idExcluir;
 
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     // FUNCIÓN: listarTodos
     // OBJETIVO: Retorna todos los roles con su estado, módulos (desde rol_modulo) y total de usuarios activos asociados
     public function listarTodos(): array
