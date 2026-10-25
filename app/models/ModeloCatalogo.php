@@ -13,14 +13,28 @@ abstract class ModeloCatalogo extends ModeloBase
     protected string $etiqueta;
     protected string $etiquetaArticulo = 'el';
 
+    // FUNCIÓN: listarTodos
+    // OBJETIVO: Obtiene todos los registros del catálogo ordenados por nombre
     public function listarTodos(): array
+    {
+        return $this->_ejecutarSelectAll();
+    }
+
+    private function _ejecutarSelectAll(): array
     {
         return $this->conexion->query("SELECT {$this->pk}, nombre, estado, estado as activo FROM {$this->tabla} ORDER BY nombre ASC")->fetchAll();
     }
 
+    // FUNCIÓN: buscarPorId
+    // OBJETIVO: Busca un registro por su ID
     public function buscarPorId(int $id): array|false
     {
         if ($id < 1) return false;
+        return $this->_ejecutarSelectById($id);
+    }
+
+    private function _ejecutarSelectById(int $id): array|false
+    {
         $stmt = $this->conexion->prepare("SELECT {$this->pk}, nombre, estado, estado as activo FROM {$this->tabla} WHERE {$this->pk} = :id");
         $stmt->execute([':id' => $id]);
         return $stmt->fetch();
@@ -49,7 +63,7 @@ abstract class ModeloCatalogo extends ModeloBase
         }
 
         $nombre = $val['nombre'];
-        if ($this->buscarDuplicado($this->tabla, 'nombre', $this->pk, $nombre)['activo'] ?? false) {
+        if ($this->verificarUnico($this->tabla, 'nombre', $this->pk, $nombre)['activo'] ?? false) {
             return ['exito' => false, 'mensaje' => "Ya existe un {$this->etiqueta} con este nombre"];
         }
 
@@ -74,7 +88,7 @@ abstract class ModeloCatalogo extends ModeloBase
         if (!$val['valido']) {
             return ['exito' => false, 'mensaje' => $val['mensaje']];
         }
-        if ($this->buscarDuplicado($this->tabla, 'nombre', $this->pk, $val['nombre'], $id, true) !== null) {
+        if ($this->verificarUnico($this->tabla, 'nombre', $this->pk, $val['nombre'], $id, true) !== null) {
             return ['exito' => false, 'mensaje' => "Ya existe un {$this->etiqueta} con este nombre"];
         }
 
@@ -103,32 +117,69 @@ abstract class ModeloCatalogo extends ModeloBase
             : ['exito' => false, 'mensaje' => 'Error al cambiar el estado'];
     }
 
+    // FUNCIÓN: insertar
+    // OBJETIVO: Crea un registro con estado=1
     public function insertar(string $nombre): bool
     {
         if ($nombre === '') return false;
+        return $this->_ejecutarInsert($nombre);
+    }
+
+    private function _ejecutarInsert(string $nombre): bool
+    {
         return $this->conexion->prepare("INSERT INTO {$this->tabla} (nombre, estado) VALUES (:nombre, 1)")->execute([':nombre' => $nombre]);
     }
 
+    // FUNCIÓN: actualizar
+    // OBJETIVO: Actualiza nombre y estado de un registro existente
     public function actualizar(int $id, string $nombre, int $activo): bool
     {
         if ($id < 1 || $nombre === '') return false;
+        return $this->_ejecutarUpdate($id, $nombre, $activo);
+    }
+
+    private function _ejecutarUpdate(int $id, string $nombre, int $activo): bool
+    {
         return $this->conexion->prepare("UPDATE {$this->tabla} SET nombre = :nombre, estado = :activo WHERE {$this->pk} = :id")
             ->execute([':nombre' => $nombre, ':activo' => $activo, ':id' => $id]);
     }
 
+    // FUNCIÓN: eliminar
+    // OBJETIVO: Soft-delete: marca estado=0 en vez de borrar
     public function eliminar(int $id): bool
     {
-        return $id >= 1 && $this->conexion->prepare("UPDATE {$this->tabla} SET estado = 0 WHERE {$this->pk} = :id")->execute([':id' => $id]);
+        if ($id < 1) return false;
+        return $this->_ejecutarDelete($id);
     }
 
+    private function _ejecutarDelete(int $id): bool
+    {
+        return $this->conexion->prepare("UPDATE {$this->tabla} SET estado = 0 WHERE {$this->pk} = :id")->execute([':id' => $id]);
+    }
+
+    // FUNCIÓN: toggleActivo
+    // OBJETIVO: Alterna el estado entre 0 y 1
     public function toggleActivo(int $id): bool
     {
-        return $id >= 1 && $this->conexion->prepare("UPDATE {$this->tabla} SET estado = 1 - estado WHERE {$this->pk} = :id")->execute([':id' => $id]);
+        if ($id < 1) return false;
+        return $this->_ejecutarToggleActivo($id);
     }
 
+    private function _ejecutarToggleActivo(int $id): bool
+    {
+        return $this->conexion->prepare("UPDATE {$this->tabla} SET estado = 1 - estado WHERE {$this->pk} = :id")->execute([':id' => $id]);
+    }
+
+    // FUNCIÓN: buscarInactivoPorNombre
+    // OBJETIVO: Busca un registro inactivo por nombre exacto para reactivarlo
     public function buscarInactivoPorNombre(string $nombre): int|false
     {
         if ($nombre === '') return false;
+        return $this->_ejecutarBuscarInactivoPorNombre($nombre);
+    }
+
+    private function _ejecutarBuscarInactivoPorNombre(string $nombre): int|false
+    {
         $stmt = $this->conexion->prepare("SELECT {$this->pk} FROM {$this->tabla} WHERE nombre = :nombre AND estado = 0 LIMIT 1");
         $stmt->execute([':nombre' => $nombre]);
         $fila = $stmt->fetch();
