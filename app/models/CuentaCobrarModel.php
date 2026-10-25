@@ -26,27 +26,7 @@ class CuentaCobrarModel extends ModeloBase
     // OBJETIVO: Obtiene todas las cuentas por cobrar activas con datos del cliente y nota
     public function listarTodas(): array
     {
-        $consulta = "SELECT cc.*, cc.estado as activo, cc.situacion as estado,
-                        c.id_cliente,
-                        CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
-                        c.cedula as cliente_cedula,
-                        (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
-                        v.id_venta as id_nota_entrega,
-                        v.id_venta as id_nota_venta,
-                        v.id_venta,
-                        v.fecha as nota_fecha,
-                        COALESCE(
-                            (SELECT t.tasa FROM tasa_cambio t WHERE t.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND t.estado = 1 ORDER BY t.fecha DESC, t.id_tasa_cambio DESC LIMIT 1),
-                            (SELECT t2.tasa FROM tasa_cambio t2 WHERE t2.estado = 1 ORDER BY t2.fecha DESC, t2.id_tasa_cambio DESC LIMIT 1),
-                            0
-                        ) as tasa_bcv
-                FROM cuentas_cobrar cc 
-                INNER JOIN ventas v ON cc.id_venta = v.id_venta
-                INNER JOIN clientes c ON v.id_cliente = c.id_cliente
-                WHERE cc.estado = 1
-                ORDER BY cc.situacion ASC, cc.fecha_vencimiento ASC";
-        $stmt = $this->conexion->query($consulta);
-        return $stmt->fetchAll();
+        return $this->_ejecutarSelectAll();
     }
 
     // FUNCIÓN: buscarPorId
@@ -57,28 +37,7 @@ class CuentaCobrarModel extends ModeloBase
         if ($this->id < 1) {
             throw new PDOException('ID no válido');
         }
-        $consulta = "SELECT cc.*, cc.estado as activo, cc.situacion as estado,
-                        c.id_cliente,
-                        CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
-                        c.cedula as cliente_cedula,
-                        (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
-                        v.id_venta as id_nota_entrega,
-                        v.id_venta as id_nota_venta,
-                        v.id_venta,
-                        v.fecha as nota_fecha,
-                        COALESCE(
-                            (SELECT t.tasa FROM tasa_cambio t WHERE t.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND t.estado = 1 ORDER BY t.fecha DESC, t.id_tasa_cambio DESC LIMIT 1),
-                            (SELECT t2.tasa FROM tasa_cambio t2 WHERE t2.estado = 1 ORDER BY t2.fecha DESC, t2.id_tasa_cambio DESC LIMIT 1),
-                            0
-                        ) as tasa_bcv
-                FROM cuentas_cobrar cc 
-                INNER JOIN ventas v ON cc.id_venta = v.id_venta
-                INNER JOIN clientes c ON v.id_cliente = c.id_cliente
-                WHERE cc.id_cuenta_cobrar = :id AND cc.estado = 1";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetch();
+        return $this->_ejecutarSelectById();
     }
 
     // FUNCIÓN: obtenerPagos
@@ -89,21 +48,7 @@ class CuentaCobrarModel extends ModeloBase
         if ($this->id < 1) {
             throw new PDOException('ID de cuenta no válido');
         }
-        $consulta = "SELECT pr.*, tp.nombre as tipo_pago_nombre, b.nombre as banco_nombre,
-                            COALESCE(
-                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(pr.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
-                                0
-                            ) as tasa_bcv
-                     FROM pagos_recibidos pr
-                     LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
-                     LEFT JOIN banco b ON pr.id_banco = b.id_banco
-                     WHERE pr.id_cuenta_cobrar = :cuenta_id 
-                     ORDER BY pr.fecha DESC";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':cuenta_id', $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll();
+        return $this->_ejecutarSelectPagos();
     }
 
     // FUNCIÓN: validarDatosPago
@@ -232,6 +177,128 @@ class CuentaCobrarModel extends ModeloBase
             throw new PDOException('Parámetros obligatorios faltantes');
         }
 
+        return $this->_ejecutarRegistrarPago();
+    }
+
+    // FUNCIÓN: obtenerTotalPagosHoy
+    // OBJETIVO: Retorna la suma de todos los pagos recibidos en el día de hoy
+    // NOTA: Usado en el dashboard para mostrar total de ingresos del día
+    public function obtenerTotalPagosHoy(): string|false
+    {
+        return $this->_ejecutarTotalPagosHoy();
+    }
+
+    // FUNCIÓN: obtenerPagosPorDia
+    // OBJETIVO: Obtiene el total de pagos agrupados por día en los últimos N días
+    // NOTA: Usado para generar la gráfica de ingresos del dashboard
+    public function obtenerPagosPorDia(int $dias = 7): array
+    {
+        $this->dias = $dias;
+        return $this->_ejecutarPagosPorDia();
+    }
+
+    // FUNCIÓN: eliminarCuenta
+    // OBJETIVO: Desactiva una cuenta por cobrar (soft delete)
+    public function eliminarCuenta(int $id): bool
+    {
+        $this->id = $id;
+        if ($this->id < 1) {
+            throw new PDOException('ID no válido');
+        }
+        return $this->_ejecutarDelete();
+    }
+
+    // FUNCIÓN: buscarCuentas
+    // OBJETIVO: Busca cuentas por cobrar por nombre o cédula del cliente
+    public function buscarCuentas(string $termino): array
+    {
+        $this->termino = $termino;
+        if ($this->termino === '') {
+            throw new PDOException('Término de búsqueda no válido');
+        }
+        return $this->_ejecutarSearch();
+    }
+
+    // FUNCIÓN: _ejecutarSelectAll
+    // OBJETIVO: Ejecuta la consulta que lista todas las cuentas activas con datos del cliente y venta
+    private function _ejecutarSelectAll(): array
+    {
+        $consulta = "SELECT cc.*, cc.estado as activo, cc.situacion as estado,
+                        c.id_cliente,
+                        CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
+                        c.cedula as cliente_cedula,
+                        (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
+                        v.id_venta as id_nota_entrega,
+                        v.id_venta as id_nota_venta,
+                        v.id_venta,
+                        v.fecha as nota_fecha,
+                        COALESCE(
+                            (SELECT t.tasa FROM tasa_cambio t WHERE t.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND t.estado = 1 ORDER BY t.fecha DESC, t.id_tasa_cambio DESC LIMIT 1),
+                            (SELECT t2.tasa FROM tasa_cambio t2 WHERE t2.estado = 1 ORDER BY t2.fecha DESC, t2.id_tasa_cambio DESC LIMIT 1),
+                            0
+                        ) as tasa_bcv
+                FROM cuentas_cobrar cc 
+                INNER JOIN ventas v ON cc.id_venta = v.id_venta
+                INNER JOIN clientes c ON v.id_cliente = c.id_cliente
+                WHERE cc.estado = 1
+                ORDER BY cc.situacion ASC, cc.fecha_vencimiento ASC";
+        $stmt = $this->conexion->query($consulta);
+        return $stmt->fetchAll();
+    }
+
+    // FUNCIÓN: _ejecutarSelectById
+    // OBJETIVO: Ejecuta la búsqueda de una cuenta por ID
+    private function _ejecutarSelectById(): array|false
+    {
+        $consulta = "SELECT cc.*, cc.estado as activo, cc.situacion as estado,
+                        c.id_cliente,
+                        CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
+                        c.cedula as cliente_cedula,
+                        (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
+                        v.id_venta as id_nota_entrega,
+                        v.id_venta as id_nota_venta,
+                        v.id_venta,
+                        v.fecha as nota_fecha,
+                        COALESCE(
+                            (SELECT t.tasa FROM tasa_cambio t WHERE t.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND t.estado = 1 ORDER BY t.fecha DESC, t.id_tasa_cambio DESC LIMIT 1),
+                            (SELECT t2.tasa FROM tasa_cambio t2 WHERE t2.estado = 1 ORDER BY t2.fecha DESC, t2.id_tasa_cambio DESC LIMIT 1),
+                            0
+                        ) as tasa_bcv
+                FROM cuentas_cobrar cc 
+                INNER JOIN ventas v ON cc.id_venta = v.id_venta
+                INNER JOIN clientes c ON v.id_cliente = c.id_cliente
+                WHERE cc.id_cuenta_cobrar = :id AND cc.estado = 1";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch();
+    }
+
+    // FUNCIÓN: _ejecutarSelectPagos
+    // OBJETIVO: Obtiene los pagos registrados para una cuenta, con tipo de pago, banco y tasa BCV histórica de la fecha del pago
+    private function _ejecutarSelectPagos(): array
+    {
+        $consulta = "SELECT pr.*, tp.nombre as tipo_pago_nombre, b.nombre as banco_nombre,
+                            COALESCE(
+                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(pr.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
+                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                                0
+                            ) as tasa_bcv
+                     FROM pagos_recibidos pr
+                     LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
+                     LEFT JOIN banco b ON pr.id_banco = b.id_banco
+                     WHERE pr.id_cuenta_cobrar = :cuenta_id 
+                     ORDER BY pr.fecha DESC";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':cuenta_id', $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    // FUNCIÓN: _ejecutarRegistrarPago
+    // OBJETIVO: Ejecuta la transacción que inserta el pago y actualiza saldo/situacion de la cuenta
+    private function _ejecutarRegistrarPago(): bool
+    {
         try {
             $this->conexion->beginTransaction();
 
@@ -280,22 +347,19 @@ class CuentaCobrarModel extends ModeloBase
         }
     }
 
-    // FUNCIÓN: obtenerTotalPagosHoy
-    // OBJETIVO: Retorna la suma de todos los pagos recibidos en el día de hoy
-    // NOTA: Usado en el dashboard para mostrar total de ingresos del día
-    public function obtenerTotalPagosHoy(): string|false
+    // FUNCIÓN: _ejecutarTotalPagosHoy
+    // OBJETIVO: Calcula la suma de pagos recibidos en la fecha actual
+    private function _ejecutarTotalPagosHoy(): string|false
     {
         $consulta = "SELECT COALESCE(SUM(monto), 0) as total FROM pagos_recibidos WHERE DATE(fecha) = CURDATE()";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchColumn();
     }
 
-    // FUNCIÓN: obtenerPagosPorDia
-    // OBJETIVO: Obtiene el total de pagos agrupados por día en los últimos N días
-    // NOTA: Usado para generar la gráfica de ingresos del dashboard
-    public function obtenerPagosPorDia(int $dias = 7): array
+    // FUNCIÓN: _ejecutarPagosPorDia
+    // OBJETIVO: Agrupa pagos por fecha en un rango de días para la gráfica de ingresos
+    private function _ejecutarPagosPorDia(): array
     {
-        $this->dias = $dias;
         $consulta = "SELECT DATE(fecha) as fecha, COALESCE(SUM(monto), 0) as total
                      FROM pagos_recibidos
                      WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL :dias DAY)
@@ -307,28 +371,20 @@ class CuentaCobrarModel extends ModeloBase
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // FUNCIÓN: eliminarCuenta
-    // OBJETIVO: Desactiva una cuenta por cobrar (soft delete)
-    public function eliminarCuenta(int $id): bool
+    // FUNCIÓN: _ejecutarDelete
+    // OBJETIVO: Ejecuta el soft delete de la cuenta por cobrar
+    private function _ejecutarDelete(): bool
     {
-        $this->id = $id;
-        if ($this->id < 1) {
-            throw new PDOException('ID no válido');
-        }
         $consulta = "UPDATE cuentas_cobrar SET estado = 0 WHERE id_cuenta_cobrar = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
-    // FUNCIÓN: buscarCuentas
-    // OBJETIVO: Busca cuentas por cobrar por nombre o cédula del cliente
-    public function buscarCuentas(string $termino): array
+    // FUNCIÓN: _ejecutarSearch
+    // OBJETIVO: Busca cuentas por cobrar filtrando por nombre o cédula del cliente
+    private function _ejecutarSearch(): array
     {
-        $this->termino = $termino;
-        if ($this->termino === '') {
-            throw new PDOException('Término de búsqueda no válido');
-        }
         $terminoLike = '%' . $this->termino . '%';
         $consulta = "SELECT cc.*, cc.estado as activo, cc.situacion as estado,
                         c.id_cliente,
@@ -353,21 +409,4 @@ class CuentaCobrarModel extends ModeloBase
         $stmt->execute();
         return $stmt->fetchAll();
     }
-
-    // FUNCIÓN: _ejecutarSelectAll
-    // OBJETIVO: Ejecuta la consulta que lista todas las cuentas activas con datos del cliente y venta
-        // FUNCIÓN: _ejecutarSelectById
-    // OBJETIVO: Ejecuta la búsqueda de una cuenta por ID
-        // FUNCIÓN: _ejecutarSelectPagos
-    // OBJETIVO: Obtiene los pagos registrados para una cuenta, con tipo de pago, banco y tasa BCV histórica de la fecha del pago
-        // FUNCIÓN: _ejecutarRegistrarPago
-    // OBJETIVO: Ejecuta la transacción que inserta el pago y actualiza saldo/situacion de la cuenta
-        // FUNCIÓN: _ejecutarTotalPagosHoy
-    // OBJETIVO: Calcula la suma de pagos recibidos en la fecha actual
-        // FUNCIÓN: _ejecutarPagosPorDia
-    // OBJETIVO: Agrupa pagos por fecha en un rango de días para la gráfica de ingresos
-        // FUNCIÓN: _ejecutarDelete
-    // OBJETIVO: Ejecuta el soft delete de la cuenta por cobrar
-        // FUNCIÓN: _ejecutarSearch
-    // OBJETIVO: Busca cuentas por cobrar filtrando por nombre o cédula del cliente
-    }
+}

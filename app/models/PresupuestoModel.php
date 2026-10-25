@@ -25,22 +25,7 @@ class PresupuestoModel extends ModeloBase
     // OBJETIVO: Obtiene todos los presupuestos activos con datos del cliente y usuario
     public function listarTodos(): array
     {
-        $consulta = "SELECT v.*, v.id_venta as id_presupuesto, v.estado as activo, ev.nombre as estado,
-                            CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
-                            c.cedula as cliente_cedula,
-                            'Sistema' as usuario_nombre,
-                            COALESCE(
-                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(v.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
-                                0
-                            ) as tasa_bcv
-                     FROM ventas v 
-                     INNER JOIN clientes c ON v.id_cliente = c.id_cliente
-                     INNER JOIN estado_venta ev ON v.id_estado_venta = ev.id_estado_venta
-                     WHERE v.estado = 1
-                     ORDER BY v.fecha DESC, v.id_venta DESC";
-        $stmt = $this->conexion->query($consulta);
-        return $stmt->fetchAll();
+        return $this->_ejecutarSelectAll();
     }
 
     // FUNCIÓN: buscarPorId
@@ -51,23 +36,7 @@ class PresupuestoModel extends ModeloBase
             throw new PDOException('ID no válido');
         }
         $this->id = $id;
-        $consulta = "SELECT v.*, v.id_venta as id_presupuesto, v.estado as activo, ev.nombre as estado,
-                            CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
-                            c.cedula as cliente_cedula,
-                            'Sistema' as usuario_nombre,
-                            COALESCE(
-                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(v.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
-                                0
-                            ) as tasa_bcv
-                     FROM ventas v 
-                     INNER JOIN clientes c ON v.id_cliente = c.id_cliente
-                     INNER JOIN estado_venta ev ON v.id_estado_venta = ev.id_estado_venta
-                     WHERE v.id_venta = :id AND v.estado = 1";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetch();
+        return $this->_ejecutarSelectById();
     }
 
     // FUNCIÓN: validarDatosPresupuesto
@@ -321,6 +290,113 @@ class PresupuestoModel extends ModeloBase
         $this->idTipoPago = $idTipoPago ?: null;
         $this->idBanco = $idBanco ?: null;
         $this->referencia = !empty($referencia) ? trim($referencia) : null;
+        return $this->_ejecutarInsert();
+    }
+
+    // FUNCIÓN: obtenerDetalle
+    // OBJETIVO: Obtiene el detalle de un presupuesto (insumos, cantidades, precios)
+    public function obtenerDetalle(int $presupuestoId): array
+    {
+        if ($presupuestoId <= 0) {
+            throw new PDOException('ID de presupuesto no válido');
+        }
+        $this->id = $presupuestoId;
+        return $this->_ejecutarSelectDetalle();
+    }
+
+    // FUNCIÓN: cambiarEstado
+    // OBJETIVO: Cambia el estado de un presupuesto (pendiente, aprobado, rechazado, convertido)
+    public function cambiarEstado(int $id, string|int $estado): bool
+    {
+        if ($id <= 0) {
+            throw new PDOException('ID no válido');
+        }
+        $this->id = $id;
+        $map = [
+            'presupuesto' => 1,
+            'pendiente' => 1,
+            'aprobado' => 2,
+            'rechazado' => 3,
+            'convertido' => 4,
+            'anulado' => 4,
+        ];
+        if (is_numeric($estado)) {
+            $this->idEstadoPresupuesto = (int)$estado;
+        } else {
+            $this->idEstadoPresupuesto = $map[strtolower(trim((string)$estado))] ?? 1;
+        }
+        return $this->_ejecutarUpdateEstado();
+    }
+
+    // FUNCIÓN: eliminarPresupuesto
+    // OBJETIVO: Desactiva un presupuesto (soft delete)
+    public function eliminarPresupuesto(int $id): bool
+    {
+        if ($id <= 0) {
+            throw new PDOException('ID no válido');
+        }
+        $this->id = $id;
+        return $this->_ejecutarDelete();
+    }
+
+    // FUNCIÓN: buscarPresupuestos
+    // OBJETIVO: Busca presupuestos por nombre/cedula del cliente y opcionalmente por estado
+    public function buscarPresupuestos(string $termino, string $estado = ''): array
+    {
+        $this->termino = $termino;
+        $this->estado = $estado;
+        return $this->_ejecutarSearch();
+    }
+
+    // FUNCIÓN: _ejecutarSelectAll
+    // OBJETIVO: Ejecuta la consulta que lista todas las ventas/presupuestos activos
+    private function _ejecutarSelectAll(): array
+    {
+        $consulta = "SELECT v.*, v.id_venta as id_presupuesto, v.estado as activo, ev.nombre as estado,
+                            CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
+                            c.cedula as cliente_cedula,
+                            'Sistema' as usuario_nombre,
+                            COALESCE(
+                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(v.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
+                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                                0
+                            ) as tasa_bcv
+                     FROM ventas v 
+                     INNER JOIN clientes c ON v.id_cliente = c.id_cliente
+                     INNER JOIN estado_venta ev ON v.id_estado_venta = ev.id_estado_venta
+                     WHERE v.estado = 1
+                     ORDER BY v.fecha DESC, v.id_venta DESC";
+        $stmt = $this->conexion->query($consulta);
+        return $stmt->fetchAll();
+    }
+
+    // FUNCIÓN: _ejecutarSelectById
+    // OBJETIVO: Ejecuta la búsqueda de una venta por ID
+    private function _ejecutarSelectById(): array|false
+    {
+        $consulta = "SELECT v.*, v.id_venta as id_presupuesto, v.estado as activo, ev.nombre as estado,
+                            CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
+                            c.cedula as cliente_cedula,
+                            'Sistema' as usuario_nombre,
+                            COALESCE(
+                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(v.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
+                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                                0
+                            ) as tasa_bcv
+                     FROM ventas v 
+                     INNER JOIN clientes c ON v.id_cliente = c.id_cliente
+                     INNER JOIN estado_venta ev ON v.id_estado_venta = ev.id_estado_venta
+                     WHERE v.id_venta = :id AND v.estado = 1";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch();
+    }
+
+    // FUNCIÓN: _ejecutarInsert
+    // OBJETIVO: Ejecuta la inserción de la venta/presupuesto y su detalle en una transacción
+    private function _ejecutarInsert(): int
+    {
         try {
             $this->conexion->beginTransaction();
 
@@ -399,14 +475,10 @@ class PresupuestoModel extends ModeloBase
         }
     }
 
-    // FUNCIÓN: obtenerDetalle
-    // OBJETIVO: Obtiene el detalle de un presupuesto (insumos, cantidades, precios)
-    public function obtenerDetalle(int $presupuestoId): array
+    // FUNCIÓN: _ejecutarSelectDetalle
+    // OBJETIVO: Obtiene las líneas de detalle de una venta con datos del producto
+    private function _ejecutarSelectDetalle(): array
     {
-        if ($presupuestoId <= 0) {
-            throw new PDOException('ID de presupuesto no válido');
-        }
-        $this->id = $presupuestoId;
         $consulta = "SELECT vd.*, 
                             vd.id_venta_detalle as id_presupuesto_detalle,
                             vd.id_venta as id_presupuesto,
@@ -424,27 +496,10 @@ class PresupuestoModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-    // FUNCIÓN: cambiarEstado
-    // OBJETIVO: Cambia el estado de un presupuesto (pendiente, aprobado, rechazado, convertido)
-    public function cambiarEstado(int $id, string|int $estado): bool
+    // FUNCIÓN: _ejecutarUpdateEstado
+    // OBJETIVO: Ejecuta el UPDATE del estado de la venta
+    private function _ejecutarUpdateEstado(): bool
     {
-        if ($id <= 0) {
-            throw new PDOException('ID no válido');
-        }
-        $this->id = $id;
-        $map = [
-            'presupuesto' => 1,
-            'pendiente' => 1,
-            'aprobado' => 2,
-            'rechazado' => 3,
-            'convertido' => 4,
-            'anulado' => 4,
-        ];
-        if (is_numeric($estado)) {
-            $this->idEstadoPresupuesto = (int)$estado;
-        } else {
-            $this->idEstadoPresupuesto = $map[strtolower(trim((string)$estado))] ?? 1;
-        }
         $sqlFechaAprobacion = ($this->idEstadoPresupuesto === 2) ? ", fecha_aprobacion = NOW()" : "";
         $consulta = "UPDATE ventas SET id_estado_venta = :id_estado_venta {$sqlFechaAprobacion} WHERE id_venta = :id";
         $stmt = $this->conexion->prepare($consulta);
@@ -453,26 +508,20 @@ class PresupuestoModel extends ModeloBase
         return $stmt->execute();
     }
 
-    // FUNCIÓN: eliminarPresupuesto
-    // OBJETIVO: Desactiva un presupuesto (soft delete)
-    public function eliminarPresupuesto(int $id): bool
+    // FUNCIÓN: _ejecutarDelete
+    // OBJETIVO: Ejecuta el soft delete de la venta (estado = 0)
+    private function _ejecutarDelete(): bool
     {
-        if ($id <= 0) {
-            throw new PDOException('ID no válido');
-        }
-        $this->id = $id;
         $consulta = "UPDATE ventas SET estado = 0 WHERE id_venta = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
-    // FUNCIÓN: buscarPresupuestos
-    // OBJETIVO: Busca presupuestos por nombre/cedula del cliente y opcionalmente por estado
-    public function buscarPresupuestos(string $termino, string $estado = ''): array
+    // FUNCIÓN: _ejecutarSearch
+    // OBJETIVO: Busca ventas construyendo condiciones dinámicas según término y estado
+    private function _ejecutarSearch(): array
     {
-        $this->termino = $termino;
-        $this->estado = $estado;
         $condiciones = [];
         $parametros = [];
 
@@ -520,19 +569,4 @@ class PresupuestoModel extends ModeloBase
         $stmt->execute();
         return $stmt->fetchAll();
     }
-
-    // FUNCIÓN: _ejecutarSelectAll
-    // OBJETIVO: Ejecuta la consulta que lista todas las ventas/presupuestos activos
-        // FUNCIÓN: _ejecutarSelectById
-    // OBJETIVO: Ejecuta la búsqueda de una venta por ID
-        // FUNCIÓN: _ejecutarInsert
-    // OBJETIVO: Ejecuta la inserción de la venta/presupuesto y su detalle en una transacción
-        // FUNCIÓN: _ejecutarSelectDetalle
-    // OBJETIVO: Obtiene las líneas de detalle de una venta con datos del producto
-        // FUNCIÓN: _ejecutarUpdateEstado
-    // OBJETIVO: Ejecuta el UPDATE del estado de la venta
-        // FUNCIÓN: _ejecutarDelete
-    // OBJETIVO: Ejecuta el soft delete de la venta (estado = 0)
-        // FUNCIÓN: _ejecutarSearch
-    // OBJETIVO: Busca ventas construyendo condiciones dinámicas según término y estado
-    }
+}

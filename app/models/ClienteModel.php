@@ -23,23 +23,14 @@ class ClienteModel extends ModeloBase
     // OBJETIVO: Devuelve la cantidad de clientes activos
     public function contarTodos(): int
     {
-        $consulta = "SELECT COUNT(*) as total FROM clientes WHERE estado = 1";
-        $stmt = $this->conexion->query($consulta);
-        return (int)$stmt->fetch()['total'];
+        return $this->_ejecutarCountAll();
     }
 
     // FUNCIÓN: listarTodos
     // OBJETIVO: Obtiene todos los clientes activos con sus teléfonos
     public function listarTodos(): array
     {
-        $consulta = "SELECT c.*, c.estado as activo, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
-                     FROM clientes c
-                     LEFT JOIN telefono_cliente tc ON tc.id_cliente = c.id_cliente
-                     WHERE c.estado = 1
-                     GROUP BY c.id_cliente
-                     ORDER BY c.apellidos ASC, c.nombres ASC";
-        $stmt = $this->conexion->query($consulta);
-        return $stmt->fetchAll();
+        return $this->_ejecutarSelectAll();
     }
 
     // FUNCIÓN: buscarPorId
@@ -50,15 +41,7 @@ class ClienteModel extends ModeloBase
 
         if ($this->id < 1) return false;
 
-        $consulta = "SELECT c.*, c.estado as activo, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
-                     FROM clientes c
-                     LEFT JOIN telefono_cliente tc ON tc.id_cliente = c.id_cliente
-                     WHERE c.id_cliente = :id AND c.estado = 1
-                     GROUP BY c.id_cliente LIMIT 1";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetch();
+        return $this->_ejecutarSelectById();
     }
 
     // FUNCIÓN: procesarTelefonosPayload
@@ -302,18 +285,7 @@ class ClienteModel extends ModeloBase
 
         if ($this->cedula === '' || $this->nombres === '' || $this->apellidos === '') return false;
 
-        $consulta = "INSERT INTO clientes (cedula, nombres, apellidos, correo, direccion, estado)
-                     VALUES (:cedula, :nombres, :apellidos, :correo, :direccion, 1)";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':cedula', $this->cedula, PDO::PARAM_STR);
-        $stmt->bindParam(':nombres', $this->nombres, PDO::PARAM_STR);
-        $stmt->bindParam(':apellidos', $this->apellidos, PDO::PARAM_STR);
-        $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
-        $stmt->bindParam(':direccion', $this->direccion, PDO::PARAM_STR);
-        if ($stmt->execute()) {
-            return (int)$this->conexion->lastInsertId();
-        }
-        return false;
+        return $this->_ejecutarInsert();
     }
 
     // FUNCIÓN: actualizarCliente
@@ -329,18 +301,7 @@ class ClienteModel extends ModeloBase
 
         if ($this->id < 1 || $this->cedula === '' || $this->nombres === '' || $this->apellidos === '') return false;
 
-        $consulta = "UPDATE clientes
-                     SET cedula = :cedula, nombres = :nombres, apellidos = :apellidos,
-                         correo = :correo, direccion = :direccion, estado = 1
-                     WHERE id_cliente = :id";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':cedula', $this->cedula, PDO::PARAM_STR);
-        $stmt->bindParam(':nombres', $this->nombres, PDO::PARAM_STR);
-        $stmt->bindParam(':apellidos', $this->apellidos, PDO::PARAM_STR);
-        $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
-        $stmt->bindParam(':direccion', $this->direccion, PDO::PARAM_STR);
-        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
-        return $stmt->execute();
+        return $this->_ejecutarUpdate();
     }
 
     // FUNCIÓN: eliminarCliente
@@ -360,10 +321,7 @@ class ClienteModel extends ModeloBase
         $stmt->execute();
         if ((int)$stmt->fetch()['total'] > 0) return false;
 
-        $consulta = "UPDATE clientes SET estado = 0 WHERE id_cliente = :id";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
-        return $stmt->execute();
+        return $this->_ejecutarDelete();
     }
 
     // FUNCIÓN: insertarTelefono
@@ -376,11 +334,7 @@ class ClienteModel extends ModeloBase
 
         if ($this->clienteId < 1 || $this->telefono === '') return false;
 
-        $consulta = "INSERT INTO telefono_cliente (id_cliente, telefono, estado) VALUES (:id_cliente, :telefono, 1)";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id_cliente', $this->clienteId, PDO::PARAM_INT);
-        $stmt->bindParam(':telefono', $this->telefono, PDO::PARAM_STR);
-        return $stmt->execute();
+        return $this->_ejecutarInsertTelefono();
     }
 
     // FUNCIÓN: eliminarTelefonos
@@ -391,10 +345,7 @@ class ClienteModel extends ModeloBase
 
         if ($this->clienteId < 1) return false;
 
-        $consulta = "DELETE FROM telefono_cliente WHERE id_cliente = :id_cliente";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id_cliente', $this->clienteId, PDO::PARAM_INT);
-        return $stmt->execute();
+        return $this->_ejecutarDeleteTelefonos();
     }
 
     // FUNCIÓN: cedulaExiste
@@ -406,17 +357,7 @@ class ClienteModel extends ModeloBase
 
         if ($this->cedula === '') return false;
 
-        $consulta = "SELECT COUNT(*) as total FROM clientes WHERE cedula = :cedula AND estado = 1";
-        if ($this->idExcluir !== null) {
-            $consulta .= " AND id_cliente != :id";
-        }
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':cedula', $this->cedula, PDO::PARAM_STR);
-        if ($this->idExcluir !== null) {
-            $stmt->bindParam(':id', $this->idExcluir, PDO::PARAM_INT);
-        }
-        $stmt->execute();
-        return $stmt->fetch()['total'] > 0;
+        return $this->_ejecutarCheckCedula();
     }
 
     // FUNCIÓN: telefonoExiste
@@ -447,12 +388,7 @@ class ClienteModel extends ModeloBase
 
         if ($this->cedula === '') return false;
 
-        $consulta = "SELECT id_cliente FROM clientes WHERE cedula = :cedula AND estado = 0 LIMIT 1";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':cedula', $this->cedula, PDO::PARAM_STR);
-        $stmt->execute();
-        $fila = $stmt->fetch();
-        return $fila ? (int)$fila['id_cliente'] : false;
+        return $this->_ejecutarBuscarInactivo();
     }
 
     // FUNCIÓN: buscarClientes
@@ -463,6 +399,125 @@ class ClienteModel extends ModeloBase
 
         if ($this->termino === '') return [];
 
+        return $this->_ejecutarSearch();
+    }
+
+    private function _ejecutarCountAll(): int
+    {
+        $consulta = "SELECT COUNT(*) as total FROM clientes WHERE estado = 1";
+        $stmt = $this->conexion->query($consulta);
+        return (int)$stmt->fetch()['total'];
+    }
+
+    private function _ejecutarSelectAll(): array
+    {
+        $consulta = "SELECT c.*, c.estado as activo, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
+                     FROM clientes c
+                     LEFT JOIN telefono_cliente tc ON tc.id_cliente = c.id_cliente
+                     WHERE c.estado = 1
+                     GROUP BY c.id_cliente
+                     ORDER BY c.apellidos ASC, c.nombres ASC";
+        $stmt = $this->conexion->query($consulta);
+        return $stmt->fetchAll();
+    }
+
+    private function _ejecutarSelectById(): array|false
+    {
+        $consulta = "SELECT c.*, c.estado as activo, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
+                     FROM clientes c
+                     LEFT JOIN telefono_cliente tc ON tc.id_cliente = c.id_cliente
+                     WHERE c.id_cliente = :id AND c.estado = 1
+                     GROUP BY c.id_cliente LIMIT 1";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch();
+    }
+
+    private function _ejecutarInsert(): int|false
+    {
+        $consulta = "INSERT INTO clientes (cedula, nombres, apellidos, correo, direccion, estado)
+                     VALUES (:cedula, :nombres, :apellidos, :correo, :direccion, 1)";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':cedula', $this->cedula, PDO::PARAM_STR);
+        $stmt->bindParam(':nombres', $this->nombres, PDO::PARAM_STR);
+        $stmt->bindParam(':apellidos', $this->apellidos, PDO::PARAM_STR);
+        $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
+        $stmt->bindParam(':direccion', $this->direccion, PDO::PARAM_STR);
+        if ($stmt->execute()) {
+            return (int)$this->conexion->lastInsertId();
+        }
+        return false;
+    }
+
+    private function _ejecutarUpdate(): bool
+    {
+        $consulta = "UPDATE clientes
+                     SET cedula = :cedula, nombres = :nombres, apellidos = :apellidos,
+                         correo = :correo, direccion = :direccion, estado = 1
+                     WHERE id_cliente = :id";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':cedula', $this->cedula, PDO::PARAM_STR);
+        $stmt->bindParam(':nombres', $this->nombres, PDO::PARAM_STR);
+        $stmt->bindParam(':apellidos', $this->apellidos, PDO::PARAM_STR);
+        $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
+        $stmt->bindParam(':direccion', $this->direccion, PDO::PARAM_STR);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    private function _ejecutarDelete(): bool
+    {
+        $consulta = "UPDATE clientes SET estado = 0 WHERE id_cliente = :id";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    private function _ejecutarInsertTelefono(): bool
+    {
+        $consulta = "INSERT INTO telefono_cliente (id_cliente, telefono, estado) VALUES (:id_cliente, :telefono, 1)";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':id_cliente', $this->clienteId, PDO::PARAM_INT);
+        $stmt->bindParam(':telefono', $this->telefono, PDO::PARAM_STR);
+        return $stmt->execute();
+    }
+
+    private function _ejecutarDeleteTelefonos(): bool
+    {
+        $consulta = "DELETE FROM telefono_cliente WHERE id_cliente = :id_cliente";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':id_cliente', $this->clienteId, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    private function _ejecutarCheckCedula(): bool
+    {
+        $consulta = "SELECT COUNT(*) as total FROM clientes WHERE cedula = :cedula AND estado = 1";
+        if ($this->idExcluir !== null) {
+            $consulta .= " AND id_cliente != :id";
+        }
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':cedula', $this->cedula, PDO::PARAM_STR);
+        if ($this->idExcluir !== null) {
+            $stmt->bindParam(':id', $this->idExcluir, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        return $stmt->fetch()['total'] > 0;
+    }
+
+    private function _ejecutarBuscarInactivo(): int|false
+    {
+        $consulta = "SELECT id_cliente FROM clientes WHERE cedula = :cedula AND estado = 0 LIMIT 1";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':cedula', $this->cedula, PDO::PARAM_STR);
+        $stmt->execute();
+        $fila = $stmt->fetch();
+        return $fila ? (int)$fila['id_cliente'] : false;
+    }
+
+    private function _ejecutarSearch(): array
+    {
         $terminoLike = '%' . $this->termino . '%';
         $consulta = "SELECT c.*, c.estado as activo, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
                      FROM clientes c
@@ -480,7 +535,7 @@ class ClienteModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-                                                // FUNCIÓN: correoExiste
+    // FUNCIÓN: correoExiste
     // OBJETIVO: Verifica si un correo electrónico ya está registrado en otro cliente activo
     public function correoExiste(string $correo, ?int $idExcluir = null): bool
     {
@@ -488,6 +543,13 @@ class ClienteModel extends ModeloBase
         if ($correo === '') return false;
         $this->correo = $correo;
         $this->idExcluir = $idExcluir;
+        return $this->_ejecutarCheckCorreo();
+    }
+
+    // FUNCIÓN: _ejecutarCheckCorreo
+    // OBJETIVO: Ejecuta COUNT para verificar unicidad del correo electrónico en clientes activos
+    private function _ejecutarCheckCorreo(): bool
+    {
         $consulta = "SELECT COUNT(*) as total FROM clientes WHERE correo = :correo AND estado = 1";
         if ($this->idExcluir !== null) {
             $consulta .= " AND id_cliente != :id";
@@ -501,7 +563,4 @@ class ClienteModel extends ModeloBase
         $resultado = $stmt->fetch();
         return (int)$resultado['total'] > 0;
     }
-
-    // FUNCIÓN: _ejecutarCheckCorreo
-    // OBJETIVO: Ejecuta COUNT para verificar unicidad del correo electrónico en clientes activos
-    }
+}
