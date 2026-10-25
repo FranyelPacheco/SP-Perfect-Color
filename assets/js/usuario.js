@@ -603,7 +603,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 table.row.add([
                     '#' + r.id_rol,
-                    '<strong>' + r.nombre + '</strong>',
+                    '<strong>' + escapeHtml(r.nombre) + '</strong>',
                     modulosHtml,
                     totalUsers,
                     estadoBadge,

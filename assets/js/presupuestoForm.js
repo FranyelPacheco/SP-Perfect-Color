@@ -285,14 +285,14 @@ document.addEventListener('DOMContentLoaded', function() {
             div.innerHTML =
                 '<div class="catalogo-info">' +
                     '<div class="d-flex align-items-center gap-1 mb-1">' +
-                        '<span class="catalogo-codigo">' + insumo.codigo + '</span>' +
+                        '<span class="catalogo-codigo">' + escapeHtml(insumo.codigo) + '</span>' +
                         '<span class="' + badgeTipoClass + '"><i class="bi ' + iconTipo + ' me-1"></i>' + tipoNom + '</span>' +
                     '</div>' +
-                    '<div class="catalogo-nombre" title="' + insumo.nombre + '">' + insumo.nombre + '</div>' +
+                    '<div class="catalogo-nombre" title="' + escapeHtml(insumo.nombre) + '">' + escapeHtml(insumo.nombre) + '</div>' +
                     '<div class="catalogo-meta flex-wrap">' +
                         '<span class="catalogo-stock-pill ' + stockCls + '"><i class="bi ' + stockIcon + '"></i>' + stockTexto + '</span>' +
                         badgeComprometidoHtml +
-                        (insumo.rubro_nombre ? '<span class="text-muted small"><i class="bi bi-tag me-1"></i>' + insumo.rubro_nombre + '</span>' : '') +
+                        (insumo.rubro_nombre ? '<span class="text-muted small"><i class="bi bi-tag me-1"></i>' + escapeHtml(insumo.rubro_nombre) + '</span>' : '') +
                     '</div>' +
                 '</div>' +
                 '<div class="catalogo-precio-box">' +
@@ -396,8 +396,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Renglón de Pintura Preparada (Mezcla de Colorimetría)
                 fila.innerHTML =
                     '<td>' +
-                        '<div class="fw-bold text-dark text-truncate" style="max-width: 250px;" title="' + item.insumo_nombre + '">' +
-                            '<i class="bi bi-palette-fill text-success me-1"></i>' + item.insumo_nombre +
+                        '<div class="fw-bold text-dark text-truncate" style="max-width: 250px;" title="' + escapeHtml(item.insumo_nombre) + '">' +
+                            '<i class="bi bi-palette-fill text-success me-1"></i>' + escapeHtml(item.insumo_nombre) +
                         '</div>' +
                         '<div class="small text-muted text-truncate" style="max-width: 250px;" title="' + (item.resumen_formula || '') + '">' +
                             '<strong>' + (item.presentacion || '') + '</strong>: ' + (item.resumen_formula || '') +
@@ -435,9 +435,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 fila.innerHTML =
                     '<td>' +
-                        '<div class="fw-semibold text-dark text-truncate" style="max-width: 250px;" title="' + item.insumo_nombre + '">' + item.insumo_nombre + '</div>' +
+                        '<div class="fw-semibold text-dark text-truncate" style="max-width: 250px;" title="' + escapeHtml(item.insumo_nombre) + '">' + escapeHtml(item.insumo_nombre) + '</div>' +
                         '<div class="d-flex align-items-center flex-wrap gap-1 mt-1">' +
-                            '<span class="badge bg-light text-muted border" style="font-size: 0.7rem;">' + item.insumo_codigo + '</span>' +
+                            '<span class="badge bg-light text-muted border" style="font-size: 0.7rem;">' + escapeHtml(item.insumo_codigo) + '</span>' +
                             '<span class="' + badgeCls + '" style="font-size: 0.68rem; padding: 0.2em 0.5em;">' + tipoNom + '</span>' +
                             '<span class="badge bg-light text-dark border" style="font-size: 0.68rem;">Máx: ' + maxStock + '</span>' +
                         '</div>' +

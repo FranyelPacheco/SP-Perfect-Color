@@ -360,11 +360,17 @@ class CuentaPagarModel extends ModeloBase
         try {
             $this->conexion->beginTransaction();
 
+            $stmtBloqueo = $this->conexion->prepare("SELECT saldo_pendiente FROM cuentas_pagar WHERE id_cuenta_pagar = :id FOR UPDATE");
+            $stmtBloqueo->bindParam(':id', $this->id, PDO::PARAM_INT);
+            $stmtBloqueo->execute();
+            $saldoBloqueado = $stmtBloqueo->fetchColumn();
+
             $cuenta = $this->buscarPorId($this->id);
 
-            if (!$cuenta) {
+            if (!$cuenta || $saldoBloqueado === false) {
                 throw new PDOException('Cuenta no encontrada');
             }
+            $cuenta['saldo_pendiente'] = $saldoBloqueado;
 
             if ($this->monto > $cuenta['saldo_pendiente']) {
                 throw new PDOException('El monto del pago supera el saldo pendiente');

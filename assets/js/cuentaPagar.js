@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 dom: 'lrtip',
                 language: window.DATATABLES_SPANISH,
                 columns: [
-                    { data: 'proveedor_nombre' },
+                    { data: 'proveedor_nombre', render: $.fn.dataTable.render.text() },
                     { data: 'proveedor_rif' },
                     {
                         data: 'monto_total',

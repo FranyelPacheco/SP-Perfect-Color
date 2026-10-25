@@ -355,19 +355,19 @@ document.addEventListener('DOMContentLoaded', function() {
     function mostrarProveedores(proveedores) {
         if (!$.fn.DataTable.isDataTable('#tablaProveedores')) {
             var columnsDef = [
-                { data: 'rif' },
+                { data: 'rif', render: $.fn.dataTable.render.text() },
                 { data: 'nombre_empresa' },
                 {
                     data: 'telefonos',
-                    render: function(d) { return d || '-'; }
+                    render: function(d) { return escapeHtml(d) || '-'; }
                 },
                 {
                     data: 'correo',
-                    render: function(d) { return d || '-'; }
+                    render: function(d) { return escapeHtml(d) || '-'; }
                 },
                 {
                     data: 'rubros',
-                    render: function(d) { return d || '-'; }
+                    render: function(d) { return escapeHtml(d) || '-'; }
                 }
             ];
 
@@ -378,7 +378,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     searchable: false,
                     render: function(data, type, row) {
                         if (!row) return '';
-                        var nom = (row.nombre_empresa || '').replace(/"/g, '&quot;');
+                        var nom = escapeHtml(row.nombre_empresa);
                         return '<div class="d-flex gap-2">' +
                             '<button class="btn btn-sm btn-warning btn-editar-proveedor" data-id="' + row.id_proveedor + '" title="Editar" aria-label="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
                             '<button class="btn btn-sm btn-danger btn-eliminar-proveedor" data-id="' + row.id_proveedor + '" data-nombre="' + nom + '" title="Eliminar" aria-label="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>' +

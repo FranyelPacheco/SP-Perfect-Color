@@ -34,8 +34,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     },
                     { data: 'fecha' },
-                    { data: 'cliente_nombre' },
-                    { data: 'cliente_cedula' },
+                    { data: 'cliente_nombre', render: $.fn.dataTable.render.text() },
+                    { data: 'cliente_cedula', render: $.fn.dataTable.render.text() },
                     {
                         data: 'total',
                         render: function(data, type, row) {

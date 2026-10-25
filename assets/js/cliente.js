@@ -290,16 +290,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 dom: 'lrtip',
                 language: window.DATATABLES_SPANISH,
                 columns: [
-                    { data: 'cedula' },
-                    { data: 'nombres' },
-                    { data: 'apellidos' },
+                    { data: 'cedula', render: $.fn.dataTable.render.text() },
+                    { data: 'nombres', render: $.fn.dataTable.render.text() },
+                    { data: 'apellidos', render: $.fn.dataTable.render.text() },
                     {
                         data: 'telefonos',
-                        render: function(d) { return d || '-'; }
+                        render: function(d) { return escapeHtml(d) || '-'; }
                     },
                     {
                         data: 'correo',
-                        render: function(d) { return d || '-'; }
+                        render: function(d) { return escapeHtml(d) || '-'; }
                     },
                     {
                         data: null,
@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         searchable: false,
                         render: function(data, type, row) {
                             if (!row) return '';
-                            var nomCompleto = ((row.nombres || '') + ' ' + (row.apellidos || '')).replace(/"/g, '&quot;');
+                            var nomCompleto = escapeHtml((row.nombres || '') + ' ' + (row.apellidos || ''));
                             return '<div class="d-flex gap-2">' +
                                 '<button class="btn btn-sm btn-warning btn-editar-cliente" data-id="' + row.id_cliente + '" title="Editar" aria-label="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
                                 '<button class="btn btn-sm btn-danger btn-eliminar-cliente" data-id="' + row.id_cliente + '" data-nombre="' + nomCompleto + '" title="Eliminar" aria-label="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>' +

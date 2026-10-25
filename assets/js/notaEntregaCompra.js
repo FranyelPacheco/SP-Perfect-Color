@@ -542,7 +542,7 @@ document.addEventListener('DOMContentLoaded', function() {
             itemsCompra.forEach(function(item, idx) {
                 total += item.subtotal;
                 var tr = document.createElement('tr');
-                tr.innerHTML = '<td><span class="badge bg-secondary font-monospace me-2">' + item.codigo + '</span><strong>' + item.nombre + '</strong></td>' +
+                tr.innerHTML = '<td><span class="badge bg-secondary font-monospace me-2">' + escapeHtml(item.codigo) + '</span><strong>' + escapeHtml(item.nombre) + '</strong></td>' +
                     '<td class="text-center fw-bold text-primary">+' + Math.floor(item.cantidad) + '</td>' +
                     '<td class="text-end">$ ' + item.precio_compra.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
                     '<td class="text-end fw-bold">$ ' + item.subtotal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +

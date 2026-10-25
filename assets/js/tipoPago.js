@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 dom: 'lrtip',
                 language: window.DATATABLES_SPANISH,
                 columns: [
-                    { data: 'nombre' },
+                    { data: 'nombre', render: $.fn.dataTable.render.text() },
                     { data: 'activo', render: function(d) { return d == 1 ? '<span class="badge bg-success">Si</span>' : '<span class="badge bg-secondary">No</span>'; } },
                     { data: null, render: function(d, t, row) {
                         var activo = row.activo == 1;
