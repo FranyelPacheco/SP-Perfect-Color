@@ -89,6 +89,8 @@ try {
             background: rgba(255, 255, 255, 0.15) !important;
         }
     </style>
+    <meta name="csrf-token" content="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+    <script src="/SP%20Perfect%20Color/assets/js/csrf.js"></script>
 </head>
 <body>
     <div class="d-flex" style="height:100vh;">
@@ -358,7 +360,7 @@ try {
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalConfirmacionTitulo">Confirmar</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body" id="modalConfirmacionCuerpo"></div>
                 <div class="modal-footer">
