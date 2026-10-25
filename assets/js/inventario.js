@@ -286,10 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Delegacion de eventos robusta para botones de accion
-    $(document).on('click', '.btn-editar-insumo', function(e) {
-        e.preventDefault();
-        var tip = bootstrap.Tooltip.getInstance(this);
-        if (tip) tip.hide();
+    alHacerClick('.btn-editar-insumo', function(e) {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         if (!isNaN(id)) {
             abrirModalEditar(id);
@@ -298,10 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    $(document).on('click', '.btn-eliminar-insumo', function(e) {
-        e.preventDefault();
-        var tip = bootstrap.Tooltip.getInstance(this);
-        if (tip) tip.hide();
+    alHacerClick('.btn-eliminar-insumo', function(e) {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         var nombre = $(this).attr('data-nombre') || 'este insumo';
         if (!isNaN(id)) {

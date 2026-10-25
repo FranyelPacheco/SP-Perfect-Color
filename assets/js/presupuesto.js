@@ -98,30 +98,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Delegacion de eventos robusta para botones de accion
-    $(document).on('click', '.btn-aprobar-presupuesto', function(e) {
-        e.preventDefault();
-        var tip = bootstrap.Tooltip.getInstance(this);
-        if (tip) tip.hide();
+    alHacerClick('.btn-aprobar-presupuesto', function(e) {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         if (!isNaN(id)) {
             window.location.href = '/SP%20Perfect%20Color/notaEntrega/crearDesdePresupuesto?id=' + id;
         }
     });
 
-    $(document).on('click', '.btn-rechazar-presupuesto', function(e) {
-        e.preventDefault();
-        var tip = bootstrap.Tooltip.getInstance(this);
-        if (tip) tip.hide();
+    alHacerClick('.btn-rechazar-presupuesto', function(e) {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         if (!isNaN(id)) {
             cambiarEstado(id, 'rechazado');
         }
     });
 
-    $(document).on('click', '.btn-eliminar-presupuesto', function(e) {
-        e.preventDefault();
-        var tip = bootstrap.Tooltip.getInstance(this);
-        if (tip) tip.hide();
+    alHacerClick('.btn-eliminar-presupuesto', function(e) {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         if (!isNaN(id)) {
             confirmarConModal('Eliminar', 'Esta seguro de eliminar este presupuesto?', function() {

@@ -247,16 +247,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         modalInstancia.show();
                     }
                 } else {
-                    if (typeof mostrarNotificacion === 'function') {
-                        mostrarNotificacion(res.mensaje || 'Error al obtener la tasa', 'error');
-                    }
+                    mostrarNotificacion(res.mensaje || 'Error al obtener la tasa', 'error');
                 }
             })
             .catch(function(err) {
                 console.error('[TasaCambio] Error:', err);
-                if (typeof mostrarNotificacion === 'function') {
-                    mostrarNotificacion('Error de conexión con el servidor', 'error');
-                }
+                mostrarNotificacion('Error de conexión con el servidor', 'error');
             });
     });
 
@@ -310,9 +306,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (btnGuardarTasa) btnGuardarTasa.disabled = false;
                 if (res.estado === 'exito') {
                     if (modalInstancia) modalInstancia.hide();
-                    if (typeof mostrarNotificacion === 'function') {
-                        mostrarNotificacion(res.mensaje, 'exito');
-                    }
+                    mostrarNotificacion(res.mensaje, 'exito');
                     cargarTasas();
                     // Si la fecha editada o creada es hoy, recargar la página tras 1s para actualizar las tarjetas de resumen
                     var hoy = new Date().toISOString().split('T')[0];

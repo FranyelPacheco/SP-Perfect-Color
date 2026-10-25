@@ -407,20 +407,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Delegacion de eventos robusta para botones de accion
-    $(document).on('click', '.btn-editar-proveedor', function(e) {
-        e.preventDefault();
-        var tip = bootstrap.Tooltip.getInstance(this);
-        if (tip) tip.hide();
+    alHacerClick('.btn-editar-proveedor', function(e) {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         if (!isNaN(id)) {
             abrirModalEditar(id);
         }
     });
 
-    $(document).on('click', '.btn-eliminar-proveedor', function(e) {
-        e.preventDefault();
-        var tip = bootstrap.Tooltip.getInstance(this);
-        if (tip) tip.hide();
+    alHacerClick('.btn-eliminar-proveedor', function(e) {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         var nombre = $(this).attr('data-nombre') || 'este proveedor';
         if (!isNaN(id)) {
