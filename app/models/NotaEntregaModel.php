@@ -30,35 +30,7 @@ class NotaEntregaModel extends ModeloBase
     // OBJETIVO: Obtiene todas las notas de venta activas con datos relacionados
     public function listarTodos(): array
     {
-        $consulta = "SELECT v.*,
-                            v.id_venta as id,
-                            v.id_venta as id_nota_venta,
-                            v.id_venta as id_nota_entrega,
-                            v.id_venta as id_presupuesto,
-                            v.estado as activo,
-                            c.id_cliente,
-                            CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
-                            c.cedula as cliente_cedula,
-                            'Sistema' as usuario_nombre,
-                            COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre,
-                            COALESCE(ev.nombre, CASE WHEN v.id_estado_venta = 1 THEN 'En Espera' WHEN v.id_estado_venta = 2 THEN 'Aprobado' WHEN v.id_estado_venta = 3 THEN 'Rechazado' ELSE 'Otro' END) as estado_nombre,
-                            COALESCE(
-                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
-                                0
-                            ) as tasa_bcv
-                     FROM ventas v 
-                     INNER JOIN clientes c ON v.id_cliente = c.id_cliente
-                     LEFT JOIN estado_venta ev ON v.id_estado_venta = ev.id_estado_venta
-                     LEFT JOIN tipo_pago tp_v ON v.id_tipo_pago = tp_v.id_tipo_pago
-                     LEFT JOIN cuentas_cobrar cc ON cc.id_venta = v.id_venta
-                     LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
-                     LEFT JOIN tipo_pago tp_pr ON pr.id_tipo_pago = tp_pr.id_tipo_pago
-                     WHERE v.estado = 1 AND v.id_estado_venta IN (1, 2, 3)
-                     GROUP BY v.id_venta
-                     ORDER BY v.fecha DESC, v.id_venta DESC";
-        $stmt = $this->conexion->query($consulta);
-        return $stmt->fetchAll();
+        return $this->_ejecutarSelectAll();
     }
 
     // FUNCIÓN: buscarPorId
@@ -69,36 +41,7 @@ class NotaEntregaModel extends ModeloBase
             throw new PDOException('ID no válido');
         }
         $this->id = $id;
-        $consulta = "SELECT v.*,
-                            v.id_venta as id,
-                            v.id_venta as id_nota_venta,
-                            v.id_venta as id_nota_entrega,
-                            v.id_venta as id_presupuesto,
-                            v.estado as activo,
-                            c.id_cliente,
-                            CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
-                            c.cedula as cliente_cedula,
-                            c.direccion as cliente_direccion,
-                            (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
-                            'Sistema' as usuario_nombre,
-                            COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre,
-                            COALESCE(
-                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
-                                0
-                            ) as tasa_bcv
-                     FROM ventas v 
-                     INNER JOIN clientes c ON v.id_cliente = c.id_cliente
-                     LEFT JOIN tipo_pago tp_v ON v.id_tipo_pago = tp_v.id_tipo_pago
-                     LEFT JOIN cuentas_cobrar cc ON cc.id_venta = v.id_venta
-                     LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
-                     LEFT JOIN tipo_pago tp_pr ON pr.id_tipo_pago = tp_pr.id_tipo_pago
-                     WHERE v.id_venta = :id AND v.estado = 1
-                     LIMIT 1";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetch();
+        return $this->_ejecutarSelectById();
     }
 
     // FUNCIÓN: obtenerDetalle
@@ -109,27 +52,7 @@ class NotaEntregaModel extends ModeloBase
             throw new PDOException('ID de nota no válido');
         }
         $this->id = $notaId;
-        $consulta = "SELECT vd.id_venta_detalle,
-                            vd.id_venta_detalle as id_presupuesto_detalle,
-                            v.id_venta as id_nota_venta,
-                            v.id_venta as id_nota_entrega,
-                            vd.id_venta as id_presupuesto,
-                            vd.descripcion as insumo_nombre,
-                            vd.cantidad,
-                            vd.precio_unitario,
-                            vd.subtotal,
-                            COALESCE(p.codigo, 'PREP') as insumo_codigo,
-                            COALESCE(p.stock_actual, 0) as stock_actual,
-                            vd.id_producto as id_insumo,
-                            vd.id_producto as id_producto
-                     FROM ventas v
-                     INNER JOIN venta_detalle vd ON v.id_venta = vd.id_venta
-                     LEFT JOIN productos p ON vd.id_producto = p.id_producto
-                     WHERE v.id_venta = :id_nota_venta";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id_nota_venta', $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll();
+        return $this->_ejecutarSelectDetalle();
     }
 
     // FUNCIÓN: crearNotaEntrega
@@ -165,48 +88,7 @@ class NotaEntregaModel extends ModeloBase
         $this->idTipoPagoInicial = $idTipoPagoInicial;
         $this->idBancoInicial = $idBancoInicial;
         $this->referenciaInicial = $referenciaInicial;
-        try {
-            $this->conexion->beginTransaction();
-
-            $this->_validarStock();
-
-            $condicionPagoVal = !empty($this->condicionPago) ? $this->condicionPago : 'contado';
-            $tipoPagoId = ($condicionPagoVal === 'contado') ? ($this->idTipoPago ?? 1) : $this->idTipoPago;
-
-            $consulta = "UPDATE ventas 
-                         SET id_estado_venta = 2, 
-                             id_tipo_pago = :id_tipo_pago, 
-                             fecha_aprobacion = NOW(), 
-                             total = :total, 
-                             condicion_pago = :condicion_pago 
-                         WHERE id_venta = :id_venta";
-            $stmt = $this->conexion->prepare($consulta);
-            $stmt->bindValue(':id_venta', $this->idPresupuesto, PDO::PARAM_INT);
-            $stmt->bindValue(':id_tipo_pago', $tipoPagoId, empty($tipoPagoId) ? PDO::PARAM_NULL : PDO::PARAM_INT);
-            $stmt->bindValue(':total', $this->total);
-            $stmt->bindValue(':condicion_pago', $condicionPagoVal, PDO::PARAM_STR);
-            $stmt->execute();
-
-            $this->notaId = $this->idPresupuesto;
-
-            $this->_insertarDetalleYDescontarStock();
-
-            if (!empty($condicionPagoVal)) {
-                if ($condicionPagoVal === 'credito') {
-                    $this->fechaVencimiento = !empty($this->fechaVencimiento) ? $this->fechaVencimiento : date('Y-m-d', strtotime('+10 days'));
-                    $this->_crearCuentaCobrar();
-                } else {
-                    $this->_crearYPagardeInmediatoContado();
-                }
-            }
-
-            $this->conexion->commit();
-            return $this->notaId;
-
-        } catch (PDOException $e) {
-            $this->conexion->rollback();
-            throw $e;
-        }
+        return $this->_ejecutarCrearNota();
     }
 
     // FUNCIÓN: procesarNotaEntrega
@@ -375,6 +257,159 @@ class NotaEntregaModel extends ModeloBase
     public function buscarNotas(string $termino): array
     {
         $this->termino = $termino;
+        return $this->_ejecutarSearch();
+    }
+
+    // FUNCIÓN: _ejecutarSelectAll
+    // OBJETIVO: Ejecuta la consulta que lista todas las ventas aprobadas
+    private function _ejecutarSelectAll(): array
+    {
+        $consulta = "SELECT v.*,
+                            v.id_venta as id,
+                            v.id_venta as id_nota_venta,
+                            v.id_venta as id_nota_entrega,
+                            v.id_venta as id_presupuesto,
+                            v.estado as activo,
+                            c.id_cliente,
+                            CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
+                            c.cedula as cliente_cedula,
+                            'Sistema' as usuario_nombre,
+                            COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre,
+                            COALESCE(ev.nombre, CASE WHEN v.id_estado_venta = 1 THEN 'En Espera' WHEN v.id_estado_venta = 2 THEN 'Aprobado' WHEN v.id_estado_venta = 3 THEN 'Rechazado' ELSE 'Otro' END) as estado_nombre,
+                            COALESCE(
+                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
+                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                                0
+                            ) as tasa_bcv
+                     FROM ventas v 
+                     INNER JOIN clientes c ON v.id_cliente = c.id_cliente
+                     LEFT JOIN estado_venta ev ON v.id_estado_venta = ev.id_estado_venta
+                     LEFT JOIN tipo_pago tp_v ON v.id_tipo_pago = tp_v.id_tipo_pago
+                     LEFT JOIN cuentas_cobrar cc ON cc.id_venta = v.id_venta
+                     LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
+                     LEFT JOIN tipo_pago tp_pr ON pr.id_tipo_pago = tp_pr.id_tipo_pago
+                     WHERE v.estado = 1 AND v.id_estado_venta IN (1, 2, 3)
+                     GROUP BY v.id_venta
+                     ORDER BY v.fecha DESC, v.id_venta DESC";
+        $stmt = $this->conexion->query($consulta);
+        return $stmt->fetchAll();
+    }
+
+    // FUNCIÓN: _ejecutarSelectById
+    // OBJETIVO: Ejecuta la búsqueda de una venta por ID con datos del cliente y tipo de pago
+    private function _ejecutarSelectById(): array|false
+    {
+        $consulta = "SELECT v.*,
+                            v.id_venta as id,
+                            v.id_venta as id_nota_venta,
+                            v.id_venta as id_nota_entrega,
+                            v.id_venta as id_presupuesto,
+                            v.estado as activo,
+                            c.id_cliente,
+                            CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
+                            c.cedula as cliente_cedula,
+                            c.direccion as cliente_direccion,
+                            (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
+                            'Sistema' as usuario_nombre,
+                            COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre,
+                            COALESCE(
+                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
+                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                                0
+                            ) as tasa_bcv
+                     FROM ventas v 
+                     INNER JOIN clientes c ON v.id_cliente = c.id_cliente
+                     LEFT JOIN tipo_pago tp_v ON v.id_tipo_pago = tp_v.id_tipo_pago
+                     LEFT JOIN cuentas_cobrar cc ON cc.id_venta = v.id_venta
+                     LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
+                     LEFT JOIN tipo_pago tp_pr ON pr.id_tipo_pago = tp_pr.id_tipo_pago
+                     WHERE v.id_venta = :id AND v.estado = 1
+                     LIMIT 1";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch();
+    }
+
+    // FUNCIÓN: _ejecutarSelectDetalle
+    // OBJETIVO: Obtiene las líneas de detalle de la venta
+    private function _ejecutarSelectDetalle(): array
+    {
+        $consulta = "SELECT vd.id_venta_detalle,
+                            vd.id_venta_detalle as id_presupuesto_detalle,
+                            v.id_venta as id_nota_venta,
+                            v.id_venta as id_nota_entrega,
+                            vd.id_venta as id_presupuesto,
+                            vd.descripcion as insumo_nombre,
+                            vd.cantidad,
+                            vd.precio_unitario,
+                            vd.subtotal,
+                            COALESCE(p.codigo, 'PREP') as insumo_codigo,
+                            COALESCE(p.stock_actual, 0) as stock_actual,
+                            vd.id_producto as id_insumo,
+                            vd.id_producto as id_producto
+                     FROM ventas v
+                     INNER JOIN venta_detalle vd ON v.id_venta = vd.id_venta
+                     LEFT JOIN productos p ON vd.id_producto = p.id_producto
+                     WHERE v.id_venta = :id_nota_venta";
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':id_nota_venta', $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    // FUNCIÓN: _ejecutarCrearNota
+    // OBJETIVO: Aprueba la venta (id_estado_venta = 2), fija fecha_aprobacion, descuenta stock y genera cuenta/cobro
+    private function _ejecutarCrearNota(): int
+    {
+        try {
+            $this->conexion->beginTransaction();
+
+            $this->_validarStock();
+
+            $condicionPagoVal = !empty($this->condicionPago) ? $this->condicionPago : 'contado';
+            $tipoPagoId = ($condicionPagoVal === 'contado') ? ($this->idTipoPago ?? 1) : $this->idTipoPago;
+
+            $consulta = "UPDATE ventas 
+                         SET id_estado_venta = 2, 
+                             id_tipo_pago = :id_tipo_pago, 
+                             fecha_aprobacion = NOW(), 
+                             total = :total, 
+                             condicion_pago = :condicion_pago 
+                         WHERE id_venta = :id_venta";
+            $stmt = $this->conexion->prepare($consulta);
+            $stmt->bindValue(':id_venta', $this->idPresupuesto, PDO::PARAM_INT);
+            $stmt->bindValue(':id_tipo_pago', $tipoPagoId, empty($tipoPagoId) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmt->bindValue(':total', $this->total);
+            $stmt->bindValue(':condicion_pago', $condicionPagoVal, PDO::PARAM_STR);
+            $stmt->execute();
+
+            $this->notaId = $this->idPresupuesto;
+
+            $this->_insertarDetalleYDescontarStock();
+
+            if (!empty($condicionPagoVal)) {
+                if ($condicionPagoVal === 'credito') {
+                    $this->fechaVencimiento = !empty($this->fechaVencimiento) ? $this->fechaVencimiento : date('Y-m-d', strtotime('+10 days'));
+                    $this->_crearCuentaCobrar();
+                } else {
+                    $this->_crearYPagardeInmediatoContado();
+                }
+            }
+
+            $this->conexion->commit();
+            return $this->notaId;
+
+        } catch (PDOException $e) {
+            $this->conexion->rollback();
+            throw $e;
+        }
+    }
+
+    // FUNCIÓN: _ejecutarSearch
+    // OBJETIVO: Busca ventas aprobadas por nombre o cédula del cliente con LIKE
+    private function _ejecutarSearch(): array
+    {
         $terminoLike = '%' . $this->termino . '%';
         $consulta = "SELECT v.*,
                             v.id_venta as id,
@@ -406,17 +441,7 @@ class NotaEntregaModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-    // FUNCIÓN: _ejecutarSelectAll
-    // OBJETIVO: Ejecuta la consulta que lista todas las ventas aprobadas
-        // FUNCIÓN: _ejecutarSelectById
-    // OBJETIVO: Ejecuta la búsqueda de una venta por ID con datos del cliente y tipo de pago
-        // FUNCIÓN: _ejecutarSelectDetalle
-    // OBJETIVO: Obtiene las líneas de detalle de la venta
-        // FUNCIÓN: _ejecutarCrearNota
-    // OBJETIVO: Aprueba la venta (id_estado_venta = 2), fija fecha_aprobacion, descuenta stock y genera cuenta/cobro
-        // FUNCIÓN: _ejecutarSearch
-    // OBJETIVO: Busca ventas aprobadas por nombre o cédula del cliente con LIKE
-        // FUNCIÓN: _validarStock
+    // FUNCIÓN: _validarStock
     // OBJETIVO: Verifica que todos los productos (o sus bases en mezcla_producto) tengan stock suficiente
     private function _validarStock(): void
     {
@@ -593,6 +618,28 @@ class NotaEntregaModel extends ModeloBase
     // OBJETIVO: Retorna la suma total de ventas aprobadas en el mes actual
     public function obtenerVentasMes(): string
     {
+        return $this->_ejecutarVentasMes();
+    }
+
+    // FUNCIÓN: obtenerTopProductos
+    // OBJETIVO: Retorna los N productos más vendidos del día de hoy
+    public function obtenerTopProductos(int $limite = 5): array
+    {
+        $this->topLimite = $limite;
+        return $this->_ejecutarTopProductos();
+    }
+
+    // FUNCIÓN: obtenerClienteTopMes
+    // OBJETIVO: Retorna el cliente con mayor monto comprado en el mes actual
+    public function obtenerClienteTopMes(): array|false
+    {
+        return $this->_ejecutarClienteTopMes();
+    }
+
+    // FUNCIÓN: _ejecutarVentasMes
+    // OBJETIVO: Suma el total de ventas activas aprobadas del mes en curso
+    private function _ejecutarVentasMes(): string
+    {
         $consulta = "SELECT COALESCE(SUM(total), 0) as total
                      FROM ventas
                      WHERE estado = 1 AND id_estado_venta = 2
@@ -602,11 +649,10 @@ class NotaEntregaModel extends ModeloBase
         return (string)$stmt->fetchColumn();
     }
 
-    // FUNCIÓN: obtenerTopProductos
-    // OBJETIVO: Retorna los N productos más vendidos del día de hoy
-    public function obtenerTopProductos(int $limite = 5): array
+    // FUNCIÓN: _ejecutarTopProductos
+    // OBJETIVO: Agrupa por producto la cantidad vendida del día, ordena y limita
+    private function _ejecutarTopProductos(): array
     {
-        $this->topLimite = $limite;
         $consulta = "SELECT p.id_producto, p.id_producto as id_insumo, p.codigo, p.nombre,
                             SUM(vd.cantidad) as total_vendido
                      FROM ventas v
@@ -622,9 +668,9 @@ class NotaEntregaModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-    // FUNCIÓN: obtenerClienteTopMes
-    // OBJETIVO: Retorna el cliente con mayor monto comprado en el mes actual
-    public function obtenerClienteTopMes(): array|false
+    // FUNCIÓN: _ejecutarClienteTopMes
+    // OBJETIVO: Busca el cliente con mayor suma de total comprado en el mes
+    private function _ejecutarClienteTopMes(): array|false
     {
         $consulta = "SELECT c.id_cliente, c.cedula, c.nombres, c.apellidos,
                             COALESCE(SUM(v.total), 0) as total_comprado
@@ -639,11 +685,4 @@ class NotaEntregaModel extends ModeloBase
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetch();
     }
-
-    // FUNCIÓN: _ejecutarVentasMes
-    // OBJETIVO: Suma el total de ventas activas aprobadas del mes en curso
-        // FUNCIÓN: _ejecutarTopProductos
-    // OBJETIVO: Agrupa por producto la cantidad vendida del día, ordena y limita
-        // FUNCIÓN: _ejecutarClienteTopMes
-    // OBJETIVO: Busca el cliente con mayor suma de total comprado en el mes
-    }
+}
