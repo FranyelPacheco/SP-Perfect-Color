@@ -29,28 +29,16 @@ class InventarioModel extends ModeloBase
     // OBJETIVO: Retorna el total de productos activos en el sistema
     public function contarTodos(): int
     {
-        return $this->_ejecutarCountAll();
-    }
-
-    // FUNCIÓN: _ejecutarCountAll
-    // OBJETIVO: Ejecuta el COUNT de todos los productos con estado = 1
-    private function _ejecutarCountAll(): int
-    {
         $consulta = "SELECT COUNT(*) as total FROM productos WHERE estado = 1";
         $stmt = $this->conexion->query($consulta);
         return (int)$stmt->fetch()['total'];
     }
 
-    // FUNCIÓN: listarTodos
+    // FUNCIÓN: _ejecutarCountAll
+    // OBJETIVO: Ejecuta el COUNT de todos los productos con estado = 1
+        // FUNCIÓN: listarTodos
     // OBJETIVO: Obtiene todos los productos activos con sus rubros, tipo y proveedores asociados
     public function listarTodos(): array
-    {
-        return $this->_ejecutarSelectAll();
-    }
-
-    // FUNCIÓN: _ejecutarSelectAll
-    // OBJETIVO: Ejecuta la consulta que lista todos los productos activos agrupados por ID
-    private function _ejecutarSelectAll(): array
     {
         $consulta = "SELECT p.*, p.estado as activo, tp.nombre as tipo_producto_nombre,
                             p.id_producto as id_insumo,
@@ -76,18 +64,13 @@ class InventarioModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-    // FUNCIÓN: buscarPorId
+    // FUNCIÓN: _ejecutarSelectAll
+    // OBJETIVO: Ejecuta la consulta que lista todos los productos activos agrupados por ID
+        // FUNCIÓN: buscarPorId
     // OBJETIVO: Busca un producto por su ID, incluyendo rubros, tipo y proveedores
     public function buscarPorId(int $id): array|false
     {
         $this->id = $id;
-        return $this->_ejecutarSelectById();
-    }
-
-    // FUNCIÓN: _ejecutarSelectById
-    // OBJETIVO: Ejecuta la búsqueda de un producto por ID con datos relacionados
-    private function _ejecutarSelectById(): array|false
-    {
         $consulta = "SELECT p.*, p.estado as activo, tp.nombre as tipo_producto_nombre,
                             p.id_producto as id_insumo,
                             (SELECT COALESCE(SUM(vd.cantidad), 0)
@@ -113,7 +96,9 @@ class InventarioModel extends ModeloBase
         return $stmt->fetch();
     }
 
-    // FUNCIÓN: validarDatosInsumo
+    // FUNCIÓN: _ejecutarSelectById
+    // OBJETIVO: Ejecuta la búsqueda de un producto por ID con datos relacionados
+        // FUNCIÓN: validarDatosInsumo
     // OBJETIVO: Valida reglas de negocio para creación o actualización de productos
     public function validarDatosInsumo(array $datos, ?int $idActual = null, bool $esCreacion = false): array
     {
@@ -279,13 +264,6 @@ class InventarioModel extends ModeloBase
         $this->precio_venta = $precioVenta;
         $this->precio_compra = $precioCompra;
         $this->id_tipo_producto = $idTipoProducto;
-        return $this->_ejecutarInsert();
-    }
-
-    // FUNCIÓN: _ejecutarInsert
-    // OBJETIVO: Ejecuta la inserción del producto en la tabla productos
-    private function _ejecutarInsert(): int|false
-    {
         $consulta = "INSERT INTO productos (codigo, nombre, id_tipo_producto, unidad_medida,
                      stock_actual, stock_minimo, precio_venta, estado)
                      VALUES (:codigo, :nombre, :id_tipo_producto, :unidad_medida,
@@ -302,7 +280,9 @@ class InventarioModel extends ModeloBase
         return false;
     }
 
-    // FUNCIÓN: actualizarInsumo
+    // FUNCIÓN: _ejecutarInsert
+    // OBJETIVO: Ejecuta la inserción del producto en la tabla productos
+        // FUNCIÓN: actualizarInsumo
     // OBJETIVO: Actualiza todos los campos de un producto existente y lo marca como activo
     public function actualizarInsumo(int $id, string $codigo, string $nombre, ?int $idRubro = null, string $unidadMedida = 'Unidad', float $stockActual = 0, float $stockMinimo = 5, float $precioVenta = 0, float $precioCompra = 0, int $idTipoProducto = 2): bool
     {
@@ -316,13 +296,6 @@ class InventarioModel extends ModeloBase
         $this->precio_venta = $precioVenta;
         $this->precio_compra = $precioCompra;
         $this->id_tipo_producto = $idTipoProducto;
-        return $this->_ejecutarUpdate();
-    }
-
-    // FUNCIÓN: _ejecutarUpdate
-    // OBJETIVO: Ejecuta el UPDATE del producto seteando estado = 1 (reactivación implícita)
-    private function _ejecutarUpdate(): bool
-    {
         $consulta = "UPDATE productos 
                      SET codigo = :codigo, nombre = :nombre,
                          id_tipo_producto = :id_tipo_producto,
@@ -342,37 +315,27 @@ class InventarioModel extends ModeloBase
         return $stmt->execute();
     }
 
-    // FUNCIÓN: eliminarInsumo
+    // FUNCIÓN: _ejecutarUpdate
+    // OBJETIVO: Ejecuta el UPDATE del producto seteando estado = 1 (reactivación implícita)
+        // FUNCIÓN: eliminarInsumo
     // OBJETIVO: Marca un producto como inactivo (soft delete)
     public function eliminarInsumo(int $id): bool
     {
         $this->id = $id;
-        return $this->_ejecutarDelete();
-    }
-
-    // FUNCIÓN: _ejecutarDelete
-    // OBJETIVO: Ejecuta el UPDATE que desactiva el producto (estado = 0)
-    private function _ejecutarDelete(): bool
-    {
         $consulta = "UPDATE productos SET estado = 0 WHERE id_producto = :id";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
-    // FUNCIÓN: codigoExiste
+    // FUNCIÓN: _ejecutarDelete
+    // OBJETIVO: Ejecuta el UPDATE que desactiva el producto (estado = 0)
+        // FUNCIÓN: codigoExiste
     // OBJETIVO: Verifica si ya existe un producto activo con el mismo código, opcionalmente excluyendo un ID
     public function codigoExiste(string $codigo, ?int $idExcluir = null): bool
     {
         $this->codigo = $codigo;
         $this->idExcluir = $idExcluir;
-        return $this->_ejecutarCheckCodigo();
-    }
-
-    // FUNCIÓN: _ejecutarCheckCodigo
-    // OBJETIVO: Ejecuta la consulta COUNT para verificar unicidad del código
-    private function _ejecutarCheckCodigo(): bool
-    {
         $consulta = "SELECT COUNT(*) as total FROM productos WHERE codigo = :codigo AND estado = 1";
         if ($this->idExcluir !== null) {
             $consulta .= " AND id_producto != :id";
@@ -386,20 +349,15 @@ class InventarioModel extends ModeloBase
         return $stmt->fetch()['total'] > 0;
     }
 
-    // FUNCIÓN: buscarInactivoPorCodigo
+    // FUNCIÓN: _ejecutarCheckCodigo
+    // OBJETIVO: Ejecuta la consulta COUNT para verificar unicidad del código
+        // FUNCIÓN: buscarInactivoPorCodigo
     // OBJETIVO: Busca un producto inactivo por código para reactivación
     // NOTA: Usado antes de insertar para evitar duplicados por soft delete
     public function buscarInactivoPorCodigo(string $codigo): int|false
     {
         if ($codigo === '') return false;
         $this->codigo = $codigo;
-        return $this->_ejecutarBuscarInactivo();
-    }
-
-    // FUNCIÓN: _ejecutarBuscarInactivo
-    // OBJETIVO: Retorna el ID de un producto inactivo con el código dado, o false si no existe
-    private function _ejecutarBuscarInactivo(): int|false
-    {
         $consulta = "SELECT id_producto FROM productos WHERE codigo = :codigo AND estado = 0 LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':codigo', $this->codigo, PDO::PARAM_STR);
@@ -408,18 +366,13 @@ class InventarioModel extends ModeloBase
         return $fila ? (int)$fila['id_producto'] : false;
     }
 
-    // FUNCIÓN: buscarInsumos
+    // FUNCIÓN: _ejecutarBuscarInactivo
+    // OBJETIVO: Retorna el ID de un producto inactivo con el código dado, o false si no existe
+        // FUNCIÓN: buscarInsumos
     // OBJETIVO: Busca productos por nombre, código o nombre de rubro usando LIKE
     public function buscarInsumos(string $termino): array
     {
         $this->termino = '%' . $termino . '%';
-        return $this->_ejecutarSearch();
-    }
-
-    // FUNCIÓN: _ejecutarSearch
-    // OBJETIVO: Ejecuta la búsqueda con tres condiciones OR (nombre, código, rubro)
-    private function _ejecutarSearch(): array
-    {
         $consulta = "SELECT p.*, p.estado as activo, tp.nombre as tipo_producto_nombre,
                             p.id_producto as id_insumo,
                             GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
@@ -444,39 +397,31 @@ class InventarioModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-    // FUNCIÓN: listarProveedoresActivos
+    // FUNCIÓN: _ejecutarSearch
+    // OBJETIVO: Ejecuta la búsqueda con tres condiciones OR (nombre, código, rubro)
+        // FUNCIÓN: listarProveedoresActivos
     // OBJETIVO: Retorna todos los proveedores activos para usar en selects del formulario
     public function listarProveedoresActivos(): array
-    {
-        return $this->_ejecutarSelectProveedoresActivos();
-    }
-
-    // FUNCIÓN: _ejecutarSelectProveedoresActivos
-    // OBJETIVO: Ejecuta la consulta de proveedores activos ordenados por nombre
-    private function _ejecutarSelectProveedoresActivos(): array
     {
         $consulta = "SELECT id_proveedor, nombre_empresa, rif FROM proveedores WHERE estado = 1 ORDER BY nombre_empresa ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
     }
 
-    // FUNCIÓN: listarRubrosActivos
+    // FUNCIÓN: _ejecutarSelectProveedoresActivos
+    // OBJETIVO: Ejecuta la consulta de proveedores activos ordenados por nombre
+        // FUNCIÓN: listarRubrosActivos
     // OBJETIVO: Retorna todos los rubros disponibles
     public function listarRubrosActivos(): array
-    {
-        return $this->_ejecutarSelectRubrosActivos();
-    }
-
-    // FUNCIÓN: _ejecutarSelectRubrosActivos
-    // OBJETIVO: Ejecuta la consulta de todos los rubros ordenados por nombre
-    private function _ejecutarSelectRubrosActivos(): array
     {
         $consulta = "SELECT id_rubro, nombre FROM rubro ORDER BY nombre ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
     }
 
-    // FUNCIÓN: listarTiposProducto
+    // FUNCIÓN: _ejecutarSelectRubrosActivos
+    // OBJETIVO: Ejecuta la consulta de todos los rubros ordenados por nombre
+        // FUNCIÓN: listarTiposProducto
     // OBJETIVO: Retorna todos los tipos de producto activos
     public function listarTiposProducto(): array
     {
@@ -502,13 +447,6 @@ class InventarioModel extends ModeloBase
     // NOTA: Usado en el dashboard para alertas de inventario
     public function obtenerAlertasStockBajo(): array
     {
-        return $this->_ejecutarAlertasStockBajo();
-    }
-
-    // FUNCIÓN: _ejecutarAlertasStockBajo
-    // OBJETIVO: Ejecuta la consulta de productos con stock bajo, incluyendo rubros y proveedores
-    private function _ejecutarAlertasStockBajo(): array
-    {
         $consulta = "SELECT p.*, p.estado as activo, p.id_producto as id_insumo,
                             GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
                             GROUP_CONCAT(DISTINCT pr.nombre_empresa SEPARATOR ', ') as proveedores_nombre
@@ -524,18 +462,13 @@ class InventarioModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-    // FUNCIÓN: obtenerRubrosPorProveedor
+    // FUNCIÓN: _ejecutarAlertasStockBajo
+    // OBJETIVO: Ejecuta la consulta de productos con stock bajo, incluyendo rubros y proveedores
+        // FUNCIÓN: obtenerRubrosPorProveedor
     // OBJETIVO: Obtiene los rubros asociados a un proveedor específico
     public function obtenerRubrosPorProveedor(int $proveedorId): array
     {
         $this->idProveedor = $proveedorId;
-        return $this->_ejecutarRubrosPorProveedor();
-    }
-
-    // FUNCIÓN: _ejecutarRubrosPorProveedor
-    // OBJETIVO: Ejecuta la consulta de rubros filtrados por proveedor
-    private function _ejecutarRubrosPorProveedor(): array
-    {
         $consulta = "SELECT r.id_rubro, r.nombre
                      FROM rubro r
                      INNER JOIN rubro_proveedor rp ON rp.id_rubro = r.id_rubro
@@ -547,20 +480,15 @@ class InventarioModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-    // FUNCIÓN: asignarProveedorAInsumo
+    // FUNCIÓN: _ejecutarRubrosPorProveedor
+    // OBJETIVO: Ejecuta la consulta de rubros filtrados por proveedor
+        // FUNCIÓN: asignarProveedorAInsumo
     // OBJETIVO: Asocia un proveedor a un producto en la tabla intermedia
     // NOTA: Usa INSERT IGNORE para evitar duplicados
     public function asignarProveedorAInsumo(int $productoId, int $proveedorId): bool
     {
         $this->productoId = $productoId;
         $this->proveedorId = $proveedorId;
-        return $this->_ejecutarAsignarProveedor();
-    }
-
-    // FUNCIÓN: _ejecutarAsignarProveedor
-    // OBJETIVO: Ejecuta el INSERT IGNORE en la tabla producto_proveedor
-    private function _ejecutarAsignarProveedor(): bool
-    {
         $consulta = "INSERT IGNORE INTO producto_proveedor (id_producto, id_proveedor) VALUES (:id_producto, :id_proveedor)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id_producto', $this->productoId, PDO::PARAM_INT);
@@ -568,25 +496,22 @@ class InventarioModel extends ModeloBase
         return $stmt->execute();
     }
 
-    // FUNCIÓN: eliminarProveedoresDeInsumo
+    // FUNCIÓN: _ejecutarAsignarProveedor
+    // OBJETIVO: Ejecuta el INSERT IGNORE en la tabla producto_proveedor
+        // FUNCIÓN: eliminarProveedoresDeInsumo
     // OBJETIVO: Elimina todas las relaciones proveedor-producto para un producto dado
     public function eliminarProveedoresDeInsumo(int $productoId): bool
     {
         $this->productoId = $productoId;
-        return $this->_ejecutarEliminarProveedores();
-    }
-
-    // FUNCIÓN: _ejecutarEliminarProveedores
-    // OBJETIVO: Ejecuta el DELETE de las relaciones en producto_proveedor
-    private function _ejecutarEliminarProveedores(): bool
-    {
         $consulta = "DELETE FROM producto_proveedor WHERE id_producto = :id_producto";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id_producto', $this->productoId, PDO::PARAM_INT);
         return $stmt->execute();
     }
 
-    // FUNCIÓN: registrarMezclaTaller
+    // FUNCIÓN: _ejecutarEliminarProveedores
+    // OBJETIVO: Ejecuta el DELETE de las relaciones en producto_proveedor
+        // FUNCIÓN: registrarMezclaTaller
     // OBJETIVO: Crea una pintura preparada (tipo 3), guarda su fórmula en mezcla_producto y descuenta el stock de las bases utilizadas
     public function registrarMezclaTaller(array $datos): array
     {
