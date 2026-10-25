@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         var activo = parseInt($(this).attr('data-activo') || $(this).data('activo'));
         var titulo = activo ? 'Deshabilitar' : 'Habilitar';
-        var msg = activo ? 'Esta seguro de deshabilitar este tipo de pago?' : 'Esta seguro de habilitar este tipo de pago?';
+        var msg = activo ? '¿Está seguro de deshabilitar este tipo de pago?' : '¿Está seguro de habilitar este tipo de pago?';
         confirmarConModal(titulo, msg, function() {
             toggleTipoPagoEstado(id);
         });
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     mostrarNotificacion(res.mensaje, 'exito');
                 } else { mostrarError(res.mensaje); }
             })
-            .catch(function() { mostrarError('Error de conexion'); });
+            .catch(function() { mostrarError('Error de conexión'); });
     }
 
     function toggleTipoPagoEstado(id) {

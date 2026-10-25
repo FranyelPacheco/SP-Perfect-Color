@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     alHacerClick('.btn-eliminar-cxp', function(e) {
         var id = $(this).attr('data-id') || $(this).data('id');
-        confirmarConModal('Eliminar', 'Esta seguro de eliminar esta cuenta por pagar?', function() {
+        confirmarConModal('Eliminar', '¿Está seguro de eliminar esta cuenta por pagar?', function() {
             var fd = new FormData();
             fd.append('id', id);
             fetch('/SP%20Perfect%20Color/cuentaPagar/eliminar', { method: 'POST', body: fd })
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (res.estado === 'exito') { mostrarNotificacion(res.mensaje, 'exito'); cargarCuentas(); }
                 else { mostrarNotificacion(res.mensaje, 'error'); }
             })
-            .catch(function() { mostrarNotificacion('Error de conexion', 'error'); });
+            .catch(function() { mostrarNotificacion('Error de conexión', 'error'); });
         });
     });
 

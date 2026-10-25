@@ -12,7 +12,7 @@
 <form id="formNotaCompra">
     <div class="row g-4 mb-4">
         <!-- Datos de Cabecera -->
-        <div class="col-12 col-lg-4">
+        <div class="col-12 col-xl-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white py-3">
                     <h5 class="card-title mb-0 fs-6 fw-bold"><i class="bi bi-truck me-2 text-primary"></i>Datos del Proveedor y Compra</h5>
@@ -126,7 +126,7 @@
         </div>
 
         <!-- Insumos Recibidos (Detalle) -->
-        <div class="col-12 col-lg-8">
+        <div class="col-12 col-xl-8">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h5 class="card-title mb-0 fs-6 fw-bold"><i class="bi bi-box-seam me-2 text-primary"></i>Insumos y Productos Recibidos</h5>

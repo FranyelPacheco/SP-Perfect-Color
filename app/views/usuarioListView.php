@@ -33,7 +33,7 @@
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                             <h4 class="mb-0 toolbar-title"><i class="bi bi-person-badge-fill me-2 text-primary"></i>Usuarios / Roles</h4>
                             <div class="d-flex gap-2 align-items-center flex-wrap toolbar-actions">
-                                <button id="btnNuevoUsuario" class="btn btn-primary" title="Nuevo Usuario" data-bs-toggle="tooltip"><i class="bi bi-plus-lg"></i></button>
+                                <button id="btnNuevoUsuario" class="btn btn-primary" ><i class="bi bi-plus-lg me-2"></i>Nuevo usuario</button>
                             </div>
                         </div>
                         <div class="table-responsive">
@@ -64,7 +64,7 @@
                                 <small class="text-muted">Configure los roles y asigne a qué módulos tiene acceso cada uno</small>
                             </div>
                             <div class="d-flex gap-2 align-items-center flex-wrap toolbar-actions">
-                                <button id="btnNuevoRol" class="btn btn-success" title="Nuevo Rol" data-bs-toggle="tooltip"><i class="bi bi-plus-lg"></i></button>
+                                <button id="btnNuevoRol" class="btn btn-success" ><i class="bi bi-plus-lg me-2"></i>Nuevo rol</button>
                             </div>
                         </div>
                         <div class="table-responsive">

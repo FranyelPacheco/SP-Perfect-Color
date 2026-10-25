@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 btnSpinner.classList.add('d-none');
             }
         } catch (error) {
-            mensajeError.textContent = 'Error de conexion. Intente nuevamente.';
+            mensajeError.textContent = 'Error de conexión. Intente nuevamente.';
             mensajeError.classList.remove('d-none');
             mensajeError.classList.add('shake');
             btnLogin.disabled = false;
