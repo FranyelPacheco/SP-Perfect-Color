@@ -112,6 +112,10 @@ class NotaEntregaModel extends ModeloBase
             return ['exito' => false, 'mensaje' => 'Presupuesto asociado no encontrado'];
         }
 
+        if ((int)($presupuesto['id_estado_venta'] ?? 0) !== 1) {
+            return ['exito' => false, 'mensaje' => 'El presupuesto ya fue procesado y no admite más cambios'];
+        }
+
         $decision = trim($datos['decision'] ?? 'aprobar');
         if ($decision === 'rechazar') {
             $stmtRechazar = $this->conexion->prepare("UPDATE ventas SET id_estado_venta = 3 WHERE id_venta = :id");
@@ -131,6 +135,9 @@ class NotaEntregaModel extends ModeloBase
         }
 
         $condicionPago = $datos['condicion_pago'] ?? 'contado';
+        if (!in_array($condicionPago, ['contado', 'credito'], true)) {
+            return ['exito' => false, 'mensaje' => 'Condición de pago no válida'];
+        }
         $tipoPagoId = !empty($datos['id_tipo_pago']) ? intval($datos['id_tipo_pago']) : null;
         $bancoId = !empty($datos['id_banco']) ? intval($datos['id_banco']) : null;
         $referencia = trim($datos['referencia'] ?? '');
@@ -189,8 +196,16 @@ class NotaEntregaModel extends ModeloBase
         $total = 0;
         $detalle = [];
 
+        $stmtLineas = $this->conexion->prepare("SELECT id_venta_detalle FROM venta_detalle WHERE id_venta = :id");
+        $stmtLineas->bindParam(':id', $presupuestoId, PDO::PARAM_INT);
+        $stmtLineas->execute();
+        $lineasValidas = array_map('intval', $stmtLineas->fetchAll(PDO::FETCH_COLUMN));
+
         foreach ($items as $item) {
             $presupuestoDetalleId = intval($item['id_presupuesto_detalle'] ?? 0);
+            if (!in_array($presupuestoDetalleId, $lineasValidas, true)) {
+                return ['exito' => false, 'mensaje' => 'Uno de los items no pertenece al presupuesto'];
+            }
             $cantidad = floatval($item['cantidad'] ?? 0);
             $precioUnitario = floatval($item['precio_unitario'] ?? 0);
             $subtotal = $cantidad * $precioUnitario;
@@ -206,6 +221,10 @@ class NotaEntregaModel extends ModeloBase
                 'precio_unitario' => $precioUnitario,
                 'subtotal' => $subtotal
             ];
+        }
+
+        if ($montoInicial < 0 || $montoInicial > $total) {
+            return ['exito' => false, 'mensaje' => 'El abono inicial no puede ser negativo ni superar el total'];
         }
 
         try {

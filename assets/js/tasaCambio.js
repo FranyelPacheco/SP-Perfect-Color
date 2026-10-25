@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (!row) return '';
                             // Solo botón de edición. Cero botones de eliminación según regla de negocio.
                             return '<div class="d-flex gap-2">' +
-                                '<button type="button" class="btn btn-sm btn-outline-primary btn-editar-tasa" data-id="' + row.id_tasa_cambio + '" title="Editar Tasa" data-bs-toggle="tooltip">' +
+                                '<button type="button" class="btn btn-sm btn-outline-primary btn-editar-tasa" data-id="' + row.id_tasa_cambio + '" title="Editar Tasa" aria-label="Editar Tasa" data-bs-toggle="tooltip">' +
                                 '<i class="bi bi-pencil"></i>' +
                                 '</button>' +
                                 '</div>';
@@ -333,28 +333,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (esEdicion) {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: '¿Confirmar actualización?',
-                    text: '¿Está seguro de actualizar la tasa de cambio para la fecha ' + fecha + '? Esta modificación actualizará los cálculos asociados.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#198754',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Sí, actualizar',
-                    cancelButtonText: 'Cancelar'
-                }).then(function(result) {
-                    if (result.isConfirmed) {
-                        ejecutarEnvio();
-                    }
-                });
-            } else if (typeof confirmarConModal === 'function') {
-                confirmarConModal('Actualizar Tasa', '¿Está seguro de actualizar la tasa para la fecha ' + fecha + '?', function() {
-                    ejecutarEnvio();
-                });
-            } else if (confirm('¿Está seguro de actualizar la tasa para la fecha ' + fecha + '?')) {
-                ejecutarEnvio();
-            }
+            confirmarConModal('Actualizar Tasa', '¿Está seguro de actualizar la tasa para la fecha ' + escapeHtml(fecha) + '? Esta modificación actualizará los cálculos asociados.', ejecutarEnvio, 'btn-success');
         } else {
             ejecutarEnvio();
         }

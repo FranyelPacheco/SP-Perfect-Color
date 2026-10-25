@@ -6,3 +6,5 @@ Thumbs.db
 cookies.txt
 /modelo_relacional.svg
 /Ejemplo.svg
+
+app/config/correoConfig.php

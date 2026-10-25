@@ -79,6 +79,9 @@ class BancoModel extends ModeloBase
         }
 
         $nombre = $val['nombre'];
+        if ($this->buscarDuplicado('banco', 'nombre', 'id_banco', $nombre)['activo'] ?? false) {
+            return ['exito' => false, 'mensaje' => 'Ya existe un banco con este nombre'];
+        }
         $inactivoId = $this->buscarInactivoPorNombre($nombre);
         if ($inactivoId) {
             if ($this->actualizar($inactivoId, $nombre, 1)) {
@@ -106,6 +109,10 @@ class BancoModel extends ModeloBase
         $val = $this->validarDatosBanco($nombre);
         if (!$val['valido']) {
             return ['exito' => false, 'mensaje' => $val['mensaje']];
+        }
+
+        if ($this->buscarDuplicado('banco', 'nombre', 'id_banco', $val['nombre'], $id, true) !== null) {
+            return ['exito' => false, 'mensaje' => 'Ya existe un banco con este nombre'];
         }
 
         if ($this->actualizar($id, $val['nombre'], $activo)) {

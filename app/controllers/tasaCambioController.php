@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Models\TasaCambioModel;
 use function App\Helpers\{
     respuestaJson,
+    verificarAutenticacion,
     verificarRolAdmin
 };
 
@@ -77,6 +78,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: obtenerHoy
 // OBJETIVO: Endpoint público/interno para consultar la tasa vigente de hoy
 } elseif ($metodo === 'obtenerHoy') {
+    verificarAutenticacion();
     $tasaHoy = $tasaCambioModel->obtenerTasaHoy();
     if ($tasaHoy) {
         respuestaJson('exito', 'Tasa de hoy obtenida', $tasaHoy);

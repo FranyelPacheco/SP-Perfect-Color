@@ -15,15 +15,15 @@
         <div class="row g-3">
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Proveedor:</small>
-                <span><?php echo $cuenta['proveedor_nombre']; ?></span>
+                <span><?php echo htmlspecialchars($cuenta['proveedor_nombre'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">RIF:</small>
-                <span><?php echo $cuenta['proveedor_rif']; ?></span>
+                <span><?php echo htmlspecialchars($cuenta['proveedor_rif'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Telefono:</small>
-                <span><?php echo $cuenta['proveedor_telefonos'] ?? '-'; ?></span>
+                <span><?php echo htmlspecialchars($cuenta['proveedor_telefonos'] ?? '-'); ?></span>
             </div>
 <?php
 $tasaCuentaCxp = !empty($cuenta['tasa_bcv']) ? (float)$cuenta['tasa_bcv'] : (float)($tasaCambioGlobal ?? 0);
@@ -111,7 +111,7 @@ $saldoPendCxp = (float)($cuenta['saldo_pendiente'] ?? 0);
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Registrar Abono</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form id="formularioPago">
                 <div class="modal-body">

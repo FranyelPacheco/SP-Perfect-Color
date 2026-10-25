@@ -2,45 +2,96 @@
 // Funciones utilitarias comunes para todas las vistas
 
 window.DATATABLES_SPANISH = {
-    "emptyTable": "No hay informacion",
+    "emptyTable": "No hay registros para mostrar",
     "zeroRecords": "No se encontraron registros",
-    "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
-    "infoEmpty": "Mostrando 0 a 0 de 0 Entradas",
-    "infoFiltered": "(filtrado de _MAX_ entradas totales)",
-    "lengthMenu": "Mostrar _MENU_ entradas",
+    "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+    "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+    "infoFiltered": "(filtrado de _MAX_ registros totales)",
+    "lengthMenu": "Mostrar _MENU_ registros",
     "search": "Buscar:",
-    "paginate": { "first": "Primero", "last": "Ultimo", "next": "Siguiente", "previous": "Anterior" }
+    "paginate": { "first": "Primero", "last": "Último", "next": "Siguiente", "previous": "Anterior" }
 };
 
-// Muestra un mensaje temporal en pantalla (toast)
-function mostrarNotificacion(mensaje, tipo) {
-    const notificacion = document.createElement('div');
-    notificacion.textContent = mensaje;
-    notificacion.style.position = 'fixed';
-    notificacion.style.bottom = '20px';
-    notificacion.style.right = '20px';
-    notificacion.style.padding = '12px 24px';
-    notificacion.style.borderRadius = '4px';
-    notificacion.style.color = '#fff';
-    notificacion.style.zIndex = '9999';
-    notificacion.style.transition = 'opacity 0.3s';
-    
-    if (tipo === 'exito') {
-        notificacion.style.background = '#4caf50';
-    } else if (tipo === 'error') {
-        notificacion.style.background = '#f44336';
-    } else {
-        notificacion.style.background = '#2196f3';
+const BASE_URL = '/SP%20Perfect%20Color/';
+
+function escapeHtml(texto) {
+    const div = document.createElement('div');
+    div.textContent = texto ?? '';
+    return div.innerHTML;
+}
+
+function debounce(fn, ms = 300) {
+    let t;
+    return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), ms);
+    };
+}
+
+// Peticiones JSON a la app: api.get('cliente/obtener', {id: 1}), api.post('cliente/guardar', formDataOObjeto)
+const api = {
+    async get(ruta, params = {}, opciones = {}) {
+        const query = new URLSearchParams(params).toString();
+        const resp = await fetch(BASE_URL + ruta + (query ? '?' + query : ''), opciones);
+        return resp.json();
+    },
+    async post(ruta, datos = {}) {
+        const body = datos instanceof FormData ? datos : new URLSearchParams(datos);
+        const resp = await fetch(BASE_URL + ruta, { method: 'POST', body });
+        return resp.json();
     }
-    
-    document.body.appendChild(notificacion);
-    
-    setTimeout(function() {
-        notificacion.style.opacity = '0';
-        setTimeout(function() {
-            notificacion.remove();
-        }, 300);
-    }, 3000);
+};
+
+// Toast accesible; los estilos viven en estiloBase.css (.toast-app)
+function mostrarNotificacion(mensaje, tipo) {
+    let contenedor = document.getElementById('toastContenedor');
+    if (!contenedor) {
+        contenedor = document.createElement('div');
+        contenedor.id = 'toastContenedor';
+        contenedor.className = 'toast-contenedor';
+        contenedor.setAttribute('role', 'status');
+        contenedor.setAttribute('aria-live', 'polite');
+        document.body.appendChild(contenedor);
+    }
+    const toast = document.createElement('div');
+    toast.className = 'toast-app toast-' + (tipo === 'exito' || tipo === 'error' ? tipo : 'info');
+    toast.textContent = mensaje;
+    contenedor.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.add('toast-salida');
+        setTimeout(() => toast.remove(), 300);
+    }, tipo === 'error' ? 5000 : 3000);
+}
+
+// Validación en vivo de campos únicos contra validacion/unico.
+// Marca is-invalid/is-valid, muestra el mensaje en feedback y deshabilita el botón si el formulario tiene errores.
+function validarUnico({ input, feedback, entidad, campo, getValor, getId, minLen = 1, formato, msgFormato, boton }) {
+    let controlador;
+    const marcar = (estado, mensaje = '') => {
+        input.classList.toggle('is-invalid', estado === 'invalid');
+        input.classList.toggle('is-valid', estado === 'valid');
+        if (feedback) feedback.textContent = mensaje;
+        if (boton) boton.disabled = !!boton.closest('form, .modal-content')?.querySelector('.is-invalid');
+    };
+    const verificar = debounce(async () => {
+        const valor = (getValor ? getValor() : input.value).trim();
+        if (valor.length < minLen) return marcar(null);
+        if (formato && !formato.test(valor)) return marcar('invalid', msgFormato || 'Formato inválido');
+        controlador?.abort();
+        controlador = new AbortController();
+        try {
+            const r = await api.get('validacion/unico', { entidad, campo, valor, id: getId ? (getId() ?? '') : '' }, { signal: controlador.signal });
+            const d = r.datos || {};
+            if (d.existe) marcar('invalid', d.mensaje);
+            else if (d.inactivo_id) marcar('valid', 'Existe deshabilitado: al guardar se reactivará');
+            else marcar('valid');
+        } catch (e) {
+            if (e.name !== 'AbortError') marcar(null);
+        }
+    });
+    input.addEventListener('input', verificar);
+    input.addEventListener('blur', verificar);
+    return { limpiar: () => marcar(null), revalidar: verificar };
 }
 
 function confirmarConModal(titulo, mensaje, callback, claseBoton) {
@@ -109,7 +160,7 @@ function animarContador(elemento, valorFinal, duracion) {
 
     function actualizar() {
         actual += incremento;
-        if (actual >= valorFinal) {
+        if (!(actual < valorFinal)) {
             actual = valorFinal;
             if (esMoneda) {
                 elemento.textContent = '$ ' + formatearMoneda(valorFinal);
@@ -201,6 +252,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var valores = document.querySelectorAll('.stat-value[data-valor]');
     valores.forEach(function(el) {
         var valorFinal = parseFloat(el.getAttribute('data-valor')) || 0;
-        animarContador(el, valorFinal, 2000);
+        animarContador(el, valorFinal, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 600);
     });
 });

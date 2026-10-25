@@ -22,13 +22,9 @@ document.addEventListener('DOMContentLoaded', function() {
             var id = $(this).data('id');
             if (!id) return;
 
-            if (typeof confirmarConModal === 'function') {
-                confirmarConModal('Anular Recepción de Compra', '¿Está seguro de anular esta nota de entrega? Se revertirá el incremento de stock de los insumos asociados.', function() {
-                    ejecutarAnulacion(id);
-                });
-            } else if (confirm('¿Está seguro de anular esta nota de entrega de compra? El stock ingresado será revertido.')) {
+            confirmarConModal('Anular Recepción de Compra', '¿Está seguro de anular esta nota de entrega? Se revertirá el incremento de stock de los insumos asociados.', function() {
                 ejecutarAnulacion(id);
-            }
+            });
         });
     }
 

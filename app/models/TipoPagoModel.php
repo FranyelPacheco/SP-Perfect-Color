@@ -79,6 +79,9 @@ class TipoPagoModel extends ModeloBase
         }
 
         $nombre = $val['nombre'];
+        if ($this->buscarDuplicado('tipo_pago', 'nombre', 'id_tipo_pago', $nombre)['activo'] ?? false) {
+            return ['exito' => false, 'mensaje' => 'Ya existe un tipo de pago con este nombre'];
+        }
         $inactivoId = $this->buscarInactivoPorNombre($nombre);
         if ($inactivoId) {
             if ($this->actualizar($inactivoId, $nombre, 1)) {
@@ -106,6 +109,10 @@ class TipoPagoModel extends ModeloBase
         $val = $this->validarDatosTipoPago($nombre);
         if (!$val['valido']) {
             return ['exito' => false, 'mensaje' => $val['mensaje']];
+        }
+
+        if ($this->buscarDuplicado('tipo_pago', 'nombre', 'id_tipo_pago', $val['nombre'], $id, true) !== null) {
+            return ['exito' => false, 'mensaje' => 'Ya existe un tipo de pago con este nombre'];
         }
 
         if ($this->actualizar($id, $val['nombre'], $activo)) {

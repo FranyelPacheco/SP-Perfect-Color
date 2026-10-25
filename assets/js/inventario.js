@@ -259,8 +259,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (!row) return '';
                         var nom = (row.nombre || '').replace(/"/g, '&quot;');
                         return '<div class="d-flex gap-2">' +
-                            '<button class="btn btn-sm btn-warning btn-editar-insumo" data-id="' + row.id_insumo + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
-                            '<button class="btn btn-sm btn-danger btn-eliminar-insumo" data-id="' + row.id_insumo + '" data-nombre="' + nom + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>' +
+                            '<button class="btn btn-sm btn-warning btn-editar-insumo" data-id="' + row.id_insumo + '" title="Editar" aria-label="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
+                            '<button class="btn btn-sm btn-danger btn-eliminar-insumo" data-id="' + row.id_insumo + '" data-nombre="' + nom + '" title="Eliminar" aria-label="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>' +
                             '</div>';
                     }
                 });

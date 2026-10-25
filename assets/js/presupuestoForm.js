@@ -639,12 +639,9 @@ document.addEventListener('DOMContentLoaded', function() {
             mostrarNotificacion(mensaje, 'error');
             return;
         }
+        mensajeError.setAttribute('role', 'alert');
         mensajeError.textContent = mensaje;
         mensajeError.classList.remove('d-none');
         mensajeError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-        setTimeout(function() {
-            mensajeError.classList.add('d-none');
-        }, 5000);
     }
 });

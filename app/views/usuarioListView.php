@@ -104,13 +104,15 @@
                     <input type="hidden" id="usuarioId" name="id" value="">
 
                     <div class="mb-3">
-                        <label for="nombreUsuario" class="form-label fw-semibold">Nombre Completo</label>
-                        <input type="text" id="nombreUsuario" name="nombre" class="form-control" placeholder="Ingrese el nombre completo" required>
+                        <label for="nombreUsuario" class="form-label fw-semibold">Nombre Completo <span class="text-danger">*</span></label>
+                        <input type="text" id="nombreUsuario" name="nombre" class="form-control" placeholder="Ingrese el nombre completo" required maxlength="50" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$" title="Solo letras y espacios (máx. 50 caracteres)">
+                        <div id="feedbackNombreUsuario" class="invalid-feedback"></div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="correoUsuario" class="form-label fw-semibold">Correo Electrónico</label>
-                        <input type="email" id="correoUsuario" name="correo" class="form-control" placeholder="ejemplo@correo.com" required>
+                        <label for="correoUsuario" class="form-label fw-semibold">Correo Electrónico <span class="text-danger">*</span></label>
+                        <input type="email" id="correoUsuario" name="correo" class="form-control" placeholder="ejemplo@correo.com" required pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Ingrese un correo electrónico válido">
+                        <div id="feedbackCorreoUsuario" class="invalid-feedback"><i class="bi bi-exclamation-circle-fill me-1"></i>Correo ya registrado</div>
                     </div>
 
                     <div id="grupoClave" class="mb-3">
@@ -176,6 +178,7 @@
                         <div class="col-md-8 col-12 mb-3 mb-md-0">
                             <label for="nombreRol" class="form-label fw-semibold">Nombre del Rol</label>
                             <input type="text" id="nombreRol" name="nombre" class="form-control" placeholder="Ej: Supervisor, Almacenista, Auditor" required>
+                            <div class="invalid-feedback" id="feedbackNombreRol"></div>
                         </div>
                         <div class="col-md-4 col-12" id="contenedorEstadoRol">
                             <label for="estadoRol" class="form-label fw-semibold">Estado</label>

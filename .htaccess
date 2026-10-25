@@ -1,5 +1,9 @@
 RewriteEngine On
 
+# Bloquear acceso directo a código, dependencias y archivos de documentación/BD
+RewriteRule ^(app|vendor)/ - [F,L]
+RewriteRule \.(sql|md|lock|json)$ - [F,L]
+
 # Si el archivo o carpeta solicitado existe físicamente, acceder directamente
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

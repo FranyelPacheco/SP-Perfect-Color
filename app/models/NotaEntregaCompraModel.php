@@ -405,6 +405,14 @@ class NotaEntregaCompraModel extends ModeloBase
         try {
             $this->conexion->beginTransaction();
 
+            $stmtEstado = $this->conexion->prepare("SELECT estado FROM nota_entrega WHERE id_nota_entrega = :id FOR UPDATE");
+            $stmtEstado->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmtEstado->execute();
+            if ((int)$stmtEstado->fetchColumn() !== 1) {
+                $this->conexion->rollBack();
+                return false;
+            }
+
             $detalle = $this->obtenerDetalle($id);
             $sqlRevertir = "UPDATE productos SET stock_actual = GREATEST(0, stock_actual - :cantidad) WHERE id_producto = :id_producto";
             $stmtRevertir = $this->conexion->prepare($sqlRevertir);

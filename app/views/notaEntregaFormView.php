@@ -52,7 +52,7 @@
             <div class="row g-3">
                 <div class="col-md-4">
                     <small class="text-muted d-block">Presupuesto de origen:</small>
-                    <a href="/SP%20Perfect%20Color/presupuesto/ver?id=<?php echo $presupuesto['id_presupuesto']; ?>" class="text-decoration-none fw-semibold">#<?php echo $presupuesto['id_presupuesto']; ?> - <?php echo $presupuesto['cliente_nombre']; ?></a>
+                    <a href="/SP%20Perfect%20Color/presupuesto/ver?id=<?php echo $presupuesto['id_presupuesto']; ?>" class="text-decoration-none fw-semibold">#<?php echo $presupuesto['id_presupuesto']; ?> - <?php echo htmlspecialchars($presupuesto['cliente_nombre'] ?? ''); ?></a>
                 </div>
 <?php
 $tasaHoyNotaForm = (float)($tasaCambioGlobal ?? 0);

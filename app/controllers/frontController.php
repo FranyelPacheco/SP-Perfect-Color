@@ -27,6 +27,7 @@ class frontController
         'reporte'           => 'reporte',
         'perfil'            => 'perfil',
         'tasacambio'        => 'tasaCambio',
+        'validacion'        => 'validacion',
     ];
 
     private $titulosPagina = [

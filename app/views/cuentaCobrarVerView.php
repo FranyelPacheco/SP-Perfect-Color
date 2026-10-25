@@ -15,11 +15,11 @@
         <div class="row g-3">
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Cliente:</small>
-                <span><?php echo $cuenta['cliente_nombre']; ?></span>
+                <span><?php echo htmlspecialchars($cuenta['cliente_nombre'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Cedula:</small>
-                <span><?php echo $cuenta['cliente_cedula']; ?></span>
+                <span><?php echo htmlspecialchars($cuenta['cliente_cedula'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Documento:</small>
@@ -129,7 +129,7 @@ $saldoPendCxc = (float)($cuenta['saldo_pendiente'] ?? 0);
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Registrar Abono</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form id="formularioPago">
                 <div class="modal-body">

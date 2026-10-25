@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const telefonoProveedor2 = document.getElementById('telefonoProveedor2');
 
     const correoProveedor = document.getElementById('correoProveedor');
+    const feedbackCorreoProveedor = document.getElementById('feedbackCorreoProveedor');
     const direccionProveedor = document.getElementById('direccionProveedor');
     const rubrosContainer = document.getElementById('rubrosContainer');
     const btnAgregarRubro = document.getElementById('btnAgregarRubro');
@@ -111,6 +112,8 @@ document.addEventListener('DOMContentLoaded', function() {
             proveedorId.value = '';
             rifProveedor.value = '';
             rifProveedor.disabled = false;
+            limpiarEstadoRif();
+            limpiarEstadoCorreoProveedor();
             nombreEmpresaProveedor.value = '';
             telefonoProveedor.value = '';
             resetearSegundoTelefonoProveedor();
@@ -136,6 +139,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (modalProveedor) {
         modalProveedor.addEventListener('hidden.bs.modal', function() {
             formularioProveedor.reset();
+            limpiarEstadoRif();
+            limpiarEstadoCorreoProveedor();
             resetearSegundoTelefonoProveedor();
             mensajeError.classList.add('d-none');
         });
@@ -183,9 +188,26 @@ document.addEventListener('DOMContentLoaded', function() {
             feedbackRifProveedor.classList.add('d-none');
             feedbackRifProveedor.removeAttribute('title');
         }
-        if (btnGuardarProveedor) {
-            btnGuardarProveedor.disabled = false;
+        actualizarBotonGuardarProveedor();
+    }
+
+    function limpiarEstadoCorreoProveedor() {
+        if (correoProveedor) {
+            correoProveedor.classList.remove('is-invalid', 'is-valid');
+            correoProveedor.removeAttribute('title');
         }
+        if (feedbackCorreoProveedor) {
+            feedbackCorreoProveedor.classList.add('d-none');
+            feedbackCorreoProveedor.removeAttribute('title');
+        }
+        actualizarBotonGuardarProveedor();
+    }
+
+    function actualizarBotonGuardarProveedor() {
+        if (!btnGuardarProveedor) return;
+        var hayInvalido = (rifProveedor && rifProveedor.classList.contains('is-invalid')) ||
+                          (correoProveedor && correoProveedor.classList.contains('is-invalid'));
+        btnGuardarProveedor.disabled = hayInvalido;
     }
 
     var temporizadorRif;
@@ -215,7 +237,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             feedbackRifProveedor.setAttribute('title', 'Proveedor ya registrado');
                             feedbackRifProveedor.classList.remove('d-none');
                         }
-                        if (btnGuardarProveedor) btnGuardarProveedor.disabled = true;
                     } else {
                         rifProveedor.classList.remove('is-invalid');
                         rifProveedor.classList.add('is-valid');
@@ -224,11 +245,68 @@ document.addEventListener('DOMContentLoaded', function() {
                             feedbackRifProveedor.classList.add('d-none');
                             feedbackRifProveedor.removeAttribute('title');
                         }
-                        if (btnGuardarProveedor) btnGuardarProveedor.disabled = false;
                     }
+                    actualizarBotonGuardarProveedor();
                 }
             } catch (e) {
                 console.error('Error al verificar RIF:', e);
+            }
+        }, 300);
+    }
+
+    var temporizadorCorreoProveedor;
+    function verificarCorreoEnTiempoReal() {
+        clearTimeout(temporizadorCorreoProveedor);
+        if (!correoProveedor) return;
+        const correo = correoProveedor.value.trim();
+        if (!correo) {
+            limpiarEstadoCorreoProveedor();
+            return;
+        }
+
+        const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!regexEmail.test(correo)) {
+            correoProveedor.classList.add('is-invalid');
+            correoProveedor.classList.remove('is-valid');
+            correoProveedor.setAttribute('title', 'Formato de correo inválido');
+            if (feedbackCorreoProveedor) {
+                feedbackCorreoProveedor.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Formato de correo inválido (ej: proveedor@correo.com)';
+                feedbackCorreoProveedor.setAttribute('title', 'Formato de correo inválido');
+                feedbackCorreoProveedor.classList.remove('d-none');
+            }
+            actualizarBotonGuardarProveedor();
+            return;
+        }
+
+        const id = proveedorId.value || '';
+
+        temporizadorCorreoProveedor = setTimeout(async function() {
+            try {
+                const resp = await fetch('/SP%20Perfect%20Color/proveedor/verificarCorreoAjax?correo=' + encodeURIComponent(correo) + '&id=' + encodeURIComponent(id));
+                const res = await resp.json();
+                if (res.estado === 'exito') {
+                    if (res.datos.existe) {
+                        correoProveedor.classList.add('is-invalid');
+                        correoProveedor.classList.remove('is-valid');
+                        correoProveedor.setAttribute('title', 'Correo ya registrado');
+                        if (feedbackCorreoProveedor) {
+                            feedbackCorreoProveedor.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Correo ya registrado';
+                            feedbackCorreoProveedor.setAttribute('title', 'Correo ya registrado');
+                            feedbackCorreoProveedor.classList.remove('d-none');
+                        }
+                    } else {
+                        correoProveedor.classList.remove('is-invalid');
+                        correoProveedor.classList.add('is-valid');
+                        correoProveedor.removeAttribute('title');
+                        if (feedbackCorreoProveedor) {
+                            feedbackCorreoProveedor.classList.add('d-none');
+                            feedbackCorreoProveedor.removeAttribute('title');
+                        }
+                    }
+                    actualizarBotonGuardarProveedor();
+                }
+            } catch (e) {
+                console.error('Error al verificar correo:', e);
             }
         }, 300);
     }
@@ -241,6 +319,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (tipoRifProveedor) {
         tipoRifProveedor.addEventListener('change', verificarRifEnTiempoReal);
+    }
+    if (correoProveedor) {
+        correoProveedor.addEventListener('input', verificarCorreoEnTiempoReal);
+        correoProveedor.addEventListener('blur', verificarCorreoEnTiempoReal);
     }
 
 
@@ -298,8 +380,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (!row) return '';
                         var nom = (row.nombre_empresa || '').replace(/"/g, '&quot;');
                         return '<div class="d-flex gap-2">' +
-                            '<button class="btn btn-sm btn-warning btn-editar-proveedor" data-id="' + row.id_proveedor + '" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
-                            '<button class="btn btn-sm btn-danger btn-eliminar-proveedor" data-id="' + row.id_proveedor + '" data-nombre="' + nom + '" title="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>' +
+                            '<button class="btn btn-sm btn-warning btn-editar-proveedor" data-id="' + row.id_proveedor + '" title="Editar" aria-label="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
+                            '<button class="btn btn-sm btn-danger btn-eliminar-proveedor" data-id="' + row.id_proveedor + '" data-nombre="' + nom + '" title="Eliminar" aria-label="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>' +
                             '</div>';
                     }
                 });
@@ -357,6 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 tituloModal.textContent = 'Editar Proveedor';
                 proveedorId.value = proveedor.id_proveedor;
                 limpiarEstadoRif();
+                limpiarEstadoCorreoProveedor();
 
                 // Parsear RIF (J-12345678)
                 const partesRif = (proveedor.rif || '').split('-');
@@ -453,6 +536,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         if (!emailRegex.test(correoVal)) {
             mostrarError('El correo electronico no tiene un formato valido');
+            correoProveedor.focus();
+            return;
+        }
+        if (correoProveedor.classList.contains('is-invalid')) {
+            mostrarError('El correo electrónico es inválido o ya se encuentra registrado');
             correoProveedor.focus();
             return;
         }

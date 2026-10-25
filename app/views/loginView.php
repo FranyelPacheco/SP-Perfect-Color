@@ -71,7 +71,7 @@
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
                             <input type="password" id="clave" name="clave" class="form-control" required maxlength="20" autocomplete="current-password" placeholder="Ingrese su contraseña">
-                            <button type="button" id="toggleClave" class="input-group-text password-toggle" tabindex="-1">
+                            <button type="button" id="toggleClave" class="input-group-text password-toggle" aria-label="Mostrar u ocultar contraseña">
                                 <i class="bi bi-eye-slash-fill" id="toggleIcono"></i>
                             </button>
                         </div>

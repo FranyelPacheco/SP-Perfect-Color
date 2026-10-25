@@ -70,6 +70,15 @@ if ($metodo === 'index') {
         'roles' => $roles
     ]);
 
+// FUNCIÓN: verificarCorreoAjax
+// OBJETIVO: Verifica en tiempo real si un correo ya está registrado en usuarios
+} elseif ($metodo === 'verificarCorreoAjax') {
+    verificarAutenticacion();
+    $correo = trim($_GET['correo'] ?? '');
+    $id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : null;
+    $existe = !empty($correo) && $usuarioModel->correoExiste($correo, $id);
+    respuestaJson('exito', 'Verificacion realizada', ['existe' => $existe]);
+
 // FUNCIÓN: guardar
 // OBJETIVO: Crea un nuevo usuario o reactiva uno inactivo
 } elseif ($metodo === 'guardar') {
@@ -77,6 +86,10 @@ if ($metodo === 'index') {
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         respuestaJson('error', 'Metodo no permitido');
+    }
+
+    if (intval($_POST['id_rol'] ?? 0) === 1 && intval($_SESSION['usuario_rol'] ?? 0) !== 1) {
+        respuestaJson('error', 'Solo un administrador puede asignar el rol Administrador');
     }
 
     $resultado = $usuarioModel->registrar($_POST);
@@ -110,6 +123,10 @@ if ($metodo === 'index') {
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         respuestaJson('error', 'Metodo no permitido');
+    }
+
+    if (intval($_POST['id_rol'] ?? 0) === 1 && intval($_SESSION['usuario_rol'] ?? 0) !== 1) {
+        respuestaJson('error', 'Solo un administrador puede asignar el rol Administrador');
     }
 
     $id = intval($_POST['id'] ?? 0);

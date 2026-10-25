@@ -17,6 +17,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    var validacionNombre = validarUnico({
+        input: nombreBanco,
+        feedback: document.getElementById('feedbackNombreBanco'),
+        entidad: 'banco', campo: 'nombre',
+        getId: function() { return bancoId.value || null; },
+        boton: formulario.querySelector('[type="submit"]')
+    });
+    modal.addEventListener('hidden.bs.modal', validacionNombre.limpiar);
+    modal.addEventListener('shown.bs.modal', function() { if (nombreBanco.value) validacionNombre.revalidar(); });
+
     cargarBancos();
 
     if (formulario) {
