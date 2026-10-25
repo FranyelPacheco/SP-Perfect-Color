@@ -55,16 +55,19 @@
             </div>
             <div class="card-body p-4">
                 <form id="formEditarPerfil">
+                    <input type="hidden" id="perfilUsuarioId" value="<?php echo htmlspecialchars($usuario['id_usuario'] ?? ''); ?>">
                     <div id="alertaDatosPerfil" class="alert d-none mb-3"></div>
 
                     <div class="mb-3">
-                        <label for="perfilNombre" class="form-label fw-semibold">Nombre Completo</label>
-                        <input type="text" class="form-control" id="perfilNombre" name="nombre" value="<?php echo htmlspecialchars($usuario['nombre'] ?? ''); ?>" required>
+                        <label for="perfilNombre" class="form-label fw-semibold">Nombre Completo <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="perfilNombre" name="nombre" value="<?php echo htmlspecialchars($usuario['nombre'] ?? ''); ?>" required maxlength="50" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$" title="Solo letras y espacios (máx. 50 caracteres)">
+                        <div id="feedbackPerfilNombre" class="invalid-feedback"></div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="perfilCorreo" class="form-label fw-semibold">Correo Electrónico</label>
-                        <input type="email" class="form-control" id="perfilCorreo" name="correo" value="<?php echo htmlspecialchars($usuario['correo'] ?? ''); ?>" required>
+                        <label for="perfilCorreo" class="form-label fw-semibold">Correo Electrónico <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="perfilCorreo" name="correo" value="<?php echo htmlspecialchars($usuario['correo'] ?? ''); ?>" required pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Ingrese un correo electrónico válido">
+                        <div id="feedbackPerfilCorreo" class="invalid-feedback"><i class="bi bi-exclamation-circle-fill me-1"></i>Correo ya registrado</div>
                     </div>
 
                     <div class="text-end">

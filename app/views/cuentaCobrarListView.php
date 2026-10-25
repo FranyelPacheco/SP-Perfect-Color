@@ -7,7 +7,7 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
             <h4 class="mb-0 toolbar-title"><i class="bi bi-cash-stack me-2 text-primary"></i>Cuentas por Cobrar</h4>
             <div class="d-flex gap-2 align-items-center flex-wrap">
-                <input type="text" id="busquedaCuentas" class="form-control" style="width: 220px;" placeholder="Buscar por cliente o cedula...">
+                <input type="text" id="busquedaCuentas" class="form-control" style="width: 220px;" placeholder="Buscar por cliente o cédula...">
             </div>
         </div>
 
@@ -16,7 +16,7 @@
                 <thead>
                     <tr>
                         <th>Cliente</th>
-                        <th>Cedula</th>
+                        <th>Cédula</th>
                         <th>Documento</th>
                         <th>Monto Total</th>
                         <th>Saldo Pendiente</th>

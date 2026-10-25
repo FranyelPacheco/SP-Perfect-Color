@@ -76,6 +76,7 @@
                     <div class="mb-3">
                         <label for="correoProveedor" class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
                         <input type="email" id="correoProveedor" name="correo" class="form-control" required placeholder="correo@ejemplo.com" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Ingrese un correo electrónico válido">
+                        <div id="feedbackCorreoProveedor" class="invalid-feedback"><i class="bi bi-exclamation-circle-fill me-1"></i>Correo ya registrado</div>
                     </div>
 
                     <div class="mb-3">

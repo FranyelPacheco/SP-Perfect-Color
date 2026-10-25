@@ -18,7 +18,7 @@
                 <span><?php echo htmlspecialchars($cuenta['cliente_nombre'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
-                <small class="text-muted d-block">Cedula:</small>
+                <small class="text-muted d-block">Cédula:</small>
                 <span><?php echo htmlspecialchars($cuenta['cliente_cedula'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">

@@ -30,7 +30,7 @@
                 <span><?php echo htmlspecialchars($nota['cliente_nombre'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
-                <small class="text-muted d-block">Cedula:</small>
+                <small class="text-muted d-block">Cédula:</small>
                 <span><?php echo htmlspecialchars($nota['cliente_cedula'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
@@ -39,13 +39,13 @@
             </div>
             <?php if (!empty($nota['cliente_direccion'])): ?>
             <div class="col-md-4 col-6">
-                <small class="text-muted d-block">Direccion:</small>
+                <small class="text-muted d-block">Dirección:</small>
                 <span><?php echo htmlspecialchars($nota['cliente_direccion']); ?></span>
             </div>
             <?php endif; ?>
             <?php if (!empty($nota['cliente_telefonos'])): ?>
             <div class="col-md-4 col-6">
-                <small class="text-muted d-block">Telefono:</small>
+                <small class="text-muted d-block">Teléfono:</small>
                 <span><?php echo htmlspecialchars($nota['cliente_telefonos']); ?></span>
             </div>
             <?php endif; ?>
@@ -65,7 +65,7 @@ $totalBsNota = $totalUsdNota * $tasaDocNota;
                 <?php endif; ?>
             </div>
             <div class="col-md-4 col-6">
-                <small class="text-muted d-block">Condicion de Pago:</small>
+                <small class="text-muted d-block">Condición de Pago:</small>
                 <span><?php echo ucfirst($nota['condicion_pago'] ?? '-'); ?></span>
             </div>
             <div class="col-md-4 col-6">
@@ -92,7 +92,7 @@ $totalBsNota = $totalUsdNota * $tasaDocNota;
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>Codigo</th>
+                        <th>Código</th>
                         <th>Insumo</th>
                         <th>Cantidad</th>
                         <th>Precio Unit.</th>

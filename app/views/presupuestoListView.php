@@ -16,9 +16,9 @@
                 </div>
             </div>
             <div class="d-flex gap-2 align-items-center flex-wrap">
-                <input type="text" id="busquedaPresupuestos" class="form-control" style="width: 220px;" placeholder="Buscar por cliente o cedula...">
-                <button type="button" class="btn btn-primary" onclick="location.href='/SP%20Perfect%20Color/presupuesto/nuevo'" title="Nuevo Presupuesto" data-bs-toggle="tooltip">
-                    <i class="bi bi-plus-lg"></i>
+                <input type="text" id="busquedaPresupuestos" class="form-control" style="width: 220px;" placeholder="Buscar por cliente o cédula...">
+                <button type="button" class="btn btn-primary" onclick="location.href='/SP%20Perfect%20Color/presupuesto/nuevo'" >
+                    <i class="bi bi-plus-lg me-2"></i>Nuevo
                 </button>
             </div>
         </div>
@@ -30,7 +30,7 @@
                         <th>ID</th>
                         <th>Fecha</th>
                         <th>Cliente</th>
-                        <th>Cedula</th>
+                        <th>Cédula</th>
                         <th>Total</th>
                         <th>Estado</th>
                         <th>Acciones</th>
