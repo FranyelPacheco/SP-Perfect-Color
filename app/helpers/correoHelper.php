@@ -43,6 +43,7 @@ function crearInstanciaMailer(): PHPMailer
     $mail->Username   = $config['smtp_user'];
     $mail->Password   = $config['smtp_pass'];
     $mail->Port       = (int)$config['smtp_port'];
+    $mail->Timeout    = 6;
 
     if (!empty($config['smtp_secure'])) {
         $mail->SMTPSecure = $config['smtp_secure'] === 'ssl' ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;

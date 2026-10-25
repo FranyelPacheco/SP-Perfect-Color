@@ -39,3 +39,24 @@ function responder(array $resultado, $datos = null): void
 {
     respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje'], $datos);
 }
+
+// FUNCIÓN: responderYContinuar
+// OBJETIVO: Enviar la respuesta JSON al navegador, cerrar la conexión y dejar que el script siga (tareas lentas como enviar correos)
+function responderYContinuar($estado, $mensaje, $datos = null): void
+{
+    ignore_user_abort(true);
+    set_time_limit(60);
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+    $cuerpo = json_encode(['estado' => $estado, 'mensaje' => $mensaje, 'datos' => $datos], JSON_UNESCAPED_UNICODE);
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    header('Connection: close');
+    header('Content-Length: ' . strlen($cuerpo));
+    echo $cuerpo;
+    while (ob_get_level() > 0) {
+        ob_end_flush();
+    }
+    flush();
+}
