@@ -10,16 +10,16 @@
 
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header">
-        <h5 class="mb-0"><i class="bi bi-file-earmark-text-fill me-2 text-primary"></i>Informacion del Presupuesto</h5>
+        <h5 class="mb-0"><i class="bi bi-file-earmark-text-fill me-2 text-primary"></i>Información del Presupuesto</h5>
     </div>
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-4 col-6">
-                <small class="text-muted d-block">Fecha de Creacion:</small>
+                <small class="text-muted d-block">Fecha de Creación:</small>
                 <span><?php echo $presupuesto['fecha']; ?></span>
             </div>
             <div class="col-md-4 col-6">
-                <small class="text-muted d-block">Fecha de Aprobacion:</small>
+                <small class="text-muted d-block">Fecha de Aprobación:</small>
                 <span><?php echo !empty($presupuesto['fecha_aprobacion']) ? $presupuesto['fecha_aprobacion'] : '<span class="text-muted fst-italic">Pendiente</span>'; ?></span>
             </div>
             <div class="col-md-4 col-6">

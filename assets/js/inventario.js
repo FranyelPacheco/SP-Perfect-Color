@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             } catch (e) {
-                console.error('Error al verificar codigo:', e);
+                console.error('Error al verificar código:', e);
             }
         }, 300);
     }
@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!isNaN(id)) {
             abrirModalEditar(id);
         } else {
-            console.error('ID de insumo invalido:', $(this).attr('data-id'));
+            console.error('ID de insumo inválido:', $(this).attr('data-id'));
         }
     });
 
@@ -430,7 +430,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const esEdicion = id !== '';
 
         if (!codigoInsumo.value.trim()) {
-            mostrarError('El codigo es obligatorio');
+            mostrarError('El código es obligatorio');
             return;
         }
 
@@ -441,7 +441,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const precioVenta = parseFloat(precioVentaInsumo.value);
         if (isNaN(precioVenta) || precioVenta <= 0) {
-            mostrarError('El precio de venta debe ser un numero positivo');
+            mostrarError('El precio de venta debe ser un número positivo');
             return;
         }
 
@@ -481,13 +481,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error al guardar insumo:', error);
-            mostrarError('Error de conexion al guardar el insumo');
+            mostrarError('Error de conexión al guardar el insumo');
         }
     }
 
     // Elimina un insumo
     async function eliminarInsumo(id, nombre) {
-        confirmarConModal('Eliminar', 'Esta seguro de eliminar el insumo ' + nombre + '?', function() {
+        confirmarConModal('Eliminar', '¿Está seguro de eliminar el insumo ' + nombre + '?', function() {
             const formData = new FormData();
             formData.append('id', id);
             fetch('/SP%20Perfect%20Color/inventario/eliminar', { method: 'POST', body: formData })
@@ -502,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(function(error) {
                     console.error('Error al eliminar insumo:', error);
-                    mostrarNotificacion('Error de conexion al eliminar el insumo', 'error');
+                    mostrarNotificacion('Error de conexión al eliminar el insumo', 'error');
                 });
         });
     }

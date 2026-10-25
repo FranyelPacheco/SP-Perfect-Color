@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
     alHacerClick('.btn-eliminar-presupuesto', function(e) {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         if (!isNaN(id)) {
-            confirmarConModal('Eliminar', 'Esta seguro de eliminar este presupuesto?', function() {
+            confirmarConModal('Eliminar', '¿Está seguro de eliminar este presupuesto?', function() {
                 var fd = new FormData();
                 fd.append('id', id);
                 fetch('/SP%20Perfect%20Color/presupuesto/eliminar', { method: 'POST', body: fd })
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 })
                 .catch(function() {
-                    mostrarNotificacion('Error de conexion', 'error');
+                    mostrarNotificacion('Error de conexión', 'error');
                 });
             });
         }
@@ -162,8 +162,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function cambiarEstado(id, estado) {
         var mensaje = estado === 'aprobado'
-            ? 'Esta seguro de aprobar este presupuesto?'
-            : 'Esta seguro de rechazar este presupuesto?';
+            ? '¿Está seguro de aprobar este presupuesto?'
+            : '¿Está seguro de rechazar este presupuesto?';
 
         confirmarConModal('Confirmar', mensaje, function() {
             var formData = new FormData();
@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(function(error) {
                 console.error('Error:', error);
-                mostrarNotificacion('Error de conexion', 'error');
+                mostrarNotificacion('Error de conexión', 'error');
             });
         });
     }

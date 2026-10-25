@@ -7,7 +7,7 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
             <h4 class="mb-0 toolbar-title"><i class="bi bi-people-fill me-2 text-primary"></i>Clientes</h4>
             <div class="d-flex gap-2 align-items-center">
-                <input type="text" id="busquedaClientes" class="form-control" style="width: 220px;" placeholder="Buscar por cedula, nombre o apellido...">
+                <input type="text" id="busquedaClientes" class="form-control" style="width: 220px;" placeholder="Buscar por cédula, nombre o apellido...">
                 <button id="btnNuevoCliente" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
             </div>
         </div>

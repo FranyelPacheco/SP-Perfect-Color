@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     mostrarNotificacion(res.mensaje, 'error');
                 }
             })
-            .catch(function() { mostrarNotificacion('Error de conexion', 'error'); });
+            .catch(function() { mostrarNotificacion('Error de conexión', 'error'); });
     }
 
     // 3. Formatea un número a moneda local ($ 1.000,00)

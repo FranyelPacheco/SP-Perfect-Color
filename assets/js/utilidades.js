@@ -12,6 +12,38 @@ window.DATATABLES_SPANISH = {
     "paginate": { "first": "Primero", "last": "Último", "next": "Siguiente", "previous": "Anterior" }
 };
 
+// Valores por defecto de todas las DataTables: idioma, columnas plegables y prioridad a la primera columna y a Acciones
+if (window.jQuery && $.fn.dataTable) {
+    $.extend(true, $.fn.dataTable.defaults, {
+        language: window.DATATABLES_SPANISH,
+        autoWidth: false,
+        responsive: true,
+        columnDefs: [
+            { responsivePriority: 1, targets: 0 },
+            { responsivePriority: 2, targets: -1 }
+        ]
+    });
+
+    // Los datos llegan por AJAX después de crear la tabla: recalcular qué columnas caben tras cada dibujado
+    let recalculando = false;
+    $(document).on('draw.dt', function (e, settings) {
+        const tabla = new $.fn.dataTable.Api(settings);
+        if (recalculando || !tabla.responsive) return;
+        recalculando = true;
+        requestAnimationFrame(function () {
+            tabla.columns.adjust().responsive.recalc();
+            recalculando = false;
+        });
+    });
+
+    // Al plegar el sidebar cambia el ancho útil sin evento resize
+    $(document).on('click', '#sidebarToggle', function () {
+        setTimeout(function () {
+            $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust().responsive.recalc();
+        }, 350);
+    });
+}
+
 const BASE_URL = '/SP%20Perfect%20Color/';
 
 function escapeHtml(texto) {
@@ -170,7 +202,7 @@ function confirmarConModal(titulo, mensaje, callback, claseBoton) {
 }
 
 function confirmarAccion(mensaje, funcionCallback) {
-    confirmarConModal('Confirmar', mensaje || 'Esta seguro de realizar esta accion?', funcionCallback);
+    confirmarConModal('Confirmar', mensaje || '¿Está seguro de realizar esta acción?', funcionCallback);
 }
 
 // Formatea un numero como moneda (formato venezolano)

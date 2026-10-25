@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     actualizarBotonGuardarCliente();
                 }
             } catch (e) {
-                console.error('Error al verificar cedula:', e);
+                console.error('Error al verificar cédula:', e);
             }
         }, 300);
     }
@@ -418,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const cedulaNum = cedulaCliente.value.trim();
         const tipoDoc = tipoDocCliente ? tipoDocCliente.value : 'V';
         if (!cedulaNum) {
-            mostrarError('La cedula es obligatoria');
+            mostrarError('La cédula es obligatoria');
             cedulaCliente.focus();
             return;
         }
@@ -471,7 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         if (!emailRegex.test(correoVal)) {
-            mostrarError('El correo electronico no es valido');
+            mostrarError('El correo electrónico no es válido');
             correoCliente.focus();
             return;
         }
@@ -544,13 +544,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error al guardar cliente:', error);
-            mostrarError('Error de conexion al guardar el cliente');
+            mostrarError('Error de conexión al guardar el cliente');
         }
     }
 
     // Elimina un cliente
     async function eliminarCliente(id, nombre) {
-        confirmarConModal('Eliminar', 'Esta seguro de eliminar al cliente ' + nombre + '?', function() {
+        confirmarConModal('Eliminar', '¿Está seguro de eliminar al cliente ' + nombre + '?', function() {
             const formData = new FormData();
             formData.append('id', id);
             fetch('/SP%20Perfect%20Color/cliente/eliminar', { method: 'POST', body: formData })
@@ -565,7 +565,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(function(error) {
                     console.error('Error al eliminar cliente:', error);
-                    mostrarNotificacion('Error de conexion al eliminar el cliente', 'error');
+                    mostrarNotificacion('Error de conexión al eliminar el cliente', 'error');
                 });
         });
     }

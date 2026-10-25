@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         var activo = parseInt($(this).attr('data-activo') || $(this).data('activo'));
         var titulo = activo ? 'Deshabilitar' : 'Habilitar';
-        var msg = activo ? 'Esta seguro de deshabilitar este banco?' : 'Esta seguro de habilitar este banco?';
+        var msg = activo ? '¿Está seguro de deshabilitar este banco?' : '¿Está seguro de habilitar este banco?';
         confirmarConModal(titulo, msg, function() {
             toggleBancoEstado(id);
         });
@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     mostrarNotificacion(res.mensaje, 'exito');
                 } else { mostrarError(res.mensaje); }
             })
-            .catch(function() { mostrarError('Error de conexion'); });
+            .catch(function() { mostrarError('Error de conexión'); });
     }
 
     function toggleBancoEstado(id) {

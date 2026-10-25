@@ -9,7 +9,7 @@
 
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header">
-        <h5 class="mb-0"><i class="bi bi-credit-card-2-back-fill me-2 text-primary"></i>Informacion de la Cuenta</h5>
+        <h5 class="mb-0"><i class="bi bi-credit-card-2-back-fill me-2 text-primary"></i>Información de la Cuenta</h5>
     </div>
     <div class="card-body">
         <div class="row g-3">

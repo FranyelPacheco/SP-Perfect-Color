@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(function(error) {
                 console.error('Error en el fetch:', error);
-                mostrarError('Error de conexion: ' + error.message);
+                mostrarError('Error de conexión: ' + error.message);
             });
         } catch (error) {
             console.error('Error en guardarNotaEntrega:', error);

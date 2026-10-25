@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(function(error) {
                 console.error('Error al cargar clientes:', error);
                 if (clientePresupuesto) {
-                    clientePresupuesto.innerHTML = '<option value="">Error de conexion al cargar clientes</option>';
+                    clientePresupuesto.innerHTML = '<option value="">Error de conexión al cargar clientes</option>';
                 }
             });
     }
@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(function(error) {
                 console.error('Error al cargar insumos:', error);
                 if (listaInsumosDisponibles) {
-                    listaInsumosDisponibles.innerHTML = '<div class="text-center text-danger py-4">Error de conexion al cargar insumos</div>';
+                    listaInsumosDisponibles.innerHTML = '<div class="text-center text-danger py-4">Error de conexión al cargar insumos</div>';
                 }
             });
     }
@@ -623,7 +623,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(function(error) {
             console.error('Error al guardar presupuesto:', error);
-            mostrarError('Error de conexion al guardar el presupuesto');
+            mostrarError('Error de conexión al guardar el presupuesto');
             if (btnGuardarPresupuesto) {
                 btnGuardarPresupuesto.disabled = false;
                 btnGuardarPresupuesto.innerHTML = '<i class="bi bi-check-lg me-1"></i>Guardar';

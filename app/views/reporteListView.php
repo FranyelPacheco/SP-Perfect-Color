@@ -10,7 +10,7 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="row g-3 align-items-end">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label for="tipoReporte" class="form-label">Tipo de Reporte</label>
                 <select id="tipoReporte" class="form-select">
                     <option value="ventas">Ventas (Notas de Entrega)</option>
@@ -19,16 +19,13 @@
                     <option value="carteraCxc">Cuentas por Cobrar Pendientes</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label for="fechaDesde" class="form-label">Desde</label>
                 <input type="date" id="fechaDesde" class="form-control" value="<?php echo date("Y-m-d"); ?>" max="<?php echo date('Y-m-d'); ?>">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label for="fechaHasta" class="form-label">Hasta</label>
                 <input type="date" id="fechaHasta" class="form-control" value="<?php echo date('Y-m-d'); ?>" max="<?php echo date('Y-m-d'); ?>">
-            </div>
-            <div class="col-md-3">
-                <button id="btnGenerarReporte" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Generar Reporte</button>
             </div>
         </div>
         <div class="row g-3 align-items-end mt-2">
@@ -74,6 +71,9 @@
                     <option value="pendiente">Pendiente</option>
                     <option value="pagado">Pagado</option>
                 </select>
+            </div>
+            <div class="col-md-3">
+                <button id="btnGenerarReporte" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Generar Reporte</button>
             </div>
             <div class="col-md-3">
                 <div class="d-flex gap-2">
@@ -125,7 +125,7 @@
                         <th>Fecha</th>
                         <th>Cliente</th>
                         <th>Total</th>
-                        <th>Metodo</th>
+                        <th>Método</th>
                         <th>Detalle</th>
                     </tr>
                 </thead>

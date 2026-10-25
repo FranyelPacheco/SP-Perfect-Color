@@ -528,7 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         if (!emailRegex.test(correoVal)) {
-            mostrarError('El correo electronico no tiene un formato valido');
+            mostrarError('El correo electrónico no tiene un formato válido');
             correoProveedor.focus();
             return;
         }
@@ -616,12 +616,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error al guardar proveedor:', error);
-            mostrarError('Error de conexion al guardar el proveedor');
+            mostrarError('Error de conexión al guardar el proveedor');
         }
     }
 
     async function eliminarProveedor(id, nombre) {
-        confirmarConModal('Eliminar', 'Esta seguro de eliminar al proveedor ' + nombre + '?', function() {
+        confirmarConModal('Eliminar', '¿Está seguro de eliminar al proveedor ' + nombre + '?', function() {
             const formData = new FormData();
             formData.append('id', id);
 
@@ -640,7 +640,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(function(error) {
                 console.error('Error al eliminar proveedor:', error);
-                mostrarNotificacion('Error de conexion al eliminar el proveedor', 'error');
+                mostrarNotificacion('Error de conexión al eliminar el proveedor', 'error');
             });
         });
     }

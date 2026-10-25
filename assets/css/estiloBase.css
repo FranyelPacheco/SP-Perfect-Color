@@ -837,14 +837,22 @@ textarea.form-control {
    ============================================================ */
 .presupuesto-grid {
   display: grid;
-  grid-template-columns: 4fr 5fr;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 5fr);
   gap: 1.25rem;
   align-items: start;
 }
-@media (max-width: 991px) {
+/* Con el sidebar abierto, por debajo de 1200px no caben dos columnas cómodas */
+@media (max-width: 1199px) {
   .presupuesto-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* Filtros rápidos en una sola fila deslizable, sin que los botones se aplasten */
+#filtrosTipoInsumo .btn,
+#filtrosFraccionBase .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .catalogo-scroll-container {
@@ -1493,15 +1501,14 @@ textarea.form-control {
   margin-bottom: 0.75rem;
 }
 
-/* Ancho mínimo protegido para evitar aplastamiento o deformación en móviles (solo tablas de datos completas) */
+/* Las tablas de datos usan DataTables Responsive: las columnas que no caben se pliegan en una fila hija */
 .table.dataTable {
   width: 100% !important;
-  min-width: 680px;
   border-collapse: separate !important;
   border-spacing: 0 !important;
 }
 
-/* Tablas del dashboard y tablas secundarias: se muestran completas al 100% sin scroll horizontal innecesario */
+/* Tablas del dashboard y tablas secundarias */
 .card-body > .table-responsive > .table:not(.dataTable),
 .table-dashboard {
   width: 100% !important;
@@ -1517,27 +1524,29 @@ textarea.form-control {
   padding: 0.6rem 0.75rem !important;
 }
 
-/* Tablas con 7 u 8 columnas complejas */
-#tablaInsumos,
-#tablaProveedores,
-#tablaPresupuestos,
-#tablaNotas,
-#tablaCuentas,
-#tablaCuentasPagar,
-#tablaRoles {
-  min-width: 820px !important;
-}
-
-#tablaBancos,
-#tablaTiposPago {
-  min-width: 480px !important;
-}
-
 .table.dataTable th,
 .table.dataTable td {
-  white-space: nowrap !important;
   vertical-align: middle !important;
   padding: 0.65rem 0.85rem !important;
+}
+
+/* Sin saltos de línea: lo que no cabe lo pliega Responsive en la fila hija */
+.table.dataTable th,
+.table.dataTable td {
+  white-space: nowrap;
+}
+
+/* Espacio para el icono de orden y que no se monte sobre el texto */
+.table.dataTable thead th.sorting,
+.table.dataTable thead th.sorting_asc,
+.table.dataTable thead th.sorting_desc {
+  padding-right: 1.75rem !important;
+}
+
+/* Paginación compacta */
+.dataTables_wrapper .pagination .page-link {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.85rem;
 }
 
 .table.dataTable td:last-child,
@@ -1546,6 +1555,15 @@ textarea.form-control {
   text-align: center;
   width: 1%;
 }
+
+/* Botón de expandir fila (Responsive) con el color de la marca */
+table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before {
+  background-color: var(--brand-bright, #1d4ed8) !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+table.dataTable > tbody > tr.child ul.dtr-details { width: 100%; }
+table.dataTable > tbody > tr.child ul.dtr-details > li { display: flex; gap: 0.5rem; justify-content: space-between; flex-wrap: wrap; }
 
 /* ============================================================
    TOOLBAR (list views)
@@ -1945,3 +1963,22 @@ table.dataTable button *,
 
 /* Barra de acciones fija al pie en formularios largos */
 .barra-accion-fija { position: sticky; bottom: 0; z-index: 10; padding: 0.75rem 0; background: var(--bs-body-bg, #fff); border-top: 1px solid rgba(0,0,0,0.08); }
+
+/* Responsive: dejar sitio al botón de expandir para que no tape el texto de la primera columna */
+table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control {
+  padding-left: 2.1rem !important;
+}
+table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before {
+  left: 0.55rem !important;
+}
+
+/* Filtro de estados de presupuestos: una fila deslizable en móvil, sin cortar palabras */
+#grupoFiltroPresupuestos {
+  max-width: 100%;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+#grupoFiltroPresupuestos .btn {
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
