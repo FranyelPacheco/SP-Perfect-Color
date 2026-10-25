@@ -253,44 +253,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Restringir caracteres especiales y números en nombres y apellidos (estrictamente solo letras y espacios)
-    function restringirSoloLetras(input) {
-        if (!input) return;
-
-        input.addEventListener('keydown', function(e) {
-            if (['Backspace', 'Tab', 'Enter', 'Escape', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key) || e.ctrlKey || e.metaKey || e.altKey) {
-                return;
-            }
-            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]$/.test(e.key)) {
-                e.preventDefault();
-            }
-        });
-
-        input.addEventListener('beforeinput', function(e) {
-            if (e.data && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/.test(e.data)) {
-                e.preventDefault();
-            }
-        });
-
-        input.addEventListener('input', function() {
-            var cursorPos = this.selectionStart;
-            var limpio = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
-            if (this.value !== limpio) {
-                this.value = limpio;
-                if (cursorPos !== null) {
-                    this.setSelectionRange(cursorPos - 1, cursorPos - 1);
-                }
-            }
-        });
-
-        input.addEventListener('paste', function(e) {
-            var textoPegado = (e.clipboardData || window.clipboardData).getData('text');
-            if (textoPegado && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(textoPegado)) {
-                e.preventDefault();
-                var limpio = textoPegado.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
-                document.execCommand('insertText', false, limpio);
-            }
-        });
-    }
     restringirSoloLetras(nombresCliente);
     restringirSoloLetras(apellidosCliente);
 
@@ -369,20 +331,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Delegacion de eventos robusta para botones de accion
-    $(document).on('click', '.btn-editar-cliente', function(e) {
-        e.preventDefault();
-        var tip = bootstrap.Tooltip.getInstance(this);
-        if (tip) tip.hide();
+    alHacerClick('.btn-editar-cliente', function(e) {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         if (!isNaN(id)) {
             abrirModalEditar(id);
         }
     });
 
-    $(document).on('click', '.btn-eliminar-cliente', function(e) {
-        e.preventDefault();
-        var tip = bootstrap.Tooltip.getInstance(this);
-        if (tip) tip.hide();
+    alHacerClick('.btn-eliminar-cliente', function(e) {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         var nombre = $(this).attr('data-nombre') || 'este cliente';
         if (!isNaN(id)) {

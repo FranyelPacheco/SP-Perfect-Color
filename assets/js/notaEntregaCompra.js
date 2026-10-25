@@ -39,20 +39,14 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(function(r) { return r.json(); })
         .then(function(res) {
             if (res.estado === 'exito') {
-                if (typeof mostrarNotificacion === 'function') {
-                    mostrarNotificacion(res.mensaje, 'exito');
-                }
+                mostrarNotificacion(res.mensaje, 'exito');
                 cargarNotasCompra();
             } else {
-                if (typeof mostrarNotificacion === 'function') {
-                    mostrarNotificacion(res.mensaje || 'Error al anular', 'error');
-                }
+                mostrarNotificacion(res.mensaje || 'Error al anular', 'error');
             }
         })
         .catch(function() {
-            if (typeof mostrarNotificacion === 'function') {
-                mostrarNotificacion('Error de conexión', 'error');
-            }
+            mostrarNotificacion('Error de conexión', 'error');
         });
     }
 
@@ -512,9 +506,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (modalInstance) modalInstance.hide();
                         formRapidoInsumo.reset();
 
-                        if (typeof mostrarNotificacion === 'function') {
-                            mostrarNotificacion('Insumo registrado e insertado en la orden', 'exito');
-                        }
+                        mostrarNotificacion('Insumo registrado e insertado en la orden', 'exito');
                     } else {
                         if (alertaRapida) {
                             alertaRapida.textContent = res.mensaje || 'Error al crear insumo.';
@@ -631,9 +623,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(function(r) { return r.json(); })
             .then(function(res) {
                 if (res.estado === 'exito') {
-                    if (typeof mostrarNotificacion === 'function') {
-                        mostrarNotificacion(res.mensaje, 'exito');
-                    }
+                    mostrarNotificacion(res.mensaje, 'exito');
                     setTimeout(function() {
                         window.location.href = '/SP%20Perfect%20Color/notaEntregaCompra/ver?id=' + res.datos.id_nota_entrega;
                     }, 800);

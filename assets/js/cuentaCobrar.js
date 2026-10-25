@@ -7,10 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     cargarCuentas();
 
-    $(document).on('click', '.btn-eliminar-cxc', function(e) {
-        e.preventDefault();
-        var tip = bootstrap.Tooltip.getInstance(this);
-        if (tip) tip.hide();
+    alHacerClick('.btn-eliminar-cxc', function(e) {
         var id = $(this).attr('data-id') || $(this).data('id');
         confirmarConModal('Eliminar', 'Esta seguro de eliminar esta cuenta por cobrar?', function() {
             var fd = new FormData();

@@ -63,6 +63,55 @@ function mostrarNotificacion(mensaje, tipo) {
     }, tipo === 'error' ? 5000 : 3000);
 }
 
+// Delegación de clic para botones de tabla: evita el submit/enlace por defecto y cierra el tooltip antes de ejecutar
+function alHacerClick(selector, fn) {
+    $(document).on('click', selector, function(e) {
+        e.preventDefault();
+        bootstrap.Tooltip.getInstance(this)?.hide();
+        fn.call(this, e);
+    });
+}
+
+// Restringe un input a letras y espacios (teclado, pegado y autocompletado)
+function restringirSoloLetras(input) {
+    if (!input) return;
+
+    input.addEventListener('keydown', function(e) {
+        if (['Backspace', 'Tab', 'Enter', 'Escape', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key) || e.ctrlKey || e.metaKey || e.altKey) {
+            return;
+        }
+        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]$/.test(e.key)) {
+            e.preventDefault();
+        }
+    });
+
+    input.addEventListener('beforeinput', function(e) {
+        if (e.data && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/.test(e.data)) {
+            e.preventDefault();
+        }
+    });
+
+    input.addEventListener('input', function() {
+        var cursorPos = this.selectionStart;
+        var limpio = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+        if (this.value !== limpio) {
+            this.value = limpio;
+            if (cursorPos !== null) {
+                this.setSelectionRange(cursorPos - 1, cursorPos - 1);
+            }
+        }
+    });
+
+    input.addEventListener('paste', function(e) {
+        var textoPegado = (e.clipboardData || window.clipboardData).getData('text');
+        if (textoPegado && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(textoPegado)) {
+            e.preventDefault();
+            var limpio = textoPegado.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+            document.execCommand('insertText', false, limpio);
+        }
+    });
+}
+
 // Validación en vivo de campos únicos contra validacion/unico.
 // Marca is-invalid/is-valid, muestra el mensaje en feedback y deshabilita el botón si el formulario tiene errores.
 function validarUnico({ input, feedback, entidad, campo, getValor, getId, minLen = 1, formato, msgFormato, boton }) {
@@ -124,30 +173,6 @@ function formatearMoneda(cantidad) {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     }).format(cantidad);
-}
-
-// Envia una peticion AJAX generica
-async function enviarPeticion(url, metodo, datos) {
-    try {
-        const opciones = {
-            method: metodo,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        };
-
-        if (datos && metodo !== 'GET') {
-            opciones.body = JSON.stringify(datos);
-        }
-
-        const respuesta = await fetch(url, opciones);
-        return await respuesta.json();
-    } catch (error) {
-        return {
-            estado: 'error',
-            mensaje: 'Error de conexion con el servidor'
-        };
-    }
 }
 
 // Animacion de contador para los valores del dashboard

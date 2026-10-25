@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         var inputNombreUsuario = document.getElementById('nombreUsuario');
         if (inputNombreUsuario) {
-            aplicarRestriccionSoloLetras(inputNombreUsuario);
+            restringirSoloLetras(inputNombreUsuario);
         }
 
         var inputCorreoUsuario = document.getElementById('correoUsuario');
@@ -300,45 +300,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 300);
     }
 
-    function aplicarRestriccionSoloLetras(input) {
-        if (!input) return;
-
-        input.addEventListener('keydown', function(e) {
-            if (['Backspace', 'Tab', 'Enter', 'Escape', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key) || e.ctrlKey || e.metaKey || e.altKey) {
-                return;
-            }
-            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]$/.test(e.key)) {
-                e.preventDefault();
-            }
-        });
-
-        input.addEventListener('beforeinput', function(e) {
-            if (e.data && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/.test(e.data)) {
-                e.preventDefault();
-            }
-        });
-
-        input.addEventListener('input', function() {
-            var cursorPos = this.selectionStart;
-            var limpio = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
-            if (this.value !== limpio) {
-                this.value = limpio;
-                if (cursorPos !== null) {
-                    this.setSelectionRange(cursorPos - 1, cursorPos - 1);
-                }
-            }
-        });
-
-        input.addEventListener('paste', function(e) {
-            var textoPegado = (e.clipboardData || window.clipboardData).getData('text');
-            if (textoPegado && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(textoPegado)) {
-                e.preventDefault();
-                var limpio = textoPegado.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
-                document.execCommand('insertText', false, limpio);
-            }
-        });
-    }
-
     function abrirModalCrearUsuario() {
         document.getElementById('formularioUsuario').reset();
         document.getElementById('usuarioId').value = '';
@@ -410,7 +371,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         } catch (error) {
             console.error('Error al obtener usuario:', error);
-            if (typeof mostrarNotificacion === 'function') mostrarNotificacion('Error al cargar datos del usuario', 'error');
+            mostrarNotificacion('Error al cargar datos del usuario', 'error');
         }
     }
 
@@ -516,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 })
                 .catch(function () {
-                    if (typeof mostrarNotificacion === 'function') mostrarNotificacion('Error de conexión al eliminar usuario', 'error');
+                    mostrarNotificacion('Error de conexión al eliminar usuario', 'error');
                 });
         });
     }
@@ -717,7 +678,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         } catch (error) {
             console.error('Error al obtener rol:', error);
-            if (typeof mostrarNotificacion === 'function') mostrarNotificacion('Error al cargar datos del rol', 'error');
+            mostrarNotificacion('Error al cargar datos del rol', 'error');
         }
     }
 
@@ -796,7 +757,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 })
                 .catch(function () {
-                    if (typeof mostrarNotificacion === 'function') mostrarNotificacion('Error de conexión al cambiar estado del rol', 'error');
+                    mostrarNotificacion('Error de conexión al cambiar estado del rol', 'error');
                 });
         }, claseBtn);
     }
@@ -837,7 +798,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 })
                 .catch(function () {
-                    if (typeof mostrarNotificacion === 'function') mostrarNotificacion('Error de conexión al eliminar el rol', 'error');
+                    mostrarNotificacion('Error de conexión al eliminar el rol', 'error');
                 });
         }, 'btn-danger');
     }

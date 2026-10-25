@@ -29,6 +29,74 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    var inputPerfilNombre = document.getElementById('perfilNombre');
+    if (inputPerfilNombre) {
+        restringirSoloLetras(inputPerfilNombre);
+    }
+
+    var inputPerfilCorreo = document.getElementById('perfilCorreo');
+    var temporizadorPerfilCorreo;
+    if (inputPerfilCorreo) {
+        function verificarPerfilCorreoEnTiempoReal() {
+            clearTimeout(temporizadorPerfilCorreo);
+            var fb = document.getElementById('feedbackPerfilCorreo');
+            var btn = document.getElementById('btnGuardarDatos');
+            var correo = inputPerfilCorreo.value.trim();
+            if (!correo) {
+                inputPerfilCorreo.classList.remove('is-invalid', 'is-valid');
+                inputPerfilCorreo.removeAttribute('title');
+                if (fb) fb.classList.add('d-none');
+                if (btn) btn.disabled = false;
+                return;
+            }
+            var regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!regex.test(correo)) {
+                inputPerfilCorreo.classList.add('is-invalid');
+                inputPerfilCorreo.classList.remove('is-valid');
+                inputPerfilCorreo.setAttribute('title', 'Formato de correo inválido');
+                if (fb) {
+                    fb.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Formato de correo inválido (ej: usuario@correo.com)';
+                    fb.classList.remove('d-none');
+                }
+                if (btn) btn.disabled = true;
+                return;
+            }
+            var idEl = document.getElementById('perfilUsuarioId');
+            var id = idEl ? idEl.value : '';
+
+            temporizadorPerfilCorreo = setTimeout(async function() {
+                try {
+                    var resp = await fetch('/SP%20Perfect%20Color/usuario/verificarCorreoAjax?correo=' + encodeURIComponent(correo) + '&id=' + encodeURIComponent(id));
+                    var res = await resp.json();
+                    if (res.estado === 'exito') {
+                        if (res.datos.existe) {
+                            inputPerfilCorreo.classList.add('is-invalid');
+                            inputPerfilCorreo.classList.remove('is-valid');
+                            inputPerfilCorreo.setAttribute('title', 'Correo ya registrado');
+                            if (fb) {
+                                fb.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Correo ya registrado';
+                                fb.setAttribute('title', 'Correo ya registrado');
+                                fb.classList.remove('d-none');
+                            }
+                            if (btn) btn.disabled = true;
+                        } else {
+                            inputPerfilCorreo.classList.remove('is-invalid');
+                            inputPerfilCorreo.classList.add('is-valid');
+                            inputPerfilCorreo.removeAttribute('title');
+                            if (fb) fb.classList.add('d-none');
+                            if (btn) btn.disabled = false;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error al verificar correo:', e);
+                }
+            }, 300);
+        }
+
+        inputPerfilCorreo.addEventListener('input', verificarPerfilCorreoEnTiempoReal);
+        inputPerfilCorreo.addEventListener('blur', verificarPerfilCorreoEnTiempoReal);
+    }
+
     // Envío del Formulario de Datos Personales
     if (formDatos) {
         formDatos.addEventListener('submit', async function (e) {
@@ -45,6 +113,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (!nombre || !correo) {
                 mostrarAlerta(alerta, 'danger', 'Todos los campos son obligatorios.');
+                return;
+            }
+
+            if (nombre.length > 50) {
+                mostrarAlerta(alerta, 'danger', 'El nombre no puede exceder los 50 caracteres.');
+                return;
+            }
+
+            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(nombre)) {
+                mostrarAlerta(alerta, 'danger', 'El nombre solo puede contener letras y espacios (sin números ni símbolos).');
+                return;
+            }
+
+            var regexCorreo = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!regexCorreo.test(correo)) {
+                mostrarAlerta(alerta, 'danger', 'El correo electrónico no tiene un formato válido.');
+                return;
+            }
+
+            if (inputPerfilCorreo && inputPerfilCorreo.classList.contains('is-invalid')) {
+                mostrarAlerta(alerta, 'danger', 'El correo electrónico es inválido o ya se encuentra registrado por otro usuario.');
                 return;
             }
 
@@ -65,9 +154,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.querySelectorAll('.user-name').forEach(function (el) {
                         el.innerHTML = '<i class="bi bi-person-circle me-1"></i>' + escapeHtml(nombre);
                     });
-                    if (typeof mostrarNotificacion === 'function') {
-                        mostrarNotificacion(json.mensaje, 'exito');
-                    }
+                    mostrarNotificacion(json.mensaje, 'exito');
                 } else {
                     mostrarAlerta(alerta, 'danger', json.mensaje || 'Error al actualizar los datos');
                 }
@@ -133,9 +220,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (json.estado === 'exito') {
                     mostrarAlerta(alerta, 'success', json.mensaje);
                     formClave.reset();
-                    if (typeof mostrarNotificacion === 'function') {
-                        mostrarNotificacion(json.mensaje, 'exito');
-                    }
+                    mostrarNotificacion(json.mensaje, 'exito');
                 } else {
                     mostrarAlerta(alerta, 'danger', json.mensaje || 'Error al actualizar la contraseña');
                 }

@@ -27,18 +27,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    $(document).on('click', '.btn-editar-tipo-pago', function(e) {
-        e.preventDefault();
-        var tip = bootstrap.Tooltip.getInstance(this);
-        if (tip) tip.hide();
+    alHacerClick('.btn-editar-tipo-pago', function(e) {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         if (!isNaN(id)) abrirModalEditar(id);
     });
 
-    $(document).on('click', '.btn-toggle-tipo-pago', function(e) {
-        e.preventDefault();
-        var tip = bootstrap.Tooltip.getInstance(this);
-        if (tip) tip.hide();
+    alHacerClick('.btn-toggle-tipo-pago', function(e) {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         var activo = parseInt($(this).attr('data-activo') || $(this).data('activo'));
         var titulo = activo ? 'Deshabilitar' : 'Habilitar';
