@@ -5,7 +5,9 @@ namespace App\Controllers;
 use App\Models\TipoPagoModel;
 use function App\Helpers\{
     respuestaJson,
-    verificarRolAdmin
+    verificarRolAdmin,
+    soloPost,
+    responder
 };
 
 $tipoPagoModel = new TipoPagoModel();
@@ -33,12 +35,10 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'guardar') {
     verificarRolAdmin();
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $resultado = $tipoPagoModel->registrar($_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: obtener
 // OBJETIVO: Devuelve los datos de un tipo de pago por ID en formato JSON
@@ -60,39 +60,33 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'actualizar') {
     verificarRolAdmin();
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $id = intval($_POST['id'] ?? 0);
     $resultado = $tipoPagoModel->modificar($id, $_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: eliminar
 // OBJETIVO: Elimina (soft-delete) un tipo de pago por ID delegando al modelo
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $id = intval($_POST['id'] ?? 0);
     $resultado = $tipoPagoModel->darDeBaja($id);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: toggleActivo
 // OBJETIVO: Alterna el estado activo/inactivo de un tipo de pago
 } elseif ($metodo === 'toggleActivo') {
     verificarRolAdmin();
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $id = intval($_POST['id'] ?? 0);
     $resultado = $tipoPagoModel->cambiarEstado($id);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: 404
 // OBJETIVO: Muestra página de error 404 para método desconocido

@@ -19,13 +19,6 @@ class ClienteModel extends ModeloBase
     private ?string $telefono;
     private ?string $tipo;
 
-    // FUNCIÓN: Constructor
-    // OBJETIVO: Inicializa la conexión a la BD
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     // FUNCIÓN: contarTodos
     // OBJETIVO: Devuelve la cantidad de clientes activos
     public function contarTodos(): int
@@ -128,6 +121,9 @@ class ClienteModel extends ModeloBase
         }
         if (filter_var($correo, FILTER_VALIDATE_EMAIL) === false) {
             return ['valido' => false, 'mensaje' => 'El correo electronico no es valido'];
+        }
+        if ($this->correoExiste($correo, $idActual)) {
+            return ['valido' => false, 'mensaje' => ($idActual ? 'Ya existe otro cliente con ese correo electrónico' : 'Ya existe un cliente con ese correo electrónico')];
         }
 
         if ($telefono === '') {
@@ -537,5 +533,34 @@ class ClienteModel extends ModeloBase
         $stmt->bindParam(':termino3', $terminoLike, PDO::PARAM_STR);
         $stmt->execute();
         return $stmt->fetchAll();
+    }
+
+    // FUNCIÓN: correoExiste
+    // OBJETIVO: Verifica si un correo electrónico ya está registrado en otro cliente activo
+    public function correoExiste(string $correo, ?int $idExcluir = null): bool
+    {
+        $correo = trim($correo);
+        if ($correo === '') return false;
+        $this->correo = $correo;
+        $this->idExcluir = $idExcluir;
+        return $this->_ejecutarCheckCorreo();
+    }
+
+    // FUNCIÓN: _ejecutarCheckCorreo
+    // OBJETIVO: Ejecuta COUNT para verificar unicidad del correo electrónico en clientes activos
+    private function _ejecutarCheckCorreo(): bool
+    {
+        $consulta = "SELECT COUNT(*) as total FROM clientes WHERE correo = :correo AND estado = 1";
+        if ($this->idExcluir !== null) {
+            $consulta .= " AND id_cliente != :id";
+        }
+        $stmt = $this->conexion->prepare($consulta);
+        $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
+        if ($this->idExcluir !== null) {
+            $stmt->bindParam(':id', $this->idExcluir, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        $resultado = $stmt->fetch();
+        return (int)$resultado['total'] > 0;
     }
 }

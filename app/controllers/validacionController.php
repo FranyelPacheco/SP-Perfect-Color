@@ -4,7 +4,12 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\{ClienteModel, ProveedorModel, InventarioModel, UsuarioModel, RolModel, BancoModel, TipoPagoModel, TasaCambioModel};
-use function App\Helpers\{respuestaJson, verificarAutenticacion, verificarPermiso, verificarRolAdmin, tienePermiso};
+use function App\Helpers\{
+    respuestaJson,
+    verificarAutenticacion,
+    verificarPermiso,
+    verificarRolAdmin
+};
 
 // OBJETIVO: Validación en vivo de campos únicos (cédula, RIF, correo, código, nombres, fecha de tasa)
 // NOTA: la lista blanca evita que la petición elija tablas o columnas arbitrarias

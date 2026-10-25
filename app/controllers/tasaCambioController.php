@@ -7,7 +7,8 @@ use App\Models\TasaCambioModel;
 use function App\Helpers\{
     respuestaJson,
     verificarAutenticacion,
-    verificarRolAdmin
+    verificarRolAdmin,
+    responder
 };
 
 $tasaCambioModel = new TasaCambioModel();
@@ -43,7 +44,7 @@ if ($metodo === 'index') {
     }
 
     $resultado = $tasaCambioModel->registrar($_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: obtener
 // OBJETIVO: Obtiene una tasa por ID para cargarla en el modal de edición
@@ -73,7 +74,7 @@ if ($metodo === 'index') {
 
     $id = intval($_POST['id_tasa_cambio'] ?? 0);
     $resultado = $tasaCambioModel->modificar($id, $_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: obtenerHoy
 // OBJETIVO: Endpoint público/interno para consultar la tasa vigente de hoy

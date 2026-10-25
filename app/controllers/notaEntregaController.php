@@ -14,7 +14,8 @@ use App\Models\{
 use function App\Helpers\{
     respuestaJson,
     verificarPermiso,
-    verificarRolVendedor
+    verificarRolVendedor,
+    soloPost
 };
 
 $notaEntregaModel = new NotaEntregaModel();
@@ -91,9 +92,7 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'guardar') {
     verificarRolVendedor();
     
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
     
     $resultado = $notaEntregaModel->procesarNotaEntrega($_POST, (int)$_SESSION['id_usuario']);
     respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje'], $resultado['datos'] ?? null);

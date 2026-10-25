@@ -7,13 +7,10 @@ namespace App\Controllers;
 use App\Models\ProveedorModel;
 use function App\Helpers\{
     respuestaJson,
-    verificarAutenticacion,
     verificarAcceso,
     verificarRolAdmin,
-    validarRequerido,
-    validarRIF,
-    validarTelefono,
-    validarCorreo
+    soloPost,
+    responder
 };
 
 $proveedorModel = new ProveedorModel();
@@ -69,17 +66,24 @@ if ($metodo === 'index') {
     $existe = !empty($telefono) && $proveedorModel->telefonoExiste($telefono, $id);
     respuestaJson('exito', 'Verificacion realizada', ['existe' => $existe]);
 
+// FUNCIÓN: verificarCorreoAjax
+// OBJETIVO: Verifica en tiempo real si un correo ya está registrado en proveedores
+} elseif ($metodo === 'verificarCorreoAjax') {
+    verificarAcceso([1]);
+    $correo = trim($_GET['correo'] ?? '');
+    $id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : null;
+    $existe = !empty($correo) && $proveedorModel->correoExiste($correo, $id);
+    respuestaJson('exito', 'Verificacion realizada', ['existe' => $existe]);
+
 // FUNCIÓN: guardar
 // OBJETIVO: Crea un nuevo proveedor o reactiva uno inactivo, delegando validaciones y transacción al modelo
 } elseif ($metodo === 'guardar') {
     verificarRolAdmin();
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $resultado = $proveedorModel->registrar($_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: obtener
 // OBJETIVO: Obtiene un proveedor por ID para edición
@@ -105,26 +109,22 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'actualizar') {
     verificarRolAdmin();
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $id = intval($_POST['id'] ?? 0);
     $resultado = $proveedorModel->modificar($id, $_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: eliminar
 // OBJETIVO: Eliminación lógica de un proveedor delegando al modelo
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $id = intval($_POST['id'] ?? 0);
     $resultado = $proveedorModel->eliminar($id);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 } else {
     require_once __DIR__ . '/../views/error404View.php';

@@ -22,13 +22,6 @@ class CuentaCobrarModel extends ModeloBase
     private int $dias;
     private string $termino;
 
-    // FUNCIÓN: Constructor
-    // OBJETIVO: Inicializa la conexión a la BD
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     // FUNCIÓN: listarTodas
     // OBJETIVO: Obtiene todas las cuentas por cobrar activas con datos del cliente y nota
     public function listarTodas(): array
@@ -202,20 +195,6 @@ class CuentaCobrarModel extends ModeloBase
     {
         $this->dias = $dias;
         return $this->_ejecutarPagosPorDia();
-    }
-
-    // FUNCIÓN: obtenerTotalPendiente
-    // OBJETIVO: Suma los saldos pendientes de todas las CxC activas no pagadas
-    public function obtenerTotalPendiente(): string
-    {
-        return $this->_ejecutarTotalPendiente();
-    }
-
-    // FUNCIÓN: obtenerCantidadVencidas
-    // OBJETIVO: Cuenta las CxC cuya fecha de vencimiento ya pasó y no han sido pagadas
-    public function obtenerCantidadVencidas(): int
-    {
-        return $this->_ejecutarCantidadVencidas();
     }
 
     // FUNCIÓN: eliminarCuenta
@@ -400,31 +379,6 @@ class CuentaCobrarModel extends ModeloBase
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         return $stmt->execute();
-    }
-
-    // FUNCIÓN: _ejecutarTotalPendiente
-    // OBJETIVO: Suma saldo_pendiente de cuentas activas cuyo estado no sea pagado
-    private function _ejecutarTotalPendiente(): string
-    {
-        $consulta = "SELECT COALESCE(SUM(saldo_pendiente), 0) as total
-                     FROM cuentas_cobrar
-                     WHERE estado = 1 AND situacion = 'pendiente'";
-        $stmt = $this->conexion->query($consulta);
-        return $stmt->fetchColumn();
-    }
-
-    // FUNCIÓN: _ejecutarCantidadVencidas
-    // OBJETIVO: Cuenta CxC activas, no pagadas, con fecha vencimiento anterior a hoy
-    private function _ejecutarCantidadVencidas(): int
-    {
-        $consulta = "SELECT COUNT(*) as total
-                     FROM cuentas_cobrar
-                     WHERE estado = 1
-                       AND situacion <> 'pagado'
-                       AND fecha_vencimiento IS NOT NULL
-                       AND fecha_vencimiento < CURDATE()";
-        $stmt = $this->conexion->query($consulta);
-        return (int)$stmt->fetchColumn();
     }
 
     // FUNCIÓN: _ejecutarSearch

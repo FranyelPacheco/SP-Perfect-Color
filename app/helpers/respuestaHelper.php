@@ -23,3 +23,19 @@ function respuestaJson($estado, $mensaje, $datos = null)
     echo json_encode($respuesta, JSON_UNESCAPED_UNICODE);
     exit;
 }
+
+// FUNCIÓN: soloPost
+// OBJETIVO: Cortar la petición con error JSON si no es POST
+function soloPost(): void
+{
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        respuestaJson('error', 'Metodo no permitido');
+    }
+}
+
+// FUNCIÓN: responder
+// OBJETIVO: Traducir un resultado ['exito' => bool, 'mensaje' => string] del modelo a respuesta JSON
+function responder(array $resultado, $datos = null): void
+{
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje'], $datos);
+}

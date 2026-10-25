@@ -13,9 +13,10 @@ use App\Models\{
 };
 use function App\Helpers\{
     respuestaJson,
-    verificarAutenticacion,
     verificarAcceso,
-    verificarRolAdmin
+    verificarRolAdmin,
+    soloPost,
+    responder
 };
 
 $cuentaPagarModel = new CuentaPagarModel();
@@ -88,12 +89,10 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'registrarPago') {
     verificarRolAdmin();
     
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
     
     $resultado = $cuentaPagarModel->procesarPago($_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: obtenerDatosPagoAjax
 // OBJETIVO: Obtiene tipos de pago y bancos para el modal de registro de pago
@@ -124,9 +123,7 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'guardarManual') {
     verificarRolAdmin();
     
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
     
     $resultado = $cuentaPagarModel->registrarCuentaManual($_POST);
     respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje'], $resultado['datos'] ?? null);
@@ -136,13 +133,11 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
     
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
     
     $id = intval($_POST['id'] ?? 0);
     $resultado = $cuentaPagarModel->darDeBaja($id);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 } else {
     require_once __DIR__ . '/../views/error404View.php';

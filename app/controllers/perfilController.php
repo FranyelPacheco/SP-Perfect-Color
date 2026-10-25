@@ -8,10 +8,7 @@ use App\Models\UsuarioModel;
 use function App\Helpers\{
     respuestaJson,
     verificarAutenticacion,
-    validarRequerido,
-    validarCorreo,
-    validarClave,
-    enviarNotificacionCambioClave
+    responder
 };
 
 $usuarioModel = new UsuarioModel();
@@ -65,7 +62,7 @@ if ($metodo === 'index') {
 
     $idUsuario = (int)($_SESSION['id_usuario'] ?? 0);
     $resultado = $usuarioModel->cambiarClavePerfil($idUsuario, $_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 } else {
     require_once __DIR__ . '/../views/error404View.php';

@@ -10,9 +10,8 @@ use function App\Helpers\{
     obtenerSesionManager,
     validarCorreo,
     validarRequerido,
-    validarClave,
     enviarRecuperacionClave,
-    enviarNotificacionCambioClave
+    soloPost
 };
 
 $usuarioModel = new UsuarioModel();
@@ -33,9 +32,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: iniciarSesion
 // OBJETIVO: Valida credenciales contra la BD e inicia sesión usando SessionTrait
 } elseif ($metodo === 'iniciarSesion') {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $correo = trim($_POST['correo'] ?? '');
     $clave = $_POST['clave'] ?? '';

@@ -26,13 +26,6 @@ class NotaEntregaModel extends ModeloBase
     private int $notaId;
     private int $topLimite;
 
-    // FUNCIÓN: Constructor
-    // OBJETIVO: Inicializa la conexión a la BD
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     // FUNCIÓN: listarTodos
     // OBJETIVO: Obtiene todas las notas de venta activas con datos relacionados
     public function listarTodos(): array

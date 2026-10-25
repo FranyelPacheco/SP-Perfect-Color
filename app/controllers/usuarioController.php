@@ -13,12 +13,9 @@ use function App\Helpers\{
     verificarAutenticacion,
     verificarRolAdmin,
     tienePermiso,
-    verificarPermiso,
-    validarRequerido,
-    validarCorreo,
-    validarClave,
     verificarPropietario,
-    enviarCredencialesUsuario
+    soloPost,
+    responder
 };
 
 $usuarioModel = new UsuarioModel();
@@ -84,16 +81,14 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'guardar') {
     verificarRolAdmin();
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     if (intval($_POST['id_rol'] ?? 0) === 1 && intval($_SESSION['usuario_rol'] ?? 0) !== 1) {
         respuestaJson('error', 'Solo un administrador puede asignar el rol Administrador');
     }
 
     $resultado = $usuarioModel->registrar($_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: obtener
 // OBJETIVO: Obtiene un usuario por ID (oculta password_hash) para edición
@@ -121,9 +116,7 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'actualizar') {
     verificarAutenticacion();
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     if (intval($_POST['id_rol'] ?? 0) === 1 && intval($_SESSION['usuario_rol'] ?? 0) !== 1) {
         respuestaJson('error', 'Solo un administrador puede asignar el rol Administrador');
@@ -152,13 +145,11 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $id = intval($_POST['id'] ?? 0);
     $resultado = $usuarioModel->darDeBaja($id, (int)$_SESSION['id_usuario']);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // ============================================================
 // ENDPOINTS PARA ROLES Y MÓDULOS
@@ -206,7 +197,7 @@ if ($metodo === 'index') {
     }
 
     $resultado = $rolModel->registrar($_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: actualizarRol
 // OBJETIVO: Actualiza el nombre, módulos y estado de un rol
@@ -273,7 +264,7 @@ if ($metodo === 'index') {
 
     $id = intval($_POST['id'] ?? 0);
     $resultado = $rolModel->darDeBaja($id);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 } else {
     require_once __DIR__ . '/../views/error404View.php';

@@ -5,7 +5,9 @@ namespace App\Controllers;
 use App\Models\BancoModel;
 use function App\Helpers\{
     respuestaJson,
-    verificarRolAdmin
+    verificarRolAdmin,
+    soloPost,
+    responder
 };
 
 $bancoModel = new BancoModel();
@@ -33,12 +35,10 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'guardar') {
     verificarRolAdmin();
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $resultado = $bancoModel->registrar($_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: obtener
 // OBJETIVO: Devuelve los datos de un banco por ID en formato JSON
@@ -60,39 +60,33 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'actualizar') {
     verificarRolAdmin();
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $id = intval($_POST['id'] ?? 0);
     $resultado = $bancoModel->modificar($id, $_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: eliminar
 // OBJETIVO: Elimina (soft-delete) un banco por ID delegando al modelo
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $id = intval($_POST['id'] ?? 0);
     $resultado = $bancoModel->darDeBaja($id);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: toggleActivo
 // OBJETIVO: Alterna el estado activo/inactivo de un banco
 } elseif ($metodo === 'toggleActivo') {
     verificarRolAdmin();
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $id = intval($_POST['id'] ?? 0);
     $resultado = $bancoModel->cambiarEstado($id);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: 404
 // OBJETIVO: Muestra página de error 404 para método desconocido

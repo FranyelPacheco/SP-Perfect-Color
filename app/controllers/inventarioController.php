@@ -7,12 +7,10 @@ namespace App\Controllers;
 use App\Models\InventarioModel;
 use function App\Helpers\{
     respuestaJson,
-    verificarAutenticacion,
     verificarAcceso,
     verificarRolAdmin,
-    validarRequerido,
-    validarDecimalPositivo,
-    validarFecha
+    soloPost,
+    responder
 };
 
 $inventarioModel = new InventarioModel();
@@ -75,9 +73,7 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'guardar') {
     verificarRolAdmin();
     
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
     
     $resultado = $inventarioModel->registrar($_POST);
     respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje'], $resultado['datos'] ?? null);
@@ -106,13 +102,11 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'actualizar') {
     verificarRolAdmin();
     
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
     
     $id = intval($_POST['id'] ?? 0);
     $resultado = $inventarioModel->modificar($id, $_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: listarRubrosAjax
 // OBJETIVO: Obtiene la lista de rubros activos para el select del formulario
@@ -146,13 +140,11 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'eliminar') {
     verificarRolAdmin();
     
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
     
     $id = intval($_POST['id'] ?? 0);
     $resultado = $inventarioModel->darDeBaja($id);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 // FUNCIÓN: listarBasesAjax
 // OBJETIVO: Obtiene tintes base para formulación de colores
@@ -165,9 +157,7 @@ if ($metodo === 'index') {
 // OBJETIVO: Registra un producto preparado y descuenta las bases consumidas
 } elseif ($metodo === 'guardarMezcla') {
     verificarRolAdmin();
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
     
     $resultado = $inventarioModel->registrarMezclaTaller($_POST);
     if ($resultado['exito']) {
@@ -180,12 +170,10 @@ if ($metodo === 'index') {
 // OBJETIVO: Descuenta inventario por merma o daño justificado
 } elseif ($metodo === 'ajustarMerma') {
     verificarRolAdmin();
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        respuestaJson('error', 'Metodo no permitido');
-    }
+    soloPost();
 
     $resultado = $inventarioModel->registrarAjusteMerma($_POST);
-    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje']);
+    responder($resultado);
 
 } else {
     require_once __DIR__ . '/../views/error404View.php';

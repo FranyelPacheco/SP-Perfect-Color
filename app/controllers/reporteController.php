@@ -9,7 +9,6 @@ use App\Models\{
 };
 use function App\Helpers\{
     respuestaJson,
-    verificarAutenticacion,
     verificarPermiso,
     generarPDF,
     generarExcel,

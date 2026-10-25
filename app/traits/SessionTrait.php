@@ -60,20 +60,6 @@ trait SessionTrait
         return isset($_SESSION['usuario_rol']) ? (int)$_SESSION['usuario_rol'] : null;
     }
 
-    // FUNCIÓN: obtenerNombreUsuario
-    // OBJETIVO: Obtener el nombre del usuario en sesión
-    public function obtenerNombreUsuario(): ?string
-    {
-        return $_SESSION['usuario_nombre'] ?? null;
-    }
-
-    // FUNCIÓN: obtenerCorreoUsuario
-    // OBJETIVO: Obtener el correo del usuario en sesión
-    public function obtenerCorreoUsuario(): ?string
-    {
-        return $_SESSION['usuario_correo'] ?? null;
-    }
-
     // FUNCIÓN: tienePermiso
     // OBJETIVO: Comprobar si el usuario en sesión tiene acceso a un módulo específico
     public function tienePermiso(string $modulo): bool

@@ -15,11 +15,6 @@ class TasaCambioModel extends ModeloBase
     private ?string $fecha = null;
     private ?int $estado = null;
 
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     // FUNCIÓN: listarTodas
     // OBJETIVO: Obtiene el histórico de tasas ordenado descendentemente por fecha
     public function listarTodas(): array
@@ -102,28 +97,6 @@ class TasaCambioModel extends ModeloBase
         }
         $ultima = $this->obtenerUltimaTasa();
         return ($ultima && isset($ultima['tasa'])) ? (float)$ultima['tasa'] : 0.0;
-    }
-
-    // FUNCIÓN: obtenerTasaPorFecha
-    // OBJETIVO: Retorna la tasa activa vigente en una fecha específica (o la más cercana anterior)
-    public function obtenerTasaPorFecha(string $fecha): float
-    {
-        $fechaLimpia = substr(trim($fecha), 0, 10);
-        if (empty($fechaLimpia)) {
-            return $this->obtenerTasaVigenteValor();
-        }
-        $sql = "SELECT tasa FROM tasa_cambio 
-                WHERE fecha <= :fecha AND estado = 1 
-                ORDER BY fecha DESC, id_tasa_cambio DESC 
-                LIMIT 1";
-        $stmt = $this->conexion->prepare($sql);
-        $stmt->bindParam(':fecha', $fechaLimpia, PDO::PARAM_STR);
-        $stmt->execute();
-        $val = $stmt->fetchColumn();
-        if ($val !== false && (float)$val > 0) {
-            return (float)$val;
-        }
-        return $this->obtenerTasaVigenteValor();
     }
 
     // FUNCIÓN: validarDatosTasa
