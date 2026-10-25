@@ -46,8 +46,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 dom: 'lrtip',
                 language: window.DATATABLES_SPANISH,
                 columns: [
-                    { data: 'cliente_nombre' },
-                    { data: 'cliente_cedula' },
+                    { data: 'cliente_nombre', render: $.fn.dataTable.render.text() },
+                    { data: 'cliente_cedula', render: $.fn.dataTable.render.text() },
                     {
                         data: null,
                         render: function(data, type, row) {

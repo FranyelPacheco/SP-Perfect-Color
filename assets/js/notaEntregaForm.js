@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     var selIni = document.getElementById('tipoPagoInicial');
                     var opts = '<option value="">Seleccione...</option>';
                     res.datos.tipos_pago.forEach(function(tp) {
-                        opts += '<option value="' + tp.id_tipo_pago + '">' + tp.nombre + '</option>';
+                        opts += '<option value="' + tp.id_tipo_pago + '">' + escapeHtml(tp.nombre) + '</option>';
                     });
                     if (sel) sel.innerHTML = opts;
                     if (selIni) selIni.innerHTML = opts;
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     var selIni = document.getElementById('bancoPagoInicial');
                     var opts = '<option value="">Seleccione un banco...</option>';
                     res.datos.bancos.forEach(function(b) {
-                        opts += '<option value="' + b.id_banco + '">' + b.nombre + '</option>';
+                        opts += '<option value="' + b.id_banco + '">' + escapeHtml(b.nombre) + '</option>';
                     });
                     if (sel) sel.innerHTML = opts;
                     if (selIni) selIni.innerHTML = opts;
@@ -133,8 +133,8 @@ document.addEventListener('DOMContentLoaded', function() {
             var fila = document.createElement('tr');
             
             fila.innerHTML = 
-                '<td><span class="badge bg-light text-secondary border font-monospace">' + item.insumo_codigo + '</span></td>' +
-                '<td class="fw-semibold">' + item.insumo_nombre + '</td>' +
+                '<td><span class="badge bg-light text-secondary border font-monospace">' + escapeHtml(item.insumo_codigo) + '</span></td>' +
+                '<td class="fw-semibold">' + escapeHtml(item.insumo_nombre) + '</td>' +
                 '<td class="text-secondary">' + Math.floor(item.stock_actual) + '</td>' +
                 '<td><span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 fs-6">' + Math.floor(item.cantidad) + '</span></td>' +
                 '<td>$ ' + formatearMoneda(item.precio_unitario) + '</td>' +

@@ -15,9 +15,7 @@ window.DATATABLES_SPANISH = {
 const BASE_URL = '/SP%20Perfect%20Color/';
 
 function escapeHtml(texto) {
-    const div = document.createElement('div');
-    div.textContent = texto ?? '';
-    return div.innerHTML;
+    return String(texto ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 function debounce(fn, ms = 300) {

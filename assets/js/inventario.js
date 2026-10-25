@@ -206,8 +206,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function mostrarInsumos(insumos) {
         if (!$.fn.DataTable.isDataTable('#tablaInsumos')) {
             var columnsDef = [
-                { data: 'codigo' },
-                { data: 'nombre' },
+                { data: 'codigo', render: $.fn.dataTable.render.text() },
+                { data: 'nombre', render: $.fn.dataTable.render.text() },
                 {
                     data: null,
                     render: function(data, type, row) {
@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 {
                     data: 'rubro_nombre',
-                    render: function(d) { return d || '-'; }
+                    render: function(d) { return escapeHtml(d) || '-'; }
                 },
                 {
                     data: null,
@@ -246,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 {
                     data: 'proveedores_nombre',
-                    render: function(d) { return d || '-'; }
+                    render: function(d) { return escapeHtml(d) || '-'; }
                 }
             ];
 
@@ -257,7 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     searchable: false,
                     render: function(data, type, row) {
                         if (!row) return '';
-                        var nom = (row.nombre || '').replace(/"/g, '&quot;');
+                        var nom = escapeHtml(row.nombre);
                         return '<div class="d-flex gap-2">' +
                             '<button class="btn btn-sm btn-warning btn-editar-insumo" data-id="' + row.id_insumo + '" title="Editar" aria-label="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
                             '<button class="btn btn-sm btn-danger btn-eliminar-insumo" data-id="' + row.id_insumo + '" data-nombre="' + nom + '" title="Eliminar" aria-label="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>' +
@@ -657,9 +657,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     item.className = 'buscador-dropdown-item';
                     item.href = '#';
                     item.innerHTML =
-                        '<span class="item-titulo">' + b.nombre + '</span>' +
+                        '<span class="item-titulo">' + escapeHtml(b.nombre) + '</span>' +
                         '<div class="item-meta">' +
-                            '<span class="badge-codigo">' + b.codigo + '</span>' +
+                            '<span class="badge-codigo">' + escapeHtml(b.codigo) + '</span>' +
                             '<span class="badge-stock ' + (stock <= min ? 'bajo' : '') + '">Stock: ' + stock + ' gal</span>' +
                         '</div>';
                     item.addEventListener('click', function(ev) {
@@ -929,9 +929,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 item.className = 'buscador-dropdown-item';
                 item.href = '#';
                 item.innerHTML =
-                    '<span class="item-titulo">' + p.nombre + '</span>' +
+                    '<span class="item-titulo">' + escapeHtml(p.nombre) + '</span>' +
                     '<div class="item-meta">' +
-                        '<span class="badge-codigo">' + p.codigo + '</span>' +
+                        '<span class="badge-codigo">' + escapeHtml(p.codigo) + '</span>' +
                         '<span class="badge-stock ' + (stock <= min ? 'bajo' : '') + '">Stock: ' + stock + ' ' + unidad + '</span>' +
                     '</div>';
                 item.addEventListener('click', function(ev) {

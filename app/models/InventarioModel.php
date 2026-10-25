@@ -647,7 +647,7 @@ class InventarioModel extends ModeloBase
             $consultaDescuento = "UPDATE productos SET stock_actual = stock_actual - :consumo_total WHERE id_producto = :id_base";
             $stmtDescuento = $this->conexion->prepare($consultaDescuento);
 
-            $stmtVerificarStock = $this->conexion->prepare("SELECT stock_actual, nombre FROM productos WHERE id_producto = :id_base LIMIT 1");
+            $stmtVerificarStock = $this->conexion->prepare("SELECT stock_actual, nombre FROM productos WHERE id_producto = :id_base LIMIT 1 FOR UPDATE");
 
             foreach ($bases as $b) {
                 $idBase = (int)($b['id_producto_base'] ?? $b['id_producto'] ?? 0);
@@ -732,7 +732,7 @@ class InventarioModel extends ModeloBase
         try {
             $this->conexion->beginTransaction();
 
-            $stmtProd = $this->conexion->prepare("SELECT stock_actual, nombre FROM productos WHERE id_producto = :id AND estado = 1 LIMIT 1");
+            $stmtProd = $this->conexion->prepare("SELECT stock_actual, nombre FROM productos WHERE id_producto = :id AND estado = 1 LIMIT 1 FOR UPDATE");
             $stmtProd->bindParam(':id', $idProducto, PDO::PARAM_INT);
             $stmtProd->execute();
             $prod = $stmtProd->fetch(PDO::FETCH_ASSOC);
@@ -755,6 +755,7 @@ class InventarioModel extends ModeloBase
             $stmtUpdate->bindParam(':id', $idProducto, PDO::PARAM_INT);
             $stmtUpdate->execute();
 
+            error_log(sprintf('[MERMA] usuario=%s producto=%d cantidad=%d motivo=%s', $_SESSION['id_usuario'] ?? 'n/d', $idProducto, $cantidad, $motivo));
             $this->conexion->commit();
             return [
                 'exito' => true,
