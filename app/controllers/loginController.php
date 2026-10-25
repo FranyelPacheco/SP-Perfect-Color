@@ -17,7 +17,9 @@ use function App\Helpers\{
 $usuarioModel = new UsuarioModel();
 $sesionManager = obtenerSesionManager();
 
-const TOKEN_SECRET = 'SP_PERFECT_COLOR_RECOVERY_KEY_2026';
+if (!defined('TOKEN_SECRET')) {
+    define('TOKEN_SECRET', env('TOKEN_SECRET', ''));
+}
 
 // FUNCIÓN: index
 // OBJETIVO: Muestra el formulario de inicio de sesión; redirige al dashboard si ya hay sesión activa

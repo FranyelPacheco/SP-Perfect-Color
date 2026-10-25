@@ -11,10 +11,10 @@ class ConexionBD
     private static $instancia = null;
     private $conexion;
 
-    private $host = 'localhost';
-    private $baseDatos = 'sp_perfect_color';
-    private $usuario = 'root';
-    private $clave = '';
+    private $host;
+    private $baseDatos;
+    private $usuario;
+    private $clave;
     private $charset = 'utf8mb4';
 
     // FUNCIÓN: __construct (privado)
@@ -22,6 +22,11 @@ class ConexionBD
     // NOTA: El constructor es privado para evitar instancias externas (Singleton)
     private function __construct()
     {
+        $this->host = env('DB_HOST', 'localhost');
+        $this->baseDatos = env('DB_NAME', 'sp_perfect_color');
+        $this->usuario = env('DB_USER', 'root');
+        $this->clave = env('DB_PASS', '');
+
         $dsn = "mysql:host={$this->host};dbname={$this->baseDatos};charset={$this->charset}";
 
         $opciones = [
