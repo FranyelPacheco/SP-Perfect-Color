@@ -52,8 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function cargarTiposPago() {
-        fetch('/SP%20Perfect%20Color/tipoPago/listarAjax')
-            .then(function(r) { return r.json(); })
+        api.get('tipoPago/listarAjax')
             .then(function(res) {
                 if (res.estado === 'exito') mostrarTiposPago(res.datos.tipos_pago);
             });
@@ -86,8 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function abrirModalEditar(id) {
-        fetch('/SP%20Perfect%20Color/tipoPago/obtener?id=' + id)
-            .then(function(r) { return r.json(); })
+        api.get('tipoPago/obtener?id=' + id)
             .then(function(res) {
                 if (res.estado === 'exito') {
                     tituloModal.textContent = 'Editar Tipo de Pago';

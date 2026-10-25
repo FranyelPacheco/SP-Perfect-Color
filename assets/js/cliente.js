@@ -347,13 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Enlazar busqueda manual a DataTables
-    if (busquedaClientes) {
-        busquedaClientes.addEventListener('keyup', function() {
-            if ($.fn.DataTable.isDataTable('#tablaClientes')) {
-                $('#tablaClientes').DataTable().search(this.value).draw();
-            }
-        });
-    }
+    vincularBusqueda(busquedaClientes, '#tablaClientes');
 
     // Abre el modal en modo edicion
     async function abrirModalEditar(id) {

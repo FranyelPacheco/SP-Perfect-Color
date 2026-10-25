@@ -61,6 +61,15 @@ function mostrarNotificacion(mensaje, tipo) {
     }, tipo === 'error' ? 5000 : 3000);
 }
 
+// Enlaza un input de búsqueda con el filtro global de una DataTable
+function vincularBusqueda(input, selectorTabla) {
+    input?.addEventListener('keyup', function () {
+        if ($.fn.DataTable.isDataTable(selectorTabla)) {
+            $(selectorTabla).DataTable().search(this.value).draw();
+        }
+    });
+}
+
 // Delegación de clic para botones de tabla: evita el submit/enlace por defecto y cierra el tooltip antes de ejecutar
 function alHacerClick(selector, fn) {
     $(document).on('click', selector, function(e) {

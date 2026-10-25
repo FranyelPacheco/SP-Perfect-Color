@@ -115,8 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Cargar clientes desde el servidor
     function cargarClientes() {
-        fetch('/SP%20Perfect%20Color/presupuesto/obtenerClientesAjax')
-            .then(function(respuesta) { return respuesta.json(); })
+        api.get('presupuesto/obtenerClientesAjax')
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
                     clientesDisponibles = resultado.datos.clientes || [];
@@ -138,8 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Cargar insumos desde el servidor
     function cargarInsumos() {
-        fetch('/SP%20Perfect%20Color/presupuesto/obtenerInsumosAjax')
-            .then(function(respuesta) { return respuesta.json(); })
+        api.get('presupuesto/obtenerInsumosAjax')
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
                     // Excluir cualquier producto con id_tipo_producto == 3 (Preparados no se venden directos)

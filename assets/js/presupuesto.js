@@ -8,8 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarPresupuestos();
 
     function cargarPresupuestos() {
-        fetch('/SP%20Perfect%20Color/presupuesto/listarAjax')
-            .then(function(respuesta) { return respuesta.json(); })
+        api.get('presupuesto/listarAjax')
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
                     mostrarPresupuestos(resultado.datos.presupuestos);
@@ -135,13 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    if (busquedaPresupuestos) {
-        busquedaPresupuestos.addEventListener('keyup', function() {
-            if ($.fn.DataTable.isDataTable('#tablaPresupuestos')) {
-                $('#tablaPresupuestos').DataTable().search(this.value).draw();
-            }
-        });
-    }
+    vincularBusqueda(busquedaPresupuestos, '#tablaPresupuestos');
 
     $(document).on('click', '.btn-filtro-presupuesto', function(e) {
         e.preventDefault();

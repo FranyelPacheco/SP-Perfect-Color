@@ -61,8 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function cargarBancos() {
-        fetch('/SP%20Perfect%20Color/banco/listarAjax')
-            .then(function(r) { return r.json(); })
+        api.get('banco/listarAjax')
             .then(function(res) {
                 if (res.estado === 'exito') mostrarBancos(res.datos.bancos);
             });
@@ -95,8 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function abrirModalEditar(id) {
-        fetch('/SP%20Perfect%20Color/banco/obtener?id=' + id)
-            .then(function(r) { return r.json(); })
+        api.get('banco/obtener?id=' + id)
             .then(function(res) {
                 if (res.estado === 'exito') {
                     tituloModal.textContent = 'Editar Banco';

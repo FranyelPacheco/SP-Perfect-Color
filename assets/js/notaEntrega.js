@@ -8,8 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarNotas();
 
     function cargarNotas() {
-        fetch('/SP%20Perfect%20Color/notaEntrega/listarAjax')
-            .then(function(respuesta) { return respuesta.json(); })
+        api.get('notaEntrega/listarAjax')
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
                     mostrarNotas(resultado.datos.notas);
@@ -117,11 +116,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    if (busquedaNotas) {
-        busquedaNotas.addEventListener('keyup', function() {
-            if ($.fn.DataTable.isDataTable('#tablaNotas')) {
-                $('#tablaNotas').DataTable().search(this.value).draw();
-            }
-        });
-    }
+    vincularBusqueda(busquedaNotas, '#tablaNotas');
 });
