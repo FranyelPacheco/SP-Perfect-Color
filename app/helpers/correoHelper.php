@@ -85,11 +85,6 @@ function crearInstanciaMailer(): PHPMailer
 // OBJETIVO: Envía un correo electrónico HTML mediante PHPMailer
 function enviarCorreo(string $destinatario, string $nombreDestinatario, string $asunto, string $cuerpoHtml, array $adjuntos = []): array
 {
-    // Si hay API key de Brevo se envía por HTTPS (puerto 443); útil cuando la red bloquea los puertos SMTP
-    if (env('BREVO_API_KEY', '') !== '') {
-        return enviarCorreoBrevo($destinatario, $nombreDestinatario, $asunto, $cuerpoHtml, $adjuntos);
-    }
-
     try {
         $mail = crearInstanciaMailer();
         $mail->addAddress($destinatario, $nombreDestinatario);
@@ -127,58 +122,6 @@ function enviarCorreo(string $destinatario, string $nombreDestinatario, string $
             'mensaje' => 'Error inesperado al enviar el correo.'
         ];
     }
-}
-
-// FUNCIÓN: enviarCorreoBrevo
-// OBJETIVO: Envía un correo HTML mediante la API transaccional de Brevo (HTTPS)
-function enviarCorreoBrevo(string $destinatario, string $nombreDestinatario, string $asunto, string $cuerpoHtml, array $adjuntos = []): array
-{
-    $config = obtenerConfiguracionCorreo();
-    $carga = [
-        'sender'      => ['name' => $config['smtp_from_name'], 'email' => $config['smtp_from_email']],
-        'to'          => [['email' => $destinatario, 'name' => $nombreDestinatario ?: $destinatario]],
-        'subject'     => $asunto,
-        'htmlContent' => $cuerpoHtml,
-    ];
-
-    foreach ($adjuntos as $adjunto) {
-        $ruta = is_array($adjunto) ? ($adjunto['ruta'] ?? '') : $adjunto;
-        if (is_string($ruta) && is_file($ruta)) {
-            $carga['attachment'][] = [
-                'name'    => is_array($adjunto) && !empty($adjunto['nombre']) ? $adjunto['nombre'] : basename($ruta),
-                'content' => base64_encode(file_get_contents($ruta)),
-            ];
-        }
-    }
-
-    $curl = curl_init('https://api.brevo.com/v3/smtp/email');
-    curl_setopt_array($curl, [
-        CURLOPT_POST           => true,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 10,
-        CURLOPT_HTTPHEADER     => [
-            'accept: application/json',
-            'content-type: application/json',
-            'api-key: ' . env('BREVO_API_KEY'),
-        ],
-        CURLOPT_POSTFIELDS     => json_encode($carga, JSON_UNESCAPED_UNICODE),
-    ]);
-    $ca = rutaCertificadosCA();
-    if ($ca !== null) {
-        curl_setopt($curl, CURLOPT_CAINFO, $ca);
-    }
-    $respuesta = curl_exec($curl);
-    $codigo = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
-    $errorCurl = curl_error($curl);
-    curl_close($curl);
-
-    if ($codigo >= 200 && $codigo < 300) {
-        return ['exito' => true, 'mensaje' => 'Correo enviado exitosamente.'];
-    }
-
-    $detalle = $errorCurl !== '' ? $errorCurl : ('HTTP ' . $codigo . ' ' . substr((string)$respuesta, 0, 300));
-    error_log('[ERROR BREVO] No se pudo enviar el correo a ' . $destinatario . ': ' . $detalle);
-    return ['exito' => false, 'mensaje' => 'Error al enviar el correo: ' . $detalle];
 }
 
 // FUNCIÓN: plantillaBaseCorreo
