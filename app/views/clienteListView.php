@@ -16,10 +16,10 @@
             <table id="tablaClientes" class="table table-hover table-striped mb-0">
                 <thead>
                     <tr>
-                        <th>Cedula</th>
+                        <th>Cédula</th>
                         <th>Nombres</th>
                         <th>Apellidos</th>
-                        <th>Telefono</th>
+                        <th>Teléfono</th>
                         <th>Correo</th>
                         <th>Acciones</th>
                     </tr>
@@ -111,6 +111,7 @@
                     <div class="mb-3">
                         <label for="correoCliente" class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
                         <input type="email" id="correoCliente" name="correo" class="form-control" required placeholder="correo@ejemplo.com" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Ingrese un correo electrónico válido">
+                        <div id="feedbackCorreoCliente" class="invalid-feedback"><i class="bi bi-exclamation-circle-fill me-1"></i>Correo ya registrado</div>
                     </div>
 
                     <div class="mb-3">

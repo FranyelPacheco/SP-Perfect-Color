@@ -24,7 +24,7 @@
             <table id="tablaInsumos" class="table table-hover table-striped mb-0">
                 <thead>
                     <tr>
-                        <th>Codigo</th>
+                        <th>Código</th>
                         <th>Nombre</th>
                         <th>Tipo</th>
                         <th>Rubro</th>
@@ -57,7 +57,7 @@
 
                     <div class="row g-3 mb-3">
                         <div class="col-md-4">
-                            <label for="codigoInsumo" class="form-label">Codigo <span class="text-danger">*</span></label>
+                            <label for="codigoInsumo" class="form-label">Código <span class="text-danger">*</span></label>
                             <input type="text" id="codigoInsumo" name="codigo" class="form-control" required placeholder="Codigo unico">
                             <div class="invalid-feedback d-none" id="feedbackCodigoInsumo">Ya existe un insumo con este codigo</div>
                         </div>

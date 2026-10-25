@@ -27,7 +27,7 @@
                 <span><?php echo htmlspecialchars($presupuesto['cliente_nombre'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
-                <small class="text-muted d-block">Cedula:</small>
+                <small class="text-muted d-block">Cédula:</small>
                 <span><?php echo htmlspecialchars($presupuesto['cliente_cedula'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
@@ -71,7 +71,7 @@ $totalBsPres = $totalUsdPres * $tasaDocPres;
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>Codigo</th>
+                        <th>Código</th>
                         <th>Insumo</th>
                         <th>Cantidad</th>
                         <th>Precio Unit.</th>

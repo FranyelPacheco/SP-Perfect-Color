@@ -5,7 +5,7 @@
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0">Nota de Entrega #<?php echo $presupuesto['id_presupuesto']; ?></h2>
-    <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-outline-secondary" title="Volver" data-bs-toggle="tooltip"><i class="bi bi-arrow-left"></i></a>
+    <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-outline-secondary" title="Volver" aria-label="Volver" data-bs-toggle="tooltip"><i class="bi bi-arrow-left"></i></a>
 </div>
 
 <form id="formularioNotaEntrega">
@@ -169,7 +169,7 @@ $totalNotaFormBs = $totalNotaFormUsd * $tasaHoyNotaForm;
 
     <div id="mensajeErrorNota" class="alert alert-danger d-none"></div>
 
-    <div class="d-flex justify-content-end gap-2">
+    <div class="d-flex justify-content-end gap-2 barra-accion-fija">
         <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i>Cancelar</a>
         <button type="submit" class="btn btn-success btn-lg" id="btnSubmitNota">
             <i class="bi bi-check-lg me-2"></i>Aprobar y Registrar Entrega

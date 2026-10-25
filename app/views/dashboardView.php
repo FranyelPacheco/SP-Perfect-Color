@@ -248,7 +248,7 @@
                 <h5 class="mb-0"><i class="bi bi-graph-up-arrow me-2 text-success"></i>Ingresos Diarios (Últimos 7 Días)</h5>
             </div>
             <div class="card-body">
-                <canvas id="graficoIngresos" height="100"></canvas>
+                <canvas id="graficoIngresos" height="100" role="img" aria-label="Gráfico de barras con los ingresos de los últimos 7 días"></canvas>
             </div>
         </div>
     </div>

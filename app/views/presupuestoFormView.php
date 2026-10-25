@@ -8,7 +8,7 @@
         <h4 class="mb-0 fw-bold text-dark"><i class="bi bi-file-earmark-plus me-2 text-primary"></i>Nuevo Presupuesto</h4>
         <small class="text-muted">Seleccione el cliente y agregue los insumos del catálogo interactivo</small>
     </div>
-    <a href="/SP%20Perfect%20Color/presupuesto" class="btn btn-outline-secondary" title="Volver" data-bs-toggle="tooltip">
+    <a href="/SP%20Perfect%20Color/presupuesto" class="btn btn-outline-secondary" title="Volver" aria-label="Volver" data-bs-toggle="tooltip">
         <i class="bi bi-arrow-left"></i>
     </a>
 </div>
@@ -145,7 +145,7 @@
             <div id="mensajeErrorPresupuesto" class="alert alert-danger d-none mb-0"></div>
 
             <div class="d-flex justify-content-end gap-2 mt-1">
-                <a href="/SP%20Perfect%20Color/presupuesto" class="btn btn-light border px-3" title="Volver" data-bs-toggle="tooltip">
+                <a href="/SP%20Perfect%20Color/presupuesto" class="btn btn-light border px-3" title="Volver" aria-label="Volver" data-bs-toggle="tooltip">
                     <i class="bi bi-arrow-left"></i>
                 </a>
                 <button type="submit" class="btn btn-primary btn-lg px-4 shadow-sm" id="btnGuardarPresupuesto">

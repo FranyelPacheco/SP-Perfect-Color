@@ -22,7 +22,7 @@
                 <span><?php echo htmlspecialchars($cuenta['proveedor_rif'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
-                <small class="text-muted d-block">Telefono:</small>
+                <small class="text-muted d-block">Teléfono:</small>
                 <span><?php echo htmlspecialchars($cuenta['proveedor_telefonos'] ?? '-'); ?></span>
             </div>
 <?php
