@@ -11,7 +11,8 @@ use function App\Helpers\{
     validarCorreo,
     validarRequerido,
     enviarRecuperacionClave,
-    soloPost
+    soloPost,
+    responderYContinuar
 };
 
 $usuarioModel = new UsuarioModel();
@@ -73,7 +74,10 @@ if ($metodo === 'index') {
 
     $usuario = $usuarioModel->buscarPorCorreo($correo);
 
-    // Si el usuario existe y está activo, generamos el enlace y enviamos el correo
+    $mensajeGenerico = 'Si el correo electrónico se encuentra registrado en el sistema, recibirá las instrucciones de recuperación en su bandeja de entrada.';
+    $enlace = null;
+
+    // Si el usuario existe y está activo, se prepara el enlace firmado
     if ($usuario && (int)$usuario['activo'] === 1) {
         $expira = time() + 3600; // Validez de 1 hora
         $firma = hash_hmac('sha256', $usuario['id_usuario'] . $usuario['password_hash'] . $expira, TOKEN_SECRET);
@@ -86,16 +90,18 @@ if ($metodo === 'index') {
         $protocolo = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         $enlace = "{$protocolo}{$host}/SP%20Perfect%20Color/login/restablecer?token=" . urlencode($payload);
+    }
 
+    // Se responde de inmediato (mismo mensaje exista o no el correo, sin diferencia de tiempos) y el envío SMTP sigue en segundo plano
+    responderYContinuar('exito', $mensajeGenerico);
+
+    if ($enlace !== null) {
         $resultadoEnvio = enviarRecuperacionClave($usuario['correo'], $usuario['nombre'], $enlace);
-
         if (!$resultadoEnvio['exito']) {
             error_log('[RECUPERACION CLAVE] No se pudo enviar el correo: ' . $resultadoEnvio['mensaje']);
         }
     }
-
-    // Por seguridad (no enumerar correos existentes), se muestra siempre el mismo mensaje de éxito
-    respuestaJson('exito', 'Si el correo electrónico se encuentra registrado en el sistema, recibirá las instrucciones de recuperación en su bandeja de entrada.');
+    exit;
 
 // FUNCIÓN: restablecer
 // OBJETIVO: Valida el token recibido en la URL y muestra el formulario de restablecimiento
