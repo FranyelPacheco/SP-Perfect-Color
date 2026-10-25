@@ -508,13 +508,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Enlazar busqueda manual a DataTables
-    if (busquedaInsumos) {
-        busquedaInsumos.addEventListener('keyup', function() {
-            if ($.fn.DataTable.isDataTable('#tablaInsumos')) {
-                $('#tablaInsumos').DataTable().search(this.value).draw();
-            }
-        });
-    }
+    vincularBusqueda(busquedaInsumos, '#tablaInsumos');
 
     // Muestra un mensaje de error en el modal
     function mostrarError(mensaje) {

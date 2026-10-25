@@ -8,8 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarCuentas();
 
     function cargarCuentas() {
-        fetch('/SP%20Perfect%20Color/cuentaPagar/listarAjax')
-            .then(function(r) { return r.json(); })
+        api.get('cuentaPagar/listarAjax')
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
                     mostrarCuentas(resultado.datos.cuentas);
@@ -111,11 +110,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Enlazar busqueda manual a DataTables
-    if (busquedaCuentas) {
-        busquedaCuentas.addEventListener('keyup', function() {
-            if ($.fn.DataTable.isDataTable('#tablaCuentasPagar')) {
-                $('#tablaCuentasPagar').DataTable().search(this.value).draw();
-            }
-        });
-    }
+    vincularBusqueda(busquedaCuentas, '#tablaCuentasPagar');
 });

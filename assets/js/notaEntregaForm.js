@@ -51,8 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Cargar clientes
     function cargarClientes() {
-        fetch('/SP%20Perfect%20Color/notaEntrega/obtenerClientesAjax')
-            .then(function(respuesta) { return respuesta.json(); })
+        api.get('notaEntrega/obtenerClientesAjax')
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
                     clientesDisponibles = resultado.datos.clientes;
@@ -66,8 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Cargar tipos de pago
     function cargarTiposPago() {
-        fetch('/SP%20Perfect%20Color/notaEntrega/obtenerTiposPagoAjax')
-            .then(function(r) { return r.json(); })
+        api.get('notaEntrega/obtenerTiposPagoAjax')
             .then(function(res) {
                 if (res.estado === 'exito') {
                     var sel = document.getElementById('tipoPago');
@@ -84,8 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Cargar bancos
     function cargarBancos() {
-        fetch('/SP%20Perfect%20Color/notaEntrega/obtenerBancosAjax')
-            .then(function(r) { return r.json(); })
+        api.get('notaEntrega/obtenerBancosAjax')
             .then(function(res) {
                 if (res.estado === 'exito') {
                     var sel = document.getElementById('bancoPago');

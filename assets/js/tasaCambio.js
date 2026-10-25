@@ -137,8 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function cargarTasas() {
-        fetch('/SP%20Perfect%20Color/tasaCambio/listarAjax')
-            .then(function(r) { return r.json(); })
+        api.get('tasaCambio/listarAjax')
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
                     mostrarTasas(resultado.datos.tasas || []);
@@ -341,11 +340,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Buscador manual de la tabla
-    if (busquedaTasas) {
-        busquedaTasas.addEventListener('keyup', function() {
-            if ($.fn.DataTable.isDataTable('#tablaTasas')) {
-                $('#tablaTasas').DataTable().search(this.value).draw();
-            }
-        });
-    }
+    vincularBusqueda(busquedaTasas, '#tablaTasas');
 });

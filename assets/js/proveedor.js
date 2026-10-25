@@ -40,8 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var esAdmin = document.getElementById('btnNuevoProveedor') !== null;
 
     // Cargar rubros disponibles
-    fetch('/SP%20Perfect%20Color/inventario/listarRubrosAjax')
-        .then(function(r) { return r.json(); })
+    api.get('inventario/listarRubrosAjax')
         .then(function(res) {
             if (res.estado === 'exito') {
                 rubrosDisponibles = res.datos.rubros;
@@ -646,13 +645,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (busquedaProveedores) {
-        busquedaProveedores.addEventListener('keyup', function() {
-            if ($.fn.DataTable.isDataTable('#tablaProveedores')) {
-                $('#tablaProveedores').DataTable().search(this.value).draw();
-            }
-        });
-    }
+    vincularBusqueda(busquedaProveedores, '#tablaProveedores');
 
     function mostrarError(mensaje) {
         mensajeError.textContent = mensaje;

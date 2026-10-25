@@ -9,13 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (tablaElement) {
         cargarNotasCompra();
 
-        if (busquedaInput) {
-            busquedaInput.addEventListener('keyup', function() {
-                if ($.fn.DataTable.isDataTable('#tablaNotasCompra')) {
-                    $('#tablaNotasCompra').DataTable().search(this.value).draw();
-                }
-            });
-        }
+        vincularBusqueda(busquedaInput, '#tablaNotasCompra');
 
         $(document).on('click', '.btn-anular-nota-compra', function(e) {
             e.preventDefault();
@@ -51,8 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function cargarNotasCompra() {
-        fetch('/SP%20Perfect%20Color/notaEntregaCompra/listarAjax')
-            .then(function(r) { return r.json(); })
+        api.get('notaEntregaCompra/listarAjax')
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
                     mostrarNotasCompra(resultado.datos.notas || []);

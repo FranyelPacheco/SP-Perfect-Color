@@ -22,17 +22,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    if (busquedaCuentas) {
-        busquedaCuentas.addEventListener('keyup', function() {
-            if ($.fn.DataTable.isDataTable('#tablaCuentas')) {
-                $('#tablaCuentas').DataTable().search(this.value).draw();
-            }
-        });
-    }
+    vincularBusqueda(busquedaCuentas, '#tablaCuentas');
 
     function cargarCuentas() {
-        fetch('/SP%20Perfect%20Color/cuentaCobrar/listarAjax')
-            .then(function(r) { return r.json(); })
+        api.get('cuentaCobrar/listarAjax')
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
                     mostrarCuentas(resultado.datos.cuentas);
