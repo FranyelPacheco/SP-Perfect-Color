@@ -3,10 +3,18 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\ContactoTrait;
 use PDO;
 
 class ProveedorModel extends ModeloBase
 {
+    use ContactoTrait;
+
+    protected function tablaContacto(): string { return 'proveedores'; }
+    protected function pkContacto(): string { return 'id_proveedor'; }
+    protected function tablaTelefonos(): string { return 'telefono_proveedor'; }
+    protected function etiquetaContacto(): string { return 'proveedor'; }
+
     private ?int $id;
     private ?string $rif;
     private ?string $nombreEmpresa;
@@ -16,8 +24,6 @@ class ProveedorModel extends ModeloBase
     private ?int $idExcluir;
     private ?string $termino;
     private ?int $proveedorId;
-    private ?string $telefono;
-    private ?string $tipo;
     private ?int $rubroId;
 
     // FUNCIÓN: contarTodos
@@ -43,27 +49,6 @@ class ProveedorModel extends ModeloBase
         if ($this->id < 1) return false;
 
         return $this->_ejecutarSelectById();
-    }
-
-    // FUNCIÓN: procesarTelefonosPayload
-    // OBJETIVO: Extrae y compone los números de teléfono principal y secundario desde el arreglo de datos
-    private function procesarTelefonosPayload(array $datos): array
-    {
-        $operadora = trim($datos['operadora'] ?? '');
-        $telefonoNum = trim($datos['telefono_num'] ?? '');
-        $telefono = trim($datos['telefono'] ?? '');
-        if (empty($telefono) && !empty($telefonoNum)) {
-            $telefono = $operadora . $telefonoNum;
-        }
-
-        $operadora2 = trim($datos['operadora2'] ?? '');
-        $telefonoNum2 = trim($datos['telefono_num2'] ?? '');
-        $telefono2 = trim($datos['telefono2'] ?? '');
-        if (empty($telefono2) && !empty($telefonoNum2)) {
-            $telefono2 = $operadora2 . $telefonoNum2;
-        }
-
-        return [$telefono, $telefono2];
     }
 
     // FUNCIÓN: procesarRifPayload
@@ -111,37 +96,18 @@ class ProveedorModel extends ModeloBase
         }
 
         if ($correo === '') {
-            return ['valido' => false, 'mensaje' => 'El correo electronico es obligatorio'];
+            return ['valido' => false, 'mensaje' => 'El correo electrónico es obligatorio'];
         }
         if (!$this->validarCorreo($correo)) {
-            return ['valido' => false, 'mensaje' => 'El correo electronico no es valido'];
+            return ['valido' => false, 'mensaje' => 'El correo electrónico no es válido'];
         }
         if ($this->correoExiste($correo, $idActual)) {
             return ['valido' => false, 'mensaje' => ($idActual ? 'Ya existe otro proveedor con ese correo electrónico' : 'Ya existe un proveedor con ese correo electrónico')];
         }
 
-        if ($telefono === '') {
-            return ['valido' => false, 'mensaje' => 'El teléfono principal es obligatorio'];
-        }
-        if (!preg_match('/^\d{11}$/', $telefono)) {
-            return ['valido' => false, 'mensaje' => 'El teléfono debe tener 11 dígitos'];
-        }
-
-        if ($telefono2 !== '') {
-            if (!preg_match('/^\d{11}$/', $telefono2)) {
-                return ['valido' => false, 'mensaje' => 'El segundo teléfono debe tener 11 dígitos'];
-            }
-            if ($telefono === $telefono2) {
-                return ['valido' => false, 'mensaje' => 'El segundo teléfono no puede ser igual al teléfono principal'];
-            }
-        }
-
-        if ($this->telefonoExiste($telefono, $idActual)) {
-            return ['valido' => false, 'mensaje' => 'El teléfono principal ya se encuentra registrado en otro proveedor'];
-        }
-
-        if ($telefono2 !== '' && $this->telefonoExiste($telefono2, $idActual)) {
-            return ['valido' => false, 'mensaje' => 'El segundo teléfono ya se encuentra registrado en otro proveedor'];
+        $error = $this->validarTelefonos($telefono, $telefono2, $idActual);
+        if ($error !== null) {
+            return ['valido' => false, 'mensaje' => $error];
         }
 
         if ($this->rifExiste($rif, $idActual)) {
@@ -351,26 +317,6 @@ class ProveedorModel extends ModeloBase
         return $this->_ejecutarCheckRif();
     }
 
-    // FUNCIÓN: telefonoExiste
-    // OBJETIVO: Verifica si un número de teléfono ya está registrado en proveedores activos (excluyendo opcionalmente a un proveedor)
-    public function telefonoExiste(string $telefono, ?int $idExcluir = null): bool
-    {
-        $consulta = "SELECT COUNT(*) as total 
-                     FROM telefono_proveedor tp 
-                     INNER JOIN proveedores p ON tp.id_proveedor = p.id_proveedor 
-                     WHERE tp.telefono = :telefono AND p.estado = 1";
-        if ($idExcluir !== null) {
-            $consulta .= " AND tp.id_proveedor != :id_excluir";
-        }
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':telefono', $telefono, PDO::PARAM_STR);
-        if ($idExcluir !== null) {
-            $stmt->bindParam(':id_excluir', $idExcluir, PDO::PARAM_INT);
-        }
-        $stmt->execute();
-        return (int)$stmt->fetch()['total'] > 0;
-    }
-
     // FUNCIÓN: buscarInactivoPorRIF
     // OBJETIVO: Busca un proveedor inactivo por RIF para reactivación
     public function buscarInactivoPorRIF(string $rif): int|false
@@ -391,30 +337,6 @@ class ProveedorModel extends ModeloBase
         if ($this->termino === '') return [];
 
         return $this->_ejecutarSearch();
-    }
-
-    // FUNCIÓN: insertarTelefono
-    // OBJETIVO: Inserta un teléfono asociado a un proveedor
-    public function insertarTelefono(int $proveedorId, string $telefono, ?string $tipo = null): bool
-    {
-        $this->proveedorId = $proveedorId;
-        $this->telefono = $telefono;
-        $this->tipo = $tipo;
-
-        if ($this->proveedorId < 1 || $this->telefono === '') return false;
-
-        return $this->_ejecutarInsertTelefono();
-    }
-
-    // FUNCIÓN: eliminarTelefonos
-    // OBJETIVO: Elimina todos los teléfonos de un proveedor (reemplazo completo)
-    public function eliminarTelefonos(int $proveedorId): bool
-    {
-        $this->proveedorId = $proveedorId;
-
-        if ($this->proveedorId < 1) return false;
-
-        return $this->_ejecutarDeleteTelefonos();
     }
 
     // FUNCIÓN: insertarRubro
@@ -565,23 +487,6 @@ class ProveedorModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-    private function _ejecutarInsertTelefono(): bool
-    {
-        $consulta = "INSERT INTO telefono_proveedor (id_proveedor, telefono, estado) VALUES (:id_proveedor, :telefono, 1)";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id_proveedor', $this->proveedorId, PDO::PARAM_INT);
-        $stmt->bindParam(':telefono', $this->telefono, PDO::PARAM_STR);
-        return $stmt->execute();
-    }
-
-    private function _ejecutarDeleteTelefonos(): bool
-    {
-        $consulta = "DELETE FROM telefono_proveedor WHERE id_proveedor = :id_proveedor";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id_proveedor', $this->proveedorId, PDO::PARAM_INT);
-        return $stmt->execute();
-    }
-
     private function _ejecutarInsertRubro(): bool
     {
         $consulta = "INSERT INTO rubro_proveedor (id_proveedor, id_rubro) VALUES (:id_proveedor, :id_rubro)";
@@ -599,32 +504,4 @@ class ProveedorModel extends ModeloBase
         return $stmt->execute();
     }
 
-    // FUNCIÓN: correoExiste
-    // OBJETIVO: Verifica si un correo electrónico ya está registrado en proveedores activos
-    public function correoExiste(string $correo, ?int $idExcluir = null): bool
-    {
-        $correo = trim($correo);
-        if ($correo === '') return false;
-        $this->correo = $correo;
-        $this->idExcluir = $idExcluir;
-        return $this->_ejecutarCheckCorreo();
-    }
-
-    // FUNCIÓN: _ejecutarCheckCorreo
-    // OBJETIVO: Ejecuta COUNT para verificar unicidad del correo electrónico en proveedores activos
-    private function _ejecutarCheckCorreo(): bool
-    {
-        $consulta = "SELECT COUNT(*) as total FROM proveedores WHERE correo = :correo AND estado = 1";
-        if ($this->idExcluir !== null) {
-            $consulta .= " AND id_proveedor != :id";
-        }
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
-        if ($this->idExcluir !== null) {
-            $stmt->bindParam(':id', $this->idExcluir, PDO::PARAM_INT);
-        }
-        $stmt->execute();
-        $resultado = $stmt->fetch();
-        return (int)$resultado['total'] > 0;
-    }
 }
