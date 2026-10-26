@@ -3,21 +3,24 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\PagoCuentaTrait;
 use PDO, PDOException;
 
 class CuentaPagarModel extends ModeloBase
 {
+    use PagoCuentaTrait;
+
+    protected function tablaCuenta(): string { return 'cuentas_pagar'; }
+    protected function pkCuenta(): string { return 'id_cuenta_pagar'; }
+    protected function tablaPagos(): string { return 'pagos_realizados'; }
+    protected function etiquetaCuenta(): string { return 'por pagar'; }
+
     private int $id;
     private int $idProveedor;
     private float $montoTotal;
     private float $saldoPendiente;
     private string $fechaVencimiento;
     private string $estado;
-    private float $monto;
-    private int $tipoPagoId;
-    private ?int $bancoId = null;
-    private ?string $referencia = null;
-    private string $fecha;
     private string $termino;
 
     // FUNCIÓN: listarTodas
@@ -47,88 +50,6 @@ class CuentaPagarModel extends ModeloBase
             throw new PDOException('ID de cuenta no válido');
         }
         return $this->_ejecutarSelectPagos();
-    }
-
-    // FUNCIÓN: validarDatosPago
-    // OBJETIVO: Valida reglas de negocio para el registro de un pago de cuenta por pagar
-    public function validarDatosPago(array $datos): array
-    {
-        $cuentaId = intval($datos['cuenta_id'] ?? 0);
-        $monto = floatval($datos['monto'] ?? 0);
-        $tipoPagoId = intval($datos['id_tipo_pago'] ?? 0);
-        $bancoId = !empty($datos['id_banco']) ? intval($datos['id_banco']) : null;
-        $referencia = trim($datos['referencia'] ?? '');
-        $fecha = !empty($datos['fecha']) ? trim($datos['fecha']) : date('Y-m-d');
-
-        if ($cuentaId < 1) {
-            return ['valido' => false, 'mensaje' => 'Cuenta no valida'];
-        }
-
-        $cuenta = $this->buscarPorId($cuentaId);
-        if (!$cuenta) {
-            return ['valido' => false, 'mensaje' => 'Cuenta por pagar no encontrada'];
-        }
-
-        if ($monto <= 0) {
-            return ['valido' => false, 'mensaje' => 'El monto debe ser mayor a cero'];
-        }
-
-        if ($monto > (float)$cuenta['saldo_pendiente']) {
-            return ['valido' => false, 'mensaje' => 'El monto del pago supera el saldo pendiente'];
-        }
-
-        if ($tipoPagoId < 1) {
-            return ['valido' => false, 'mensaje' => 'Debe seleccionar un tipo de pago'];
-        }
-
-        if ($tipoPagoId === 1) {
-            $bancoId = null;
-            if ($referencia === '') {
-                $referencia = 'Efectivo';
-            }
-        } elseif ($tipoPagoId === 2 || $tipoPagoId === 3) {
-            if (empty($bancoId) || $bancoId < 1) {
-                return ['valido' => false, 'mensaje' => 'Debe seleccionar un banco para transferencia o pago movil'];
-            }
-            if ($referencia === '') {
-                return ['valido' => false, 'mensaje' => 'Debe ingresar el numero de referencia para transferencia o pago movil'];
-            }
-        }
-
-        return [
-            'valido' => true,
-            'cuenta_id' => $cuentaId,
-            'monto' => $monto,
-            'tipo_pago_id' => $tipoPagoId,
-            'banco_id' => $bancoId,
-            'referencia' => $referencia,
-            'fecha' => $fecha
-        ];
-    }
-
-    // FUNCIÓN: procesarPago
-    // OBJETIVO: Valida y aplica el pago realizado a la cuenta por pagar
-    public function procesarPago(array $datos): array
-    {
-        $val = $this->validarDatosPago($datos);
-        if (!$val['valido']) {
-            return ['exito' => false, 'mensaje' => $val['mensaje']];
-        }
-
-        try {
-            $this->registrarPago(
-                $val['cuenta_id'],
-                $val['monto'],
-                $val['tipo_pago_id'],
-                $val['banco_id'],
-                $val['referencia'],
-                $val['fecha']
-            );
-            return ['exito' => true, 'mensaje' => 'Pago registrado exitosamente'];
-        } catch (\PDOException $e) {
-            error_log('Error al registrar pago CxP: ' . $e->getMessage());
-            return ['exito' => false, 'mensaje' => 'Error al registrar el pago: ' . $e->getMessage()];
-        }
     }
 
     // FUNCIÓN: validarDatosManual
@@ -188,53 +109,6 @@ class CuentaPagarModel extends ModeloBase
         }
     }
 
-    // FUNCIÓN: darDeBaja
-    // OBJETIVO: Valida que la cuenta esté saldada antes de realizar soft-delete
-    public function darDeBaja(int $id): array
-    {
-        if ($id < 1) {
-            return ['exito' => false, 'mensaje' => 'ID invalido'];
-        }
-
-        $cuenta = $this->buscarPorId($id);
-        if (!$cuenta) {
-            return ['exito' => false, 'mensaje' => 'Cuenta por pagar no encontrada'];
-        }
-
-        $saldo = floatval($cuenta['saldo_pendiente'] ?? 0);
-        $situacion = strtolower($cuenta['situacion'] ?? ($cuenta['estado'] ?? ''));
-        if ($saldo > 0 || $situacion !== 'pagado') {
-            return ['exito' => false, 'mensaje' => 'No se puede eliminar una cuenta por pagar que no esté totalmente pagada'];
-        }
-
-        try {
-            $this->eliminarCuenta($id);
-            return ['exito' => true, 'mensaje' => 'Cuenta eliminada correctamente'];
-        } catch (\PDOException $e) {
-            error_log('Error al eliminar CxP: ' . $e->getMessage());
-            return ['exito' => false, 'mensaje' => 'Error al eliminar la cuenta'];
-        }
-    }
-
-    // FUNCIÓN: registrarPago
-    // OBJETIVO: Registra un pago parcial o total y actualiza el saldo/estado de la cuenta
-    // NOTA: Transacción que valida que el monto no supere el saldo pendiente
-    public function registrarPago(int $cuentaId, float $monto, int $tipoPagoId, ?int $bancoId = null, ?string $referencia = null, ?string $fecha = null): bool
-    {
-        $this->id = $cuentaId;
-        $this->monto = $monto;
-        $this->tipoPagoId = $tipoPagoId;
-        $this->bancoId = $bancoId;
-        $this->referencia = $referencia;
-        $this->fecha = $fecha ?? date('Y-m-d H:i:s');
-
-        if ($this->id < 1 || $this->monto <= 0 || $this->tipoPagoId < 1) {
-            throw new PDOException('Parámetros obligatorios faltantes');
-        }
-
-        return $this->_ejecutarRegistrarPago();
-    }
-
     // FUNCIÓN: crearCuenta
     // OBJETIVO: Crea una nueva cuenta por pagar con monto total y fecha de vencimiento
     public function crearCuenta(int $idProveedor, float $montoTotal, string $fechaVencimiento): int|false
@@ -251,17 +125,6 @@ class CuentaPagarModel extends ModeloBase
         return $this->_ejecutarInsert();
     }
 
-    // FUNCIÓN: eliminarCuenta
-    // OBJETIVO: Desactiva una cuenta por pagar (soft delete)
-    public function eliminarCuenta(int $id): bool
-    {
-        $this->id = $id;
-        if ($this->id < 1) {
-            throw new PDOException('ID no válido');
-        }
-        return $this->_ejecutarDelete();
-    }
-
     // FUNCIÓN: buscarCuentas
     // OBJETIVO: Busca cuentas por pagar por nombre de empresa o RIF del proveedor
     public function buscarCuentas(string $termino): array
@@ -271,23 +134,6 @@ class CuentaPagarModel extends ModeloBase
             throw new PDOException('Término de búsqueda no válido');
         }
         return $this->_ejecutarSearch();
-    }
-
-    // FUNCIÓN: obtenerTotalPagosHoy
-    // OBJETIVO: Retorna la suma de todos los pagos realizados en el día de hoy
-    // NOTA: Usado en el dashboard
-    public function obtenerTotalPagosHoy(): string|false
-    {
-        return $this->_ejecutarTotalPagosHoy();
-    }
-
-    // FUNCIÓN: _ejecutarTotalPagosHoy
-    // OBJETIVO: Calcula la suma de pagos realizados en la fecha actual
-    private function _ejecutarTotalPagosHoy(): string|false
-    {
-        $consulta = "SELECT COALESCE(SUM(monto), 0) as total FROM pagos_realizados WHERE DATE(fecha) = CURDATE()";
-        $stmt = $this->conexion->query($consulta);
-        return $stmt->fetchColumn();
     }
 
     // FUNCIÓN: _ejecutarSelectAll
@@ -353,64 +199,6 @@ class CuentaPagarModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-    // FUNCIÓN: _ejecutarRegistrarPago
-    // OBJETIVO: Ejecuta la transacción que inserta el pago y actualiza saldo/situacion de la cuenta
-    private function _ejecutarRegistrarPago(): bool
-    {
-        try {
-            $this->conexion->beginTransaction();
-
-            $stmtBloqueo = $this->conexion->prepare("SELECT saldo_pendiente FROM cuentas_pagar WHERE id_cuenta_pagar = :id FOR UPDATE");
-            $stmtBloqueo->bindParam(':id', $this->id, PDO::PARAM_INT);
-            $stmtBloqueo->execute();
-            $saldoBloqueado = $stmtBloqueo->fetchColumn();
-
-            $cuenta = $this->buscarPorId($this->id);
-
-            if (!$cuenta || $saldoBloqueado === false) {
-                throw new PDOException('Cuenta no encontrada');
-            }
-            $cuenta['saldo_pendiente'] = $saldoBloqueado;
-
-            if ($this->monto > $cuenta['saldo_pendiente']) {
-                throw new PDOException('El monto del pago supera el saldo pendiente');
-            }
-
-            $consulta = "INSERT INTO pagos_realizados (id_cuenta_pagar, id_tipo_pago, id_banco, monto, fecha, referencia) 
-                         VALUES (:cuenta_id, :id_tipo_pago, :id_banco, :monto, :fecha, :referencia)";
-            $stmt = $this->conexion->prepare($consulta);
-            $stmt->bindParam(':cuenta_id', $this->id, PDO::PARAM_INT);
-            $stmt->bindParam(':id_tipo_pago', $this->tipoPagoId, PDO::PARAM_INT);
-            $stmt->bindValue(':id_banco', $this->bancoId, $this->bancoId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-            $stmt->bindParam(':monto', $this->monto);
-            $stmt->bindParam(':fecha', $this->fecha, PDO::PARAM_STR);
-            $stmt->bindValue(':referencia', $this->referencia, $this->referencia === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
-            $stmt->execute();
-
-            $nuevoSaldo = round($cuenta['saldo_pendiente'] - $this->monto, 2);
-            if ($nuevoSaldo <= 0.001) {
-                $nuevoSaldo = 0;
-                $nuevoEstado = 'pagado';
-            } else {
-                $nuevoEstado = 'pendiente';
-            }
-
-            $consulta = "UPDATE cuentas_pagar SET saldo_pendiente = :saldo, situacion = :estado WHERE id_cuenta_pagar = :id";
-            $stmt = $this->conexion->prepare($consulta);
-            $stmt->bindParam(':saldo', $nuevoSaldo);
-            $stmt->bindParam(':estado', $nuevoEstado, PDO::PARAM_STR);
-            $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
-            $stmt->execute();
-
-            $this->conexion->commit();
-            return true;
-
-        } catch (PDOException $e) {
-            $this->conexion->rollback();
-            throw $e;
-        }
-    }
-
     // FUNCIÓN: _ejecutarInsert
     // OBJETIVO: Ejecuta la inserción de una nueva cuenta por pagar asociada a su nota de entrega
     private function _ejecutarInsert(): int|false
@@ -434,16 +222,6 @@ class CuentaPagarModel extends ModeloBase
             return (int)$this->conexion->lastInsertId();
         }
         return false;
-    }
-
-    // FUNCIÓN: _ejecutarDelete
-    // OBJETIVO: Ejecuta el soft delete de la cuenta por pagar
-    private function _ejecutarDelete(): bool
-    {
-        $consulta = "UPDATE cuentas_pagar SET estado = 0 WHERE id_cuenta_pagar = :id";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
-        return $stmt->execute();
     }
 
     // FUNCIÓN: _ejecutarSearch
