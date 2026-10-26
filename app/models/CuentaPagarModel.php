@@ -4,10 +4,12 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Traits\PagoCuentaTrait;
+use App\Traits\TasaBcvTrait;
 use PDO, PDOException;
 
 class CuentaPagarModel extends ModeloBase
 {
+    use TasaBcvTrait;
     use PagoCuentaTrait;
 
     protected function tablaCuenta(): string { return 'cuentas_pagar'; }
@@ -142,11 +144,7 @@ class CuentaPagarModel extends ModeloBase
     {
         $consulta = "SELECT cp.*, cp.estado as activo, cp.situacion as estado, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif,
                             ne.fecha as nota_fecha,
-                            COALESCE(
-                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(ne.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
-                                0
-                            ) as tasa_bcv
+                            {$this->sqlTasaBcv('ne.fecha')}
                      FROM cuentas_pagar cp 
                      INNER JOIN nota_entrega ne ON cp.id_nota_entrega = ne.id_nota_entrega
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
@@ -163,11 +161,7 @@ class CuentaPagarModel extends ModeloBase
         $consulta = "SELECT cp.*, cp.estado as activo, cp.situacion as estado, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif,
                             ne.fecha as nota_fecha,
                             (SELECT GROUP_CONCAT(tp.telefono SEPARATOR ', ') FROM telefono_proveedor tp WHERE tp.id_proveedor = p.id_proveedor) as proveedor_telefonos,
-                            COALESCE(
-                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(ne.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
-                                0
-                            ) as tasa_bcv
+                            {$this->sqlTasaBcv('ne.fecha')}
                      FROM cuentas_pagar cp 
                      INNER JOIN nota_entrega ne ON cp.id_nota_entrega = ne.id_nota_entrega
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
@@ -183,11 +177,7 @@ class CuentaPagarModel extends ModeloBase
     private function _ejecutarSelectPagos(): array
     {
         $consulta = "SELECT pr.*, tp.nombre as tipo_pago_nombre, b.nombre as banco_nombre,
-                            COALESCE(
-                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(pr.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
-                                0
-                            ) as tasa_bcv
+                            {$this->sqlTasaBcv('pr.fecha')}
                      FROM pagos_realizados pr
                      LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
                      LEFT JOIN banco b ON pr.id_banco = b.id_banco

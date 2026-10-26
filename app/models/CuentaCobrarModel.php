@@ -4,10 +4,12 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Traits\PagoCuentaTrait;
+use App\Traits\TasaBcvTrait;
 use PDO, PDOException;
 
 class CuentaCobrarModel extends ModeloBase
 {
+    use TasaBcvTrait;
     use PagoCuentaTrait;
 
     protected function tablaCuenta(): string { return 'cuentas_cobrar'; }
@@ -87,11 +89,7 @@ class CuentaCobrarModel extends ModeloBase
                         v.id_venta as id_nota_venta,
                         v.id_venta,
                         v.fecha as nota_fecha,
-                        COALESCE(
-                            (SELECT t.tasa FROM tasa_cambio t WHERE t.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND t.estado = 1 ORDER BY t.fecha DESC, t.id_tasa_cambio DESC LIMIT 1),
-                            (SELECT t2.tasa FROM tasa_cambio t2 WHERE t2.estado = 1 ORDER BY t2.fecha DESC, t2.id_tasa_cambio DESC LIMIT 1),
-                            0
-                        ) as tasa_bcv
+                        {$this->sqlTasaBcv('COALESCE(v.fecha_aprobacion, v.fecha)')}
                 FROM cuentas_cobrar cc 
                 INNER JOIN ventas v ON cc.id_venta = v.id_venta
                 INNER JOIN clientes c ON v.id_cliente = c.id_cliente
@@ -114,11 +112,7 @@ class CuentaCobrarModel extends ModeloBase
                         v.id_venta as id_nota_venta,
                         v.id_venta,
                         v.fecha as nota_fecha,
-                        COALESCE(
-                            (SELECT t.tasa FROM tasa_cambio t WHERE t.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND t.estado = 1 ORDER BY t.fecha DESC, t.id_tasa_cambio DESC LIMIT 1),
-                            (SELECT t2.tasa FROM tasa_cambio t2 WHERE t2.estado = 1 ORDER BY t2.fecha DESC, t2.id_tasa_cambio DESC LIMIT 1),
-                            0
-                        ) as tasa_bcv
+                        {$this->sqlTasaBcv('COALESCE(v.fecha_aprobacion, v.fecha)')}
                 FROM cuentas_cobrar cc 
                 INNER JOIN ventas v ON cc.id_venta = v.id_venta
                 INNER JOIN clientes c ON v.id_cliente = c.id_cliente
@@ -134,11 +128,7 @@ class CuentaCobrarModel extends ModeloBase
     private function _ejecutarSelectPagos(): array
     {
         $consulta = "SELECT pr.*, tp.nombre as tipo_pago_nombre, b.nombre as banco_nombre,
-                            COALESCE(
-                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(pr.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
-                                0
-                            ) as tasa_bcv
+                            {$this->sqlTasaBcv('pr.fecha')}
                      FROM pagos_recibidos pr
                      LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
                      LEFT JOIN banco b ON pr.id_banco = b.id_banco

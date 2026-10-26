@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\TasaBcvTrait;
 use PDO, PDOException;
 
 class NotaEntregaModel extends ModeloBase
 {
+    use TasaBcvTrait;
     private int $id;
     private int $idCliente;
     private int $idUsuario;
@@ -266,11 +268,7 @@ class NotaEntregaModel extends ModeloBase
                             'Sistema' as usuario_nombre,
                             COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre,
                             COALESCE(ev.nombre, CASE WHEN v.id_estado_venta = 1 THEN 'En Espera' WHEN v.id_estado_venta = 2 THEN 'Aprobado' WHEN v.id_estado_venta = 3 THEN 'Rechazado' ELSE 'Otro' END) as estado_nombre,
-                            COALESCE(
-                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
-                                0
-                            ) as tasa_bcv
+                            {$this->sqlTasaBcv('COALESCE(v.fecha_aprobacion, v.fecha)')}
                      FROM ventas v 
                      INNER JOIN clientes c ON v.id_cliente = c.id_cliente
                      LEFT JOIN estado_venta ev ON v.id_estado_venta = ev.id_estado_venta
@@ -302,11 +300,7 @@ class NotaEntregaModel extends ModeloBase
                             (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
                             'Sistema' as usuario_nombre,
                             COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre,
-                            COALESCE(
-                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(COALESCE(v.fecha_aprobacion, v.fecha)) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
-                                0
-                            ) as tasa_bcv
+                            {$this->sqlTasaBcv('COALESCE(v.fecha_aprobacion, v.fecha)')}
                      FROM ventas v 
                      INNER JOIN clientes c ON v.id_cliente = c.id_cliente
                      LEFT JOIN tipo_pago tp_v ON v.id_tipo_pago = tp_v.id_tipo_pago
