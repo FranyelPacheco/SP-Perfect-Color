@@ -3,12 +3,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\TasaBcvTrait;
 use PDO, PDOException;
 
 // MODELO: NotaEntregaCompraModel
 // OBJETIVO: Gestión de Notas de Entrega de Compras a Proveedores (Recepción de Insumos, aumento de stock y Cuentas por Pagar)
 class NotaEntregaCompraModel extends ModeloBase
 {
+    use TasaBcvTrait;
     private ?int $id = null;
     private ?int $idProveedor = null;
     private ?string $fecha = null;
@@ -28,11 +30,7 @@ class NotaEntregaCompraModel extends ModeloBase
                             COALESCE(cp.situacion, 'pagado') as situacion_pago,
                             COALESCE(cp.saldo_pendiente, 0.00) as saldo_pendiente,
                             cp.fecha_vencimiento,
-                            COALESCE(
-                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(ne.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
-                                0
-                            ) as tasa_bcv
+                            {$this->sqlTasaBcv('ne.fecha')}
                      FROM nota_entrega ne
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
                      LEFT JOIN cuentas_pagar cp ON cp.id_nota_entrega = ne.id_nota_entrega AND cp.estado = 1
@@ -53,11 +51,7 @@ class NotaEntregaCompraModel extends ModeloBase
                             COALESCE(cp.situacion, 'pagado') as situacion_pago,
                             COALESCE(cp.saldo_pendiente, 0.00) as saldo_pendiente,
                             cp.fecha_vencimiento,
-                            COALESCE(
-                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(ne.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
-                                0
-                            ) as tasa_bcv
+                            {$this->sqlTasaBcv('ne.fecha')}
                      FROM nota_entrega ne
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
                      LEFT JOIN cuentas_pagar cp ON cp.id_nota_entrega = ne.id_nota_entrega AND cp.estado = 1

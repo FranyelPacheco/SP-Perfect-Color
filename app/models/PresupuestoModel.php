@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\TasaBcvTrait;
 use PDO, PDOException;
 
 class PresupuestoModel extends ModeloBase
 {
+    use TasaBcvTrait;
     private int $id;
     private int $idCliente;
     private int $idUsuario;
@@ -356,11 +358,7 @@ class PresupuestoModel extends ModeloBase
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
                             'Sistema' as usuario_nombre,
-                            COALESCE(
-                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(v.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
-                                0
-                            ) as tasa_bcv
+                            {$this->sqlTasaBcv('v.fecha')}
                      FROM ventas v 
                      INNER JOIN clientes c ON v.id_cliente = c.id_cliente
                      INNER JOIN estado_venta ev ON v.id_estado_venta = ev.id_estado_venta
@@ -378,11 +376,7 @@ class PresupuestoModel extends ModeloBase
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
                             'Sistema' as usuario_nombre,
-                            COALESCE(
-                                (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE(v.fecha) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                                (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
-                                0
-                            ) as tasa_bcv
+                            {$this->sqlTasaBcv('v.fecha')}
                      FROM ventas v 
                      INNER JOIN clientes c ON v.id_cliente = c.id_cliente
                      INNER JOIN estado_venta ev ON v.id_estado_venta = ev.id_estado_venta
