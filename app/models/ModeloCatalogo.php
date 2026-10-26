@@ -169,15 +169,7 @@ abstract class ModeloCatalogo extends ModeloBase
     // OBJETIVO: Busca un registro inactivo por nombre exacto para reactivarlo
     public function buscarInactivoPorNombre(string $nombre): int|false
     {
-        if ($nombre === '') return false;
-        return $this->_ejecutarBuscarInactivoPorNombre($nombre);
+        return $this->buscarInactivoPor($this->tabla, $this->pk, 'nombre', $nombre);
     }
 
-    private function _ejecutarBuscarInactivoPorNombre(string $nombre): int|false
-    {
-        $stmt = $this->conexion->prepare("SELECT {$this->pk} FROM {$this->tabla} WHERE nombre = :nombre AND estado = 0 LIMIT 1");
-        $stmt->execute([':nombre' => $nombre]);
-        $fila = $stmt->fetch();
-        return $fila ? (int)$fila[$this->pk] : false;
-    }
 }
