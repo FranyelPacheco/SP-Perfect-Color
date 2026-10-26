@@ -15,9 +15,9 @@
         ]
     },
     "require": {
-        "php": ">=8.0",
+        "php": ">=8.2",
         "dompdf/dompdf": "^3.1",
-        "openspout/openspout": "^4.25",
+        "openspout/openspout": "^4.28",
         "phpmailer/phpmailer": "^7.1"
     }
 }
