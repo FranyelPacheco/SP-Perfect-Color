@@ -562,20 +562,7 @@ class UsuarioModel extends ModeloBase
     // NOTA: Usado antes de insertar para evitar duplicados por soft delete
     public function buscarInactivoPorCorreo(string $correo): int|false
     {
-        if (empty($correo)) return false;
-        $this->correo = $correo;
-        return $this->_ejecutarBuscarInactivo();
+        return $this->buscarInactivoPor('usuarios', 'id_usuario', 'correo', $correo);
     }
 
-    // FUNCIÓN: _ejecutarBuscarInactivo
-    // OBJETIVO: Retorna el ID de un usuario inactivo con el correo dado, o false si no existe
-    private function _ejecutarBuscarInactivo(): int|false
-    {
-        $consulta = "SELECT id_usuario FROM usuarios WHERE correo = :correo AND estado = 0 LIMIT 1";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':correo', $this->correo, PDO::PARAM_STR);
-        $stmt->execute();
-        $fila = $stmt->fetch();
-        return $fila ? (int)$fila['id_usuario'] : false;
-    }
 }

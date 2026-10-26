@@ -391,21 +391,7 @@ class InventarioModel extends ModeloBase
     // NOTA: Usado antes de insertar para evitar duplicados por soft delete
     public function buscarInactivoPorCodigo(string $codigo): int|false
     {
-        if ($codigo === '') return false;
-        $this->codigo = $codigo;
-        return $this->_ejecutarBuscarInactivo();
-    }
-
-    // FUNCIÓN: _ejecutarBuscarInactivo
-    // OBJETIVO: Retorna el ID de un producto inactivo con el código dado, o false si no existe
-    private function _ejecutarBuscarInactivo(): int|false
-    {
-        $consulta = "SELECT id_producto FROM productos WHERE codigo = :codigo AND estado = 0 LIMIT 1";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':codigo', $this->codigo, PDO::PARAM_STR);
-        $stmt->execute();
-        $fila = $stmt->fetch();
-        return $fila ? (int)$fila['id_producto'] : false;
+        return $this->buscarInactivoPor('productos', 'id_producto', 'codigo', $codigo);
     }
 
     // FUNCIÓN: buscarInsumos

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Core\ConexionBD;
+use App\Traits\ReactivacionTrait;
 use App\Traits\RespuestaModeloTrait;
 use App\Traits\ValidacionTrait;
 use PDO;
@@ -12,6 +13,7 @@ abstract class ModeloBase
 {
     use ValidacionTrait;
     use RespuestaModeloTrait;
+    use ReactivacionTrait;
 
     protected PDO $conexion;
 

@@ -290,11 +290,7 @@ class ClienteModel extends ModeloBase
     // OBJETIVO: Busca un cliente inactivo por cédula para reactivación
     public function buscarInactivoPorCedula(string $cedula): int|false
     {
-        $this->cedula = $cedula;
-
-        if ($this->cedula === '') return false;
-
-        return $this->_ejecutarBuscarInactivo();
+        return $this->buscarInactivoPor('clientes', 'id_cliente', 'cedula', $cedula);
     }
 
     // FUNCIÓN: buscarClientes
@@ -393,16 +389,6 @@ class ClienteModel extends ModeloBase
         }
         $stmt->execute();
         return $stmt->fetch()['total'] > 0;
-    }
-
-    private function _ejecutarBuscarInactivo(): int|false
-    {
-        $consulta = "SELECT id_cliente FROM clientes WHERE cedula = :cedula AND estado = 0 LIMIT 1";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':cedula', $this->cedula, PDO::PARAM_STR);
-        $stmt->execute();
-        $fila = $stmt->fetch();
-        return $fila ? (int)$fila['id_cliente'] : false;
     }
 
     private function _ejecutarSearch(): array

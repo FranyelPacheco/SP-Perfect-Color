@@ -321,11 +321,7 @@ class ProveedorModel extends ModeloBase
     // OBJETIVO: Busca un proveedor inactivo por RIF para reactivación
     public function buscarInactivoPorRIF(string $rif): int|false
     {
-        $this->rif = $rif;
-
-        if ($this->rif === '') return false;
-
-        return $this->_ejecutarBuscarInactivo();
+        return $this->buscarInactivoPor('proveedores', 'id_proveedor', 'rif', $rif);
     }
 
     // FUNCIÓN: buscarProveedores
@@ -453,16 +449,6 @@ class ProveedorModel extends ModeloBase
         }
         $stmt->execute();
         return $stmt->fetch()['total'] > 0;
-    }
-
-    private function _ejecutarBuscarInactivo(): int|false
-    {
-        $consulta = "SELECT id_proveedor FROM proveedores WHERE rif = :rif AND estado = 0 LIMIT 1";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':rif', $this->rif, PDO::PARAM_STR);
-        $stmt->execute();
-        $fila = $stmt->fetch();
-        return $fila ? (int)$fila['id_proveedor'] : false;
     }
 
     private function _ejecutarSearch(): array

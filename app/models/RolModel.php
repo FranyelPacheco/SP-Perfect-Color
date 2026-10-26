@@ -320,18 +320,7 @@ class RolModel extends ModeloBase
     // OBJETIVO: Busca si existe un rol inactivo con el nombre dado para reactivación
     public function buscarInactivoPorNombre(string $nombre): int|false
     {
-        $this->nombre = trim($nombre);
-        return $this->_ejecutarBuscarInactivo();
-    }
-
-    private function _ejecutarBuscarInactivo(): int|false
-    {
-        $consulta = "SELECT id_rol FROM roles WHERE LOWER(nombre) = LOWER(:nombre) AND estado = 0 LIMIT 1";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':nombre', $this->nombre, PDO::PARAM_STR);
-        $stmt->execute();
-        $fila = $stmt->fetch();
-        return $fila ? (int)$fila['id_rol'] : false;
+        return $this->buscarInactivoPor('roles', 'id_rol', 'nombre', $nombre, true);
     }
 
     // FUNCIÓN: eliminarRol
