@@ -54,62 +54,62 @@ abstract class ModeloCatalogo extends ModeloBase
     {
         $val = $this->validarNombre($datos['nombre'] ?? '');
         if (!$val['valido']) {
-            return ['exito' => false, 'mensaje' => $val['mensaje']];
+            return $this->respuestaError($val['mensaje']);
         }
 
         $nombre = $val['nombre'];
         if ($this->verificarUnico($this->tabla, 'nombre', $this->pk, $nombre)['activo'] ?? false) {
-            return ['exito' => false, 'mensaje' => "Ya existe un {$this->etiqueta} con este nombre"];
+            return $this->respuestaError("Ya existe un {$this->etiqueta} con este nombre");
         }
 
         $inactivoId = $this->buscarInactivoPorNombre($nombre);
         if ($inactivoId) {
             return $this->actualizar($inactivoId, $nombre, 1)
-                ? ['exito' => true, 'mensaje' => ucfirst($this->etiqueta) . ' reactivado exitosamente']
-                : ['exito' => false, 'mensaje' => "Error al reactivar {$this->etiquetaArticulo} {$this->etiqueta}"];
+                ? $this->respuestaExito(ucfirst($this->etiqueta) . ' reactivado exitosamente')
+                : $this->respuestaError("Error al reactivar {$this->etiquetaArticulo} {$this->etiqueta}");
         }
 
         return $this->insertar($nombre)
-            ? ['exito' => true, 'mensaje' => ucfirst($this->etiqueta) . ' creado exitosamente']
-            : ['exito' => false, 'mensaje' => "Error al crear {$this->etiquetaArticulo} {$this->etiqueta}"];
+            ? $this->respuestaExito(ucfirst($this->etiqueta) . ' creado exitosamente')
+            : $this->respuestaError("Error al crear {$this->etiquetaArticulo} {$this->etiqueta}");
     }
 
     public function modificar(int $id, array $datos): array
     {
         if ($id < 1) {
-            return ['exito' => false, 'mensaje' => "ID de {$this->etiqueta} no valido"];
+            return $this->respuestaError("ID de {$this->etiqueta} no valido");
         }
         $val = $this->validarNombre($datos['nombre'] ?? '');
         if (!$val['valido']) {
-            return ['exito' => false, 'mensaje' => $val['mensaje']];
+            return $this->respuestaError($val['mensaje']);
         }
         if ($this->verificarUnico($this->tabla, 'nombre', $this->pk, $val['nombre'], $id, true) !== null) {
-            return ['exito' => false, 'mensaje' => "Ya existe un {$this->etiqueta} con este nombre"];
+            return $this->respuestaError("Ya existe un {$this->etiqueta} con este nombre");
         }
 
         return $this->actualizar($id, $val['nombre'], intval($datos['activo'] ?? 1))
-            ? ['exito' => true, 'mensaje' => ucfirst($this->etiqueta) . ' actualizado exitosamente']
-            : ['exito' => false, 'mensaje' => "Error al actualizar {$this->etiquetaArticulo} {$this->etiqueta}"];
+            ? $this->respuestaExito(ucfirst($this->etiqueta) . ' actualizado exitosamente')
+            : $this->respuestaError("Error al actualizar {$this->etiquetaArticulo} {$this->etiqueta}");
     }
 
     public function darDeBaja(int $id): array
     {
         if ($id < 1) {
-            return ['exito' => false, 'mensaje' => "ID de {$this->etiqueta} no valido"];
+            return $this->respuestaError("ID de {$this->etiqueta} no valido");
         }
         return $this->eliminar($id)
-            ? ['exito' => true, 'mensaje' => ucfirst($this->etiqueta) . ' eliminado exitosamente']
-            : ['exito' => false, 'mensaje' => "Error al eliminar {$this->etiquetaArticulo} {$this->etiqueta}"];
+            ? $this->respuestaExito(ucfirst($this->etiqueta) . ' eliminado exitosamente')
+            : $this->respuestaError("Error al eliminar {$this->etiquetaArticulo} {$this->etiqueta}");
     }
 
     public function cambiarEstado(int $id): array
     {
         if ($id < 1) {
-            return ['exito' => false, 'mensaje' => "ID de {$this->etiqueta} no valido"];
+            return $this->respuestaError("ID de {$this->etiqueta} no valido");
         }
         return $this->toggleActivo($id)
-            ? ['exito' => true, 'mensaje' => 'Estado cambiado exitosamente']
-            : ['exito' => false, 'mensaje' => 'Error al cambiar el estado'];
+            ? $this->respuestaExito('Estado cambiado exitosamente')
+            : $this->respuestaError('Error al cambiar el estado');
     }
 
     // FUNCIÓN: insertar
