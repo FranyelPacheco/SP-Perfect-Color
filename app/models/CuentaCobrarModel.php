@@ -83,19 +83,12 @@ class CuentaCobrarModel extends ModeloBase
             return ['valido' => false, 'mensaje' => 'Debe seleccionar un tipo de pago'];
         }
 
-        if ($tipoPagoId === 1) {
-            $bancoId = null;
-            if ($referencia === '') {
-                $referencia = 'Efectivo';
-            }
-        } elseif ($tipoPagoId === 2 || $tipoPagoId === 3) {
-            if (empty($bancoId) || $bancoId < 1) {
-                return ['valido' => false, 'mensaje' => 'Debe seleccionar un banco para transferencia o pago movil'];
-            }
-            if ($referencia === '') {
-                return ['valido' => false, 'mensaje' => 'Debe ingresar el numero de referencia para transferencia o pago movil'];
-            }
+        $pago = $this->validarPagoBancario($tipoPagoId, $bancoId, $referencia, 'transferencia o pago móvil');
+        if (!$pago['valido']) {
+            return ['valido' => false, 'mensaje' => $pago['mensaje']];
         }
+        $bancoId = $pago['id_banco'];
+        $referencia = (string)$pago['referencia'];
 
         return [
             'valido' => true,

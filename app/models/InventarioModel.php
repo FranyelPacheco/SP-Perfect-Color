@@ -597,14 +597,9 @@ class InventarioModel extends ModeloBase
         $basesRaw = $datos['bases'] ?? '[]';
         $bases = is_array($basesRaw) ? $basesRaw : json_decode((string)$basesRaw, true);
 
-        if ($nombre === '') {
-            return ['exito' => false, 'mensaje' => 'El nombre del color o fórmula es obligatorio'];
-        }
-        if (strlen($nombre) > 40) {
-            return ['exito' => false, 'mensaje' => 'El nombre de la mezcla no puede superar los 40 caracteres'];
-        }
-        if (preg_match('/[\'"`;\\\\<>]/', $nombre)) {
-            return ['exito' => false, 'mensaje' => 'El nombre de la mezcla contiene caracteres especiales no permitidos'];
+        $error = $this->validarTextoSeguro($nombre, 40, 'El nombre del color o fórmula');
+        if ($error !== null) {
+            return ['exito' => false, 'mensaje' => $error];
         }
         if ($cantidadEnvases < 1) {
             return ['exito' => false, 'mensaje' => 'La cantidad de envases debe ser al menos 1'];
@@ -719,14 +714,9 @@ class InventarioModel extends ModeloBase
         if (!ctype_digit($cantidadRaw) || $cantidad < 1) {
             return ['exito' => false, 'mensaje' => 'La cantidad a descontar debe ser un número entero mayor a 0'];
         }
-        if ($motivo === '') {
-            return ['exito' => false, 'mensaje' => 'Debe especificar el motivo del daño o merma'];
-        }
-        if (strlen($motivo) > 250) {
-            return ['exito' => false, 'mensaje' => 'El motivo del ajuste no puede superar los 250 caracteres'];
-        }
-        if (preg_match('/[\'"`;\\\\<>]/', $motivo)) {
-            return ['exito' => false, 'mensaje' => 'El motivo contiene caracteres no permitidos'];
+        $error = $this->validarTextoSeguro($motivo, 250, 'El motivo del daño o merma');
+        if ($error !== null) {
+            return ['exito' => false, 'mensaje' => $error];
         }
 
         try {

@@ -4,10 +4,13 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Core\ConexionBD;
+use App\Traits\ValidacionTrait;
 use PDO;
 
 abstract class ModeloBase
 {
+    use ValidacionTrait;
+
     protected PDO $conexion;
 
     // FUNCIÓN: Constructor

@@ -135,23 +135,18 @@ class UsuarioModel extends ModeloBase
         $idRol = intval($datos['id_rol'] ?? 0);
         $activo = isset($datos['activo']) ? intval($datos['activo']) : 1;
 
-        if ($nombre === '') {
-            return ['valido' => false, 'mensaje' => 'El nombre es obligatorio'];
+        $error = $this->validarNombrePersona($nombre, 50, 'El nombre');
+        if ($error !== null) {
+            return ['valido' => false, 'mensaje' => $error];
         }
-        if (mb_strlen($nombre) > 50) {
-            return ['valido' => false, 'mensaje' => 'El nombre no puede exceder 50 caracteres'];
-        }
-        if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/u', $nombre)) {
-            return ['valido' => false, 'mensaje' => 'El nombre solo puede contener letras y espacios'];
-        }
-        if ($correo === '' || filter_var($correo, FILTER_VALIDATE_EMAIL) === false) {
-            return ['valido' => false, 'mensaje' => 'El correo electronico no es valido'];
+        if (!$this->validarCorreo($correo)) {
+            return ['valido' => false, 'mensaje' => 'El correo electrónico no es válido'];
         }
 
         if ($esCreacion) {
             $clave = $datos['clave'] ?? '';
             $errorClave = null;
-            if (!\App\Helpers\validarClave($clave, $errorClave)) {
+            if (!$this->validarClave($clave, $errorClave)) {
                 return ['valido' => false, 'mensaje' => $errorClave ?? 'Contraseña inválida'];
             }
         }
@@ -237,9 +232,9 @@ class UsuarioModel extends ModeloBase
         $cambiarClave = isset($datos['cambiar_clave']) && $datos['cambiar_clave'] == '1';
         $nuevaClave = $datos['nueva_clave'] ?? '';
 
-        if ($cambiarClave && \App\Helpers\validarRequerido($nuevaClave)) {
+        if ($cambiarClave && $this->validarRequerido($nuevaClave)) {
             $errorClave = null;
-            if (!\App\Helpers\validarClave($nuevaClave, $errorClave)) {
+            if (!$this->validarClave($nuevaClave, $errorClave)) {
                 return ['exito' => false, 'mensaje' => $errorClave ?? 'La nueva clave no cumple los requisitos'];
             }
             if (password_verify($nuevaClave, $usuarioActual['password_hash'])) {
@@ -308,16 +303,11 @@ class UsuarioModel extends ModeloBase
         $nombre = trim($datos['nombre'] ?? '');
         $correo = trim($datos['correo'] ?? '');
 
-        if ($nombre === '') {
-            return ['exito' => false, 'mensaje' => 'El nombre es obligatorio'];
+        $error = $this->validarNombrePersona($nombre, 50, 'El nombre');
+        if ($error !== null) {
+            return ['exito' => false, 'mensaje' => $error];
         }
-        if (mb_strlen($nombre) > 50) {
-            return ['exito' => false, 'mensaje' => 'El nombre no puede exceder 50 caracteres'];
-        }
-        if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/u', $nombre)) {
-            return ['exito' => false, 'mensaje' => 'El nombre solo puede contener letras y espacios'];
-        }
-        if ($correo === '' || filter_var($correo, FILTER_VALIDATE_EMAIL) === false) {
+        if (!$this->validarCorreo($correo)) {
             return ['exito' => false, 'mensaje' => 'El correo electrónico no es válido'];
         }
 
@@ -359,7 +349,7 @@ class UsuarioModel extends ModeloBase
         }
 
         $errorClave = null;
-        if (!\App\Helpers\validarClave($nuevaClave, $errorClave)) {
+        if (!$this->validarClave($nuevaClave, $errorClave)) {
             return ['exito' => false, 'mensaje' => $errorClave ?? 'La nueva contraseña no cumple los requisitos'];
         }
 
@@ -401,7 +391,7 @@ class UsuarioModel extends ModeloBase
         }
 
         $errorClave = null;
-        if (!\App\Helpers\validarClave($nuevaClave, $errorClave)) {
+        if (!$this->validarClave($nuevaClave, $errorClave)) {
             return ['exito' => false, 'mensaje' => $errorClave ?? 'La nueva contraseña no cumple los requisitos'];
         }
 
