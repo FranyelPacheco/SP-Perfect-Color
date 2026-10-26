@@ -113,7 +113,7 @@ class ProveedorModel extends ModeloBase
         if ($correo === '') {
             return ['valido' => false, 'mensaje' => 'El correo electronico es obligatorio'];
         }
-        if (filter_var($correo, FILTER_VALIDATE_EMAIL) === false) {
+        if (!$this->validarCorreo($correo)) {
             return ['valido' => false, 'mensaje' => 'El correo electronico no es valido'];
         }
         if ($this->correoExiste($correo, $idActual)) {

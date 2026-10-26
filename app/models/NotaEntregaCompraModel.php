@@ -115,11 +115,9 @@ class NotaEntregaCompraModel extends ModeloBase
             return ['valido' => false, 'mensaje' => 'El proveedor seleccionado no existe o está inactivo'];
         }
 
-        if (strlen($observaciones) > 250) {
-            return ['valido' => false, 'mensaje' => 'Las observaciones no pueden superar los 250 caracteres'];
-        }
-        if (preg_match('/[\'"`;\\\\<>]/', $observaciones)) {
-            return ['valido' => false, 'mensaje' => 'Las observaciones contienen caracteres no permitidos'];
+        $error = $this->validarTextoSeguro($observaciones, 250, 'El campo observaciones', false);
+        if ($error !== null) {
+            return ['valido' => false, 'mensaje' => $error];
         }
 
         if (empty($fecha)) {
@@ -134,16 +132,12 @@ class NotaEntregaCompraModel extends ModeloBase
         }
 
         if ($condicionPago === 'credito' && $montoInicial > 0) {
-            if ($idTipoPagoInicial === 1) {
-                $idBancoInicial = null;
-                if (empty($referenciaInicial)) {
-                    $referenciaInicial = 'Efectivo (Abono Inicial)';
-                }
-            } else {
-                if (empty($idBancoInicial) || empty($referenciaInicial)) {
-                    return ['valido' => false, 'mensaje' => 'Debe indicar banco y referencia para el abono inicial.'];
-                }
+            $pago = $this->validarPagoBancario((int)$idTipoPagoInicial, $idBancoInicial, $referenciaInicial, 'el abono inicial', null, 'Efectivo (Abono Inicial)');
+            if (!$pago['valido']) {
+                return ['valido' => false, 'mensaje' => $pago['mensaje']];
             }
+            $idBancoInicial = $pago['id_banco'];
+            $referenciaInicial = $pago['referencia'];
         }
 
         $itemsRaw = $datos['items'] ?? '[]';

@@ -43,14 +43,9 @@ abstract class ModeloCatalogo extends ModeloBase
     protected function validarNombre(string $nombre): array
     {
         $nombre = trim($nombre);
-        if ($nombre === '') {
-            return ['valido' => false, 'mensaje' => "El nombre del {$this->etiqueta} es obligatorio"];
-        }
-        if (mb_strlen($nombre) > 50) {
-            return ['valido' => false, 'mensaje' => "El nombre del {$this->etiqueta} no puede superar los 50 caracteres"];
-        }
-        if (preg_match('/[\'"`;\\<>]/', $nombre)) {
-            return ['valido' => false, 'mensaje' => "El nombre del {$this->etiqueta} contiene caracteres no permitidos"];
+        $error = $this->validarTextoSeguro($nombre, 50, "El nombre del {$this->etiqueta}");
+        if ($error !== null) {
+            return ['valido' => false, 'mensaje' => $error];
         }
         return ['valido' => true, 'nombre' => $nombre];
     }

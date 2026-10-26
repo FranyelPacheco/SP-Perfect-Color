@@ -155,17 +155,12 @@ class NotaEntregaModel extends ModeloBase
                 if (empty($tipoPagoInicial)) {
                     return ['exito' => false, 'mensaje' => 'Debe seleccionar el método de pago para el abono inicial'];
                 }
-                if ($tipoPagoInicial === 1) {
-                    $bancoInicial = null;
-                    if (empty($referenciaInicial)) $referenciaInicial = 'Efectivo';
-                } else {
-                    if (empty($bancoInicial)) {
-                        return ['exito' => false, 'mensaje' => 'Debe seleccionar el banco receptor para el abono inicial'];
-                    }
-                    if (empty($referenciaInicial)) {
-                        return ['exito' => false, 'mensaje' => 'Debe ingresar la referencia para el abono inicial'];
-                    }
+                $pago = $this->validarPagoBancario($tipoPagoInicial, $bancoInicial, $referenciaInicial, 'el abono inicial', null);
+                if (!$pago['valido']) {
+                    return ['exito' => false, 'mensaje' => $pago['mensaje']];
                 }
+                $bancoInicial = $pago['id_banco'];
+                $referenciaInicial = (string)$pago['referencia'];
             }
         }
 
@@ -173,17 +168,12 @@ class NotaEntregaModel extends ModeloBase
             if (empty($tipoPagoId) || $tipoPagoId < 1) {
                 return ['exito' => false, 'mensaje' => 'Debe seleccionar un tipo de pago para aprobar la entrega'];
             }
-            if ($tipoPagoId === 1) {
-                $bancoId = null;
-                if (empty($referencia)) $referencia = 'Efectivo';
-            } else {
-                if (empty($bancoId) || $bancoId < 1) {
-                    return ['exito' => false, 'mensaje' => 'Debe seleccionar un banco para el pago por transferencia o pago móvil'];
-                }
-                if (empty($referencia)) {
-                    return ['exito' => false, 'mensaje' => 'Debe ingresar el número de referencia para el pago'];
-                }
+            $pago = $this->validarPagoBancario($tipoPagoId, $bancoId, $referencia, 'el pago', null);
+            if (!$pago['valido']) {
+                return ['exito' => false, 'mensaje' => $pago['mensaje']];
             }
+            $bancoId = $pago['id_banco'];
+            $referencia = (string)$pago['referencia'];
         }
 
         $total = 0;

@@ -96,31 +96,16 @@ class ClienteModel extends ModeloBase
             return ['valido' => false, 'mensaje' => 'El documento debe tener formato V, E o J seguido de 6 a 9 digitos'];
         }
 
-        if ($nombres === '') {
-            return ['valido' => false, 'mensaje' => 'El nombre es obligatorio'];
-        }
-        if (mb_strlen($nombres) > 40) {
-            return ['valido' => false, 'mensaje' => 'El nombre no puede exceder 40 caracteres'];
-        }
-        if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/u', $nombres)) {
-            return ['valido' => false, 'mensaje' => 'El nombre solo puede contener letras y espacios'];
-        }
-
-        if ($apellidos === '') {
-            return ['valido' => false, 'mensaje' => 'El apellido es obligatorio'];
-        }
-        if (mb_strlen($apellidos) > 40) {
-            return ['valido' => false, 'mensaje' => 'El apellido no puede exceder 40 caracteres'];
-        }
-        if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/u', $apellidos)) {
-            return ['valido' => false, 'mensaje' => 'El apellido solo puede contener letras y espacios'];
+        $error = $this->validarNombrePersona($nombres, 40, 'El nombre') ?? $this->validarNombrePersona($apellidos, 40, 'El apellido');
+        if ($error !== null) {
+            return ['valido' => false, 'mensaje' => $error];
         }
 
         if ($correo === '') {
-            return ['valido' => false, 'mensaje' => 'El correo electronico es obligatorio'];
+            return ['valido' => false, 'mensaje' => 'El correo electrónico es obligatorio'];
         }
-        if (filter_var($correo, FILTER_VALIDATE_EMAIL) === false) {
-            return ['valido' => false, 'mensaje' => 'El correo electronico no es valido'];
+        if (!$this->validarCorreo($correo)) {
+            return ['valido' => false, 'mensaje' => 'El correo electrónico no es válido'];
         }
         if ($this->correoExiste($correo, $idActual)) {
             return ['valido' => false, 'mensaje' => ($idActual ? 'Ya existe otro cliente con ese correo electrónico' : 'Ya existe un cliente con ese correo electrónico')];
