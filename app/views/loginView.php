@@ -51,14 +51,8 @@
                     <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color">
                 </div>
                 <h1>SP Perfect Color</h1>
-                <p class="auth-lema">Ventas, inventario y cobranzas de tu pinturería en un solo lugar.</p>
-                <ul class="auth-puntos">
-                    <li><i class="bi bi-palette2"></i>Mezclas y presupuestos al instante</li>
-                    <li><i class="bi bi-box-seam"></i>Inventario con alertas de stock</li>
-                    <li><i class="bi bi-currency-exchange"></i>Cobros en dólares y bolívares</li>
-                </ul>
+                <p class="auth-lema">Sistema de gestión interno</p>
             </div>
-            <small class="auth-pie">&copy; <?php echo date('Y'); ?> SP Perfect Color</small>
         </aside>
 
         <section class="auth-form-lado">
@@ -67,8 +61,8 @@
                     <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color">
                     <span>SP Perfect Color</span>
                 </div>
-                <h2>Bienvenido de nuevo</h2>
-                <p class="auth-sub">Ingresa tus credenciales para acceder al sistema.</p>
+                <h2>Iniciar sesión</h2>
+                <p class="auth-sub">Ingresa con tu cuenta.</p>
 
                 <form id="formularioLogin" novalidate>
                     <div class="mb-3">
@@ -91,7 +85,7 @@
                     </div>
 
                     <div class="d-flex justify-content-end mb-3">
-                        <a href="#" class="auth-link" data-bs-toggle="modal" data-bs-target="#modalRecuperarClave">¿Olvidaste tu contraseña?</a>
+                        <a href="#" class="auth-link" data-bs-toggle="modal" data-bs-target="#modalRecuperarClave">Recuperar contraseña</a>
                     </div>
 
                     <div id="mensajeError" class="alert alert-danger d-none" role="alert"></div>
