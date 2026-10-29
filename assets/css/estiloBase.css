@@ -38,6 +38,7 @@ body {
 /* Main content scroll */
 main {
   height: 100vh;
+  height: 100dvh;
   overflow-y: auto;
 }
 
@@ -122,8 +123,22 @@ select.form-select.form-select-sm {
   margin-right: 0 !important;
 }
 
+/* Con el sidebar colapsado no hay espacio hacia abajo: el submenú sale al costado */
 .sidebar.collapsed .dropdown-submenu {
-  left: 70px !important;
+  position: absolute;
+  left: 70px;
+  top: 0;
+  min-width: 200px;
+  background: var(--brand-gradient);
+  border-radius: 0 8px 8px 0;
+  padding: 0.5rem 0;
+  box-shadow: 4px 4px 16px rgba(0,0,0,0.3);
+  z-index: 100;
+}
+
+.sidebar:not(.collapsed) > .nav {
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .sidebar-toggle {
@@ -161,7 +176,7 @@ select.form-select.form-select-sm {
   object-fit: contain;
   border-radius: 12px;
   background: rgba(255,255,255,0.95);
-  padding: 6px;
+  padding: 3px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   flex-shrink: 0;
 }
@@ -237,19 +252,19 @@ select.form-select.form-select-sm {
   transform: rotate(180deg);
 }
 
+/* Submenú en acordeón: se despliega hacia abajo dentro del propio menú */
 .dropdown-submenu {
   display: none;
-  position: absolute;
-  left: var(--sidebar-width);
-  top: 0;
-  background: var(--brand-gradient);
-  min-width: 200px;
-  border-radius: 0 8px 8px 0;
-  padding: 0.5rem 0;
-  box-shadow: 4px 4px 16px rgba(0,0,0,0.3);
-  z-index: 100;
+  position: static;
+  background: rgba(0,0,0,0.18);
+  padding: 0.25rem 0;
   list-style: none;
   margin: 0;
+}
+
+.sidebar:not(.collapsed) .dropdown-submenu li a {
+  padding: 0.5rem 1.25rem 0.5rem 2.6rem;
+  white-space: normal;
 }
 
 .nav-item.dropdown-hover.open > .dropdown-submenu,
@@ -326,6 +341,15 @@ main.flex-grow-1 {
   margin-bottom: 0.35rem;
 }
 
+.sidebar-user .user-name .user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  vertical-align: middle;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
 .sidebar-user .user-name:hover {
   color: var(--brand-bright);
 }
@@ -390,6 +414,12 @@ main.flex-grow-1 {
   color: #fff;
   position: relative;
   overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
 }
 
 .stat-card .stat-icon {
@@ -789,6 +819,44 @@ textarea.form-control {
 .badge.bg-secondary { background: linear-gradient(135deg, #546E7A, #78909C) !important; color: #fff !important; }
 
 /* Badges de Tipo de Producto con maximo contraste y estetica pulida */
+.badge-presentacion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--brand-bg-light);
+  color: var(--brand-dark);
+  border: 1px solid var(--brand-bg-border);
+}
+
+.badge-presentacion.entero {
+  background: var(--brand-dark);
+  color: #fff;
+  border-color: var(--brand-dark);
+}
+
+.badge-presentacion.simple {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+.pres-pie {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: conic-gradient(var(--brand-primary) calc(var(--p) * 1%), #cbd5e1 0);
+}
+
+.badge-presentacion.entero .pres-pie {
+  background: #fff;
+}
+
 .badge-tipo-base {
   background-color: #DBEAFE !important;
   color: #1E40AF !important;
@@ -1201,6 +1269,9 @@ textarea.form-control {
   position: absolute;
   border-radius: 50%;
   opacity: 0.08;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
 .login-bg-shapes .shape-1 {
@@ -1232,10 +1303,10 @@ textarea.form-control {
 }
 
 @keyframes floatShape {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  25% { transform: translate(30px, -30px) scale(1.05); }
-  50% { transform: translate(-20px, 20px) scale(0.95); }
-  75% { transform: translate(15px, -15px) scale(1.02); }
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  25% { transform: translate3d(24px, -24px, 0) scale(1.04); }
+  50% { transform: translate3d(-16px, 16px, 0) scale(0.96); }
+  75% { transform: translate3d(12px, -12px, 0) scale(1.02); }
 }
 
 .login-card {
@@ -1243,11 +1314,11 @@ textarea.form-control {
   max-width: 420px;
   position: relative;
   z-index: 1;
-  animation: fadeInUp 0.6s ease;
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(30px); }
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -1276,7 +1347,7 @@ textarea.form-control {
   height: 120px;
   border-radius: 20px;
   background: rgba(255,255,255,0.95);
-  padding: 12px;
+  padding: 4px;
   margin-bottom: 1rem;
   box-shadow: 0 4px 16px rgba(0,0,0,0.15);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -1425,7 +1496,7 @@ textarea.form-control {
   .login-logo-wrapper {
     width: 64px;
     height: 64px;
-    padding: 10px;
+    padding: 3px;
   }
 
   .login-card .card-header h1 {
@@ -1797,7 +1868,9 @@ table.dataTable > tbody > tr.child ul.dtr-details > li { display: flex; gap: 0.5
   .toolbar-actions .form-control,
   .d-flex.justify-content-between > .d-flex.gap-2.align-items-center input,
   .d-flex.justify-content-between > .d-flex.gap-2.align-items-center select,
-  .d-flex.gap-2.align-items-center input[style*="width"] {
+  .d-flex.gap-2.align-items-center input[style*="width"],
+  .toolbar-actions .input-busqueda,
+  .d-flex.justify-content-between > .d-flex.gap-2.align-items-center .input-busqueda {
     width: 100% !important;
     max-width: 100% !important;
   }
@@ -1806,6 +1879,41 @@ table.dataTable > tbody > tr.child ul.dtr-details > li { display: flex; gap: 0.5
   .d-flex.justify-content-between > .d-flex.gap-2.align-items-center button,
   .d-flex.justify-content-between > .d-flex.gap-2.align-items-center .btn {
     width: 100% !important;
+  }
+}
+
+.card-header.d-flex,
+.toolbar-actions {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.modal-footer {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 575.98px) {
+  .modal-footer .btn {
+    flex: 1 1 auto;
+  }
+  .modal-body {
+    padding: 1rem;
+  }
+  .container-fluid > .row > [class*="col-"] {
+    min-width: 0;
+  }
+  .card-body {
+    padding: 1rem;
+  }
+  h1, .h1 { font-size: 1.6rem; }
+  h2, .h2 { font-size: 1.4rem; }
+  h4, .h4 { font-size: 1.15rem; }
+}
+
+@media (min-width: 576px) and (max-width: 991.98px) {
+  .modal-dialog.modal-lg,
+  .modal-dialog.modal-xl {
+    max-width: calc(100% - 2rem);
   }
 }
 
@@ -1957,9 +2065,7 @@ table.dataTable button *,
 .toast-salida { opacity: 0; }
 
 :focus-visible { outline: 2px solid var(--brand-bright, #1d4ed8); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-}
+
 
 /* Barra de acciones fija al pie en formularios largos */
 .barra-accion-fija { position: sticky; bottom: 0; z-index: 10; padding: 0.75rem 0; background: var(--bs-body-bg, #fff); border-top: 1px solid rgba(0,0,0,0.08); }
@@ -1981,4 +2087,44 @@ table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before {
 #grupoFiltroPresupuestos .btn {
   white-space: nowrap;
   flex: 0 0 auto;
+}
+
+/* ============================================================
+   ANIMACIÓN DE ENTRADA DEL INICIO (dashboard)
+   ============================================================ */
+@keyframes entradaSuave {
+  from { opacity: 0; transform: translate3d(0, 18px, 0) scale(0.98); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+/* Cada columna entra con un pequeño retraso escalonado */
+.entrada-animada > [class*="col"] {
+  animation: entradaSuave 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.entrada-animada > [class*="col"]:nth-child(1) { animation-delay: 0.05s; }
+.entrada-animada > [class*="col"]:nth-child(2) { animation-delay: 0.10s; }
+.entrada-animada > [class*="col"]:nth-child(3) { animation-delay: 0.15s; }
+.entrada-animada > [class*="col"]:nth-child(4) { animation-delay: 0.20s; }
+.entrada-animada > [class*="col"]:nth-child(5) { animation-delay: 0.25s; }
+.entrada-animada > [class*="col"]:nth-child(6) { animation-delay: 0.30s; }
+.entrada-animada > [class*="col"]:nth-child(7) { animation-delay: 0.35s; }
+
+/* Los bloques inferiores entran después de las tarjetas de métricas */
+.entrada-animada + .entrada-animada > [class*="col"] { animation-delay: 0.35s; }
+.entrada-animada + .entrada-animada + .entrada-animada > [class*="col"] { animation-delay: 0.45s; }
+.entrada-animada + .entrada-animada + .entrada-animada + .entrada-animada > [class*="col"] { animation-delay: 0.55s; }
+
+/* Icono de cada métrica con un leve rebote al entrar */
+@keyframes iconoEntrada {
+  0% { opacity: 0; transform: translateY(-50%) scale(0.6) rotate(-12deg); }
+  70% { opacity: 0.25; transform: translateY(-50%) scale(1.08) rotate(3deg); }
+  100% { opacity: 0.2; transform: translateY(-50%) scale(1) rotate(0); }
+}
+.entrada-animada .stat-card .stat-icon {
+  animation: iconoEntrada 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s both;
+}
+
+/* Campo de busqueda de las listas */
+.input-busqueda {
+  width: 220px;
 }

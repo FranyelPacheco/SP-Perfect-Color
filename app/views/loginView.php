@@ -37,7 +37,8 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/estiloBase.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/estiloBase.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/estiloBase.css'); ?>">
     <meta name="csrf-token" content="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
     <script src="/SP%20Perfect%20Color/assets/js/csrf.js"></script>
 </head>
@@ -53,7 +54,7 @@
         <div class="card shadow">
             <div class="card-header text-center border-0">
                 <div class="login-logo-wrapper">
-                    <img src="/SP%20Perfect%20Color/assets/images/logo.webp" alt="SP Perfect Color" class="login-logo">
+                    <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color" class="login-logo">
                 </div>
                 <h1>SP Perfect Color</h1>
                 <p class="mb-0">Sistema de Gestión Administrativa</p>
