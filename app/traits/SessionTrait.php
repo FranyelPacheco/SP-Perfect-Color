@@ -23,6 +23,7 @@ trait SessionTrait
         $_SESSION['id_usuario'] = (int)$usuario['id_usuario'];
         $_SESSION['usuario_nombre'] = $usuario['nombre'];
         $_SESSION['usuario_correo'] = $usuario['correo'];
+        $_SESSION['usuario_foto'] = $usuario['foto'] ?? '';
         $_SESSION['usuario_rol'] = (int)$usuario['id_rol'];
         $_SESSION['usuario_rol_nombre'] = $usuario['rol_nombre'] ?? '';
         $_SESSION['usuario_modulos'] = $usuario['rol_modulos'] ?? '';
@@ -146,6 +147,17 @@ trait SessionTrait
             return;
         }
         respuestaJson('error', 'Acceso denegado. Se requieren privilegios de Administrador');
+    }
+
+    // FUNCIÓN: verificarSoloAdmin
+    // OBJETIVO: Exigir rol Administrador (rol 1) aunque el usuario tenga permiso del módulo; para acciones que modifican datos sensibles
+    public function verificarSoloAdmin(): void
+    {
+        $this->verificarAutenticacion();
+        if ($this->obtenerRolUsuario() === 1) {
+            return;
+        }
+        respuestaJson('error', 'Acceso denegado. Solo el Administrador puede realizar esta acción');
     }
 
     // FUNCIÓN: verificarRolVendedor

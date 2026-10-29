@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formularioCliente.reset();
             clienteId.value = '';
             limpiarEstadoCedula();
+            bloquearCedula(false);
             limpiarEstadoCorreo();
             resetearSegundoTelefono();
             mensajeError.classList.add('d-none');
@@ -102,6 +103,22 @@ document.addEventListener('DOMContentLoaded', function() {
             resetearSegundoTelefono();
             mensajeError.classList.add('d-none');
         });
+    }
+
+    function asignarOperadora(select, valor) {
+        if (!Array.from(select.options).some(function (o) { return o.value === valor; })) {
+            select.add(new Option(valor, valor));
+        }
+        select.value = valor;
+    }
+
+    function bloquearCedula(bloquear) {
+        if (cedulaCliente) {
+            cedulaCliente.disabled = bloquear;
+            if (bloquear) cedulaCliente.setAttribute('title', 'La cédula no se puede modificar');
+            else cedulaCliente.removeAttribute('title');
+        }
+        if (tipoDocCliente) tipoDocCliente.disabled = bloquear;
     }
 
     function limpiarEstadoCedula() {
@@ -371,6 +388,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     cedulaCliente.value = c.cedula || '';
                 }
+                bloquearCedula(true);
 
                 nombresCliente.value = c.nombres;
                 apellidosCliente.value = c.apellidos;
@@ -381,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (arrayTels.length > 0 && arrayTels[0]) {
                     const telRaw1 = arrayTels[0].replace(/[^0-9]/g, '');
                     if (telRaw1.length === 11 && operadoraCliente && telefonoNumeroCliente) {
-                        operadoraCliente.value = telRaw1.substring(0, 4);
+                        asignarOperadora(operadoraCliente, telRaw1.substring(0, 4));
                         telefonoNumeroCliente.value = telRaw1.substring(4);
                     } else if (telefonoNumeroCliente) {
                         telefonoNumeroCliente.value = telRaw1;
@@ -390,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (arrayTels.length > 1 && arrayTels[1]) {
                     const telRaw2 = arrayTels[1].replace(/[^0-9]/g, '');
                     if (telRaw2.length === 11 && operadoraCliente2 && telefonoNumeroCliente2) {
-                        operadoraCliente2.value = telRaw2.substring(0, 4);
+                        asignarOperadora(operadoraCliente2, telRaw2.substring(0, 4));
                         telefonoNumeroCliente2.value = telRaw2.substring(4);
                         if (seccionTel2Cliente) seccionTel2Cliente.classList.remove('d-none');
                         if (btnToggleTel2Cliente) btnToggleTel2Cliente.classList.add('d-none');
@@ -550,7 +568,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Elimina un cliente
     async function eliminarCliente(id, nombre) {
-        confirmarConModal('Eliminar', '¿Está seguro de eliminar al cliente ' + nombre + '?', function() {
+        confirmarConModal('Eliminar', '¿Está seguro de eliminar al cliente ' + escapeHtml(nombre) + '?', function() {
             const formData = new FormData();
             formData.append('id', id);
             fetch('/SP%20Perfect%20Color/cliente/eliminar', { method: 'POST', body: formData })

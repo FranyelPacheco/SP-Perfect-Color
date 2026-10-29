@@ -12,6 +12,7 @@ use function App\Helpers\{
     respuestaJson,
     verificarAutenticacion,
     verificarRolAdmin,
+    verificarSoloAdmin,
     tienePermiso,
     verificarPropietario,
     soloPost,
@@ -129,6 +130,11 @@ if ($metodo === 'index') {
         verificarPropietario($id);
     }
 
+    $objetivo = $usuarioModel->buscarPorId($id);
+    if ($objetivo && (int)$objetivo['id_rol'] === 1 && (int)($_SESSION['usuario_rol'] ?? 0) !== 1) {
+        respuestaJson('error', 'Solo un administrador puede modificar a otro administrador');
+    }
+
     $resultado = $usuarioModel->modificar($id, $_POST, tienePermiso('usuario'));
     if ($resultado['exito']) {
         if ($id == $_SESSION['id_usuario']) {
@@ -148,6 +154,10 @@ if ($metodo === 'index') {
     soloPost();
 
     $id = intval($_POST['id'] ?? 0);
+    $objetivo = $usuarioModel->buscarPorId($id);
+    if ($objetivo && (int)$objetivo['id_rol'] === 1 && (int)($_SESSION['usuario_rol'] ?? 0) !== 1) {
+        respuestaJson('error', 'Solo un administrador puede eliminar a otro administrador');
+    }
     $resultado = $usuarioModel->darDeBaja($id, (int)$_SESSION['id_usuario']);
     responder($resultado);
 
@@ -187,10 +197,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: guardarRol
 // OBJETIVO: Crea un nuevo rol con sus módulos autorizados
 } elseif ($metodo === 'guardarRol') {
-    verificarAutenticacion();
-    if (!tienePermiso('usuario')) {
-        respuestaJson('error', 'Acceso denegado');
-    }
+    verificarSoloAdmin();
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         respuestaJson('error', 'Método no permitido');
@@ -202,10 +209,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: actualizarRol
 // OBJETIVO: Actualiza el nombre, módulos y estado de un rol
 } elseif ($metodo === 'actualizarRol') {
-    verificarAutenticacion();
-    if (!tienePermiso('usuario')) {
-        respuestaJson('error', 'Acceso denegado');
-    }
+    verificarSoloAdmin();
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         respuestaJson('error', 'Método no permitido');
@@ -226,10 +230,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: toggleRol
 // OBJETIVO: Habilita o deshabilita un rol
 } elseif ($metodo === 'toggleRol') {
-    verificarAutenticacion();
-    if (!tienePermiso('usuario')) {
-        respuestaJson('error', 'Acceso denegado');
-    }
+    verificarSoloAdmin();
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         respuestaJson('error', 'Método no permitido');
@@ -253,10 +254,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: eliminarRol
 // OBJETIVO: Elimina permanentemente un rol (protege Administrador id_rol = 1)
 } elseif ($metodo === 'eliminarRol') {
-    verificarAutenticacion();
-    if (!tienePermiso('usuario')) {
-        respuestaJson('error', 'Acceso denegado');
-    }
+    verificarSoloAdmin();
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         respuestaJson('error', 'Método no permitido');

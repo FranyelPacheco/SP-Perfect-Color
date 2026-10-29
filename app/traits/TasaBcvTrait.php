@@ -15,11 +15,19 @@ trait TasaBcvTrait
         return $this->_ejecutarSqlTasaBcv($expresionFecha, $alias);
     }
 
+    // FUNCIÓN: sqlTasaPago
+    // OBJETIVO: Subconsulta escalar con la tasa vigente el día indicado (sin tasas posteriores) para guardarla fija al registrar un pago
+    // NOTA: $expresionFecha viene del propio modelo (nunca de la petición)
+    public function sqlTasaPago(string $expresionFecha): string
+    {
+        return "(SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE({$expresionFecha}) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1)";
+    }
+
     private function _ejecutarSqlTasaBcv(string $expresionFecha, string $alias): string
     {
         return "COALESCE(
                     (SELECT tc.tasa FROM tasa_cambio tc WHERE tc.fecha <= DATE({$expresionFecha}) AND tc.estado = 1 ORDER BY tc.fecha DESC, tc.id_tasa_cambio DESC LIMIT 1),
-                    (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha DESC, tc2.id_tasa_cambio DESC LIMIT 1),
+                    (SELECT tc2.tasa FROM tasa_cambio tc2 WHERE tc2.estado = 1 ORDER BY tc2.fecha ASC, tc2.id_tasa_cambio ASC LIMIT 1),
                     0
                 ) as {$alias}";
     }

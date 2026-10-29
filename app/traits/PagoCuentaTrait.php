@@ -46,6 +46,14 @@ trait PagoCuentaTrait
             return ['valido' => false, 'mensaje' => 'El monto debe ser mayor a cero'];
         }
 
+        if (!$this->validarFecha($fecha)) {
+            return ['valido' => false, 'mensaje' => 'La fecha del pago no es válida'];
+        }
+
+        if (mb_strlen($referencia) > 100) {
+            return ['valido' => false, 'mensaje' => 'La referencia no puede superar los 100 caracteres'];
+        }
+
         if ($monto > (float)$cuenta['saldo_pendiente']) {
             return ['valido' => false, 'mensaje' => 'El monto del pago supera el saldo pendiente'];
         }
@@ -88,7 +96,8 @@ trait PagoCuentaTrait
             return $this->respuestaExito('Pago registrado exitosamente');
         } catch (PDOException $e) {
             error_log('Error al registrar pago de cuenta ' . $this->etiquetaCuenta() . ': ' . $e->getMessage());
-            return $this->respuestaError('Error al registrar el pago: ' . $e->getMessage());
+            $esMensajePropio = str_starts_with($e->getMessage(), 'El monto') || str_starts_with($e->getMessage(), 'Cuenta');
+            return $this->respuestaError($esMensajePropio ? $e->getMessage() : 'Error al registrar el pago');
         }
     }
 
@@ -123,13 +132,14 @@ trait PagoCuentaTrait
                 throw new PDOException('El monto del pago supera el saldo pendiente');
             }
 
-            $stmtPago = $this->conexion->prepare("INSERT INTO {$this->tablaPagos()} ({$pk}, id_tipo_pago, id_banco, monto, fecha, referencia)
-                                                  VALUES (:cuenta_id, :id_tipo_pago, :id_banco, :monto, :fecha, :referencia)");
+            $stmtPago = $this->conexion->prepare("INSERT INTO {$this->tablaPagos()} ({$pk}, id_tipo_pago, id_banco, monto, fecha, referencia, tasa_bcv)
+                                                  VALUES (:cuenta_id, :id_tipo_pago, :id_banco, :monto, :fecha, :referencia, {$this->sqlTasaPago(':fecha_tasa')})");
             $stmtPago->bindValue(':cuenta_id', $cuentaId, PDO::PARAM_INT);
             $stmtPago->bindValue(':id_tipo_pago', $tipoPagoId, PDO::PARAM_INT);
             $stmtPago->bindValue(':id_banco', $bancoId, $bancoId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
             $stmtPago->bindValue(':monto', $monto);
             $stmtPago->bindValue(':fecha', $fecha, PDO::PARAM_STR);
+            $stmtPago->bindValue(':fecha_tasa', $fecha, PDO::PARAM_STR);
             $stmtPago->bindValue(':referencia', $referencia, $referencia === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmtPago->execute();
 

@@ -77,14 +77,14 @@ $saldoPendCxp = (float)($cuenta['saldo_pendiente'] ?? 0);
                 <tbody>
                     <?php foreach ($pagos as $pago): 
                         $montoPagoUsd = (float)($pago['monto'] ?? 0);
-                        $tasaPagoFecha = !empty($pago['tasa_bcv']) ? (float)$pago['tasa_bcv'] : $tasaHoyCxp;
+                        $tasaPagoFecha = (float)($pago['tasa_bcv'] ?? 0);
                         $montoPagoBs = $montoPagoUsd * $tasaPagoFecha;
                     ?>
                     <tr>
                         <td><?php echo $pago['fecha']; ?></td>
                         <td class="fw-bold text-success">$ <?php echo number_format($montoPagoUsd, 2, ',', '.'); ?></td>
-                        <td><span class="badge bg-light text-dark border">Bs. <?php echo number_format($tasaPagoFecha, 2, ',', '.'); ?></span></td>
-                        <td class="fw-semibold text-primary">Bs. <?php echo number_format($montoPagoBs, 2, ',', '.'); ?></td>
+                        <td><?php if ($tasaPagoFecha > 0): ?><span class="badge bg-light text-dark border">Bs. <?php echo number_format($tasaPagoFecha, 2, ',', '.'); ?></span><?php else: ?><span class="text-muted small">Sin tasa registrada</span><?php endif; ?></td>
+                        <td class="fw-semibold text-primary"><?php echo $tasaPagoFecha > 0 ? 'Bs. ' . number_format($montoPagoBs, 2, ',', '.') : '-'; ?></td>
                         <td><?php echo htmlspecialchars($pago['tipo_pago_nombre'] ?? '-'); ?></td>
                         <td><?php echo htmlspecialchars($pago['banco_nombre'] ?? '-'); ?></td>
                         <td><?php echo htmlspecialchars($pago['referencia'] ?? '-'); ?></td>
@@ -106,8 +106,8 @@ $saldoPendCxp = (float)($cuenta['saldo_pendiente'] ?? 0);
     </button>
 </div>
 
-<div class="modal fade" id="modalPago" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="modalPago" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Registrar Abono</h5>
@@ -155,7 +155,7 @@ $saldoPendCxp = (float)($cuenta['saldo_pendiente'] ?? 0);
                     <div id="mensajeErrorPago" class="alert alert-danger d-none"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
                     <button type="submit" class="btn btn-success"><i class="bi bi-check-lg me-1"></i>Registrar Abono</button>
                 </div>
             </form>
@@ -228,7 +228,7 @@ document.getElementById('formularioPago').addEventListener('submit', function(ev
     var mensajeError = document.getElementById('mensajeErrorPago');
     mensajeError.classList.add('d-none');
     if (!monto || parseFloat(monto) <= 0) {
-        mensajeError.textContent = 'Ingrese un monto valido';
+        mensajeError.textContent = 'Ingrese un monto válido';
         mensajeError.classList.remove('d-none');
         return;
     }
@@ -240,12 +240,12 @@ document.getElementById('formularioPago').addEventListener('submit', function(ev
     var tipoVal = parseInt(tipoPagoId);
     if (tipoVal === 2 || tipoVal === 3) {
         if (!bancoId) {
-            mensajeError.textContent = 'Debe seleccionar un banco para transferencia o pago movil';
+            mensajeError.textContent = 'Debe seleccionar un banco para transferencia o pago móvil';
             mensajeError.classList.remove('d-none');
             return;
         }
         if (!referencia.trim()) {
-            mensajeError.textContent = 'Debe ingresar el numero de referencia para transferencia o pago movil';
+            mensajeError.textContent = 'Debe ingresar el número de referencia para transferencia o pago móvil';
             mensajeError.classList.remove('d-none');
             return;
         }
@@ -270,7 +270,7 @@ document.getElementById('formularioPago').addEventListener('submit', function(ev
         }
     })
     .catch(function() {
-        mensajeError.textContent = 'Error de conexion';
+        mensajeError.textContent = 'Error de conexión';
         mensajeError.classList.remove('d-none');
     });
 });

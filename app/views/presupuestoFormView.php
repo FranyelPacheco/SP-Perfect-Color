@@ -19,7 +19,7 @@
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-bold text-dark fs-6">
-                    <i class="bi bi-box-seam text-primary me-2"></i>Catálogo de Insumos
+                    <i class="bi bi-box-seam text-primary me-2"></i>Catálogo de Productos
                 </h5>
                 <span id="contadorInsumos" class="badge bg-light text-muted border">0 disponibles</span>
             </div>
@@ -97,7 +97,7 @@
                         <table id="tablaItemsPresupuesto" class="table tabla-items-presupuesto align-middle">
                             <thead>
                                 <tr>
-                                    <th>Insumo</th>
+                                    <th>Producto</th>
                                     <th class="text-center" style="width: 100px;">Cantidad</th>
                                     <th class="text-end" style="width: 120px;">Precio ($)</th>
                                     <th class="text-end" style="width: 110px;">Subtotal</th>

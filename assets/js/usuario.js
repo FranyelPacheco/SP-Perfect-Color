@@ -184,9 +184,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     : '<span class="badge bg-secondary">Inactivo</span>';
 
                 table.row.add([
-                    u.nombre,
-                    u.correo,
-                    '<span class="badge bg-primary-subtle text-primary border border-primary-subtle">' + (u.rol_nombre || 'Sin Rol') + '</span>',
+                    escapeHtml(u.nombre),
+                    escapeHtml(u.correo),
+                    '<span class="badge bg-primary-subtle text-primary border border-primary-subtle">' + escapeHtml(u.rol_nombre || 'Sin Rol') + '</span>',
                     estadoBadge,
                     acciones
                 ]);
@@ -463,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function eliminarUsuario(id, nombre) {
-        confirmarConModal('Eliminar Usuario', '¿Está seguro de eliminar al usuario ' + nombre + '?', function () {
+        confirmarConModal('Eliminar Usuario', '¿Está seguro de eliminar al usuario ' + escapeHtml(nombre) + '?', function () {
             var fd = new FormData();
             fd.append('id', id);
             fetch('/SP%20Perfect%20Color/usuario/eliminar', { method: 'POST', body: fd })
@@ -574,7 +574,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     var iconClass = r.activo == 1 ? 'bi-toggle-off' : 'bi-toggle-on';
                     var titleText = r.activo == 1 ? 'Deshabilitar Rol' : 'Habilitar Rol';
                     acciones += '<button class="btn btn-sm ' + btnClass + ' btn-toggle-rol" data-id="' + r.id_rol + '" data-activo="' + r.activo + '" title="' + titleText + '" aria-label="' + titleText + '" data-bs-toggle="tooltip"><i class="bi ' + iconClass + '"></i></button>';
-                    acciones += '<button class="btn btn-sm btn-danger btn-eliminar-rol" data-id="' + r.id_rol + '" data-nombre="' + r.nombre.replace(/"/g, '&quot;') + '" data-usuarios="' + (r.total_usuarios || 0) + '" title="Eliminar Rol" aria-label="Eliminar Rol" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>';
+                    acciones += '<button class="btn btn-sm btn-danger btn-eliminar-rol" data-id="' + r.id_rol + '" data-nombre="' + escapeHtml(r.nombre) + '" data-usuarios="' + (r.total_usuarios || 0) + '" title="Eliminar Rol" aria-label="Eliminar Rol" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>';
                 }
                 acciones += '</div>';
 
@@ -769,7 +769,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (totalUsuarios > 0) {
-            var advertencia = 'No se puede eliminar el rol <strong>' + nombre + '</strong> porque tiene <strong>' + totalUsuarios + '</strong> usuario(s) asignado(s).' +
+            var advertencia = 'No se puede eliminar el rol <strong>' + escapeHtml(nombre) + '</strong> porque tiene <strong>' + totalUsuarios + '</strong> usuario(s) asignado(s).' +
                 '<div class="alert alert-danger py-2 px-3 small mt-2 mb-0 text-start">' +
                 '<i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Atención:</strong> Debe reasignar o eliminar los usuarios asociados antes de poder borrar este rol.' +
                 '</div>';

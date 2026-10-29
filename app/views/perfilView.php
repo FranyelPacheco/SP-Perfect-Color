@@ -7,10 +7,28 @@
     <div class="col-12 col-lg-4">
         <div class="card border-0 shadow-sm text-center p-4">
             <div class="card-body p-0">
-                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm"
-                     style="width: 86px; height: 86px; font-size: 2.2rem; font-weight: 700; background-color: #1E3A5F !important;">
-                    <?php echo strtoupper(substr($usuario['nombre'] ?? 'U', 0, 1)); ?>
+                <?php $fotoPerfil = $usuario['foto'] ?? ''; ?>
+                <div class="position-relative d-inline-block mb-3">
+                    <img id="fotoPerfilImg" src="<?php echo $fotoPerfil ? '/SP%20Perfect%20Color/assets/uploads/avatares/' . rawurlencode($fotoPerfil) : ''; ?>"
+                         alt="Foto de perfil" class="rounded-circle shadow-sm object-fit-cover <?php echo $fotoPerfil ? '' : 'd-none'; ?>"
+                         style="width: 110px; height: 110px;">
+                    <div id="fotoPerfilInicial" class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm <?php echo $fotoPerfil ? 'd-none' : ''; ?>"
+                         style="width: 110px; height: 110px; font-size: 2.6rem; font-weight: 700; background-color: #1E3A5F !important;">
+                        <?php echo strtoupper(substr($usuario['nombre'] ?? 'U', 0, 1)); ?>
+                    </div>
                 </div>
+                <div id="alertaFotoPerfil" class="alert d-none py-2 small"></div>
+                <div class="d-flex justify-content-center gap-2 mb-3">
+                    <input type="file" id="inputFotoPerfil" accept="image/jpeg,image/png" class="d-none">
+                    <button type="button" id="btnCambiarFoto" class="btn btn-outline-primary btn-sm">
+                        <span class="btn-texto"><i class="bi bi-camera me-1"></i>Cambiar foto</span>
+                        <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    </button>
+                    <button type="button" id="btnQuitarFoto" class="btn btn-outline-danger btn-sm <?php echo $fotoPerfil ? '' : 'd-none'; ?>" title="Quitar foto">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                <p class="text-muted small mb-3">JPG o PNG, máximo 2 MB</p>
                 <h4 class="mb-1 fw-bold"><?php echo htmlspecialchars($usuario['nombre'] ?? ''); ?></h4>
                 <p class="text-muted small mb-3"><?php echo htmlspecialchars($usuario['correo'] ?? ''); ?></p>
                 <span class="badge bg-primary px-3 py-2 fs-6 mb-3" style="background-color: #1E3A5F !important;">

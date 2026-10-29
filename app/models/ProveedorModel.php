@@ -197,6 +197,12 @@ class ProveedorModel extends ModeloBase
             return ['exito' => false, 'mensaje' => 'ID de proveedor no valido'];
         }
 
+        $actual = $this->buscarPorId($id);
+        if (!$actual) {
+            return ['exito' => false, 'mensaje' => 'Proveedor no encontrado'];
+        }
+        $datos['rif'] = $actual['rif'];
+
         $val = $this->validarDatosProveedor($datos, $id);
         if (!$val['valido']) {
             return ['exito' => false, 'mensaje' => $val['mensaje']];

@@ -175,7 +175,7 @@ CREATE TABLE `mezcla_producto` (
   `id_producto_mezclado` int(11) NOT NULL COMMENT 'Producto nuevo resultante de la mezcla',
   `id_producto_base` int(11) NOT NULL COMMENT 'Pintura base o fraccion utilizada en la formula',
   `fraccion` varchar(15) NOT NULL DEFAULT '1/4' COMMENT 'Medida usada: 1/2, 1/4, ..., 1/128',
-  `cantidad_galon` decimal(12,4) NOT NULL COMMENT 'Equivalente decimal descontado del stock base',
+  `cantidad_galon` decimal(14,7) NOT NULL COMMENT 'Equivalente decimal descontado del stock base',
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_mezcla_producto`),
   KEY `fk_mezcla_prod_mezclado` (`id_producto_mezclado`),
@@ -404,8 +404,8 @@ CREATE TABLE `productos` (
   `codigo` varchar(50) NOT NULL,
   `nombre` varchar(150) NOT NULL,
   `unidad_medida` varchar(30) DEFAULT NULL,
-  `stock_actual` decimal(12,4) NOT NULL DEFAULT 0.0000,
-  `stock_minimo` decimal(12,4) NOT NULL DEFAULT 5.0000,
+  `stock_actual` decimal(14,7) NOT NULL DEFAULT 0.0000000,
+  `stock_minimo` decimal(14,7) NOT NULL DEFAULT 5.0000000,
   `precio_venta` decimal(10,2) NOT NULL DEFAULT 0.00,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
@@ -721,6 +721,7 @@ CREATE TABLE `usuarios` (
   `nombre` varchar(100) NOT NULL,
   `correo` varchar(100) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
+  `foto` varchar(255) DEFAULT NULL,
   `id_rol` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
@@ -827,3 +828,49 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2026-10-17 11:59:00
+
+-- Presentaciones de galon e historial de mermas
+CREATE TABLE IF NOT EXISTS `presentacion` (
+  `id_presentacion` tinyint(4) NOT NULL,
+  `etiqueta` varchar(15) NOT NULL,
+  `factor_128` smallint(6) NOT NULL COMMENT 'Equivalencia en 128avos de galon',
+  PRIMARY KEY (`id_presentacion`),
+  UNIQUE KEY `etiqueta` (`etiqueta`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+
+INSERT IGNORE INTO `presentacion` (`id_presentacion`, `etiqueta`, `factor_128`) VALUES
+  (1, '1 Galón', 128),
+  (2, '1/2 Galón', 64),
+  (3, '1/4 Galón', 32),
+  (4, '1/8 Galón', 16),
+  (5, '1/16 Galón', 8),
+  (6, '1/32 Galón', 4),
+  (7, '1/64 Galón', 2),
+  (8, '1/128 Galón', 1);
+
+CREATE TABLE IF NOT EXISTS `merma_inventario` (
+  `id_merma` int(11) NOT NULL AUTO_INCREMENT,
+  `id_producto` int(11) NOT NULL,
+  `id_presentacion` tinyint(4) DEFAULT NULL COMMENT 'Presentacion perdida; NULL en productos que no se miden en galones',
+  `cantidad` int(11) NOT NULL COMMENT 'Unidades perdidas de la presentacion indicada',
+  `equivalente_128` int(11) DEFAULT NULL COMMENT 'Total perdido en 128avos de galon',
+  `cantidad_descontada` decimal(14,7) NOT NULL COMMENT 'Valor restado de stock_actual',
+  `motivo` varchar(250) NOT NULL,
+  `id_usuario` int(11) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id_merma`),
+  KEY `fk_merma_producto` (`id_producto`),
+  KEY `fk_merma_presentacion` (`id_presentacion`),
+  KEY `fk_merma_usuario` (`id_usuario`),
+  CONSTRAINT `fk_merma_producto` FOREIGN KEY (`id_producto`) REFERENCES `productos` (`id_producto`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_merma_presentacion` FOREIGN KEY (`id_presentacion`) REFERENCES `presentacion` (`id_presentacion`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_merma_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_usuario`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+
+-- Tasa fija por pago (se guarda al registrar el pago)
+ALTER TABLE `pagos_recibidos` ADD COLUMN `tasa_bcv` decimal(12,4) DEFAULT NULL COMMENT 'Tasa Bs/$ vigente el dia del pago, fija' AFTER `monto`;
+ALTER TABLE `pagos_realizados` ADD COLUMN `tasa_bcv` decimal(12,4) DEFAULT NULL COMMENT 'Tasa Bs/$ vigente el dia del pago, fija' AFTER `monto`;
+
+-- Alerta de stock minimo silenciable en presentaciones hijas
+ALTER TABLE `productos` ADD COLUMN `alerta_activa` tinyint(1) NOT NULL DEFAULT 1 AFTER `stock_minimo`;
+UPDATE `productos` SET `stock_minimo` = 0 WHERE `id_tipo_producto` = 3;

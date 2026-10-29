@@ -8,7 +8,7 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
             <h4 class="mb-0 toolbar-title"><i class="bi bi-truck me-2 text-primary"></i>Proveedores</h4>
             <div class="d-flex gap-2 align-items-center">
-                <input type="text" id="busquedaProveedores" class="form-control" style="width: 220px;" placeholder="Buscar por nombre de empresa o RIF...">
+                <input type="text" id="busquedaProveedores" class="form-control input-busqueda" placeholder="Buscar por nombre de empresa o RIF...">
                 <?php if ($_SESSION['usuario_rol'] == 1): ?>
                 <button id="btnNuevoProveedor" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
                 <?php endif; ?>
@@ -36,12 +36,12 @@
 </div>
 
 <?php if ($_SESSION['usuario_rol'] == 1): ?>
-<div id="modalProveedor" class="modal" style="display: none;" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+<div id="modalProveedor" class="modal fade" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="tituloModalProveedor">Nuevo Proveedor</h5>
-                <button type="button" id="btnCerrarModalProveedor" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" id="btnCerrarModalProveedor" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form id="formularioProveedor">
                 <div class="modal-body">
@@ -70,12 +70,12 @@
 
                     <div class="mb-3">
                         <label for="direccionProveedor" class="form-label">Dirección</label>
-                        <textarea id="direccionProveedor" name="direccion" class="form-control" rows="2" placeholder="Ingrese la dirección"></textarea>
+                        <textarea id="direccionProveedor" name="direccion" class="form-control" maxlength="250" rows="2" placeholder="Ingrese la dirección"></textarea>
                     </div>
 
                     <div class="mb-3">
                         <label for="correoProveedor" class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
-                        <input type="email" id="correoProveedor" name="correo" class="form-control" required placeholder="correo@ejemplo.com" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Ingrese un correo electrónico válido">
+                        <input type="email" id="correoProveedor" name="correo" class="form-control" required maxlength="100" placeholder="correo@ejemplo.com" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="Ingrese un correo electrónico válido">
                         <div id="feedbackCorreoProveedor" class="invalid-feedback"><i class="bi bi-exclamation-circle-fill me-1"></i>Correo ya registrado</div>
                     </div>
 

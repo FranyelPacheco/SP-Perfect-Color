@@ -93,7 +93,7 @@ $totalBsNota = $totalUsdNota * $tasaDocNota;
                 <thead>
                     <tr>
                         <th>Código</th>
-                        <th>Insumo</th>
+                        <th>Producto</th>
                         <th>Cantidad</th>
                         <th>Precio Unit.</th>
                         <th>Subtotal</th>

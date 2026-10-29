@@ -77,6 +77,44 @@ document.addEventListener('DOMContentLoaded', function() {
     let rubrosGlobal = [];
     let insumosGlobal = [];
     let basesGlobal = [];
+    let presentacionesGlobal = [];
+
+    // Los tintes base se cuentan en envases por tamaño (1, 1/2 ... 1/128 de galón)
+    function esBase(p) {
+        return parseInt(p.id_tipo_producto) === 1;
+    }
+
+    function factor128(fraccion) {
+        var m = String(fraccion || '1').match(/^(\d+)\/(\d+)$/);
+        return m ? Math.round(parseInt(m[1]) * 128 / parseInt(m[2])) : 128;
+    }
+
+    // Presentación a mostrar: fracción de galón (bases y preparados) o la unidad de medida (simples)
+    function presentacionDe(p) {
+        var tipo = parseInt(p.id_tipo_producto);
+        var unidad = String(p.unidad_medida || '');
+        var texto = null;
+        if (tipo === 1) texto = String(p.fraccion || '1');
+        else if (tipo === 3) texto = (unidad.match(/\d+\/\d+/) || [])[0] || (/gal/i.test(unidad) ? '1' : null);
+        if (texto === null) return { fraccion: null, etiqueta: unidad || '-' };
+        var partes = texto.split('/');
+        var valor = partes.length === 2 ? parseInt(partes[0]) / parseInt(partes[1]) : 1;
+        return { fraccion: valor, etiqueta: (valor === 1 ? '1' : texto) + ' Galón' };
+    }
+
+    function formatearGalones(galones) {
+        var total = Math.round((parseFloat(galones) || 0) * 128);
+        var texto = Math.floor(total / 128) + ' gal';
+        var resto = total % 128;
+        [64, 32, 16, 8, 4, 2, 1].forEach(function (f) {
+            if (resto >= f) {
+                texto += ' + 1/' + (128 / f);
+                resto -= f;
+            }
+        });
+        return texto;
+    }
+
     const esAdmin = document.getElementById('btnPrepararMezcla') !== null || document.getElementById('btnNuevoInsumo') !== null;
 
     // Ajusta la unidad de medida según el tipo de producto
@@ -131,7 +169,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (feedbackCodigoInsumo) feedbackCodigoInsumo.classList.add('d-none');
             if (btnGuardarInsumo) btnGuardarInsumo.disabled = false;
             nombreInsumo.value = '';
-            if (tipoProductoInsumo) tipoProductoInsumo.value = '2';
+            if (tipoProductoInsumo) { tipoProductoInsumo.value = '2'; tipoProductoInsumo.disabled = false; }
+            if (unidadMedidaInsumo) unidadMedidaInsumo.disabled = false;
+            var grupoAlertaNuevo = document.getElementById('grupoAlertaActivaInsumo');
+            if (grupoAlertaNuevo) grupoAlertaNuevo.classList.add('d-none');
             rubroInsumo.value = '';
             rubroInsumo.disabled = false;
             if (rubrosGlobal.length) llenarSelectRubros(rubrosGlobal);
@@ -182,6 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (resultado.estado === 'exito') {
                 insumosGlobal = resultado.datos.insumos || [];
+                presentacionesGlobal = resultado.datos.presentaciones || [];
                 mostrarInsumos(resultado.datos.insumos);
 
                 if (resultado.datos.proveedores) {
@@ -207,7 +249,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!$.fn.DataTable.isDataTable('#tablaInsumos')) {
             var columnsDef = [
                 { data: 'codigo', render: $.fn.dataTable.render.text() },
-                { data: 'nombre', render: $.fn.dataTable.render.text() },
+                {
+                    data: 'nombre',
+                    render: function(d, type, row) {
+                        if (type !== 'display') return d;
+                        return (row.id_producto_padre ? '<i class="bi bi-arrow-return-right text-muted me-1"></i>' : '') + escapeHtml(d);
+                    }
+                },
                 {
                     data: null,
                     render: function(data, type, row) {
@@ -227,6 +275,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 },
                 {
+                    data: null,
+                    render: function(data, type, row) {
+                        if (!row) return '';
+                        var pres = presentacionDe(row);
+                        if (type !== 'display') return pres.etiqueta;
+                        if (pres.fraccion === null) {
+                            return '';
+                        }
+                        return '<span class="badge-presentacion' + (pres.fraccion === 1 ? ' entero' : '') + '" title="' + Math.round(pres.fraccion * 128) + '/128 de galón">' +
+                            '<span class="pres-pie" style="--p:' + (pres.fraccion * 100) + '"></span>' + escapeHtml(pres.etiqueta) + '</span>';
+                    }
+                },
+                {
                     data: 'rubro_nombre',
                     render: function(d) { return escapeHtml(d) || '-'; }
                 },
@@ -236,8 +297,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (!row) return '';
                         var stockVal = Math.floor(parseFloat(row.stock_actual) || 0);
                         var stockMin = Math.floor(parseFloat(row.stock_minimo) || 0);
-                        var stockStyle = stockVal <= stockMin ? 'stock-bajo' : 'stock-normal';
-                        return '<span class="' + stockStyle + '">' + stockVal + '</span>';
+                        var alertaActiva = parseInt(row.alerta_activa) !== 0 && !(parseInt(row.id_tipo_producto) === 3 && stockMin <= 0);
+                        var stockStyle = alertaActiva && stockVal <= stockMin ? 'stock-bajo' : 'stock-normal';
+                        var totalFamilia = (esBase(row) && !row.id_producto_padre && row.volumen_familia_128 != null)
+                            ? '<div class="small text-muted">Total: ' + formatearGalones(row.volumen_familia_128 / 128) + '</div>' : '';
+                        return '<span class="' + stockStyle + '">' + stockVal + '</span>' + totalFamilia;
                     }
                 },
                 {
@@ -303,6 +367,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Silencia la alerta de stock mínimo de una presentación hija
+    function silenciarAlerta(id) {
+        var fd = new FormData();
+        fd.append('id', id);
+        fd.append('activa', 0);
+        fetch('/SP%20Perfect%20Color/inventario/silenciarAlerta', { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                mostrarNotificacion(res.mensaje, res.estado === 'exito' ? 'exito' : 'error');
+                if (res.estado === 'exito') {
+                    if (alertasStockBajo) alertasStockBajo.classList.add('d-none');
+                    cargarInsumos();
+                }
+            })
+            .catch(function() { mostrarNotificacion('Error de conexión', 'error'); });
+    }
+
     // Muestra las alertas de stock bajo
     function mostrarAlertas(alertas) {
         if (!alertasStockBajo || !contenidoAlertas) return;
@@ -314,7 +395,17 @@ document.addEventListener('DOMContentLoaded', function() {
             div.className = 'alerta-item';
             const stockEnt = Math.floor(parseFloat(alerta.stock_actual) || 0);
             const minEnt = Math.floor(parseFloat(alerta.stock_minimo) || 0);
-            div.textContent = alerta.codigo + ' - ' + alerta.nombre + ' (Stock: ' + stockEnt + ', Mínimo: ' + minEnt + ')';
+            var texto = document.createElement('span');
+            texto.textContent = alerta.codigo + ' - ' + alerta.nombre + ' (Stock: ' + stockEnt + ', Mínimo: ' + minEnt + ')';
+            div.appendChild(texto);
+            if (alerta.id_producto_padre && esAdmin) {
+                var btnSilenciar = document.createElement('button');
+                btnSilenciar.type = 'button';
+                btnSilenciar.className = 'btn btn-sm btn-outline-secondary ms-2 py-0';
+                btnSilenciar.innerHTML = '<i class="bi bi-bell-slash me-1"></i>Silenciar';
+                btnSilenciar.addEventListener('click', function() { silenciarAlerta(alerta.id_producto); });
+                div.appendChild(btnSilenciar);
+            }
             contenidoAlertas.appendChild(div);
         });
     }
@@ -385,7 +476,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (resultado.estado === 'exito') {
                 const insumo = resultado.datos;
 
-                tituloModal.textContent = 'Editar Insumo';
+                tituloModal.textContent = 'Editar Producto';
                 insumoId.value = insumo.id_insumo;
                 codigoInsumo.value = insumo.codigo;
                 codigoInsumo.disabled = true;
@@ -395,6 +486,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 nombreInsumo.value = insumo.nombre;
                 if (tipoProductoInsumo) tipoProductoInsumo.value = insumo.id_tipo_producto || '2';
                 ajustarUnidadSegunTipo(insumo.unidad_medida);
+                if (tipoProductoInsumo) {
+                    if (!Array.from(tipoProductoInsumo.options).some(function (o) { return o.value === String(insumo.id_tipo_producto); })) {
+                        tipoProductoInsumo.add(new Option(insumo.tipo_producto_nombre || 'Preparado', insumo.id_tipo_producto));
+                    }
+                    tipoProductoInsumo.value = insumo.id_tipo_producto;
+                    tipoProductoInsumo.disabled = true;
+                }
+                if (unidadMedidaInsumo) {
+                    if (insumo.unidad_medida && !Array.from(unidadMedidaInsumo.options).some(function (o) { return o.value === insumo.unidad_medida; })) {
+                        unidadMedidaInsumo.add(new Option(insumo.unidad_medida, insumo.unidad_medida));
+                    }
+                    unidadMedidaInsumo.value = insumo.unidad_medida || unidadMedidaInsumo.value;
+                    unidadMedidaInsumo.disabled = true;
+                }
+                var grupoAlerta = document.getElementById('grupoAlertaActivaInsumo');
+                var chkAlerta = document.getElementById('alertaActivaInsumo');
+                if (grupoAlerta && chkAlerta) {
+                    grupoAlerta.classList.toggle('d-none', !insumo.id_producto_padre);
+                    chkAlerta.checked = parseInt(insumo.alerta_activa) !== 0;
+                }
                 if (stockActualInsumo) {
                     stockActualInsumo.value = Math.round(parseFloat(insumo.stock_actual) || 0);
                     stockActualInsumo.readOnly = true;
@@ -487,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Elimina un insumo
     async function eliminarInsumo(id, nombre) {
-        confirmarConModal('Eliminar', '¿Está seguro de eliminar el insumo ' + nombre + '?', function() {
+        confirmarConModal('Eliminar', '¿Está seguro de eliminar el insumo ' + escapeHtml(nombre) + '?', function() {
             const formData = new FormData();
             formData.append('id', id);
             fetch('/SP%20Perfect%20Color/inventario/eliminar', { method: 'POST', body: formData })
@@ -645,8 +756,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 listaSug.innerHTML = '<div class="p-3 text-muted small text-center">No se encontraron tintes base</div>';
             } else {
                 filtradas.forEach(function(b) {
-                    const stock = Math.floor(parseFloat(b.stock_actual) || 0);
-                    const min = Math.floor(parseFloat(b.stock_minimo) || 0);
+                    const volumen = parseInt(b.volumen_familia_128) || 0;
+                    const stock = volumen;
+                    const min = 0;
                     const item = document.createElement('a');
                     item.className = 'buscador-dropdown-item';
                     item.href = '#';
@@ -654,7 +766,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<span class="item-titulo">' + escapeHtml(b.nombre) + '</span>' +
                         '<div class="item-meta">' +
                             '<span class="badge-codigo">' + escapeHtml(b.codigo) + '</span>' +
-                            '<span class="badge-stock ' + (stock <= min ? 'bajo' : '') + '">Stock: ' + stock + ' gal</span>' +
+                            '<span class="badge-stock ' + (stock <= min ? 'bajo' : '') + '">Disponible: ' + formatearGalones(volumen / 128) + '</span>' +
                         '</div>';
                     item.addEventListener('click', function(ev) {
                         ev.preventDefault();
@@ -885,6 +997,58 @@ document.addEventListener('DOMContentLoaded', function() {
     const ajusteMotivo = document.getElementById('ajusteMotivo');
     const ajusteObservacion = document.getElementById('ajusteObservacion');
     const mensajeErrorAjuste = document.getElementById('mensajeErrorAjuste');
+    const grupoAjustePresentacion = document.getElementById('grupoAjustePresentacion');
+    const ajustePresentacion = document.getElementById('ajustePresentacion');
+    const ajusteEquivalencia = document.getElementById('ajusteEquivalencia');
+    const textoEquivalenciaBase = ajusteEquivalencia ? ajusteEquivalencia.textContent : '';
+
+    // Para tintes base la merma se indica por presentación perdida; el resto sigue en unidades enteras
+    function actualizarEquivalenciaAjuste() {
+        if (!ajusteEquivalencia || !ajusteProducto) return;
+        var esTinte = ajusteProducto.dataset.galones === '1';
+        var volumen = parseInt(ajusteProducto.dataset.volumen) || 0;
+        var optTope = esTinte && ajustePresentacion ? ajustePresentacion.selectedOptions[0] : null;
+        var maximo = esTinte
+            ? Math.floor(volumen / (optTope ? parseInt(optTope.dataset.factor) : 128))
+            : Math.floor(parseFloat(ajusteProducto.dataset.stock) || 0);
+        if (ajusteCantidad) {
+            ajusteCantidad.max = maximo;
+            if (parseInt(ajusteCantidad.value) > maximo) ajusteCantidad.value = maximo > 0 ? maximo : '';
+        }
+        var prefijoTope = ajusteProducto.value
+            ? 'Máximo permitido: ' + maximo + (esTinte ? ' (total disponible: ' + formatearGalones(volumen / 128) + '). ' : '. ')
+            : '';
+        if (!esTinte) {
+            ajusteEquivalencia.textContent = prefijoTope + textoEquivalenciaBase;
+            return;
+        }
+        var opt = ajustePresentacion.selectedOptions[0];
+        var cant = parseInt(ajusteCantidad.value) || 0;
+        var eq = cant * (opt ? parseInt(opt.dataset.factor) : 0);
+        if (cant < 1) {
+            ajusteEquivalencia.textContent = prefijoTope + 'Indique cuántas unidades de esa presentación se perdieron.';
+            return;
+        }
+        ajusteEquivalencia.textContent = prefijoTope + 'Se perderán ' + formatearGalones(eq / 128) + ' en total. Si no hay envases de ese tamaño se abre uno mayor y el sobrante queda en stock.';
+    }
+
+    function configurarAjustePresentacion(esTinte, producto) {
+        if (!ajusteProducto || !grupoAjustePresentacion) return;
+        ajusteProducto.dataset.galones = esTinte ? '1' : '0';
+        grupoAjustePresentacion.classList.toggle('d-none', !esTinte);
+        if (esTinte) {
+            var tamanoProducto = factor128(producto ? producto.fraccion : '1');
+            ajustePresentacion.innerHTML = presentacionesGlobal.map(function (pr) {
+                return '<option value="' + pr.id_presentacion + '" data-factor="' + pr.factor_128 + '"' +
+                    (parseInt(pr.factor_128) === tamanoProducto ? ' selected' : '') + '>' + escapeHtml(pr.etiqueta) + '</option>';
+            }).join('');
+            ajusteCantidad.removeAttribute('max');
+        }
+        actualizarEquivalenciaAjuste();
+    }
+
+    if (ajustePresentacion) ajustePresentacion.addEventListener('change', actualizarEquivalenciaAjuste);
+    if (ajusteCantidad) ajusteCantidad.addEventListener('input', actualizarEquivalenciaAjuste);
 
     // Bloquear puntos, comas y decimales en ajusteCantidad y mezclaCantidad
     [ajusteCantidad, document.getElementById('mezclaCantidad')].forEach(function(inp) {
@@ -905,7 +1069,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const q = (filtro || '').toLowerCase().trim();
 
         const productosConStock = insumosGlobal.filter(function(p) {
-            const stock = Math.floor(parseFloat(p.stock_actual) || 0);
+            if (p.id_producto_padre) return false;
+            const stock = esBase(p) ? (parseInt(p.volumen_familia_128) || 0) : Math.floor(parseFloat(p.stock_actual) || 0);
             if (stock <= 0) return false;
             if (!q) return true;
             const texto = ((p.codigo || '') + ' ' + (p.nombre || '')).toLowerCase();
@@ -916,9 +1081,11 @@ document.addEventListener('DOMContentLoaded', function() {
             listaSugerenciasAjusteProducto.innerHTML = '<div class="p-3 text-muted small text-center">No se encontraron productos con stock disponible</div>';
         } else {
             productosConStock.forEach(function(p) {
+                const enGalones = esBase(p);
                 const stock = Math.floor(parseFloat(p.stock_actual) || 0);
                 const min = Math.floor(parseFloat(p.stock_minimo) || 0);
                 const unidad = p.unidad_medida || '';
+                const stockTexto = enGalones ? stock + ' envase(s) · familia: ' + formatearGalones((parseInt(p.volumen_familia_128) || 0) / 128) : stock + ' ' + unidad;
                 const item = document.createElement('a');
                 item.className = 'buscador-dropdown-item';
                 item.href = '#';
@@ -926,7 +1093,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     '<span class="item-titulo">' + escapeHtml(p.nombre) + '</span>' +
                     '<div class="item-meta">' +
                         '<span class="badge-codigo">' + escapeHtml(p.codigo) + '</span>' +
-                        '<span class="badge-stock ' + (stock <= min ? 'bajo' : '') + '">Stock: ' + stock + ' ' + unidad + '</span>' +
+                        '<span class="badge-stock ' + (stock <= min ? 'bajo' : '') + '">Stock: ' + stockTexto + '</span>' +
                     '</div>';
                 item.addEventListener('click', function(ev) {
                     ev.preventDefault();
@@ -934,10 +1101,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (ajusteProducto) {
                         ajusteProducto.value = p.id_producto;
                         ajusteProducto.dataset.stock = stock;
+                        ajusteProducto.dataset.volumen = parseInt(p.volumen_familia_128) || 0;
                         ajusteProducto.dataset.unidad = unidad;
                     }
-                    if (ajusteStockDisponible) ajusteStockDisponible.textContent = stock + ' ' + unidad;
-                    if (ajusteCantidad) ajusteCantidad.max = stock;
+                    if (ajusteStockDisponible) ajusteStockDisponible.textContent = stockTexto;
+                    if (ajusteCantidad && !enGalones) ajusteCantidad.max = stock;
+                    configurarAjustePresentacion(enGalones, p);
                     if (btnLimpiarAjusteProducto) btnLimpiarAjusteProducto.classList.remove('d-none');
                     listaSugerenciasAjusteProducto.classList.remove('show');
                     if (ajusteCantidad) ajusteCantidad.focus();
@@ -958,7 +1127,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ajusteProducto.value = '';
                     ajusteProducto.dataset.stock = '0';
                 }
-                if (ajusteStockDisponible) ajusteStockDisponible.textContent = '-';
+                if (ajusteStockDisponible) ajusteStockDisponible.textContent = '-'; configurarAjustePresentacion(false);
                 if (btnLimpiarAjusteProducto) btnLimpiarAjusteProducto.classList.add('d-none');
             }
             renderizarSugerenciasAjuste(this.value);
@@ -972,7 +1141,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ajusteProducto.value = '';
                 ajusteProducto.dataset.stock = '0';
             }
-            if (ajusteStockDisponible) ajusteStockDisponible.textContent = '-';
+            if (ajusteStockDisponible) ajusteStockDisponible.textContent = '-'; configurarAjustePresentacion(false);
             btnLimpiarAjusteProducto.classList.add('d-none');
             if (listaSugerenciasAjusteProducto) listaSugerenciasAjusteProducto.classList.remove('show');
             if (inputBuscarAjusteProducto) inputBuscarAjusteProducto.focus();
@@ -1009,7 +1178,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btnAjusteMerma.addEventListener('click', function() {
             if (formAjusteMerma) formAjusteMerma.reset();
             if (mensajeErrorAjuste) mensajeErrorAjuste.classList.add('d-none');
-            if (ajusteStockDisponible) ajusteStockDisponible.textContent = '-';
+            if (ajusteStockDisponible) ajusteStockDisponible.textContent = '-'; configurarAjustePresentacion(false);
             if (inputBuscarAjusteProducto) inputBuscarAjusteProducto.value = '';
             if (ajusteProducto) {
                 ajusteProducto.value = '';
@@ -1051,7 +1220,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            const enGalones = ajusteProducto && ajusteProducto.dataset.galones === '1';
             const stockActual = Math.floor(parseFloat(ajusteProducto ? ajusteProducto.dataset.stock : 0) || 0);
+            const volumenFamilia = parseInt(ajusteProducto ? ajusteProducto.dataset.volumen : 0) || 0;
 
             if (!cantRaw || !Number.isInteger(cant) || cant < 1) {
                 mensajeErrorAjuste.textContent = 'La cantidad a descontar debe ser un número entero mayor o igual a 1.';
@@ -1059,7 +1230,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            if (cant > stockActual) {
+            if (enGalones) {
+                const opt = ajustePresentacion.selectedOptions[0];
+                const eq = cant * (opt ? parseInt(opt.dataset.factor) : 0);
+                if (!opt || eq > volumenFamilia) {
+                    mensajeErrorAjuste.textContent = opt
+                        ? 'Lo perdido (' + formatearGalones(eq / 128) + ') excede el stock disponible (' + formatearGalones(volumenFamilia / 128) + ').'
+                        : 'Seleccione la presentación que se perdió.';
+                    mensajeErrorAjuste.classList.remove('d-none');
+                    return;
+                }
+            } else if (cant > stockActual) {
                 mensajeErrorAjuste.textContent = 'La cantidad (' + cant + ') excede el stock disponible (' + stockActual + ').';
                 mensajeErrorAjuste.classList.remove('d-none');
                 return;
@@ -1068,6 +1249,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const fd = new FormData();
             fd.append('id_producto', idProd);
             fd.append('cantidad', cant);
+            if (enGalones) fd.append('id_presentacion', ajustePresentacion.value);
             fd.append('motivo', motivoFinal);
 
             try {

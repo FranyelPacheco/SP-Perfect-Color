@@ -91,12 +91,12 @@
 </div>
 
 <!-- MODAL PARA USUARIO (CREAR/EDITAR) -->
-<div id="modalUsuario" class="modal fade" tabindex="-1">
+<div id="modalUsuario" class="modal fade" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-dark text-white border-bottom-0">
                 <h5 class="modal-title text-white" id="tituloModalUsuario">Nuevo Usuario</h5>
-                <button type="button" id="btnCerrarModalUsuario" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" id="btnCerrarModalUsuario" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
 
             <form id="formularioUsuario">
@@ -152,8 +152,8 @@
                 </div>
 
                 <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
-                    <button type="button" id="btnCancelarUsuario" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" id="btnGuardarUsuario" class="btn btn-primary">Guardar</button>
+                    <button type="button" id="btnCancelarUsuario" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                    <button type="submit" id="btnGuardarUsuario" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar</button>
                 </div>
             </form>
         </div>
@@ -162,12 +162,12 @@
 
 <?php if ($puedeGestionar): ?>
 <!-- MODAL PARA ROL (CREAR/EDITAR) -->
-<div id="modalRol" class="modal fade" tabindex="-1">
+<div id="modalRol" class="modal fade" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-dark text-white border-bottom-0">
                 <h5 class="modal-title text-white" id="tituloModalRol">Nuevo Rol</h5>
-                <button type="button" id="btnCerrarModalRol" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" id="btnCerrarModalRol" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
 
             <form id="formularioRol">
@@ -275,8 +275,8 @@
                 </div>
 
                 <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
-                    <button type="button" id="btnCancelarRol" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" id="btnGuardarRol" class="btn btn-primary">Guardar Rol</button>
+                    <button type="button" id="btnCancelarRol" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                    <button type="submit" id="btnGuardarRol" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar Rol</button>
                 </div>
             </form>
         </div>

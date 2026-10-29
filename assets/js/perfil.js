@@ -151,8 +151,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (json.estado === 'exito') {
                     mostrarAlerta(alerta, 'success', json.mensaje);
                     // Actualizar nombre en sidebar si existe
-                    document.querySelectorAll('.user-name').forEach(function (el) {
-                        el.innerHTML = '<i class="bi bi-person-circle me-1"></i>' + escapeHtml(nombre);
+                    document.querySelectorAll('.user-nombre').forEach(function (el) {
+                        el.textContent = nombre;
                     });
                     mostrarNotificacion(json.mensaje, 'exito');
                 } else {
@@ -228,6 +228,109 @@ document.addEventListener('DOMContentLoaded', function () {
                 mostrarAlerta(alerta, 'danger', 'Error de conexión con el servidor.');
             } finally {
                 setLoading(btn, spinner, texto, false);
+            }
+        });
+    }
+
+    // Foto de perfil
+    var inputFoto = document.getElementById('inputFotoPerfil');
+    var btnCambiarFoto = document.getElementById('btnCambiarFoto');
+    var btnQuitarFoto = document.getElementById('btnQuitarFoto');
+    var alertaFoto = document.getElementById('alertaFotoPerfil');
+    var rutaAvatares = '/SP%20Perfect%20Color/assets/uploads/avatares/';
+
+    function mostrarFoto(nombreArchivo) {
+        var img = document.getElementById('fotoPerfilImg');
+        var inicial = document.getElementById('fotoPerfilInicial');
+        if (img) {
+            img.src = nombreArchivo ? rutaAvatares + encodeURIComponent(nombreArchivo) : '';
+            img.classList.toggle('d-none', !nombreArchivo);
+        }
+        if (inicial) inicial.classList.toggle('d-none', !!nombreArchivo);
+        if (btnQuitarFoto) btnQuitarFoto.classList.toggle('d-none', !nombreArchivo);
+
+        document.querySelectorAll('.user-name').forEach(function (el) {
+            var actual = el.querySelector('.user-avatar, .bi-person-circle');
+            var nuevo;
+            if (nombreArchivo) {
+                nuevo = document.createElement('img');
+                nuevo.className = 'user-avatar me-1';
+                nuevo.alt = '';
+                nuevo.src = rutaAvatares + encodeURIComponent(nombreArchivo);
+            } else {
+                nuevo = document.createElement('i');
+                nuevo.className = 'bi bi-person-circle me-1';
+            }
+            if (actual) actual.replaceWith(nuevo);
+            else el.prepend(nuevo);
+        });
+    }
+
+    if (inputFoto && btnCambiarFoto) {
+        btnCambiarFoto.addEventListener('click', function () { inputFoto.click(); });
+
+        inputFoto.addEventListener('change', async function () {
+            var archivo = inputFoto.files[0];
+            ocultarAlerta(alertaFoto);
+            if (!archivo) return;
+
+            if (['image/jpeg', 'image/png'].indexOf(archivo.type) === -1) {
+                mostrarAlerta(alertaFoto, 'danger', 'Solo se permiten imágenes JPG o PNG.');
+                inputFoto.value = '';
+                return;
+            }
+            if (archivo.size > 2 * 1024 * 1024) {
+                mostrarAlerta(alertaFoto, 'danger', 'La imagen no puede superar los 2 MB.');
+                inputFoto.value = '';
+                return;
+            }
+
+            var spinner = btnCambiarFoto.querySelector('.spinner-border');
+            setLoading(btnCambiarFoto, spinner, null, true);
+            try {
+                var formData = new FormData();
+                formData.append('foto', archivo);
+                var res = await fetch('/SP%20Perfect%20Color/perfil/subirFoto', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                var json = await res.json();
+                if (json.estado === 'exito') {
+                    mostrarFoto(json.datos.foto);
+                    mostrarNotificacion(json.mensaje, 'exito');
+                } else {
+                    mostrarAlerta(alertaFoto, 'danger', json.mensaje || 'Error al subir la foto');
+                }
+            } catch (err) {
+                mostrarAlerta(alertaFoto, 'danger', 'Error de conexión con el servidor.');
+            } finally {
+                inputFoto.value = '';
+                setLoading(btnCambiarFoto, spinner, null, false);
+            }
+        });
+    }
+
+    if (btnQuitarFoto) {
+        btnQuitarFoto.addEventListener('click', async function () {
+            ocultarAlerta(alertaFoto);
+            btnQuitarFoto.disabled = true;
+            try {
+                var res = await fetch('/SP%20Perfect%20Color/perfil/eliminarFoto', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                var json = await res.json();
+                if (json.estado === 'exito') {
+                    mostrarFoto(null);
+                    mostrarNotificacion(json.mensaje, 'exito');
+                } else {
+                    mostrarAlerta(alertaFoto, 'danger', json.mensaje || 'Error al eliminar la foto');
+                }
+            } catch (err) {
+                mostrarAlerta(alertaFoto, 'danger', 'Error de conexión con el servidor.');
+            } finally {
+                btnQuitarFoto.disabled = false;
             }
         });
     }

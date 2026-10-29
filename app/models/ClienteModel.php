@@ -177,6 +177,12 @@ class ClienteModel extends ModeloBase
             return ['exito' => false, 'mensaje' => 'ID de cliente no valido'];
         }
 
+        $actual = $this->buscarPorId($id);
+        if (!$actual) {
+            return ['exito' => false, 'mensaje' => 'Cliente no encontrado'];
+        }
+        $datos['cedula'] = $actual['cedula'];
+
         $validacion = $this->validarDatosCliente($datos, $id);
         if (!$validacion['valido']) {
             return ['exito' => false, 'mensaje' => $validacion['mensaje']];
