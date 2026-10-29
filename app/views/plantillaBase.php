@@ -90,6 +90,45 @@ try {
             background: rgba(255, 255, 255, 0.15) !important;
         }
     </style>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.bootstrap5.min.css">
+    <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/estiloUI.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/estiloUI.css'); ?>">
+    <script>
+        // Mientras haya peticiones en curso la vista muestra el esqueleto; se retira cuando todo termina de cargar
+        (function () {
+            var raiz = document.documentElement, pendientes = 0, espera, listo = false;
+            raiz.classList.add('js-cargando');
+            function terminar() {
+                if (listo) return;
+                listo = true;
+                raiz.classList.remove('js-cargando');
+                document.querySelectorAll('.skeleton-page').forEach(function (el) { el.remove(); });
+                var c = document.querySelector('main > .container-fluid');
+                if (c) c.classList.remove('cargando');
+            }
+            function revisar() {
+                clearTimeout(espera);
+                if (pendientes === 0 && document.readyState === 'complete') {
+                    espera = setTimeout(function () { if (pendientes === 0) terminar(); }, 250);
+                }
+            }
+            var fetchOriginal = window.fetch;
+            if (fetchOriginal) {
+                window.fetch = function () {
+                    pendientes++;
+                    return fetchOriginal.apply(this, arguments).finally(function () { pendientes--; revisar(); });
+                };
+            }
+            var enviarOriginal = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.send = function () {
+                pendientes++;
+                this.addEventListener('loadend', function () { pendientes--; revisar(); }, { once: true });
+                return enviarOriginal.apply(this, arguments);
+            };
+            window.addEventListener('load', revisar);
+            setTimeout(terminar, 8000);
+        })();
+    </script>
     <meta name="csrf-token" content="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
     <script src="/SP%20Perfect%20Color/assets/js/csrf.js"></script>
 </head>
@@ -112,7 +151,7 @@ try {
                     <?php $claseMenu = ''; require __DIR__ . '/parciales/menuLateral.php'; ?>
                 </nav>
                 <div class="sidebar-user">
-                    <a href="/SP%20Perfect%20Color/perfil" class="user-name" title="Ver mi perfil"><?php if (!empty($_SESSION['usuario_foto'])): ?><img src="/SP%20Perfect%20Color/assets/uploads/avatares/<?php echo rawurlencode($_SESSION['usuario_foto']); ?>" alt="" class="user-avatar me-1"><?php else: ?><i class="bi bi-person-circle me-1"></i><?php endif; ?><span class="user-nombre"><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></span></a>
+                    <a href="/SP%20Perfect%20Color/perfil" class="user-name" title="Ver mi perfil"><?php if (!empty($_SESSION['usuario_foto'])): ?><img src="/SP%20Perfect%20Color/assets/uploads/avatares/<?php echo rawurlencode($_SESSION['usuario_foto']); ?>" alt="" onerror="this.outerHTML='&lt;i class=&quot;bi bi-person-circle&quot;&gt;&lt;/i&gt;'" class="user-avatar me-1"><?php else: ?><i class="bi bi-person-circle me-1"></i><?php endif; ?><span class="user-nombre"><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></span></a>
                     <a href="/SP%20Perfect%20Color/login/salir" class="logout-link"><i class="bi bi-box-arrow-left me-1"></i>Cerrar Sesión</a>
                 </div>
             </div>
@@ -131,7 +170,7 @@ try {
                 </div>
                 <?php $claseMenu = 'sidebar-nav'; require __DIR__ . '/parciales/menuLateral.php'; ?>
                 <div class="sidebar-user">
-                    <a href="/SP%20Perfect%20Color/perfil" class="user-name" title="Ver mi perfil"><?php if (!empty($_SESSION['usuario_foto'])): ?><img src="/SP%20Perfect%20Color/assets/uploads/avatares/<?php echo rawurlencode($_SESSION['usuario_foto']); ?>" alt="" class="user-avatar"><?php else: ?><i class="bi bi-person-circle"></i><?php endif; ?><span class="user-nombre"><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></span></a>
+                    <a href="/SP%20Perfect%20Color/perfil" class="user-name" title="Ver mi perfil"><?php if (!empty($_SESSION['usuario_foto'])): ?><img src="/SP%20Perfect%20Color/assets/uploads/avatares/<?php echo rawurlencode($_SESSION['usuario_foto']); ?>" alt="" onerror="this.outerHTML='&lt;i class=&quot;bi bi-person-circle&quot;&gt;&lt;/i&gt;'" class="user-avatar"><?php else: ?><i class="bi bi-person-circle"></i><?php endif; ?><span class="user-nombre"><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></span></a>
                     <a href="/SP%20Perfect%20Color/login/salir" class="logout-link" title="Cerrar sesión"><i class="bi bi-box-arrow-left"></i><span>Cerrar Sesión</span></a>
                 </div>
             </div>
@@ -150,15 +189,13 @@ try {
                 </div>
             </nav>
 
-            <div class="container-fluid p-3 p-lg-4">
+            <div class="container-fluid p-3 p-lg-4 cargando">
+                <?php require __DIR__ . '/parciales/skeleton.php'; ?>
                 <?php if (isset($contenidoVista)) include $contenidoVista; ?>
             </div>
         </main>
     </div>
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.bootstrap5.min.css">
-
-    <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/estiloUI.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/estiloUI.css'); ?>">
+    
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
@@ -181,6 +218,15 @@ try {
                     try { sessionStorage.removeItem('sbAbierto'); } catch (e) {}
                 };
                 requestAnimationFrame(function() { requestAnimationFrame(function() { panel.parentElement.classList.remove('sin-transicion'); }); });
+                if (panel.dataset.open === 'true') {
+                    // Abierto por la navegación anterior: solo se mantiene mientras el cursor siga encima
+                    var revisarCursor = function(e) {
+                        document.removeEventListener('mousemove', revisarCursor);
+                        if (!panel.contains(e.target)) cerrar();
+                    };
+                    document.addEventListener('mousemove', revisarCursor);
+                    setTimeout(function() { if (!panel.matches(':hover')) cerrar(); }, 1500);
+                }
                 panel.addEventListener('click', function(e) {
                     if (e.target.closest('a[href]:not([href="#"])')) { try { sessionStorage.setItem('sbAbierto', '1'); } catch (er) {} }
                 });
@@ -232,6 +278,8 @@ try {
             });
         });
     </script>
+
+    <template id="plantillaSkeleton"><?php require __DIR__ . '/parciales/skeleton.php'; ?></template>
 
     <div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
