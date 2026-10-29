@@ -13,6 +13,7 @@ use App\Models\{
 use function App\Helpers\{
     respuestaJson,
     verificarRolAdmin,
+    verificarSoloAdmin,
     soloPost,
     responder
 };
@@ -84,7 +85,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: registrarPago
 // OBJETIVO: Registra un pago recibido con validación de banco/referencia para transferencia o pago móvil
 } elseif ($metodo === 'registrarPago') {
-    verificarRolAdmin();
+    verificarSoloAdmin();
     
     soloPost();
     
@@ -107,7 +108,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: eliminar
 // OBJETIVO: Eliminación lógica de una cuenta por cobrar (soft-delete)
 } elseif ($metodo === 'eliminar') {
-    verificarRolAdmin();
+    verificarSoloAdmin();
     
     soloPost();
     

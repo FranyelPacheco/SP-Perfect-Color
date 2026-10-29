@@ -7,7 +7,7 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
             <h4 class="mb-0 toolbar-title"><i class="bi bi-box-seam-fill me-2 text-primary"></i>Gestión de Inventario</h4>
             <div class="d-flex gap-2 align-items-center flex-wrap">
-                <input type="text" id="busquedaInsumos" class="form-control" style="width: 220px;" placeholder="Buscar por código, nombre...">
+                <input type="text" id="busquedaInsumos" class="form-control input-busqueda" placeholder="Buscar por código, nombre...">
                 <?php if ($_SESSION['usuario_rol'] == 1): ?>
                 <button id="btnPrepararMezcla" class="btn btn-primary shadow-sm"><i class="bi bi-palette-fill me-1"></i>Mezcla</button>
                 <button id="btnAjusteMerma" class="btn btn-outline-danger"><i class="bi bi-dash-circle-fill me-1"></i>Merma</button>
@@ -27,6 +27,7 @@
                         <th>Código</th>
                         <th>Nombre</th>
                         <th>Tipo</th>
+                        <th>Presentación</th>
                         <th>Rubro</th>
                         <th>Stock</th>
                         <th>P. Venta</th>
@@ -44,12 +45,12 @@
 
 <?php if ($_SESSION['usuario_rol'] == 1): ?>
 <!-- MODAL PARA EDICION DE INSUMO -->
-<div id="modalInsumo" class="modal" style="display: none;" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+<div id="modalInsumo" class="modal fade" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="tituloModalInsumo">Editar Insumo</h5>
-                <button type="button" id="btnCerrarModalInsumo" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" id="btnCerrarModalInsumo" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form id="formularioInsumo">
                 <div class="modal-body">
@@ -58,12 +59,12 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-4">
                             <label for="codigoInsumo" class="form-label">Código <span class="text-danger">*</span></label>
-                            <input type="text" id="codigoInsumo" name="codigo" class="form-control" required placeholder="Código único">
+                            <input type="text" id="codigoInsumo" name="codigo" class="form-control" required maxlength="50" placeholder="Código único">
                             <div class="invalid-feedback d-none" id="feedbackCodigoInsumo">Ya existe un insumo con este codigo</div>
                         </div>
                         <div class="col-md-5">
-                            <label for="nombreInsumo" class="form-label">Nombre del Insumo / Producto</label>
-                            <input type="text" id="nombreInsumo" name="nombre" class="form-control" required placeholder="Ingrese el nombre">
+                            <label for="nombreInsumo" class="form-label">Nombre del Producto</label>
+                            <input type="text" id="nombreInsumo" name="nombre" class="form-control" required maxlength="150" placeholder="Ingrese el nombre">
                         </div>
                         <div class="col-md-3">
                             <label for="tipoProductoInsumo" class="form-label">Tipo</label>
@@ -93,6 +94,17 @@
                         <div class="col-md-6">
                             <label for="stockMinimoInsumo" class="form-label">Stock Mínimo</label>
                             <input type="number" id="stockMinimoInsumo" name="stock_minimo" class="form-control" step="1" min="0" value="5">
+                            <div class="form-text">En preparados (mezclas), 0 significa sin alerta.</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3 d-none" id="grupoAlertaActivaInsumo">
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="alertaActivaInsumo" name="alerta_activa" value="1" checked>
+                                <label class="form-check-label" for="alertaActivaInsumo">Avisar cuando el stock llegue al mínimo</label>
+                            </div>
+                            <div class="form-text">Solo las presentaciones pueden silenciar su alerta; el producto principal siempre avisa.</div>
                         </div>
                     </div>
 
@@ -122,8 +134,8 @@
                     <div id="mensajeErrorInsumo" class="alert alert-danger d-none"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" id="btnCancelarInsumo" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" id="btnGuardarInsumo" class="btn btn-primary">Guardar</button>
+                    <button type="button" id="btnCancelarInsumo" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                    <button type="submit" id="btnGuardarInsumo" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar</button>
                 </div>
             </form>
         </div>
@@ -218,7 +230,7 @@
                     <div id="mensajeErrorMezcla" class="alert alert-danger d-none mt-3 mb-0"></div>
                 </div>
                 <div class="modal-footer bg-white border-top">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
                     <button type="submit" class="btn btn-success" id="btnGuardarMezcla">
                         <i class="bi bi-check-lg me-1"></i>Guardar
                     </button>
@@ -241,7 +253,7 @@
             <form id="formularioAjusteMerma">
                 <div class="modal-body p-4">
                     <div class="mb-3 position-relative" id="contenedorBuscadorAjuste">
-                        <label for="inputBuscarAjusteProducto" class="form-label fw-semibold text-dark">Producto / Insumo <span class="text-danger">*</span></label>
+                        <label for="inputBuscarAjusteProducto" class="form-label fw-semibold text-dark">Producto <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
                             <input type="text" id="inputBuscarAjusteProducto" class="form-control" placeholder="Haga clic o escriba código / nombre del producto..." autocomplete="off">
@@ -256,10 +268,15 @@
                         <span class="fw-bold fs-5 text-dark" id="ajusteStockDisponible">-</span>
                     </div>
 
+                    <div class="mb-3 d-none" id="grupoAjustePresentacion">
+                        <label for="ajustePresentacion" class="form-label fw-semibold text-dark">Presentación perdida <span class="text-danger">*</span></label>
+                        <select id="ajustePresentacion" class="form-select"></select>
+                    </div>
+
                     <div class="mb-3">
                         <label for="ajusteCantidad" class="form-label fw-semibold text-dark">Cantidad a Descontar <span class="text-danger">*</span></label>
                         <input type="number" id="ajusteCantidad" class="form-control" min="1" step="1" placeholder="1" required>
-                        <div class="form-text">Esta cantidad se restará inmediatamente de las existencias (solo números enteros).</div>
+                        <div class="form-text" id="ajusteEquivalencia">Esta cantidad se restará inmediatamente de las existencias (solo números enteros).</div>
                     </div>
 
                     <div class="mb-3">
@@ -278,7 +295,7 @@
                     <div id="mensajeErrorAjuste" class="alert alert-danger d-none mb-0"></div>
                 </div>
                 <div class="modal-footer bg-white border-top">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
                     <button type="submit" class="btn btn-danger" id="btnGuardarAjuste">
                         <i class="bi bi-dash-lg me-1"></i>descontar
                     </button>

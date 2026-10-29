@@ -26,6 +26,8 @@ if ($metodo === 'index') {
         exit;
     }
 
+    $_SESSION['usuario_foto'] = $usuario['foto'] ?? '';
+
     $pageTitle = 'SP Perfect Color - Mi Perfil';
     $pageDescription = 'Consulta y actualización de perfil de usuario y seguridad';
     $contenidoVista = __DIR__ . '/../views/perfilView.php';
@@ -50,6 +52,36 @@ if ($metodo === 'index') {
     } else {
         respuestaJson('error', $resultado['mensaje']);
     }
+
+// FUNCIÓN: subirFoto
+// OBJETIVO: Valida y guarda la foto de perfil (JPG/PNG) del usuario en sesión
+} elseif ($metodo === 'subirFoto') {
+    verificarAutenticacion();
+
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        respuestaJson('error', 'Método no permitido');
+    }
+
+    $resultado = $usuarioModel->actualizarFotoPerfil((int)($_SESSION['id_usuario'] ?? 0), $_FILES['foto'] ?? []);
+    if ($resultado['exito']) {
+        $_SESSION['usuario_foto'] = $resultado['datos']['foto'];
+    }
+    responder($resultado, $resultado['datos'] ?? null);
+
+// FUNCIÓN: eliminarFoto
+// OBJETIVO: Quita la foto de perfil del usuario en sesión
+} elseif ($metodo === 'eliminarFoto') {
+    verificarAutenticacion();
+
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        respuestaJson('error', 'Método no permitido');
+    }
+
+    $resultado = $usuarioModel->eliminarFotoPerfil((int)($_SESSION['id_usuario'] ?? 0));
+    if ($resultado['exito']) {
+        $_SESSION['usuario_foto'] = '';
+    }
+    responder($resultado);
 
 // FUNCIÓN: cambiarClave
 // OBJETIVO: Cambia la contraseña solicitando y verificando la contraseña actual

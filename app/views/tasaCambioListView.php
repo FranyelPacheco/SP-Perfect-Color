@@ -49,7 +49,7 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
             <h4 class="mb-0 toolbar-title"><i class="bi bi-currency-exchange me-2 text-primary"></i>Tasas de Cambio</h4>
             <div class="d-flex gap-2 align-items-center flex-wrap">
-                <input type="text" id="busquedaTasas" class="form-control" style="width: 220px;" placeholder="Buscar por fecha...">
+                <input type="text" id="busquedaTasas" class="form-control input-busqueda" placeholder="Buscar por fecha...">
                 <button type="button" class="btn btn-success" id="btnNuevaTasa" data-bs-toggle="modal" data-bs-target="#modalTasaCambio" title="Registrar Tasa" data-bs-toggle="tooltip">
                     <i class="bi bi-plus-lg"></i>
                 </button>
@@ -74,8 +74,8 @@
 </div>
 
 <!-- Modal Registrar / Editar Tasa de Cambio (Sin Eliminar) -->
-<div class="modal fade" id="modalTasaCambio" tabindex="-1" aria-labelledby="modalTasaTitulo" aria-hidden="true">
-    <div class="modal-dialog">
+<div class="modal fade" id="modalTasaCambio" tabindex="-1" data-bs-backdrop="static" aria-labelledby="modalTasaTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalTasaTitulo">Registrar Tasa de Cambio</h5>
@@ -104,7 +104,7 @@
                     <div id="mensajeErrorTasa" class="alert alert-danger d-none"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
                     <button type="submit" class="btn btn-success" id="btnGuardarTasa">
                         <i class="bi bi-check-lg me-1"></i><span id="textoBotonGuardar">Guardar</span>
                     </button>

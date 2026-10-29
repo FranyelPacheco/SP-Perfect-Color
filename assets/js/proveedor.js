@@ -110,8 +110,8 @@ document.addEventListener('DOMContentLoaded', function() {
             tituloModal.textContent = 'Nuevo Proveedor';
             proveedorId.value = '';
             rifProveedor.value = '';
-            rifProveedor.disabled = false;
             limpiarEstadoRif();
+            bloquearRif(false);
             limpiarEstadoCorreoProveedor();
             nombreEmpresaProveedor.value = '';
             telefonoProveedor.value = '';
@@ -176,6 +176,22 @@ document.addEventListener('DOMContentLoaded', function() {
             resetRubrosContainer();
             mensajeError.classList.add('d-none');
         });
+    }
+
+    function asignarOperadora(select, valor) {
+        if (!Array.from(select.options).some(function (o) { return o.value === valor; })) {
+            select.add(new Option(valor, valor));
+        }
+        select.value = valor;
+    }
+
+    function bloquearRif(bloquear) {
+        if (rifProveedor) {
+            rifProveedor.disabled = bloquear;
+            if (bloquear) rifProveedor.setAttribute('title', 'El RIF no se puede modificar');
+            else rifProveedor.removeAttribute('title');
+        }
+        if (tipoRifProveedor) tipoRifProveedor.disabled = bloquear;
     }
 
     function limpiarEstadoRif() {
@@ -442,6 +458,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     rifProveedor.value = proveedor.rif;
                 }
+                bloquearRif(true);
 
                 nombreEmpresaProveedor.value = proveedor.nombre_empresa;
 
@@ -451,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (arrayTels.length > 0 && arrayTels[0]) {
                     const telRaw1 = arrayTels[0].replace(/[^0-9]/g, '');
                     if (telRaw1.length === 11 && operadoraProveedor && telefonoNumeroProveedor) {
-                        operadoraProveedor.value = telRaw1.substring(0, 4);
+                        asignarOperadora(operadoraProveedor, telRaw1.substring(0, 4));
                         telefonoNumeroProveedor.value = telRaw1.substring(4);
                     } else if (telefonoNumeroProveedor) {
                         telefonoNumeroProveedor.value = telRaw1;
@@ -460,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (arrayTels.length > 1 && arrayTels[1]) {
                     const telRaw2 = arrayTels[1].replace(/[^0-9]/g, '');
                     if (telRaw2.length === 11 && operadoraProveedor2 && telefonoNumeroProveedor2) {
-                        operadoraProveedor2.value = telRaw2.substring(0, 4);
+                        asignarOperadora(operadoraProveedor2, telRaw2.substring(0, 4));
                         telefonoNumeroProveedor2.value = telRaw2.substring(4);
                         if (seccionTel2Proveedor) seccionTel2Proveedor.classList.remove('d-none');
                         if (btnToggleTel2Proveedor) btnToggleTel2Proveedor.classList.add('d-none');
@@ -621,7 +638,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function eliminarProveedor(id, nombre) {
-        confirmarConModal('Eliminar', '¿Está seguro de eliminar al proveedor ' + nombre + '?', function() {
+        confirmarConModal('Eliminar', '¿Está seguro de eliminar al proveedor ' + escapeHtml(nombre) + '?', function() {
             const formData = new FormData();
             formData.append('id', id);
 

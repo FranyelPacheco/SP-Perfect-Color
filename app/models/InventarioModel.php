@@ -3,10 +3,13 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\EnvaseTrait;
 use PDO;
 
 class InventarioModel extends ModeloBase
 {
+    use EnvaseTrait;
+
     private int $id_producto;
     private int $id_tipo_producto;
     private string $codigo;
@@ -73,7 +76,22 @@ class InventarioModel extends ModeloBase
                      GROUP BY p.id_producto
                      ORDER BY p.nombre ASC";
         $stmt = $this->conexion->query($consulta);
-        return $stmt->fetchAll();
+        $filas = $stmt->fetchAll();
+
+        $volumenes = [];
+        foreach ($filas as $fila) {
+            if ((int)$fila['id_tipo_producto'] === 1) {
+                $raiz = (int)($fila['id_producto_padre'] ?: $fila['id_producto']);
+                $volumenes[$raiz] = ($volumenes[$raiz] ?? 0) + (int)floor((float)$fila['stock_actual']) * $this->factor128((string)$fila['fraccion']);
+            }
+        }
+        foreach ($filas as &$fila) {
+            if ((int)$fila['id_tipo_producto'] === 1) {
+                $fila['volumen_familia_128'] = $volumenes[(int)($fila['id_producto_padre'] ?: $fila['id_producto'])] ?? 0;
+            }
+        }
+        unset($fila);
+        return $filas;
     }
 
     // FUNCIÓN: buscarPorId
@@ -154,12 +172,9 @@ class InventarioModel extends ModeloBase
         }
         $stockMinimo = (float)intval($stockMinimoRaw);
 
-        if ($codigo === '') {
-            return ['valido' => false, 'mensaje' => 'El codigo es obligatorio'];
-        }
-
-        if ($nombre === '') {
-            return ['valido' => false, 'mensaje' => 'El nombre del insumo es obligatorio'];
+        $error = $this->validarTextoSeguro($codigo, 50, 'El codigo') ?? $this->validarTextoSeguro($nombre, 150, 'El nombre del insumo');
+        if ($error !== null) {
+            return ['valido' => false, 'mensaje' => $error];
         }
 
         if ($precioVenta <= 0) {
@@ -238,18 +253,35 @@ class InventarioModel extends ModeloBase
             return ['exito' => false, 'mensaje' => 'Insumo no encontrado'];
         }
 
-        // El stock actual es de solo lectura y se mantiene el actual
-        $datos['stock_actual'] = (float)$insumoExistente['stock_actual'];
+        // Solo se editan nombre, precio y stock mínimo; código, tipo, unidad y stock no se tocan
+        $nombre = trim($datos['nombre'] ?? '');
+        $precioVenta = floatval($datos['precio_venta'] ?? 0);
+        $stockMinimoRaw = $datos['stock_minimo'] ?? '0';
 
-        $val = $this->validarDatosInsumo($datos, $id, false);
-        if (!$val['valido']) {
-            return ['exito' => false, 'mensaje' => $val['mensaje']];
+        $error = $this->validarTextoSeguro($nombre, 150, 'El nombre del producto');
+        if ($error !== null) {
+            return ['exito' => false, 'mensaje' => $error];
+        }
+        if ($precioVenta <= 0) {
+            return ['exito' => false, 'mensaje' => 'El precio de venta debe ser un numero positivo'];
+        }
+        if (!is_numeric($stockMinimoRaw) || floor((float)$stockMinimoRaw) != (float)$stockMinimoRaw || (float)$stockMinimoRaw < 0) {
+            return ['exito' => false, 'mensaje' => 'El stock minimo debe ser un numero entero no negativo'];
         }
 
-        if ($this->actualizarInsumo($id, $val['codigo'], $val['nombre'], $val['rubro_id'], $val['unidad_medida'], $val['stock_actual'], $val['stock_minimo'], $val['precio_venta'], 0, $val['id_tipo_producto'])) {
-            return ['exito' => true, 'mensaje' => 'Insumo actualizado exitosamente'];
+        // Solo las presentaciones hijas pueden silenciar su alerta; el producto padre siempre alerta
+        $alertaActiva = empty($insumoExistente['id_producto_padre']) ? 1 : (empty($datos['alerta_activa']) ? 0 : 1);
+
+        $stmt = $this->conexion->prepare("UPDATE productos SET nombre = :nombre, precio_venta = :precio, stock_minimo = :minimo, alerta_activa = :alerta WHERE id_producto = :id");
+        $stmt->bindValue(':nombre', $nombre);
+        $stmt->bindValue(':precio', number_format($precioVenta, 2, '.', ''));
+        $stmt->bindValue(':minimo', (int)$stockMinimoRaw, PDO::PARAM_INT);
+        $stmt->bindValue(':alerta', $alertaActiva, PDO::PARAM_INT);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        if ($stmt->execute()) {
+            return ['exito' => true, 'mensaje' => 'Producto actualizado exitosamente'];
         }
-        return ['exito' => false, 'mensaje' => 'Error al actualizar el insumo'];
+        return ['exito' => false, 'mensaje' => 'Error al actualizar el producto'];
     }
 
     // FUNCIÓN: darDeBaja
@@ -475,12 +507,40 @@ class InventarioModel extends ModeloBase
     // OBJETIVO: Retorna todos los insumos base para formulación de mezclas
     public function listarBases(): array
     {
-        $consulta = "SELECT id_producto, codigo, nombre, unidad_medida, stock_actual, precio_venta, fraccion, id_producto_padre
-                     FROM productos 
-                     WHERE estado = 1 AND id_tipo_producto = 1 AND id_producto_padre IS NULL
-                     ORDER BY nombre ASC";
+        $consulta = "SELECT p.id_producto, p.codigo, p.nombre, p.unidad_medida, p.stock_actual, p.precio_venta, p.fraccion, p.id_producto_padre,
+                            (SELECT COALESCE(SUM(FLOOR(h.stock_actual) * CASE h.fraccion WHEN '1' THEN 128 WHEN '1/2' THEN 64 WHEN '1/4' THEN 32 WHEN '1/8' THEN 16
+                                    WHEN '1/16' THEN 8 WHEN '1/32' THEN 4 WHEN '1/64' THEN 2 WHEN '1/128' THEN 1 ELSE 0 END), 0)
+                             FROM productos h WHERE h.estado = 1 AND (h.id_producto = p.id_producto OR h.id_producto_padre = p.id_producto)) as volumen_familia_128
+                     FROM productos p
+                     WHERE p.estado = 1 AND p.id_tipo_producto = 1 AND p.id_producto_padre IS NULL
+                     ORDER BY p.nombre ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
+    }
+
+    // FUNCIÓN: cambiarAlertaStock
+    // OBJETIVO: Silencia o reactiva la alerta de stock mínimo de una presentación hija (el producto padre no se puede silenciar)
+    public function cambiarAlertaStock(int $id, bool $activa): array
+    {
+        $producto = $this->buscarPorId($id);
+        if (!$producto) {
+            return ['exito' => false, 'mensaje' => 'Producto no encontrado'];
+        }
+        if (empty($producto['id_producto_padre'])) {
+            return ['exito' => false, 'mensaje' => 'La alerta del producto principal no se puede silenciar'];
+        }
+        $stmt = $this->conexion->prepare("UPDATE productos SET alerta_activa = :activa WHERE id_producto = :id");
+        $stmt->bindValue(':activa', $activa ? 1 : 0, PDO::PARAM_INT);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return ['exito' => true, 'mensaje' => $activa ? 'Alerta de stock mínimo activada' : 'Alerta de stock mínimo silenciada'];
+    }
+
+    // FUNCIÓN: listarPresentaciones
+    // OBJETIVO: Lista las presentaciones de galón (1, 1/2 ... 1/128) con su equivalencia en 128avos
+    public function listarPresentaciones(): array
+    {
+        return $this->conexion->query("SELECT id_presentacion, etiqueta, factor_128 FROM presentacion ORDER BY factor_128 DESC")->fetchAll();
     }
 
     // FUNCIÓN: obtenerAlertasStockBajo
@@ -503,7 +563,8 @@ class InventarioModel extends ModeloBase
                      LEFT JOIN proveedores pr ON pr.id_proveedor = pp.id_proveedor
                      LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = pr.id_proveedor
                      LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
-                     WHERE p.estado = 1 AND p.stock_actual <= p.stock_minimo
+                     WHERE p.estado = 1 AND p.stock_actual <= p.stock_minimo AND p.alerta_activa = 1
+                       AND NOT (p.id_tipo_producto = 3 AND p.stock_minimo <= 0)
                      GROUP BY p.id_producto
                      ORDER BY p.stock_actual ASC";
         $stmt = $this->conexion->query($consulta);
@@ -596,6 +657,30 @@ class InventarioModel extends ModeloBase
         if (!is_array($bases) || count($bases) === 0) {
             return ['exito' => false, 'mensaje' => 'Debe agregar al menos un tinte base a la mezcla'];
         }
+        if (count($bases) > 6) {
+            return ['exito' => false, 'mensaje' => 'La mezcla admite como máximo 6 tintes base'];
+        }
+
+        $factorPresentacion = $this->factor128(trim((string)preg_replace('/\s*Gal[oó]n.*$/iu', '', $presentacion)));
+        if ($factorPresentacion === 0) {
+            return ['exito' => false, 'mensaje' => 'La presentación de la mezcla no es válida'];
+        }
+
+        $componentes = [];
+        $volumenFormula = 0;
+        foreach ($bases as $b) {
+            $idBase = (int)($b['id_producto_base'] ?? $b['id_producto'] ?? 0);
+            $cantGalon = (float)($b['cantidad_galon'] ?? 0);
+            $volumen128 = (int)round($cantGalon * 128);
+            if ($idBase <= 0 || $volumen128 < 1) {
+                return ['exito' => false, 'mensaje' => 'Una de las bases de la fórmula no es válida'];
+            }
+            $componentes[] = ['id' => $idBase, 'fraccion' => (string)($b['fraccion'] ?? ''), 'galon' => $cantGalon, 'v128' => $volumen128];
+            $volumenFormula += $volumen128;
+        }
+        if ($volumenFormula !== $factorPresentacion) {
+            return ['exito' => false, 'mensaje' => "La suma de las bases ({$volumenFormula}/128 de galón) debe ser igual a la presentación ({$factorPresentacion}/128)"];
+        }
 
         try {
             $this->conexion->beginTransaction();
@@ -608,7 +693,7 @@ class InventarioModel extends ModeloBase
 
             // 2. Insertar producto en productos (tipo 3 = Preparado)
             $consultaProd = "INSERT INTO productos (codigo, nombre, id_tipo_producto, unidad_medida, stock_actual, stock_minimo, precio_venta, estado)
-                             VALUES (:codigo, :nombre, 3, :unidad_medida, :stock_actual, 1.0000, :precio_venta, 1)";
+                             VALUES (:codigo, :nombre, 3, :unidad_medida, :stock_actual, 0, :precio_venta, 1)";
             $stmtProd = $this->conexion->prepare($consultaProd);
             $stmtProd->bindParam(':codigo', $codigo, PDO::PARAM_STR);
             $stmtProd->bindParam(':nombre', $nombre, PDO::PARAM_STR);
@@ -625,46 +710,27 @@ class InventarioModel extends ModeloBase
                                VALUES (:id_producto_mezclado, :id_producto_base, :fraccion, :cantidad_galon, 1)";
             $stmtMezcla = $this->conexion->prepare($consultaMezcla);
 
-            $consultaDescuento = "UPDATE productos SET stock_actual = stock_actual - :consumo_total WHERE id_producto = :id_base";
-            $stmtDescuento = $this->conexion->prepare($consultaDescuento);
+            $stmtBase = $this->conexion->prepare("SELECT id_tipo_producto, nombre FROM productos WHERE id_producto = :id_base AND estado = 1 LIMIT 1");
 
-            $stmtVerificarStock = $this->conexion->prepare("SELECT stock_actual, nombre FROM productos WHERE id_producto = :id_base LIMIT 1 FOR UPDATE");
-
-            foreach ($bases as $b) {
-                $idBase = (int)($b['id_producto_base'] ?? $b['id_producto'] ?? 0);
-                $fraccion = (string)($b['fraccion'] ?? '1/4');
-                $cantGalon = (float)($b['cantidad_galon'] ?? 0);
-                $consumoTotal = $cantGalon * $cantidadEnvases;
-
-                if ($idBase <= 0 || $cantGalon <= 0) {
-                    continue;
-                }
-
-                // Verificar stock suficiente del tinte base
-                $stmtVerificarStock->bindParam(':id_base', $idBase, PDO::PARAM_INT);
-                $stmtVerificarStock->execute();
-                $baseInfo = $stmtVerificarStock->fetch(PDO::FETCH_ASSOC);
-
-                if (!$baseInfo || (float)$baseInfo['stock_actual'] < $consumoTotal) {
-                    $this->conexion->rollBack();
-                    $nombreBase = $baseInfo['nombre'] ?? "ID $idBase";
-                    return [
-                        'exito' => false,
-                        'mensaje' => "Stock insuficiente del tinte base '{$nombreBase}' para preparar la mezcla (requerido: {$consumoTotal} gal, disponible: " . ($baseInfo ? $baseInfo['stock_actual'] : 0) . " gal)"
-                    ];
+            foreach ($componentes as $c) {
+                $stmtBase->bindValue(':id_base', $c['id'], PDO::PARAM_INT);
+                $stmtBase->execute();
+                $baseInfo = $stmtBase->fetch(PDO::FETCH_ASSOC);
+                if (!$baseInfo || (int)$baseInfo['id_tipo_producto'] !== 1) {
+                    throw new \RuntimeException('Solo se pueden mezclar tintes base activos');
                 }
 
                 // Guardar receta en mezcla_producto
-                $stmtMezcla->bindParam(':id_producto_mezclado', $idProductoMezclado, PDO::PARAM_INT);
-                $stmtMezcla->bindParam(':id_producto_base', $idBase, PDO::PARAM_INT);
-                $stmtMezcla->bindParam(':fraccion', $fraccion, PDO::PARAM_STR);
-                $stmtMezcla->bindParam(':cantidad_galon', $cantGalon);
+                $stmtMezcla->bindValue(':id_producto_mezclado', $idProductoMezclado, PDO::PARAM_INT);
+                $stmtMezcla->bindValue(':id_producto_base', $c['id'], PDO::PARAM_INT);
+                $stmtMezcla->bindValue(':fraccion', $c['fraccion'] !== '' ? $c['fraccion'] : $this->etiquetaFraccion($c['v128']));
+                $stmtMezcla->bindValue(':cantidad_galon', number_format($c['galon'], 7, '.', ''));
                 $stmtMezcla->execute();
 
-                // Descontar inventario base
-                $stmtDescuento->bindParam(':consumo_total', $consumoTotal);
-                $stmtDescuento->bindParam(':id_base', $idBase, PDO::PARAM_INT);
-                $stmtDescuento->execute();
+                // Descontar envases de la base, abriendo uno mayor si hace falta
+                foreach ($this->descomponerVolumen128($c['v128']) as $parte) {
+                    $this->consumirEnvase($c['id'], $cantidadEnvases, $parte);
+                }
             }
 
             $this->conexion->commit();
@@ -674,14 +740,17 @@ class InventarioModel extends ModeloBase
                 'codigo' => $codigo,
                 'mensaje' => 'Pintura preparada registrada exitosamente e inventario base descontado.'
             ];
+        } catch (\RuntimeException $e) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
+            return ['exito' => false, 'mensaje' => $e->getMessage()];
         } catch (\Exception $e) {
             if ($this->conexion->inTransaction()) {
                 $this->conexion->rollBack();
             }
-            return [
-                'exito' => false,
-                'mensaje' => 'Error al preparar la mezcla: ' . $e->getMessage()
-            ];
+            error_log('Error al preparar mezcla: ' . $e->getMessage());
+            return ['exito' => false, 'mensaje' => 'Error al preparar la mezcla'];
         }
     }
 
@@ -693,6 +762,7 @@ class InventarioModel extends ModeloBase
         $cantidadRaw = trim((string)($datos['cantidad'] ?? '0'));
         $cantidad = intval($cantidadRaw);
         $motivo = trim($datos['motivo'] ?? '');
+        $idPresentacion = intval($datos['id_presentacion'] ?? 0);
 
         if ($idProducto < 1) {
             return ['exito' => false, 'mensaje' => 'Debe seleccionar un producto'];
@@ -708,7 +778,7 @@ class InventarioModel extends ModeloBase
         try {
             $this->conexion->beginTransaction();
 
-            $stmtProd = $this->conexion->prepare("SELECT stock_actual, nombre FROM productos WHERE id_producto = :id AND estado = 1 LIMIT 1 FOR UPDATE");
+            $stmtProd = $this->conexion->prepare("SELECT stock_actual, nombre, id_tipo_producto, id_producto_padre FROM productos WHERE id_producto = :id AND estado = 1 LIMIT 1 FOR UPDATE");
             $stmtProd->bindParam(':id', $idProducto, PDO::PARAM_INT);
             $stmtProd->execute();
             $prod = $stmtProd->fetch(PDO::FETCH_ASSOC);
@@ -718,30 +788,69 @@ class InventarioModel extends ModeloBase
                 return ['exito' => false, 'mensaje' => 'Producto no encontrado o inactivo'];
             }
 
-            if ((float)$prod['stock_actual'] < $cantidad) {
-                $this->conexion->rollBack();
-                return [
-                    'exito' => false,
-                    'mensaje' => "Stock insuficiente para realizar el ajuste (actual: {$prod['stock_actual']}, a descontar: {$cantidad})"
-                ];
+            $enGalones = (int)$prod['id_tipo_producto'] === 1;
+            $equivalente128 = null;
+            $descuento = (float)$cantidad;
+            $detalle = (string)$cantidad;
+
+            if ($enGalones) {
+                $stmtPres = $this->conexion->prepare("SELECT etiqueta, factor_128 FROM presentacion WHERE id_presentacion = :id");
+                $stmtPres->bindValue(':id', $idPresentacion, PDO::PARAM_INT);
+                $stmtPres->execute();
+                $pres = $stmtPres->fetch(PDO::FETCH_ASSOC);
+                if (!$pres) {
+                    $this->conexion->rollBack();
+                    return ['exito' => false, 'mensaje' => 'Debe indicar la presentación que se perdió (1 galón, 1/2, 1/4...)'];
+                }
+                $equivalente128 = $cantidad * (int)$pres['factor_128'];
+                $descuento = $equivalente128 / 128;
+                $detalle = "{$cantidad} x {$pres['etiqueta']}";
+                $this->consumirEnvase($idProducto, $cantidad, (int)$pres['factor_128']);
+            } else {
+                $idPresentacion = 0;
+                $stmtUpdate = $this->conexion->prepare("UPDATE productos SET stock_actual = stock_actual - :cantidad WHERE id_producto = :id AND stock_actual >= :cantidad2");
+                $stmtUpdate->bindValue(':cantidad', $cantidad, PDO::PARAM_INT);
+                $stmtUpdate->bindValue(':cantidad2', $cantidad, PDO::PARAM_INT);
+                $stmtUpdate->bindValue(':id', $idProducto, PDO::PARAM_INT);
+                $stmtUpdate->execute();
+                if ($stmtUpdate->rowCount() === 0) {
+                    $this->conexion->rollBack();
+                    return [
+                        'exito' => false,
+                        'mensaje' => "Stock insuficiente para realizar el ajuste (actual: " . (int)$prod['stock_actual'] . ", a descontar: {$cantidad})"
+                    ];
+                }
             }
 
-            $stmtUpdate = $this->conexion->prepare("UPDATE productos SET stock_actual = stock_actual - :cantidad WHERE id_producto = :id");
-            $stmtUpdate->bindValue(':cantidad', (float)$cantidad);
-            $stmtUpdate->bindParam(':id', $idProducto, PDO::PARAM_INT);
-            $stmtUpdate->execute();
+            $descuentoTexto = number_format($descuento, 7, '.', '');
 
-            error_log(sprintf('[MERMA] usuario=%s producto=%d cantidad=%d motivo=%s', $_SESSION['id_usuario'] ?? 'n/d', $idProducto, $cantidad, $motivo));
+            $stmtLog = $this->conexion->prepare("INSERT INTO merma_inventario (id_producto, id_presentacion, cantidad, equivalente_128, cantidad_descontada, motivo, id_usuario)
+                                                 VALUES (:producto, :presentacion, :cantidad, :equivalente, :descontada, :motivo, :usuario)");
+            $stmtLog->bindValue(':producto', $idProducto, PDO::PARAM_INT);
+            $stmtLog->bindValue(':presentacion', $idPresentacion ?: null, $idPresentacion ? PDO::PARAM_INT : PDO::PARAM_NULL);
+            $stmtLog->bindValue(':cantidad', $cantidad, PDO::PARAM_INT);
+            $stmtLog->bindValue(':equivalente', $equivalente128, $equivalente128 === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmtLog->bindValue(':descontada', $descuentoTexto);
+            $stmtLog->bindValue(':motivo', $motivo);
+            $stmtLog->bindValue(':usuario', $_SESSION['id_usuario'] ?? null, isset($_SESSION['id_usuario']) ? PDO::PARAM_INT : PDO::PARAM_NULL);
+            $stmtLog->execute();
+
             $this->conexion->commit();
             return [
                 'exito' => true,
-                'mensaje' => "Ajuste por merma aplicado correctamente a '{$prod['nombre']}' (-{$cantidad})."
+                'mensaje' => "Merma registrada en '{$prod['nombre']}' (-{$detalle})."
             ];
+        } catch (\RuntimeException $e) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
+            return ['exito' => false, 'mensaje' => $e->getMessage()];
         } catch (\Exception $e) {
             if ($this->conexion->inTransaction()) {
                 $this->conexion->rollBack();
             }
-            return ['exito' => false, 'mensaje' => 'Error al registrar ajuste: ' . $e->getMessage()];
+            error_log('Error en merma: ' . $e->getMessage());
+            return ['exito' => false, 'mensaje' => 'Error al registrar el ajuste'];
         }
     }
 }

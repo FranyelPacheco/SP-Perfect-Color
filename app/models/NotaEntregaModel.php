@@ -3,12 +3,13 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\EnvaseTrait;
 use App\Traits\TasaBcvTrait;
 use PDO, PDOException;
 
 class NotaEntregaModel extends ModeloBase
 {
-    use TasaBcvTrait;
+    use TasaBcvTrait, EnvaseTrait;
     private int $id;
     private int $idCliente;
     private int $idUsuario;
@@ -178,35 +179,45 @@ class NotaEntregaModel extends ModeloBase
             $referencia = (string)$pago['referencia'];
         }
 
-        $total = 0;
-        $detalle = [];
-
-        $stmtLineas = $this->conexion->prepare("SELECT id_venta_detalle FROM venta_detalle WHERE id_venta = :id");
+        // Cantidades y precios salen del presupuesto guardado; del cliente solo se acepta qué líneas aprueba
+        $stmtLineas = $this->conexion->prepare("SELECT id_venta_detalle, cantidad, precio_unitario FROM venta_detalle WHERE id_venta = :id");
         $stmtLineas->bindParam(':id', $presupuestoId, PDO::PARAM_INT);
         $stmtLineas->execute();
-        $lineasValidas = array_map('intval', $stmtLineas->fetchAll(PDO::FETCH_COLUMN));
+        $lineas = [];
+        foreach ($stmtLineas->fetchAll() as $linea) {
+            $lineas[(int)$linea['id_venta_detalle']] = $linea;
+        }
 
-        foreach ($items as $item) {
-            $presupuestoDetalleId = intval($item['id_presupuesto_detalle'] ?? 0);
-            if (!in_array($presupuestoDetalleId, $lineasValidas, true)) {
-                return ['exito' => false, 'mensaje' => 'Uno de los items no pertenece al presupuesto'];
+        $enviadas = array_map(fn($item) => intval($item['id_presupuesto_detalle'] ?? 0), $items);
+        $unicas = array_unique($enviadas);
+        if (count($unicas) !== count($enviadas)) {
+            return ['exito' => false, 'mensaje' => 'Hay items repetidos en la nota de entrega'];
+        }
+        $esperadas = array_keys($lineas);
+        sort($unicas);
+        sort($esperadas);
+        if ($unicas !== $esperadas) {
+            return ['exito' => false, 'mensaje' => 'Los items no coinciden con los del presupuesto'];
+        }
+
+        $total = 0.0;
+        $detalle = [];
+        foreach ($lineas as $id => $linea) {
+            $cantidad = (float)$linea['cantidad'];
+            $precioUnitario = (float)$linea['precio_unitario'];
+            if ($cantidad < 1 || floor($cantidad) !== $cantidad || $precioUnitario <= 0) {
+                return ['exito' => false, 'mensaje' => 'El presupuesto tiene una línea con cantidad o precio no válidos'];
             }
-            $cantidad = floatval($item['cantidad'] ?? 0);
-            $precioUnitario = floatval($item['precio_unitario'] ?? 0);
-            $subtotal = $cantidad * $precioUnitario;
-
-            if ($presupuestoDetalleId < 1 || $cantidad <= 0 || $precioUnitario <= 0) {
-                return ['exito' => false, 'mensaje' => 'Datos invalidos en uno de los items'];
-            }
-
+            $subtotal = round($cantidad * $precioUnitario, 2);
             $total += $subtotal;
             $detalle[] = [
-                'id_presupuesto_detalle' => $presupuestoDetalleId,
-                'cantidad' => $cantidad,
+                'id_presupuesto_detalle' => $id,
+                'cantidad' => (int)$cantidad,
                 'precio_unitario' => $precioUnitario,
                 'subtotal' => $subtotal
             ];
         }
+        $total = round($total, 2);
 
         if ($montoInicial < 0 || $montoInicial > $total) {
             return ['exito' => false, 'mensaje' => 'El abono inicial no puede ser negativo ni superar el total'];
@@ -238,9 +249,11 @@ class NotaEntregaModel extends ModeloBase
                     'total' => $total
                 ]
             ];
+        } catch (\RuntimeException $e) {
+            return ['exito' => false, 'mensaje' => $e->getMessage()];
         } catch (\Throwable $e) {
             error_log('ERROR CRITICO AL CREAR NOTA: ' . $e->getMessage() . ' (en ' . $e->getFile() . ':' . $e->getLine() . ')');
-            return ['exito' => false, 'mensaje' => 'Error al crear la nota de entrega: ' . $e->getMessage()];
+            return ['exito' => false, 'mensaje' => 'Error al crear la nota de entrega'];
         }
     }
 
@@ -349,8 +362,6 @@ class NotaEntregaModel extends ModeloBase
         try {
             $this->conexion->beginTransaction();
 
-            $this->_validarStock();
-
             $condicionPagoVal = !empty($this->condicionPago) ? $this->condicionPago : 'contado';
             $tipoPagoId = ($condicionPagoVal === 'contado') ? ($this->idTipoPago ?? 1) : $this->idTipoPago;
 
@@ -384,8 +395,10 @@ class NotaEntregaModel extends ModeloBase
             $this->conexion->commit();
             return $this->notaId;
 
-        } catch (PDOException $e) {
-            $this->conexion->rollback();
+        } catch (\Throwable $e) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollback();
+            }
             throw $e;
         }
     }
@@ -425,111 +438,65 @@ class NotaEntregaModel extends ModeloBase
         return $stmt->fetchAll();
     }
 
-    // FUNCIÓN: _validarStock
-    // OBJETIVO: Verifica que todos los productos (o sus bases en mezcla_producto) tengan stock suficiente
-    private function _validarStock(): void
+    // FUNCIÓN: _insertarDetalleYDescontarStock
+    // OBJETIVO: Descuenta el stock de cada línea aprobada: envases para tintes, bases para preparados sin stock y unidades para el resto
+    // NOTA: Todo ocurre dentro de la transacción; cualquier falta de stock lanza RuntimeException y revierte la aprobación
+    private function _insertarDetalleYDescontarStock(): void
     {
         $stmtVd = $this->conexion->prepare(
             "SELECT vd.id_producto, p.nombre, p.stock_actual, p.id_tipo_producto
              FROM venta_detalle vd
              INNER JOIN productos p ON vd.id_producto = p.id_producto
-             WHERE vd.id_venta_detalle = :vd_id AND p.estado = 1 FOR UPDATE"
-        );
-        $stmtBases = $this->conexion->prepare(
-            "SELECT mp.id_producto_base, mp.cantidad_galon, p.nombre, p.stock_actual
-             FROM mezcla_producto mp
-             INNER JOIN productos p ON mp.id_producto_base = p.id_producto
-             WHERE mp.id_producto_mezclado = :id_prod AND p.estado = 1 FOR UPDATE"
-        );
-
-        foreach ($this->detalle as $item) {
-            $vdId = (int)($item['id_venta_detalle'] ?? $item['id_presupuesto_detalle'] ?? 0);
-            $cantMultiplicador = (float)$item['cantidad'];
-
-            $stmtVd->bindValue(':vd_id', $vdId, PDO::PARAM_INT);
-            $stmtVd->execute();
-            $prod = $stmtVd->fetch();
-
-            if (!$prod) {
-                throw new PDOException('No se encontró el producto para el ítem ID: ' . $vdId);
-            }
-
-            if ((int)$prod['id_tipo_producto'] === 3 && (float)$prod['stock_actual'] < $cantMultiplicador) {
-                $stmtBases->bindValue(':id_prod', (int)$prod['id_producto'], PDO::PARAM_INT);
-                $stmtBases->execute();
-                $componentes = $stmtBases->fetchAll();
-
-                if (empty($componentes)) {
-                    throw new PDOException('Stock insuficiente para el producto preparado: ' . $prod['nombre']);
-                }
-
-                foreach ($componentes as $comp) {
-                    $requerido = (float)$comp['cantidad_galon'] * $cantMultiplicador;
-                    if ((float)$comp['stock_actual'] < $requerido) {
-                        throw new PDOException('Stock insuficiente para la base ' . $comp['nombre'] . ' (Disponible: ' . $comp['stock_actual'] . ', Requerido: ' . $requerido . ')');
-                    }
-                }
-            } else {
-                if ((float)$prod['stock_actual'] < $cantMultiplicador) {
-                    throw new PDOException('Stock insuficiente para el producto ' . $prod['nombre'] . ' (Disponible: ' . $prod['stock_actual'] . ', Requerido: ' . $cantMultiplicador . ')');
-                }
-            }
-        }
-    }
-
-    // FUNCIÓN: _insertarDetalleYDescontarStock
-    // OBJETIVO: Descuenta el stock físico del producto o de sus bases en mezcla_producto
-    private function _insertarDetalleYDescontarStock(): void
-    {
-        $stmtVd = $this->conexion->prepare(
-            "SELECT vd.id_producto, p.stock_actual, p.id_tipo_producto
-             FROM venta_detalle vd
-             INNER JOIN productos p ON vd.id_producto = p.id_producto
-             WHERE vd.id_venta_detalle = :vd_id"
+             WHERE vd.id_venta_detalle = :vd_id AND p.estado = 1
+             FOR UPDATE"
         );
         $stmtBases = $this->conexion->prepare(
             "SELECT id_producto_base, cantidad_galon FROM mezcla_producto WHERE id_producto_mezclado = :id_prod"
         );
-        $stmtDescontar = $this->conexion->prepare(
-            "UPDATE productos SET stock_actual = stock_actual - :cant WHERE id_producto = :id_prod"
-        );
-        $stmtUpdVd = $this->conexion->prepare(
-            "UPDATE venta_detalle SET cantidad = :cant, subtotal = :subtotal WHERE id_venta_detalle = :vd_id"
-        );
 
         foreach ($this->detalle as $item) {
             $vdId = (int)($item['id_venta_detalle'] ?? $item['id_presupuesto_detalle'] ?? 0);
-            $cant = (float)$item['cantidad'];
+            $cant = (int)$item['cantidad'];
 
             $stmtVd->bindValue(':vd_id', $vdId, PDO::PARAM_INT);
             $stmtVd->execute();
             $prod = $stmtVd->fetch();
-
             if (!$prod) {
-                continue;
+                throw new \RuntimeException('Uno de los productos del presupuesto ya no está disponible');
             }
 
-            if (isset($item['subtotal'])) {
-                $stmtUpdVd->bindValue(':cant', $cant);
-                $stmtUpdVd->bindValue(':subtotal', (float)$item['subtotal']);
-                $stmtUpdVd->bindValue(':vd_id', $vdId, PDO::PARAM_INT);
-                $stmtUpdVd->execute();
-            }
+            $idProducto = (int)$prod['id_producto'];
+            $tipo = (int)$prod['id_tipo_producto'];
 
-            if ((int)$prod['id_tipo_producto'] === 3 && (float)$prod['stock_actual'] < $cant) {
-                $stmtBases->bindValue(':id_prod', (int)$prod['id_producto'], PDO::PARAM_INT);
+            if ($tipo === 1) {
+                $this->consumirEnvase($idProducto, $cant);
+            } elseif ($tipo === 3 && (float)$prod['stock_actual'] < $cant) {
+                $stmtBases->bindValue(':id_prod', $idProducto, PDO::PARAM_INT);
                 $stmtBases->execute();
                 $bases = $stmtBases->fetchAll();
-
+                if (empty($bases)) {
+                    throw new \RuntimeException('Stock insuficiente del producto preparado: ' . $prod['nombre']);
+                }
                 foreach ($bases as $b) {
-                    $stmtDescontar->bindValue(':cant', (float)$b['cantidad_galon'] * $cant);
-                    $stmtDescontar->bindValue(':id_prod', (int)$b['id_producto_base'], PDO::PARAM_INT);
-                    $stmtDescontar->execute();
+                    $volumen = (int)round((float)$b['cantidad_galon'] * 128);
+                    if ($volumen < 1) {
+                        throw new \RuntimeException('La fórmula de ' . $prod['nombre'] . ' no es válida');
+                    }
+                    foreach ($this->descomponerVolumen128($volumen) as $parte) {
+                        $this->consumirEnvase((int)$b['id_producto_base'], $cant, $parte);
+                    }
                 }
             } else {
-                $stmtDescontar->bindValue(':cant', $cant);
-                $stmtDescontar->bindValue(':id_prod', (int)$prod['id_producto'], PDO::PARAM_INT);
+                $stmtDescontar = $this->conexion->prepare(
+                    "UPDATE productos SET stock_actual = stock_actual - :cant WHERE id_producto = :id_prod AND stock_actual >= :cant2"
+                );
+                $stmtDescontar->bindValue(':cant', $cant, PDO::PARAM_INT);
+                $stmtDescontar->bindValue(':cant2', $cant, PDO::PARAM_INT);
+                $stmtDescontar->bindValue(':id_prod', $idProducto, PDO::PARAM_INT);
                 $stmtDescontar->execute();
+                if ($stmtDescontar->rowCount() === 0) {
+                    throw new \RuntimeException('Stock insuficiente para el producto ' . $prod['nombre'] . ' (disponible: ' . (int)$prod['stock_actual'] . ', requerido: ' . $cant . ')');
+                }
             }
         }
     }
@@ -560,8 +527,8 @@ class NotaEntregaModel extends ModeloBase
         // Si se pagó una inicial, registrar automáticamente en pagos_recibidos
         if ($montoInicial > 0) {
             $tipoPagoInicial = !empty($this->idTipoPagoInicial) ? (int)$this->idTipoPagoInicial : 1;
-            $consultaPago = "INSERT INTO pagos_recibidos (id_cuenta_cobrar, id_tipo_pago, id_banco, monto, fecha, referencia, estado) 
-                             VALUES (:id_cuenta_cobrar, :id_tipo_pago, :id_banco, :monto, NOW(), :referencia, 1)";
+            $consultaPago = "INSERT INTO pagos_recibidos (id_cuenta_cobrar, id_tipo_pago, id_banco, monto, fecha, referencia, estado, tasa_bcv)
+                             VALUES (:id_cuenta_cobrar, :id_tipo_pago, :id_banco, :monto, NOW(), :referencia, 1, {$this->sqlTasaPago('NOW()')})";
             $stmtPago = $this->conexion->prepare($consultaPago);
             $stmtPago->bindValue(':id_cuenta_cobrar', $idCuentaCobrar, PDO::PARAM_INT);
             $stmtPago->bindValue(':id_tipo_pago', $tipoPagoInicial, PDO::PARAM_INT);
@@ -587,8 +554,8 @@ class NotaEntregaModel extends ModeloBase
         $idCuentaCobrar = (int)$this->conexion->lastInsertId();
 
         $tipoPagoVal = $this->idTipoPago ?? 1;
-        $consultaPago = "INSERT INTO pagos_recibidos (id_cuenta_cobrar, id_tipo_pago, id_banco, monto, fecha, referencia, estado) 
-                         VALUES (:id_cuenta_cobrar, :id_tipo_pago, :id_banco, :monto, NOW(), :referencia, 1)";
+        $consultaPago = "INSERT INTO pagos_recibidos (id_cuenta_cobrar, id_tipo_pago, id_banco, monto, fecha, referencia, estado, tasa_bcv)
+                         VALUES (:id_cuenta_cobrar, :id_tipo_pago, :id_banco, :monto, NOW(), :referencia, 1, {$this->sqlTasaPago('NOW()')})";
         $stmtPago = $this->conexion->prepare($consultaPago);
         $stmtPago->bindValue(':id_cuenta_cobrar', $idCuentaCobrar, PDO::PARAM_INT);
         $stmtPago->bindValue(':id_tipo_pago', $tipoPagoVal, PDO::PARAM_INT);

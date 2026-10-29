@@ -18,7 +18,7 @@
 
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fs-6 fw-bold"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Información de la Recepción de Insumos</h5>
+        <h5 class="mb-0 fs-6 fw-bold"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Información de la Recepción de Productos</h5>
         <span class="badge <?php echo ($nota['situacion_pago'] === 'pagado') ? 'bg-success' : 'bg-warning text-dark'; ?> fs-6">
             <?php echo strtoupper($nota['situacion_pago']); ?>
         </span>
@@ -99,7 +99,7 @@ $saldoBsCompra = $saldoUsdCompra * $tasaDocCompra;
 
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-white py-3">
-        <h5 class="mb-0 fs-6 fw-bold"><i class="bi bi-box-seam me-2 text-primary"></i>Insumos Recibidos e Ingresados al Inventario</h5>
+        <h5 class="mb-0 fs-6 fw-bold"><i class="bi bi-box-seam me-2 text-primary"></i>Productos Recibidos e Ingresados al Inventario</h5>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -108,7 +108,7 @@ $saldoBsCompra = $saldoUsdCompra * $tasaDocCompra;
                     <tr>
                         <th style="width: 50px;">#</th>
                         <th>Código</th>
-                        <th>Insumo / Descripción</th>
+                        <th>Producto / Descripción</th>
                         <th class="text-center" style="width: 150px;">Cantidad Recibida</th>
                         <th class="text-end" style="width: 150px;">Precio Compra ($)</th>
                         <th class="text-end" style="width: 160px;">Subtotal ($)</th>

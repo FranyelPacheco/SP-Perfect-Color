@@ -129,7 +129,7 @@
         <div class="col-12 col-xl-8">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <h5 class="card-title mb-0 fs-6 fw-bold"><i class="bi bi-box-seam me-2 text-primary"></i>Insumos y Productos Recibidos</h5>
+                    <h5 class="card-title mb-0 fs-6 fw-bold"><i class="bi bi-box-seam me-2 text-primary"></i>Productos Recibidos</h5>
                     <div class="d-flex align-items-center gap-2">
                         <?php if (!empty($tasaCambioGlobal) && $tasaCambioGlobal > 0): ?>
                             <span class="badge bg-info bg-opacity-10 text-primary border border-primary border-opacity-25">
@@ -137,7 +137,7 @@
                             </span>
                         <?php endif; ?>
                         <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalRapidoInsumo">
-                            <i class="bi bi-plus-circle me-1"></i>Nuevo Insumo
+                            <i class="bi bi-plus-circle me-1"></i>Nuevo Producto
                         </button>
                     </div>
                 </div>
@@ -146,7 +146,7 @@
                     <div class="p-3 bg-light rounded-3 mb-3 border">
                         <div class="row g-2 align-items-end">
                             <div class="col-12 col-md-5">
-                                <label for="inputBuscarProductoCompra" class="form-label small fw-semibold">Producto / Insumo <span class="text-danger">*</span></label>
+                                <label for="inputBuscarProductoCompra" class="form-label small fw-semibold">Producto <span class="text-danger">*</span></label>
                                 <div class="position-relative">
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
@@ -178,7 +178,7 @@
                         <table class="table table-bordered align-middle mb-0" id="tablaDetalleCompra">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Insumo / Producto</th>
+                                    <th>Producto</th>
                                     <th style="width: 120px;" class="text-center">Cantidad</th>
                                     <th style="width: 140px;" class="text-end">Costo Unit. ($)</th>
                                     <th style="width: 150px;" class="text-end">Subtotal ($)</th>
@@ -220,13 +220,13 @@
     </div>
 </form>
 
-<!-- Modal Rápido para Crear Nuevo Insumo -->
+<!-- Modal Rápido para Crear Nuevo Producto -->
 <div class="modal fade" id="modalRapidoInsumo" tabindex="-1" aria-labelledby="modalRapidoInsumoLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title fw-bold" id="modalRapidoInsumoLabel">
-                    <i class="bi bi-box-seam me-2"></i>Nuevo Insumo
+                    <i class="bi bi-box-seam me-2"></i>Nuevo Producto
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
@@ -247,7 +247,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="rapidoNombre" class="form-label small fw-semibold">Nombre del Insumo / Producto <span class="text-danger">*</span></label>
+                        <label for="rapidoNombre" class="form-label small fw-semibold">Nombre del Producto <span class="text-danger">*</span></label>
                         <input type="text" id="rapidoNombre" name="nombre" class="form-control form-control-sm" required placeholder="Ej: Solvente Limpiador 1L">
                     </div>
 
@@ -279,7 +279,7 @@
                     <div id="alertaErrorRapidoInsumo" class="alert alert-danger d-none mt-3 mb-0 small"></div>
                 </div>
                 <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
                     <button type="submit" class="btn btn-primary btn-sm px-3" id="btnGuardarRapidoInsumo">
                         <i class="bi bi-check-lg me-1"></i>Guardar
                     </button>

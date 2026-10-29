@@ -3,10 +3,15 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\ImagenSeguraTrait;
 use PDO;
 
 class UsuarioModel extends ModeloBase
 {
+    use ImagenSeguraTrait;
+
+    private const DIR_AVATARES = __DIR__ . '/../../assets/uploads/avatares';
+
     private int $id_usuario;
     private string $nombre;
     private string $correo;
@@ -331,6 +336,53 @@ class UsuarioModel extends ModeloBase
             ];
         }
         return ['exito' => false, 'mensaje' => 'Error al actualizar los datos de perfil'];
+    }
+
+    // FUNCIÓN: actualizarFotoPerfil
+    // OBJETIVO: Valida y guarda la foto del usuario, reemplazando y borrando la anterior
+    public function actualizarFotoPerfil(int $idUsuario, array $archivo): array
+    {
+        $usuario = $this->buscarPorId($idUsuario);
+        if (!$usuario) {
+            return $this->respuestaError('Usuario no encontrado');
+        }
+
+        $guardado = $this->guardarImagenSegura($archivo, self::DIR_AVATARES);
+        if (!$guardado['exito']) {
+            return $guardado;
+        }
+
+        $nombre = $guardado['datos']['nombre'];
+        if (!$this->_ejecutarUpdateFoto($idUsuario, $nombre)) {
+            $this->eliminarImagenSegura($nombre, self::DIR_AVATARES);
+            return $this->respuestaError('Error al actualizar la foto de perfil');
+        }
+
+        $this->eliminarImagenSegura($usuario['foto'] ?? null, self::DIR_AVATARES);
+        return $this->respuestaExito('Foto de perfil actualizada exitosamente', ['foto' => $nombre]);
+    }
+
+    // FUNCIÓN: eliminarFotoPerfil
+    // OBJETIVO: Quita la foto del usuario y borra el archivo
+    public function eliminarFotoPerfil(int $idUsuario): array
+    {
+        $usuario = $this->buscarPorId($idUsuario);
+        if (!$usuario) {
+            return $this->respuestaError('Usuario no encontrado');
+        }
+        if (!$this->_ejecutarUpdateFoto($idUsuario, null)) {
+            return $this->respuestaError('Error al eliminar la foto de perfil');
+        }
+        $this->eliminarImagenSegura($usuario['foto'] ?? null, self::DIR_AVATARES);
+        return $this->respuestaExito('Foto de perfil eliminada');
+    }
+
+    private function _ejecutarUpdateFoto(int $idUsuario, ?string $foto): bool
+    {
+        $stmt = $this->conexion->prepare("UPDATE usuarios SET foto = :foto WHERE id_usuario = :id");
+        $stmt->bindValue(':foto', $foto, $foto === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindValue(':id', $idUsuario, PDO::PARAM_INT);
+        return $stmt->execute();
     }
 
     // FUNCIÓN: cambiarClavePerfil

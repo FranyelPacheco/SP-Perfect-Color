@@ -218,10 +218,18 @@ class NotaEntregaCompraModel extends ModeloBase
         }
 
         try {
+            $stmtCp = $this->conexion->prepare("SELECT COUNT(*) FROM cuentas_pagar WHERE id_nota_entrega = :id AND estado = 1");
+            $stmtCp->bindValue(':id', $id, PDO::PARAM_INT);
+            $stmtCp->execute();
+            if ((int)$stmtCp->fetchColumn() > 0) {
+                return ['exito' => false, 'mensaje' => 'No se puede anular: la compra ya está registrada en cuentas por pagar'];
+            }
             if ($this->anular($id)) {
                 return ['exito' => true, 'mensaje' => 'Nota de entrega anulada y stock revertido correctamente'];
             }
             return ['exito' => false, 'mensaje' => 'No se pudo anular la nota de entrega'];
+        } catch (\RuntimeException $e) {
+            return ['exito' => false, 'mensaje' => $e->getMessage()];
         } catch (\PDOException $e) {
             error_log('Error al anular nota de compra: ' . $e->getMessage());
             return ['exito' => false, 'mensaje' => 'Error al anular nota de compra'];
@@ -330,8 +338,8 @@ class NotaEntregaCompraModel extends ModeloBase
 
                 // Si hubo pago/abono inicial en crédito, registrarlo en pagos_realizados
                 if ($abonoInicial > 0) {
-                    $sqlPagoIni = "INSERT INTO pagos_realizados (id_cuenta_pagar, id_tipo_pago, id_banco, monto, fecha, referencia, estado)
-                                   VALUES (:id_cuenta_pagar, :id_tipo_pago, :id_banco, :monto, :fecha, :referencia, 1)";
+                    $sqlPagoIni = "INSERT INTO pagos_realizados (id_cuenta_pagar, id_tipo_pago, id_banco, monto, fecha, referencia, estado, tasa_bcv)
+                                   VALUES (:id_cuenta_pagar, :id_tipo_pago, :id_banco, :monto, :fecha, :referencia, 1, {$this->sqlTasaPago(':fecha_tasa')})";
                     $stmtPagoIni = $this->conexion->prepare($sqlPagoIni);
                     $tipoPagoIniVal = $idTipoPagoInicial ?? 1;
                     $bcoIniVal = ($tipoPagoIniVal === 1) ? null : ($idBancoInicial ?: null);
@@ -344,6 +352,7 @@ class NotaEntregaCompraModel extends ModeloBase
                     $stmtPagoIni->bindValue(':id_banco', $bcoIniVal, $bcoIniVal ? PDO::PARAM_INT : PDO::PARAM_NULL);
                     $stmtPagoIni->bindParam(':monto', $abonoInicial);
                     $stmtPagoIni->bindParam(':fecha', $fecha, PDO::PARAM_STR);
+                    $stmtPagoIni->bindParam(':fecha_tasa', $fecha, PDO::PARAM_STR);
                     $stmtPagoIni->bindValue(':referencia', $refIniVal, PDO::PARAM_STR);
                     $stmtPagoIni->execute();
                 }
@@ -359,8 +368,8 @@ class NotaEntregaCompraModel extends ModeloBase
 
                 $idCxp = (int)$this->conexion->lastInsertId();
 
-                $sqlPago = "INSERT INTO pagos_realizados (id_cuenta_pagar, id_tipo_pago, id_banco, monto, fecha, referencia, estado)
-                            VALUES (:id_cuenta_pagar, :id_tipo_pago, :id_banco, :monto, :fecha, :referencia, 1)";
+                $sqlPago = "INSERT INTO pagos_realizados (id_cuenta_pagar, id_tipo_pago, id_banco, monto, fecha, referencia, estado, tasa_bcv)
+                            VALUES (:id_cuenta_pagar, :id_tipo_pago, :id_banco, :monto, :fecha, :referencia, 1, {$this->sqlTasaPago(':fecha_tasa')})";
                 $stmtPago = $this->conexion->prepare($sqlPago);
                 $tipoPagoVal = $idTipoPago ?? 1; // 1 = Efectivo por defecto
                 $stmtPago->bindParam(':id_cuenta_pagar', $idCxp, PDO::PARAM_INT);
@@ -368,6 +377,7 @@ class NotaEntregaCompraModel extends ModeloBase
                 $stmtPago->bindValue(':id_banco', $idBanco ?: null, $idBanco ? PDO::PARAM_INT : PDO::PARAM_NULL);
                 $stmtPago->bindParam(':monto', $totalCompra);
                 $stmtPago->bindParam(':fecha', $fecha, PDO::PARAM_STR);
+                $stmtPago->bindParam(':fecha_tasa', $fecha, PDO::PARAM_STR);
                 $stmtPago->bindValue(':referencia', $referencia ?: 'PAGO CONTADO DIRECTO', PDO::PARAM_STR);
                 $stmtPago->execute();
             }
@@ -397,13 +407,18 @@ class NotaEntregaCompraModel extends ModeloBase
             }
 
             $detalle = $this->obtenerDetalle($id);
-            $sqlRevertir = "UPDATE productos SET stock_actual = GREATEST(0, stock_actual - :cantidad) WHERE id_producto = :id_producto";
+            $sqlRevertir = "UPDATE productos SET stock_actual = stock_actual - :cantidad WHERE id_producto = :id_producto AND stock_actual >= :cantidad2";
             $stmtRevertir = $this->conexion->prepare($sqlRevertir);
 
             foreach ($detalle as $item) {
                 $stmtRevertir->bindValue(':cantidad', $item['cantidad']);
+                $stmtRevertir->bindValue(':cantidad2', $item['cantidad']);
                 $stmtRevertir->bindValue(':id_producto', $item['id_producto'], PDO::PARAM_INT);
                 $stmtRevertir->execute();
+                if ($stmtRevertir->rowCount() === 0) {
+                    $this->conexion->rollBack();
+                    throw new \RuntimeException('No se puede anular: parte de lo recibido ya se vendió o se usó');
+                }
             }
 
             // Marcar nota_entrega inactiva

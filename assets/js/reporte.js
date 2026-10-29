@@ -218,9 +218,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     var fila = document.createElement('tr');
                     fila.innerHTML =
                         '<td>' + (v.fecha ? v.fecha.substring(0, 10) : '-') + '</td>' +
-                        '<td>' + (v.cliente_nombre || '-') + '<br><small class="text-muted">' + (v.cliente_cedula || '') + '</small></td>' +
+                        '<td>' + escapeHtml(v.cliente_nombre || '-') + '<br><small class="text-muted">' + escapeHtml(v.cliente_cedula || '') + '</small></td>' +
                         '<td class="fw-bold text-primary">$ ' + formatearMonedaLocal(v.total) + '</td>' +
-                        '<td>' + (v.tipo_pago_nombre || '-') + '</td>' +
+                        '<td>' + escapeHtml(v.tipo_pago_nombre || '-') + '</td>' +
                         '<td><a href="/SP%20Perfect%20Color/notaEntrega/ver?id=' + (v.id_nota_entrega || v.id_venta) + '" class="btn btn-sm btn-outline-primary" title="Ver Nota"><i class="bi bi-eye"></i></a></td>';
                     cuerpoReporte.appendChild(fila);
                 });
@@ -237,10 +237,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     fila.innerHTML =
                         '<td>' + (c.fecha ? c.fecha.substring(0, 10) : '-') + '</td>' +
                         '<td><strong>#' + (c.id_nota_entrega || '-') + '</strong></td>' +
-                        '<td>' + (c.proveedor_nombre || '-') + '</td>' +
-                        '<td>' + (c.proveedor_rif || '-') + '</td>' +
+                        '<td>' + escapeHtml(c.proveedor_nombre || '-') + '</td>' +
+                        '<td>' + escapeHtml(c.proveedor_rif || '-') + '</td>' +
                         '<td class="fw-bold text-danger">$ ' + formatearMonedaLocal(c.total) + '</td>' +
-                        '<td><span class="badge bg-' + badgeCond + '">' + (c.condicion_pago || '-') + '</span></td>' +
+                        '<td><span class="badge bg-' + badgeCond + '">' + escapeHtml(c.condicion_pago || '-') + '</span></td>' +
                         '<td>' + (c.situacion_pago ? c.situacion_pago.charAt(0).toUpperCase() + c.situacion_pago.slice(1) : '-') + '</td>' +
                         '<td><a href="/SP%20Perfect%20Color/notaEntregaCompra/ver?id=' + c.id_nota_entrega + '" class="btn btn-sm btn-outline-secondary" title="Ver Recepción"><i class="bi bi-eye"></i></a></td>';
                     cuerpoReporte.appendChild(fila);
@@ -263,9 +263,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<td>' + row.fecha + '</td>' +
                         '<td>' + badgeTipo + '</td>' +
                         '<td>#' + row.doc_numero + '</td>' +
-                        '<td>' + (row.tercero_nombre || '-') + '</td>' +
-                        '<td>' + (row.tercero_doc || '-') + '</td>' +
-                        '<td>' + (row.condicion || '-') + '</td>' +
+                        '<td>' + escapeHtml(row.tercero_nombre || '-') + '</td>' +
+                        '<td>' + escapeHtml(row.tercero_doc || '-') + '</td>' +
+                        '<td>' + escapeHtml(row.condicion || '-') + '</td>' +
                         '<td>' + ingresoFmt + '</td>' +
                         '<td>' + egresoFmt + '</td>';
                     cuerpoReporte.appendChild(fila);
@@ -281,8 +281,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     var fila = document.createElement('tr');
                     var badge = c.estado === 'pagado' ? 'success' : 'warning';
                     fila.innerHTML =
-                        '<td>' + (c.cliente_nombre || '-') + '</td>' +
-                        '<td>' + (c.cliente_cedula || '-') + '</td>' +
+                        '<td>' + escapeHtml(c.cliente_nombre || '-') + '</td>' +
+                        '<td>' + escapeHtml(c.cliente_cedula || '-') + '</td>' +
                         '<td>$ ' + formatearMonedaLocal(c.monto_total) + '</td>' +
                         '<td><strong>$ ' + formatearMonedaLocal(c.saldo_pendiente) + '</strong></td>' +
                         '<td>' + (c.fecha_vencimiento || '-') + '</td>' +

@@ -8,7 +8,7 @@ use App\Models\InventarioModel;
 use function App\Helpers\{
     respuestaJson,
     verificarAcceso,
-    verificarRolAdmin,
+    verificarSoloAdmin,
     soloPost,
     responder
 };
@@ -39,7 +39,8 @@ if ($metodo === 'index') {
         'proveedores' => $proveedores,
         'alertas' => $alertas,
         'rubros' => $rubros,
-        'tipos_producto' => $tiposProducto
+        'tipos_producto' => $tiposProducto,
+        'presentaciones' => $inventarioModel->listarPresentaciones()
     ]);
 
 // FUNCIÓN: buscarAjax
@@ -71,7 +72,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: guardar
 // OBJETIVO: Crea un nuevo insumo o reactiva uno inactivo, con proveedor asociado
 } elseif ($metodo === 'guardar') {
-    verificarRolAdmin();
+    verificarSoloAdmin();
     
     soloPost();
     
@@ -81,7 +82,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: obtener
 // OBJETIVO: Obtiene un insumo por ID para edición
 } elseif ($metodo === 'obtener') {
-    verificarRolAdmin();
+    verificarSoloAdmin();
     
     $id = intval($_GET['id'] ?? 0);
     
@@ -100,7 +101,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: actualizar
 // OBJETIVO: Actualiza un insumo existente y su relación con proveedor
 } elseif ($metodo === 'actualizar') {
-    verificarRolAdmin();
+    verificarSoloAdmin();
     
     soloPost();
     
@@ -138,7 +139,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: eliminar
 // OBJETIVO: Eliminación lógica de un insumo (soft-delete)
 } elseif ($metodo === 'eliminar') {
-    verificarRolAdmin();
+    verificarSoloAdmin();
     
     soloPost();
     
@@ -156,7 +157,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: guardarMezcla
 // OBJETIVO: Registra un producto preparado y descuenta las bases consumidas
 } elseif ($metodo === 'guardarMezcla') {
-    verificarRolAdmin();
+    verificarSoloAdmin();
     soloPost();
     
     $resultado = $inventarioModel->registrarMezclaTaller($_POST);
@@ -166,10 +167,19 @@ if ($metodo === 'index') {
         respuestaJson('error', $resultado['mensaje']);
     }
 
+// FUNCIÓN: silenciarAlerta
+// OBJETIVO: Silencia o reactiva la alerta de stock mínimo de una presentación hija
+} elseif ($metodo === 'silenciarAlerta') {
+    verificarSoloAdmin();
+    soloPost();
+
+    $resultado = $inventarioModel->cambiarAlertaStock(intval($_POST['id'] ?? 0), !empty($_POST['activa']));
+    responder($resultado);
+
 // FUNCIÓN: ajustarMerma
 // OBJETIVO: Descuenta inventario por merma o daño justificado
 } elseif ($metodo === 'ajustarMerma') {
-    verificarRolAdmin();
+    verificarSoloAdmin();
     soloPost();
 
     $resultado = $inventarioModel->registrarAjusteMerma($_POST);

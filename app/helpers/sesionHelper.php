@@ -52,6 +52,13 @@ function verificarRolAdmin()
     obtenerSesionManager()->verificarRolAdmin();
 }
 
+// FUNCIÓN: verificarSoloAdmin
+// OBJETIVO: Verificar que el usuario sea Administrador (rol 1), sin aceptar permisos de módulo
+function verificarSoloAdmin()
+{
+    obtenerSesionManager()->verificarSoloAdmin();
+}
+
 // FUNCIÓN: verificarRolVendedor
 // OBJETIVO: Verificar que el usuario tenga rol de Vendedor, Administrador o acceso a ventas
 function verificarRolVendedor()

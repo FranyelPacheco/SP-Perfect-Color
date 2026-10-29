@@ -3,12 +3,13 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\EnvaseTrait;
 use App\Traits\TasaBcvTrait;
 use PDO, PDOException;
 
 class PresupuestoModel extends ModeloBase
 {
-    use TasaBcvTrait;
+    use TasaBcvTrait, EnvaseTrait;
     private int $id;
     private int $idCliente;
     private int $idUsuario;
@@ -70,7 +71,7 @@ class PresupuestoModel extends ModeloBase
             return ['valido' => false, 'mensaje' => 'Debe agregar al menos un insumo al presupuesto'];
         }
 
-        $stmtProd = $this->conexion->prepare("SELECT id_producto, nombre, stock_actual, precio_venta FROM productos WHERE id_producto = :id AND estado = 1 LIMIT 1");
+        $stmtProd = $this->conexion->prepare("SELECT id_producto, nombre, stock_actual, precio_venta, id_tipo_producto FROM productos WHERE id_producto = :id AND estado = 1 LIMIT 1");
 
         $total = 0;
         $detalle = [];
@@ -151,7 +152,14 @@ class PresupuestoModel extends ModeloBase
                 }
 
                 $stockDisponible = (int)floor((float)($insumoInfo['stock_actual'] ?? 0));
-                if ($cantidad > $stockDisponible) {
+                if ((int)$insumoInfo['id_tipo_producto'] === 1) {
+                    if (!$this->hayEnvases($insumoId, (int)$cantidad)) {
+                        return [
+                            'valido' => false,
+                            'mensaje' => 'No hay envases suficientes de "' . $insumoInfo['nombre'] . '" para ' . $cantidad . ' unidad(es).'
+                        ];
+                    }
+                } elseif ($cantidad > $stockDisponible) {
                     return [
                         'valido' => false,
                         'mensaje' => 'La cantidad solicitada de "' . $insumoInfo['nombre'] . '" (' . $cantidad . ') supera el stock disponible (' . $stockDisponible . ').'
@@ -261,10 +269,21 @@ class PresupuestoModel extends ModeloBase
             return ['exito' => false, 'mensaje' => 'ID invalido'];
         }
         try {
+            $stmt = $this->conexion->prepare("SELECT id_estado_venta FROM ventas WHERE id_venta = :id AND estado = 1");
+            $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+            $estadoVenta = $stmt->fetchColumn();
+            if ($estadoVenta === false) {
+                return ['exito' => false, 'mensaje' => 'Presupuesto no encontrado'];
+            }
+            if (!in_array((int)$estadoVenta, [1, 3], true)) {
+                return ['exito' => false, 'mensaje' => 'No se puede eliminar: la venta ya fue aprobada y está en cuentas por cobrar'];
+            }
             $this->eliminarPresupuesto($id);
             return ['exito' => true, 'mensaje' => 'Presupuesto eliminado correctamente'];
         } catch (\PDOException $e) {
-            return ['exito' => false, 'mensaje' => 'Error al eliminar el presupuesto: ' . $e->getMessage()];
+            error_log('Error al eliminar presupuesto: ' . $e->getMessage());
+            return ['exito' => false, 'mensaje' => 'Error al eliminar el presupuesto'];
         }
     }
 

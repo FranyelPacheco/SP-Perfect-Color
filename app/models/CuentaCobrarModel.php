@@ -128,7 +128,7 @@ class CuentaCobrarModel extends ModeloBase
     private function _ejecutarSelectPagos(): array
     {
         $consulta = "SELECT pr.*, tp.nombre as tipo_pago_nombre, b.nombre as banco_nombre,
-                            {$this->sqlTasaBcv('pr.fecha')}
+                            COALESCE(pr.tasa_bcv, {$this->sqlTasaPago('pr.fecha')}) as tasa_bcv
                      FROM pagos_recibidos pr
                      LEFT JOIN tipo_pago tp ON pr.id_tipo_pago = tp.id_tipo_pago
                      LEFT JOIN banco b ON pr.id_banco = b.id_banco

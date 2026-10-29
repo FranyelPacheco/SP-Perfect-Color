@@ -144,7 +144,7 @@ $totalNotaFormBs = $totalNotaFormUsd * $tasaHoyNotaForm;
                     <thead>
                         <tr>
                             <th>Código</th>
-                            <th>Insumo / Producto</th>
+                            <th>Producto</th>
                             <th>Stock</th>
                             <th>Cantidad</th>
                             <th>Precio Unit.</th>

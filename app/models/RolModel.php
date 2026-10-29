@@ -91,8 +91,9 @@ class RolModel extends ModeloBase
         }
         $modulos = array_values(array_filter(array_map('trim', $modulos)));
 
-        if ($nombre === '') {
-            return ['valido' => false, 'mensaje' => 'El nombre del rol es obligatorio'];
+        $error = $this->validarTextoSeguro($nombre, 50, 'El nombre del rol');
+        if ($error !== null) {
+            return ['valido' => false, 'mensaje' => $error];
         }
 
         if (empty($modulos)) {

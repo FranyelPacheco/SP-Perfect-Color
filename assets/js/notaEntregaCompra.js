@@ -129,9 +129,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                 '<a href="/SP%20Perfect%20Color/notaEntregaCompra/ver?id=' + row.id_nota_entrega + '" class="btn btn-sm btn-info text-white" title="Ver Detalle">' +
                                 '<i class="bi bi-eye"></i>' +
                                 '</a>' +
-                                '<button type="button" class="btn btn-sm btn-outline-danger btn-anular-nota-compra" data-id="' + row.id_nota_entrega + '" title="Anular Recepción">' +
-                                '<i class="bi bi-x-circle"></i>' +
-                                '</button>' +
+                                (row.id_cuenta_pagar ? '' :
+                                    '<button type="button" class="btn btn-sm btn-outline-danger btn-anular-nota-compra" data-id="' + row.id_nota_entrega + '" title="Anular Recepción" aria-label="Anular Recepción">' +
+                                    '<i class="bi bi-x-circle"></i>' +
+                                    '</button>') +
                                 '</div>';
                         }
                     }
@@ -314,7 +315,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 var q = (filtro || '').toLowerCase().trim();
                 var filtrados = catalogoInsumos.filter(function(ins) {
                     if (!q) return true;
-                    var txt = ((ins.codigo || '') + ' ' + (ins.nombre || '')).toLowerCase();
+                    var txt = (escapeHtml(ins.codigo || '') + ' ' + escapeHtml(ins.nombre || '')).toLowerCase();
                     return txt.includes(q);
                 });
 
@@ -328,9 +329,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         var item = document.createElement('div');
                         item.className = 'buscador-dropdown-item';
                         item.innerHTML =
-                            '<div class="item-titulo">' + (ins.nombre || '') + '</div>' +
+                            '<div class="item-titulo">' + escapeHtml(ins.nombre || '') + '</div>' +
                             '<div class="item-meta">' +
-                                '<span class="badge-codigo">' + (ins.codigo || '') + '</span>' +
+                                '<span class="badge-codigo">' + escapeHtml(ins.codigo || '') + '</span>' +
                                 '<span class="badge-stock ' + (stock <= 0 ? 'sin-stock' : '') + '">Stock actual: ' + stock + '</span>' +
                                 '<span class="badge-precio">P. Venta: $ ' + pVenta.toFixed(2) + '</span>' +
                             '</div>';

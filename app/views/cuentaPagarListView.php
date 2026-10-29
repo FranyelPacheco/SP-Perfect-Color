@@ -7,7 +7,7 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
             <h4 class="mb-0 toolbar-title"><i class="bi bi-credit-card-2-back-fill me-2 text-primary"></i>Cuentas por Pagar</h4>
             <div class="d-flex gap-2 align-items-center flex-wrap">
-                <input type="text" id="busquedaCuentasPagar" class="form-control" style="width: 220px;" placeholder="Buscar por proveedor o RIF...">
+                <input type="text" id="busquedaCuentasPagar" class="form-control input-busqueda" placeholder="Buscar por proveedor o RIF...">
                 <a href="/SP%20Perfect%20Color/notaEntregaCompra/crear" class="btn btn-primary">
                     <i class="bi bi-cart-plus-fill me-2"></i>Registrar Compra
                 </a>

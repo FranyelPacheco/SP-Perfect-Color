@@ -47,7 +47,7 @@
 <?php endif; ?>
 
 <?php if ($_SESSION['usuario_rol'] === 1): ?>
-<div class="row g-3 mb-4">
+<div class="entrada-animada row g-3 mb-4">
     <div class="col-6 col-md-4 col-xl">
         <div class="stat-card stat-teal">
             <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
@@ -65,7 +65,7 @@
     <div class="col-6 col-md-4 col-xl">
         <div class="stat-card stat-purple">
             <div class="stat-icon"><i class="bi bi-box-seam-fill"></i></div>
-            <div class="stat-label">Insumos</div>
+            <div class="stat-label">Productos</div>
             <div class="stat-value" data-valor="<?php echo $totalInsumos; ?>">0</div>
         </div>
     </div>
@@ -101,7 +101,7 @@
 <?php endif; ?>
 
 <?php if ($_SESSION['usuario_rol'] === 1): ?>
-<div class="row g-3">
+<div class="entrada-animada row g-3">
     <div class="col-lg-5">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header">
@@ -119,7 +119,7 @@
                         <thead>
                             <tr>
                                 <th>Código</th>
-                                <th>Insumo</th>
+                                <th>Producto</th>
                                 <th class="text-center">Stock Actual</th>
                                 <th class="text-center">Stock Mínimo</th>
                             </tr>
@@ -158,7 +158,7 @@
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Insumo</th>
+                                <th>Producto</th>
                                 <th class="text-end">Vendido</th>
                             </tr>
                         </thead>
@@ -200,7 +200,7 @@
 </div>
 <?php endif; ?>
 
-<div class="row g-3 mt-2">
+<div class="entrada-animada row g-3 mt-2">
     <div class="col-lg-12">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header">
@@ -241,14 +241,16 @@
 </div>
 
 <?php if ($_SESSION['usuario_rol'] === 1): ?>
-<div class="row g-3 mt-2">
+<div class="entrada-animada row g-3 mt-2">
     <div class="col-12">
         <div class="card border-0 shadow-sm">
             <div class="card-header">
                 <h5 class="mb-0"><i class="bi bi-graph-up-arrow me-2 text-success"></i>Ingresos Diarios (Últimos 7 Días)</h5>
             </div>
             <div class="card-body">
-                <canvas id="graficoIngresos" height="100" role="img" aria-label="Gráfico de barras con los ingresos de los últimos 7 días"></canvas>
+                <div style="position: relative; height: 260px; width: 100%;">
+                    <canvas id="graficoIngresos" role="img" aria-label="Gráfico de barras con los ingresos de los últimos 7 días"></canvas>
+                </div>
             </div>
         </div>
     </div>

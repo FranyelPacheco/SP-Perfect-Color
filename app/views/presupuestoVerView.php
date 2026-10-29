@@ -72,7 +72,7 @@ $totalBsPres = $totalUsdPres * $tasaDocPres;
                 <thead>
                     <tr>
                         <th>Código</th>
-                        <th>Insumo</th>
+                        <th>Producto</th>
                         <th>Cantidad</th>
                         <th>Precio Unit.</th>
                         <th>Subtotal</th>
@@ -120,17 +120,18 @@ $totalBsPres = $totalUsdPres * $tasaDocPres;
 
 <script>
 function cambiarEstado(id, estado) {
-    var mensaje = estado === 'aprobado' ? 'Esta seguro de aprobar este presupuesto?' : 'Esta seguro de rechazar este presupuesto?';
-    if (!confirm(mensaje)) return;
-    var formData = new FormData();
-    formData.append('id', id);
-    formData.append('estado', estado);
-    fetch('../presupuesto/cambiarEstado', { method: 'POST', body: formData })
-    .then(function(r) { return r.json(); })
-    .then(function(resultado) {
-        if (resultado.estado === 'exito') { location.reload(); }
-        else { alert(resultado.mensaje); }
-    })
-    .catch(function(error) { console.error('Error:', error); alert('Error de conexion'); });
+    var mensaje = estado === 'aprobado' ? '¿Está seguro de aprobar este presupuesto?' : '¿Está seguro de rechazar este presupuesto?';
+    confirmarConModal('Confirmar', mensaje, function() {
+        var formData = new FormData();
+        formData.append('id', id);
+        formData.append('estado', estado);
+        fetch('/SP%20Perfect%20Color/presupuesto/cambiarEstado', { method: 'POST', body: formData })
+        .then(function(r) { return r.json(); })
+        .then(function(resultado) {
+            if (resultado.estado === 'exito') { location.reload(); }
+            else { mostrarNotificacion(resultado.mensaje, 'error'); }
+        })
+        .catch(function(error) { console.error('Error:', error); mostrarNotificacion('Error de conexión', 'error'); });
+    }, estado === 'aprobado' ? 'btn-success' : 'btn-danger');
 }
 </script>

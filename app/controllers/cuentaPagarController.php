@@ -15,6 +15,7 @@ use function App\Helpers\{
     respuestaJson,
     verificarAcceso,
     verificarRolAdmin,
+    verificarSoloAdmin,
     soloPost,
     responder
 };
@@ -87,7 +88,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: registrarPago
 // OBJETIVO: Registra un pago realizado con validación de banco/referencia para transferencia o pago móvil
 } elseif ($metodo === 'registrarPago') {
-    verificarRolAdmin();
+    verificarSoloAdmin();
     
     soloPost();
     
@@ -121,7 +122,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: guardarManual
 // OBJETIVO: Crea una cuenta por pagar manualmente con proveedor, monto y fecha de vencimiento
 } elseif ($metodo === 'guardarManual') {
-    verificarRolAdmin();
+    verificarSoloAdmin();
     
     soloPost();
     
@@ -131,7 +132,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: eliminar
 // OBJETIVO: Eliminación lógica de una cuenta por pagar (soft-delete)
 } elseif ($metodo === 'eliminar') {
-    verificarRolAdmin();
+    verificarSoloAdmin();
     
     soloPost();
     

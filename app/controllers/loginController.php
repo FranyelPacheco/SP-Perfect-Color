@@ -98,7 +98,13 @@ if ($metodo === 'index') {
     if ($enlace !== null) {
         $resultadoEnvio = enviarRecuperacionClave($usuario['correo'], $usuario['nombre'], $enlace);
         if (!$resultadoEnvio['exito']) {
-            error_log('[RECUPERACION CLAVE] No se pudo enviar el correo: ' . $resultadoEnvio['mensaje']);
+            $dirLogs = __DIR__ . '/../logs';
+            if (!is_dir($dirLogs)) {
+                @mkdir($dirLogs, 0777, true);
+            }
+            $logMsg = '[' . date('Y-m-d H:i:s') . '] Falló envío a ' . $usuario['correo'] . ': ' . $resultadoEnvio['mensaje'] . ' | Enlace de recuperación: ' . $enlace . PHP_EOL;
+            @file_put_contents($dirLogs . '/recuperacion.log', $logMsg, FILE_APPEND);
+            error_log('[RECUPERACION CLAVE] ' . $logMsg);
         }
     }
     exit;

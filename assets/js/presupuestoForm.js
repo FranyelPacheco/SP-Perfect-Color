@@ -397,12 +397,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<div class="fw-bold text-dark text-truncate" style="max-width: 250px;" title="' + escapeHtml(item.insumo_nombre) + '">' +
                             '<i class="bi bi-palette-fill text-success me-1"></i>' + escapeHtml(item.insumo_nombre) +
                         '</div>' +
-                        '<div class="small text-muted text-truncate" style="max-width: 250px;" title="' + (item.resumen_formula || '') + '">' +
-                            '<strong>' + (item.presentacion || '') + '</strong>: ' + (item.resumen_formula || '') +
+                        '<div class="small text-muted text-truncate" style="max-width: 250px;" title="' + escapeHtml(item.resumen_formula || '') + '">' +
+                            '<strong>' + escapeHtml(item.presentacion || '') + '</strong>: ' + escapeHtml(item.resumen_formula || '') +
                         '</div>' +
                         '<div class="d-flex align-items-center gap-1 mt-1">' +
                             '<span class="badge bg-success" style="font-size: 0.68rem; padding: 0.25em 0.5em;"><i class="bi bi-palette-fill me-1"></i>Preparado</span>' +
-                            '<span class="badge bg-light text-secondary border" style="font-size: 0.68rem;">' + item.presentacion + '</span>' +
+                            '<span class="badge bg-light text-secondary border" style="font-size: 0.68rem;">' + escapeHtml(item.presentacion) + '</span>' +
                         '</div>' +
                     '</td>' +
                     '<td class="text-center">' +

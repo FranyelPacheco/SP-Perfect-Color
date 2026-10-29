@@ -75,7 +75,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                     '<button class="btn btn-sm btn-success btn-aprobar-presupuesto" data-id="' + row.id_presupuesto + '" title="Aprobar / Procesar Entrega" aria-label="Aprobar / Procesar Entrega" data-bs-toggle="tooltip"><i class="bi bi-check-lg"></i></button>' +
                                     '<button class="btn btn-sm btn-danger btn-rechazar-presupuesto" data-id="' + row.id_presupuesto + '" title="Rechazar" aria-label="Rechazar" data-bs-toggle="tooltip"><i class="bi bi-x-lg"></i></button>';
                             }
-                            html += '<button class="btn btn-sm btn-outline-danger btn-eliminar-presupuesto" data-id="' + row.id_presupuesto + '" title="Eliminar" aria-label="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>';
+                            var estadoVenta = parseInt(row.id_estado_venta);
+                            if (estadoVenta === 1 || estadoVenta === 3) {
+                                html += '<button class="btn btn-sm btn-outline-danger btn-eliminar-presupuesto" data-id="' + row.id_presupuesto + '" title="Eliminar" aria-label="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>';
+                            }
                             html += '</div>';
                             return html;
                         }

@@ -14,7 +14,7 @@
                 <label for="tipoReporte" class="form-label">Tipo de Reporte</label>
                 <select id="tipoReporte" class="form-select">
                     <option value="ventas">Ventas (Notas de Entrega)</option>
-                    <option value="compras">Compras (Recepción de Insumos)</option>
+                    <option value="compras">Compras (Recepción de Productos)</option>
                     <option value="ambas">Ambas (Ventas y Compras - Flujo)</option>
                     <option value="carteraCxc">Cuentas por Cobrar Pendientes</option>
                 </select>
