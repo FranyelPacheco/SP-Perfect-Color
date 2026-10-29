@@ -34,6 +34,52 @@
         }
     });
 
+    // Validación nativa de formularios: en lugar del globo del navegador, el campo vibra en rojo y muestra el aviso debajo
+    let primerInvalido = null;
+
+    function textoAviso(el) {
+        return el.validity.valueMissing ? (el.type === 'checkbox' ? 'Debes marcar esta opción' : 'Este campo es obligatorio') : el.validationMessage;
+    }
+
+    function quitarAviso(el) {
+        el.classList.remove('is-invalid', 'campo-vibra');
+        const anclaje = el.closest('.input-group') || el;
+        const aviso = anclaje.nextElementSibling;
+        if (aviso && aviso.classList.contains('aviso-campo')) aviso.remove();
+    }
+
+    function marcarInvalido(el) {
+        const anclaje = el.closest('.input-group') || el;
+        quitarAviso(el);
+        el.classList.add('is-invalid');
+        void el.offsetWidth;
+        el.classList.add('campo-vibra');
+        const aviso = document.createElement('div');
+        aviso.className = 'aviso-campo';
+        aviso.setAttribute('role', 'alert');
+        aviso.innerHTML = '<i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i><span></span>';
+        aviso.lastChild.textContent = textoAviso(el);
+        anclaje.insertAdjacentElement('afterend', aviso);
+        (el.closest('.input-group') || el).classList.add('campo-vibra');
+        setTimeout(() => (el.closest('.input-group') || el).classList.remove('campo-vibra'), 500);
+    }
+
+    document.addEventListener('invalid', function (e) {
+        e.preventDefault();
+        marcarInvalido(e.target);
+        if (!primerInvalido) {
+            primerInvalido = e.target;
+            e.target.focus();
+            setTimeout(() => { primerInvalido = null; }, 0);
+        }
+    }, true);
+
+    ['input', 'change'].forEach(function (evento) {
+        document.addEventListener(evento, function (e) {
+            if (e.target.classList?.contains('is-invalid') && e.target.validity?.valid) quitarAviso(e.target);
+        });
+    });
+
     // Con una búsqueda activa, las filas que coinciden quedan resaltadas
     if (window.jQuery && $.fn.dataTable) {
         const COLUMNA_NUMERICA = /total|monto|saldo|precio|p\. venta|stock|tasa|cantidad/i;
