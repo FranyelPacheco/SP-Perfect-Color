@@ -7,3 +7,7 @@ cookies.txt
 /modelo_relacional.svg
 /Ejemplo.svg
 
+
+# Fotos subidas por los usuarios (se conserva el .htaccess)
+/assets/uploads/avatares/*
+!/assets/uploads/avatares/.htaccess
