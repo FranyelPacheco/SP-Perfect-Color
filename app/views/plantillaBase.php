@@ -121,6 +121,7 @@ try {
         <!-- Desktop sidebar: plegado por defecto, se expande al pasar el cursor -->
         <nav class="sidebar d-none d-lg-block" aria-label="Menú principal">
             <div class="sidebar-panel" id="sidebarPanel" data-open="false">
+                <script>try { if (sessionStorage.getItem('sbAbierto') === '1') { var sp = document.getElementById('sidebarPanel'); sp.dataset.open = 'true'; sp.parentElement.classList.add('sin-transicion'); } } catch (e) {}</script>
                 <div class="sidebar-brand">
                     <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color" class="sidebar-logo">
                     <div class="sidebar-brand-text">
@@ -175,7 +176,14 @@ try {
             var panel = document.getElementById('sidebarPanel');
             if (panel) {
                 var abrir = function() { panel.dataset.open = 'true'; };
-                var cerrar = function() { panel.dataset.open = 'false'; };
+                var cerrar = function() {
+                    panel.dataset.open = 'false';
+                    try { sessionStorage.removeItem('sbAbierto'); } catch (e) {}
+                };
+                requestAnimationFrame(function() { requestAnimationFrame(function() { panel.parentElement.classList.remove('sin-transicion'); }); });
+                panel.addEventListener('click', function(e) {
+                    if (e.target.closest('a[href]:not([href="#"])')) { try { sessionStorage.setItem('sbAbierto', '1'); } catch (er) {} }
+                });
                 panel.addEventListener('mouseenter', abrir);
                 panel.addEventListener('mouseleave', cerrar);
                 panel.addEventListener('focusin', abrir);
