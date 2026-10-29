@@ -483,3 +483,8 @@ html body div.dataTables_wrapper div.dataTables_length label,
 html body div.dataTables_wrapper div.dataTables_filter label { display: inline-flex; align-items: center; gap: 0.5rem; margin: 0; color: #334155; }
 
 html body .text-warning { color: #92400E !important; }
+
+
+/* Mientras carga la vista: contenido oculto pero con su tamaño real, y el esqueleto encima */
+html.js-cargando main > .container-fluid > :not(.skeleton-page) { visibility: hidden; }
+html.js-cargando main > .container-fluid > .skeleton-page { visibility: visible; }

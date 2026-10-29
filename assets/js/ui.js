@@ -3,18 +3,12 @@
 
 (function () {
     const BASE = '/SP%20Perfect%20Color/';
-    const SKELETON = '<div class="skeleton-page" aria-hidden="true">' +
-        '<div class="sk sk-titulo"></div>' +
-        '<div class="sk-tarjeta">' +
-        '<div class="sk-barra"><div class="sk sk-input"></div><div class="sk sk-boton"></div></div>' +
-        Array.from({ length: 7 }, () => '<div class="sk-fila"><div class="sk sk-c1"></div><div class="sk sk-c2"></div><div class="sk sk-c3"></div><div class="sk sk-c4"></div></div>').join('') +
-        '</div></div>';
-
     function mostrarSkeleton() {
         const contenedor = document.querySelector('main > .container-fluid');
         if (!contenedor || contenedor.querySelector(':scope > .skeleton-page')) return;
         contenedor.classList.add('cargando');
-        contenedor.insertAdjacentHTML('beforeend', SKELETON);
+        const plantilla = document.getElementById('plantillaSkeleton');
+        if (plantilla) contenedor.appendChild(plantilla.content.cloneNode(true));
     }
 
     function quitarSkeleton() {

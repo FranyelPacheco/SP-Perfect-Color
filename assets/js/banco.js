@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     modal.addEventListener('hidden.bs.modal', validacionNombre.limpiar);
     modal.addEventListener('shown.bs.modal', function() { if (nombreBanco.value) validacionNombre.revalidar(); });
 
+    vincularBusqueda(document.getElementById('busquedaBancos'), '#tablaBancos');
     cargarBancos();
 
     if (formulario) {
@@ -72,12 +73,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     { data: 'activo', render: function(d) { return d == 1 ? '<span class="badge bg-success">Si</span>' : '<span class="badge bg-danger">No</span>'; } },
                     { data: null, render: function(d, t, row) {
                         var activo = row.activo == 1;
-                        return '<div class="d-flex gap-2">' +
-                            '<button class="btn btn-sm btn-warning btn-editar-banco" data-id="' + row.id_banco + '"><i class="bi bi-pencil-square"></i></button>' +
+                        return '<button class="btn btn-sm btn-warning btn-editar-banco" data-id="' + row.id_banco + '"><i class="bi bi-pencil-square"></i></button>' +
                             (activo
                                 ? '<button class="btn btn-sm btn-danger btn-toggle-banco" data-id="' + row.id_banco + '" data-activo="1" title="Deshabilitar"><i class="bi bi-toggle-off"></i></button>'
-                                : '<button class="btn btn-sm btn-success btn-toggle-banco" data-id="' + row.id_banco + '" data-activo="0" title="Habilitar"><i class="bi bi-toggle-on"></i></button>') +
-                            '</div>';
+                                : '<button class="btn btn-sm btn-success btn-toggle-banco" data-id="' + row.id_banco + '" data-activo="0" title="Habilitar"><i class="bi bi-toggle-on"></i></button>');
                     }}
                 ]
             });

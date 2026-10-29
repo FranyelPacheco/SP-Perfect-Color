@@ -2,15 +2,18 @@
 // VISTA: bancoListView.php
 // OBJETIVO: Lista de bancos con DataTable y modal para crear/editar
 ?>
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-    <h2 class="h4 mb-0"><i class="bi bi-bank me-2 text-primary"></i>Bancos</h2>
-    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalBanco"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
-</div>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h4 class="mb-0 toolbar-title"><i class="bi bi-bank me-2 text-primary"></i>Bancos</h4>
+            <div class="d-flex gap-2 align-items-center">
+                <input type="text" id="busquedaBancos" class="form-control input-busqueda" placeholder="Buscar banco...">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalBanco"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
+            </div>
+        </div>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-body p-0">
         <div class="table-responsive">
-            <table id="tablaBancos" class="table table-hover mb-0">
+            <table id="tablaBancos" class="table table-hover table-striped mb-0">
                 <thead>
                     <tr>
                         <th>Nombre</th>
@@ -24,8 +27,8 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalBanco" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="modalBanco" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="tituloModalBanco">Nuevo Banco</h5>
@@ -46,8 +49,8 @@
                     <div id="mensajeErrorBanco" class="alert alert-danger d-none"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar</button>
                 </div>
             </form>
         </div>
