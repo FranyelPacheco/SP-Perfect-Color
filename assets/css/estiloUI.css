@@ -270,9 +270,9 @@ html body table.dataTable tbody tr.fila-encontrada > td:first-child { box-shadow
   pointer-events: none;
 }
 .swipe-toast {
-  --st-bg: #0f172a;
-  --st-ink: #f8fafc;
-  --st-fuse: #60a5fa;
+  --st-bg: linear-gradient(135deg, #1E3A5F, #1D4ED8);
+  --st-ink: #ffffff;
+  --st-fuse: rgba(255,255,255,0.85);
   --st-slide: 400ms;
   display: grid;
   grid-template-rows: 1fr;
@@ -488,3 +488,13 @@ html body .text-warning { color: #92400E !important; }
 /* Mientras carga la vista: contenido oculto pero con su tamaño real, y el esqueleto encima */
 html.js-cargando main > .container-fluid > :not(.skeleton-page) { visibility: hidden; }
 html.js-cargando main > .container-fluid > .skeleton-page { visibility: visible; }
+
+/* Toasts con los colores del sistema: éxito verde, error rojo, info azul de marca */
+.swipe-toast[data-tipo="exito"] { --st-bg: linear-gradient(135deg, #166534, #15803D); }
+.swipe-toast[data-tipo="error"] { --st-bg: linear-gradient(135deg, #991B1B, #B91C1C); }
+.swipe-toast[data-tipo="info"] { --st-bg: linear-gradient(135deg, #1E3A5F, #1D4ED8); }
+.swipe-toast__card { background: var(--st-bg); }
+.swipe-toast__icon { color: #fff; }
+.swipe-toast__desc { color: rgba(255,255,255,0.85); }
+.swipe-toast__close { color: rgba(255,255,255,0.85); }
+.swipe-toast__close:hover { background: rgba(255,255,255,0.18); }

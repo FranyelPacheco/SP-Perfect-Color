@@ -93,7 +93,6 @@ function mostrarNotificacion(mensaje, tipo, descripcion) {
     const raiz = document.createElement('div');
     raiz.className = 'swipe-toast';
     raiz.dataset.tipo = t;
-    raiz.style.setProperty('--st-fuse', TOAST_TIPOS[t].mecha);
     raiz.innerHTML = '<div class="swipe-toast__gate"><div class="swipe-toast__lift">' +
         '<div class="swipe-toast__card" role="' + (t === 'error' ? 'alert' : 'status') + '" tabindex="0">' +
         '<i class="bi ' + TOAST_TIPOS[t].icono + ' swipe-toast__icon" aria-hidden="true"></i>' +
