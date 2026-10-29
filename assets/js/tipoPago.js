@@ -34,12 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     alHacerClick('.btn-toggle-tipo-pago', function(e) {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
-        var activo = parseInt($(this).attr('data-activo') || $(this).data('activo'));
-        var titulo = activo ? 'Deshabilitar' : 'Habilitar';
-        var msg = activo ? '¿Está seguro de deshabilitar este tipo de pago?' : '¿Está seguro de habilitar este tipo de pago?';
-        confirmarConModal(titulo, msg, function() {
-            toggleTipoPagoEstado(id);
-        });
+        toggleTipoPagoEstado(id);
     });
 
     if (modal) {

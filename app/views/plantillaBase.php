@@ -53,6 +53,7 @@ try {
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/estiloBase.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/estiloBase.css'); ?>">
     <script>
         window.TASA_CAMBIO_HOY = <?php echo json_encode((float)$tasaCambioGlobal); ?>;
@@ -93,44 +94,45 @@ try {
     <script src="/SP%20Perfect%20Color/assets/js/csrf.js"></script>
 </head>
 <body>
-    <div class="d-flex" style="height:100vh;">
+    <div class="d-flex" style="height:100vh;height:100dvh;">
         <!-- Offcanvas sidebar (mobile) -->
         <div class="offcanvas offcanvas-start sidebar-offcanvas text-white" tabindex="-1" id="offcanvasSidebar">
             <div class="offcanvas-header border-bottom border-white border-opacity-10">
                 <div class="d-flex align-items-center gap-2">
-                    <img src="/SP%20Perfect%20Color/assets/images/logo.webp" alt="SP Perfect Color" height="36">
+                    <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color" height="48">
                     <div>
                         <h5 class="offcanvas-title fw-bold">SP Perfect Color</h5>
                         <small class="text-white-50" style="font-size:0.7rem;">Sistema de Gestión</small>
                     </div>
                 </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
             </div>
             <div class="offcanvas-body p-0 d-flex flex-column">
                 <nav class="mt-2">
                     <?php $claseMenu = ''; require __DIR__ . '/parciales/menuLateral.php'; ?>
                 </nav>
                 <div class="sidebar-user">
-                    <a href="/SP%20Perfect%20Color/perfil" class="user-name" title="Ver mi perfil"><i class="bi bi-person-circle me-1"></i><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></a>
+                    <a href="/SP%20Perfect%20Color/perfil" class="user-name" title="Ver mi perfil"><?php if (!empty($_SESSION['usuario_foto'])): ?><img src="/SP%20Perfect%20Color/assets/uploads/avatares/<?php echo rawurlencode($_SESSION['usuario_foto']); ?>" alt="" class="user-avatar me-1"><?php else: ?><i class="bi bi-person-circle me-1"></i><?php endif; ?><span class="user-nombre"><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></span></a>
                     <a href="/SP%20Perfect%20Color/login/salir" class="logout-link"><i class="bi bi-box-arrow-left me-1"></i>Cerrar Sesión</a>
                 </div>
             </div>
         </div>
 
-        <!-- Desktop sidebar -->
-        <nav class="sidebar d-none d-lg-flex">
-            <div class="sidebar-brand">
-                <img src="/SP%20Perfect%20Color/assets/images/logo.webp" alt="SP Perfect Color" class="sidebar-logo">
-                <div class="sidebar-brand-text">
-                    <h5>SP Perfect Color</h5>
-                    <small>Sistema de Gestión</small>
+        <!-- Desktop sidebar: plegado por defecto, se expande al pasar el cursor -->
+        <nav class="sidebar d-none d-lg-block" aria-label="Menú principal">
+            <div class="sidebar-panel" id="sidebarPanel" data-open="false">
+                <div class="sidebar-brand">
+                    <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color" class="sidebar-logo">
+                    <div class="sidebar-brand-text">
+                        <h5>SP Perfect Color</h5>
+                        <small>Sistema de Gestión</small>
+                    </div>
                 </div>
-                <button class="sidebar-toggle" id="sidebarToggle" title="Colapsar sidebar" aria-label="Colapsar sidebar"><i class="bi bi-list"></i></button>
-            </div>
-            <?php $claseMenu = 'mt-1'; require __DIR__ . '/parciales/menuLateral.php'; ?>
-            <div class="sidebar-user">
-                <a href="/SP%20Perfect%20Color/perfil" class="user-name" title="Ver mi perfil"><i class="bi bi-person-circle me-1"></i><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></a>
-                <a href="/SP%20Perfect%20Color/login/salir" class="logout-link"><i class="bi bi-box-arrow-left me-1"></i>Cerrar Sesión</a>
+                <?php $claseMenu = 'sidebar-nav'; require __DIR__ . '/parciales/menuLateral.php'; ?>
+                <div class="sidebar-user">
+                    <a href="/SP%20Perfect%20Color/perfil" class="user-name" title="Ver mi perfil"><?php if (!empty($_SESSION['usuario_foto'])): ?><img src="/SP%20Perfect%20Color/assets/uploads/avatares/<?php echo rawurlencode($_SESSION['usuario_foto']); ?>" alt="" class="user-avatar"><?php else: ?><i class="bi bi-person-circle"></i><?php endif; ?><span class="user-nombre"><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></span></a>
+                    <a href="/SP%20Perfect%20Color/login/salir" class="logout-link" title="Cerrar sesión"><i class="bi bi-box-arrow-left"></i><span>Cerrar Sesión</span></a>
+                </div>
             </div>
         </nav>
 
@@ -142,7 +144,7 @@ try {
                     <button class="navbar-toggler border-0 me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar">
                         <span class="navbar-toggler-icon"></span>
                     </button>
-                    <img src="/SP%20Perfect%20Color/assets/images/logo.webp" alt="SP Perfect Color" height="28" class="me-2">
+                    <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color" height="36" class="me-2">
                     <span class="navbar-brand mb-0 fs-6 fw-bold">SP Perfect Color</span>
                 </div>
             </nav>
@@ -155,6 +157,8 @@ try {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.bootstrap5.min.css">
 
+    <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/estiloUI.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/estiloUI.css'); ?>">
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
@@ -164,27 +168,27 @@ try {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/SP%20Perfect%20Color/assets/js/utilidades.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/utilidades.js'); ?>"></script>
+    <script src="/SP%20Perfect%20Color/assets/js/ui.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/ui.js'); ?>"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Sidebar toggle
-            var sidebarToggle = document.getElementById('sidebarToggle');
-            var sidebar = document.querySelector('.sidebar');
-            var sidebarBrand = document.querySelector('.sidebar-brand');
-            function toggleSidebar() {
-                sidebar.classList.toggle('collapsed');
-            }
-            if (sidebarToggle && sidebar) {
-                sidebarToggle.addEventListener('click', toggleSidebar);
-            }
-            // Click brand area to expand when collapsed
-            if (sidebarBrand && sidebar) {
-                sidebarBrand.addEventListener('click', function(e) {
-                    if (e.target.closest('.sidebar-toggle')) return;
-                    if (sidebar.classList.contains('collapsed')) {
-                        toggleSidebar();
-                    }
+            // Sidebar: se expande con el cursor o el foco y se pliega al salir
+            var panel = document.getElementById('sidebarPanel');
+            if (panel) {
+                var abrir = function() { panel.dataset.open = 'true'; };
+                var cerrar = function() { panel.dataset.open = 'false'; };
+                panel.addEventListener('mouseenter', abrir);
+                panel.addEventListener('mouseleave', cerrar);
+                panel.addEventListener('focusin', abrir);
+                panel.addEventListener('focusout', function(e) {
+                    if (!panel.contains(e.relatedTarget)) cerrar();
                 });
             }
+            document.querySelectorAll('.dropdown-hover').forEach(function(item) {
+                if (item.querySelector('.dropdown-submenu a.active')) {
+                    item.classList.add('open');
+                    item.querySelector(':scope > .nav-link').setAttribute('aria-expanded', 'true');
+                }
+            });
 
             // Submenús desplegables (clic o teclado); aria-expanded y Escape para cerrar
             function cerrarSubmenus(excepto) {
@@ -203,6 +207,7 @@ try {
                 });
             });
             document.addEventListener('click', function(e) {
+                if (e.target.closest('.sidebar-panel')) return;
                 var padre = e.target.closest('.dropdown-hover');
                 cerrarSubmenus(padre);
             });
@@ -229,7 +234,7 @@ try {
                 </div>
                 <div class="modal-body" id="modalConfirmacionCuerpo"></div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
                     <button type="button" class="btn btn-danger" id="modalConfirmacionBtn">Confirmar</button>
                 </div>
             </div>
