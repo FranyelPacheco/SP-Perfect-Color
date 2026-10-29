@@ -10,6 +10,18 @@ class InventarioModel extends ModeloBase
 {
     use EnvaseTrait;
 
+    // Presentaciones de galón fijas: id => [etiqueta, equivalencia en 128avos]
+    private const PRESENTACIONES = [
+        1 => ['1 Galón', 128],
+        2 => ['1/2 Galón', 64],
+        3 => ['1/4 Galón', 32],
+        4 => ['1/8 Galón', 16],
+        5 => ['1/16 Galón', 8],
+        6 => ['1/32 Galón', 4],
+        7 => ['1/64 Galón', 2],
+        8 => ['1/128 Galón', 1],
+    ];
+
     private int $id_producto;
     private int $id_tipo_producto;
     private string $codigo;
@@ -540,7 +552,11 @@ class InventarioModel extends ModeloBase
     // OBJETIVO: Lista las presentaciones de galón (1, 1/2 ... 1/128) con su equivalencia en 128avos
     public function listarPresentaciones(): array
     {
-        return $this->conexion->query("SELECT id_presentacion, etiqueta, factor_128 FROM presentacion ORDER BY factor_128 DESC")->fetchAll();
+        $lista = [];
+        foreach (self::PRESENTACIONES as $id => [$etiqueta, $factor]) {
+            $lista[] = ['id_presentacion' => $id, 'etiqueta' => $etiqueta, 'factor_128' => $factor];
+        }
+        return $lista;
     }
 
     // FUNCIÓN: obtenerAlertasStockBajo
@@ -794,10 +810,9 @@ class InventarioModel extends ModeloBase
             $detalle = (string)$cantidad;
 
             if ($enGalones) {
-                $stmtPres = $this->conexion->prepare("SELECT etiqueta, factor_128 FROM presentacion WHERE id_presentacion = :id");
-                $stmtPres->bindValue(':id', $idPresentacion, PDO::PARAM_INT);
-                $stmtPres->execute();
-                $pres = $stmtPres->fetch(PDO::FETCH_ASSOC);
+                $pres = isset(self::PRESENTACIONES[$idPresentacion])
+                    ? ['etiqueta' => self::PRESENTACIONES[$idPresentacion][0], 'factor_128' => self::PRESENTACIONES[$idPresentacion][1]]
+                    : null;
                 if (!$pres) {
                     $this->conexion->rollBack();
                     return ['exito' => false, 'mensaje' => 'Debe indicar la presentación que se perdió (1 galón, 1/2, 1/4...)'];
