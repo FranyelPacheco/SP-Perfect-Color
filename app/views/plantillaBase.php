@@ -160,7 +160,6 @@ try {
         <!-- Desktop sidebar: plegado por defecto, se expande al pasar el cursor -->
         <nav class="sidebar d-none d-lg-block" aria-label="Menú principal">
             <div class="sidebar-panel" id="sidebarPanel" data-open="false">
-                <script>try { if (sessionStorage.getItem('sbAbierto') === '1') { var sp = document.getElementById('sidebarPanel'); sp.dataset.open = 'true'; sp.parentElement.classList.add('sin-transicion'); } } catch (e) {}</script>
                 <div class="sidebar-brand">
                     <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color" class="sidebar-logo">
                     <div class="sidebar-brand-text">
@@ -173,6 +172,34 @@ try {
                     <a href="/SP%20Perfect%20Color/perfil" class="user-name" title="Ver mi perfil"><?php if (!empty($_SESSION['usuario_foto'])): ?><img src="/SP%20Perfect%20Color/assets/uploads/avatares/<?php echo rawurlencode($_SESSION['usuario_foto']); ?>" alt="" onerror="this.outerHTML='&lt;i class=&quot;bi bi-person-circle&quot;&gt;&lt;/i&gt;'" class="user-avatar"><?php else: ?><i class="bi bi-person-circle"></i><?php endif; ?><span class="user-nombre"><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></span></a>
                     <a href="/SP%20Perfect%20Color/login/salir" class="logout-link" title="Cerrar sesión"><i class="bi bi-box-arrow-left"></i><span>Cerrar Sesión</span></a>
                 </div>
+                <script>
+                    // Restaura el estado exacto del sidebar de la página anterior antes del primer pintado
+                    (function () {
+                        try {
+                            var p = document.getElementById('sidebarPanel');
+                            var e = JSON.parse(sessionStorage.getItem('sbEstado') || 'null');
+                            if (!e) return;
+                            p.parentElement.classList.add('sin-transicion');
+                            if (e.open) {
+                                p.dataset.open = 'true';
+                                // Si el cursor ya no está sobre el sidebar, el primer movimiento lo pliega
+                                document.addEventListener('mousemove', function f(ev) {
+                                    document.removeEventListener('mousemove', f);
+                                    if (!p.contains(ev.target)) {
+                                        p.dataset.open = 'false';
+                                        e.open = false;
+                                        sessionStorage.setItem('sbEstado', JSON.stringify(e));
+                                    }
+                                });
+                            }
+                            p.querySelectorAll('.dropdown-hover').forEach(function (li, i) {
+                                if ((e.subs || []).indexOf(i) > -1) li.classList.add('open');
+                            });
+                            var nav = p.querySelector('.sidebar-nav');
+                            if (nav) nav.scrollTop = e.scroll || 0;
+                        } catch (x) {}
+                    })();
+                </script>
             </div>
         </nav>
 
@@ -212,24 +239,24 @@ try {
             // Sidebar: se expande con el cursor o el foco y se pliega al salir
             var panel = document.getElementById('sidebarPanel');
             if (panel) {
-                var abrir = function() { panel.dataset.open = 'true'; };
-                var cerrar = function() {
-                    panel.dataset.open = 'false';
-                    try { sessionStorage.removeItem('sbAbierto'); } catch (e) {}
+                var guardar = function() {
+                    try {
+                        var subs = [];
+                        panel.querySelectorAll('.dropdown-hover').forEach(function(li, i) { if (li.classList.contains('open')) subs.push(i); });
+                        var nav = panel.querySelector('.sidebar-nav');
+                        sessionStorage.setItem('sbEstado', JSON.stringify({ open: panel.dataset.open === 'true', subs: subs, scroll: nav ? nav.scrollTop : 0 }));
+                    } catch (e) {}
                 };
+                window.guardarEstadoSidebar = guardar;
+                var abrir = function() { panel.dataset.open = 'true'; guardar(); };
+                var navegando = false;
+                var cerrar = function() { if (navegando) return; panel.dataset.open = 'false'; guardar(); };
+                // Al salir de la página el navegador dispara focusout/mouseleave: no deben contar como "cerrar"
+                panel.addEventListener('click', function(e) { if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.target.closest('a[href]:not([href="#"]):not([target])')) { navegando = true; guardar(); setTimeout(function() { navegando = false; }, 3000); } });
+                window.addEventListener('beforeunload', function() { navegando = true; });
+                window.addEventListener('pageshow', function() { navegando = false; });
                 requestAnimationFrame(function() { requestAnimationFrame(function() { panel.parentElement.classList.remove('sin-transicion'); }); });
-                if (panel.dataset.open === 'true') {
-                    // Abierto por la navegación anterior: solo se mantiene mientras el cursor siga encima
-                    var revisarCursor = function(e) {
-                        document.removeEventListener('mousemove', revisarCursor);
-                        if (!panel.contains(e.target)) cerrar();
-                    };
-                    document.addEventListener('mousemove', revisarCursor);
-                    setTimeout(function() { if (!panel.matches(':hover')) cerrar(); }, 1500);
-                }
-                panel.addEventListener('click', function(e) {
-                    if (e.target.closest('a[href]:not([href="#"])')) { try { sessionStorage.setItem('sbAbierto', '1'); } catch (er) {} }
-                });
+                window.addEventListener('pagehide', guardar);
                 panel.addEventListener('mouseenter', abrir);
                 panel.addEventListener('mouseleave', cerrar);
                 panel.addEventListener('focusin', abrir);
@@ -238,7 +265,7 @@ try {
                 });
             }
             document.querySelectorAll('.dropdown-hover').forEach(function(item) {
-                if (item.querySelector('.dropdown-submenu a.active')) {
+                if (item.querySelector('.dropdown-submenu a.active') || item.classList.contains('open')) {
                     item.classList.add('open');
                     item.querySelector(':scope > .nav-link').setAttribute('aria-expanded', 'true');
                 }
@@ -258,6 +285,7 @@ try {
                     e.preventDefault();
                     var abierto = this.parentElement.classList.toggle('open');
                     this.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+                    if (window.guardarEstadoSidebar) window.guardarEstadoSidebar();
                 });
             });
             document.addEventListener('click', function(e) {
