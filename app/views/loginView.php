@@ -39,41 +39,51 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/estiloBase.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/estiloBase.css'); ?>">
+    <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/login.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/login.css'); ?>">
     <meta name="csrf-token" content="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
     <script src="/SP%20Perfect%20Color/assets/js/csrf.js"></script>
 </head>
-<body class="login-page">
-    <div class="login-bg-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
-        <div class="shape shape-4"></div>
-    </div>
-
-    <div class="login-card">
-        <div class="card shadow">
-            <div class="card-header text-center border-0">
-                <div class="login-logo-wrapper">
-                    <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color" class="login-logo">
+<body class="auth-page">
+    <main class="auth-layout">
+        <aside class="auth-brand" aria-hidden="false">
+            <div class="auth-brand-inner">
+                <div class="auth-logo-badge">
+                    <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color">
                 </div>
                 <h1>SP Perfect Color</h1>
-                <p class="mb-0">Sistema de Gestión Administrativa</p>
+                <p class="auth-lema">Ventas, inventario y cobranzas de tu pinturería en un solo lugar.</p>
+                <ul class="auth-puntos">
+                    <li><i class="bi bi-palette2"></i>Mezclas y presupuestos al instante</li>
+                    <li><i class="bi bi-box-seam"></i>Inventario con alertas de stock</li>
+                    <li><i class="bi bi-currency-exchange"></i>Cobros en dólares y bolívares</li>
+                </ul>
             </div>
-            <div class="card-body">
+            <small class="auth-pie">&copy; <?php echo date('Y'); ?> SP Perfect Color</small>
+        </aside>
+
+        <section class="auth-form-lado">
+            <div class="auth-form-caja">
+                <div class="auth-logo-movil">
+                    <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color">
+                    <span>SP Perfect Color</span>
+                </div>
+                <h2>Bienvenido de nuevo</h2>
+                <p class="auth-sub">Ingresa tus credenciales para acceder al sistema.</p>
+
                 <form id="formularioLogin" novalidate>
                     <div class="mb-3">
-                        <label for="correo" class="form-label">Correo Electrónico</label>
+                        <label for="correo" class="form-label">Correo electrónico</label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
                             <input type="email" id="correo" name="correo" class="form-control" required autocomplete="email" placeholder="usuario@ejemplo.com">
                         </div>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-2">
                         <label for="clave" class="form-label">Contraseña</label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                            <input type="password" id="clave" name="clave" class="form-control" required maxlength="20" autocomplete="current-password" placeholder="Ingrese su contraseña">
+                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                            <input type="password" id="clave" name="clave" class="form-control" required maxlength="20" autocomplete="current-password" placeholder="Ingresa tu contraseña">
                             <button type="button" id="toggleClave" class="input-group-text password-toggle" aria-label="Mostrar u ocultar contraseña">
                                 <i class="bi bi-eye-slash-fill" id="toggleIcono"></i>
                             </button>
@@ -81,24 +91,22 @@
                     </div>
 
                     <div class="d-flex justify-content-end mb-3">
-                        <a href="#" class="small text-decoration-none text-muted" data-bs-toggle="modal" data-bs-target="#modalRecuperarClave">¿Olvidó su contraseña?</a>
+                        <a href="#" class="auth-link" data-bs-toggle="modal" data-bs-target="#modalRecuperarClave">¿Olvidaste tu contraseña?</a>
                     </div>
 
-                    <div id="mensajeError" class="alert alert-danger d-none"></div>
+                    <div id="mensajeError" class="alert alert-danger d-none" role="alert"></div>
 
-                    <button type="submit" id="btnLogin" class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2">
-                        <span id="btnText">Iniciar Sesión</span>
+                    <button type="submit" id="btnLogin" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
+                        <span id="btnText">Iniciar sesión</span>
+                        <i class="bi bi-arrow-right" aria-hidden="true"></i>
                         <div id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status">
                             <span class="visually-hidden">Cargando...</span>
                         </div>
                     </button>
                 </form>
             </div>
-            <div class="card-footer text-center border-0 py-3">
-                <small class="text-muted">&copy; <?php echo date('Y'); ?> SP Perfect Color</small>
-            </div>
-        </div>
-    </div>
+        </section>
+    </main>
 
     <!-- MODAL PARA RECUPERAR CONTRASEÑA -->
     <div class="modal fade" id="modalRecuperarClave" tabindex="-1" aria-labelledby="modalRecuperarLabel" aria-hidden="true">
