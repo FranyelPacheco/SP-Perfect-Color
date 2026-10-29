@@ -498,3 +498,33 @@ html.js-cargando main > .container-fluid > .skeleton-page { visibility: visible;
 .swipe-toast__desc { color: rgba(255,255,255,0.85); }
 .swipe-toast__close { color: rgba(255,255,255,0.85); }
 .swipe-toast__close:hover { background: rgba(255,255,255,0.18); }
+
+/* ============================================================
+   VALIDACIÓN DE CAMPOS: rojo, vibración y aviso en línea
+   ============================================================ */
+@keyframes campoVibra {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-7px); }
+  30% { transform: translateX(6px); }
+  45% { transform: translateX(-5px); }
+  60% { transform: translateX(4px); }
+  75% { transform: translateX(-2px); }
+}
+@keyframes avisoEntra { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+html body .campo-vibra { animation: campoVibra 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+html body .form-control.is-invalid, html body .form-select.is-invalid {
+  border-color: #dc2626 !important;
+  background-color: #fef2f2;
+  box-shadow: 0 0 0 3px rgba(220,38,38,0.15);
+}
+html body .input-group:has(.is-invalid) .input-group-text { border-color: #dc2626 !important; background: #fee2e2; color: #b91c1c; }
+html body .form-check-input.is-invalid { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
+html body .aviso-campo {
+  display: flex; align-items: center; gap: 0.35rem;
+  margin-top: 0.35rem;
+  color: #b91c1c;
+  font-size: 0.8rem; font-weight: 500;
+  animation: avisoEntra 0.25s ease both;
+}
+html body .aviso-campo i { font-size: 0.9rem; }
+@media (prefers-reduced-motion: reduce) { html body .campo-vibra, html body .aviso-campo { animation: none; } }
