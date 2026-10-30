@@ -223,6 +223,18 @@ class InventarioModel extends ModeloBase
 
         $inactivoId = $this->buscarInactivoPorCodigo($val['codigo']);
         if ($inactivoId) {
+            $stmtInfo = $this->conexion->prepare(
+                "SELECT p.id_tipo_producto, p.id_producto_padre,
+                        (SELECT COUNT(*) FROM productos h WHERE h.id_producto_padre = p.id_producto AND h.estado = 1) AS hijos
+                 FROM productos p WHERE p.id_producto = :id"
+            );
+            $stmtInfo->bindValue(':id', $inactivoId, PDO::PARAM_INT);
+            $stmtInfo->execute();
+            $previo = $stmtInfo->fetch();
+            if ($previo && ((int)$previo['id_tipo_producto'] === 3
+                || ((int)$previo['hijos'] > 0 && (int)$previo['id_tipo_producto'] !== $val['id_tipo_producto']))) {
+                return ['exito' => false, 'mensaje' => 'Ese código perteneció a un producto que no se puede reactivar con otro tipo. Use un código distinto.'];
+            }
             if ($this->actualizarInsumo($inactivoId, $val['codigo'], $val['nombre'], $val['rubro_id'], $val['unidad_medida'], $val['stock_actual'], $val['stock_minimo'], $val['precio_venta'], $val['precio_compra'], $val['id_tipo_producto'])) {
                 $this->eliminarProveedoresDeInsumo($inactivoId);
                 if ($val['proveedor_id']) {
@@ -369,8 +381,8 @@ class InventarioModel extends ModeloBase
     {
         $consulta = "UPDATE productos 
                      SET codigo = :codigo, nombre = :nombre,
-                         id_tipo_producto = :id_tipo_producto,
-                         unidad_medida = :unidad_medida, stock_actual = :stock_actual,
+                         id_tipo_producto = IF(id_producto_padre IS NULL, :id_tipo_producto, id_tipo_producto),
+                         unidad_medida = IF(id_producto_padre IS NULL, :unidad_medida, unidad_medida), stock_actual = :stock_actual,
                          stock_minimo = :stock_minimo, precio_venta = :precio_venta,
                          estado = 1
                      WHERE id_producto = :id";
@@ -691,7 +703,7 @@ class InventarioModel extends ModeloBase
             if ($idBase <= 0 || $volumen128 < 1) {
                 return ['exito' => false, 'mensaje' => 'Una de las bases de la fórmula no es válida'];
             }
-            $componentes[] = ['id' => $idBase, 'fraccion' => (string)($b['fraccion'] ?? ''), 'galon' => $cantGalon, 'v128' => $volumen128];
+            $componentes[] = ['id' => $idBase, 'galon' => $cantGalon, 'v128' => $volumen128];
             $volumenFormula += $volumen128;
         }
         if ($volumenFormula !== $factorPresentacion) {
@@ -713,7 +725,7 @@ class InventarioModel extends ModeloBase
             $stmtProd = $this->conexion->prepare($consultaProd);
             $stmtProd->bindParam(':codigo', $codigo, PDO::PARAM_STR);
             $stmtProd->bindParam(':nombre', $nombre, PDO::PARAM_STR);
-            $stmtProd->bindParam(':unidad_medida', $presentacion, PDO::PARAM_STR);
+            $stmtProd->bindValue(':unidad_medida', $factorPresentacion >= 128 ? 'Galon' : $this->etiquetaFraccion($factorPresentacion) . ' Galon');
             $stockActualEnvases = (float)$cantidadEnvases;
             $stmtProd->bindParam(':stock_actual', $stockActualEnvases);
             $stmtProd->bindParam(':precio_venta', $precioVenta);
@@ -722,8 +734,8 @@ class InventarioModel extends ModeloBase
             $idProductoMezclado = (int)$this->conexion->lastInsertId();
 
             // 3. Preparar statements para mezcla_producto y actualización de stock de bases
-            $consultaMezcla = "INSERT INTO mezcla_producto (id_producto_mezclado, id_producto_base, fraccion, cantidad_galon, estado)
-                               VALUES (:id_producto_mezclado, :id_producto_base, :fraccion, :cantidad_galon, 1)";
+            $consultaMezcla = "INSERT INTO mezcla_producto (id_producto_mezclado, id_producto_base, cantidad_galon, estado)
+                               VALUES (:id_producto_mezclado, :id_producto_base, :cantidad_galon, 1)";
             $stmtMezcla = $this->conexion->prepare($consultaMezcla);
 
             $stmtBase = $this->conexion->prepare("SELECT id_tipo_producto, nombre FROM productos WHERE id_producto = :id_base AND estado = 1 LIMIT 1");
@@ -739,7 +751,6 @@ class InventarioModel extends ModeloBase
                 // Guardar receta en mezcla_producto
                 $stmtMezcla->bindValue(':id_producto_mezclado', $idProductoMezclado, PDO::PARAM_INT);
                 $stmtMezcla->bindValue(':id_producto_base', $c['id'], PDO::PARAM_INT);
-                $stmtMezcla->bindValue(':fraccion', $c['fraccion'] !== '' ? $c['fraccion'] : $this->etiquetaFraccion($c['v128']));
                 $stmtMezcla->bindValue(':cantidad_galon', number_format($c['galon'], 7, '.', ''));
                 $stmtMezcla->execute();
 
@@ -783,8 +794,8 @@ class InventarioModel extends ModeloBase
         if ($idProducto < 1) {
             return ['exito' => false, 'mensaje' => 'Debe seleccionar un producto'];
         }
-        if (!ctype_digit($cantidadRaw) || $cantidad < 1) {
-            return ['exito' => false, 'mensaje' => 'La cantidad a descontar debe ser un número entero mayor a 0'];
+        if (!ctype_digit($cantidadRaw) || $cantidad < 1 || $cantidad > 1000000) {
+            return ['exito' => false, 'mensaje' => 'La cantidad a descontar debe ser un número entero entre 1 y 1.000.000'];
         }
         $error = $this->validarTextoSeguro($motivo, 250, 'El motivo del daño o merma');
         if ($error !== null) {
@@ -805,8 +816,6 @@ class InventarioModel extends ModeloBase
             }
 
             $enGalones = (int)$prod['id_tipo_producto'] === 1;
-            $equivalente128 = null;
-            $descuento = (float)$cantidad;
             $detalle = (string)$cantidad;
 
             if ($enGalones) {
@@ -817,8 +826,6 @@ class InventarioModel extends ModeloBase
                     $this->conexion->rollBack();
                     return ['exito' => false, 'mensaje' => 'Debe indicar la presentación que se perdió (1 galón, 1/2, 1/4...)'];
                 }
-                $equivalente128 = $cantidad * (int)$pres['factor_128'];
-                $descuento = $equivalente128 / 128;
                 $detalle = "{$cantidad} x {$pres['etiqueta']}";
                 $this->consumirEnvase($idProducto, $cantidad, (int)$pres['factor_128']);
             } else {
@@ -837,15 +844,11 @@ class InventarioModel extends ModeloBase
                 }
             }
 
-            $descuentoTexto = number_format($descuento, 7, '.', '');
-
-            $stmtLog = $this->conexion->prepare("INSERT INTO merma_inventario (id_producto, id_presentacion, cantidad, equivalente_128, cantidad_descontada, motivo)
-                                                 VALUES (:producto, :presentacion, :cantidad, :equivalente, :descontada, :motivo)");
+            $stmtLog = $this->conexion->prepare("INSERT INTO merma_inventario (id_producto, id_presentacion, cantidad, motivo)
+                                                 VALUES (:producto, :presentacion, :cantidad, :motivo)");
             $stmtLog->bindValue(':producto', $idProducto, PDO::PARAM_INT);
             $stmtLog->bindValue(':presentacion', $idPresentacion ?: null, $idPresentacion ? PDO::PARAM_INT : PDO::PARAM_NULL);
             $stmtLog->bindValue(':cantidad', $cantidad, PDO::PARAM_INT);
-            $stmtLog->bindValue(':equivalente', $equivalente128, $equivalente128 === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-            $stmtLog->bindValue(':descontada', $descuentoTexto);
             $stmtLog->bindValue(':motivo', $motivo);
             $stmtLog->execute();
 

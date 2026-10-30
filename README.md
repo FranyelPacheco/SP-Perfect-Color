@@ -33,7 +33,7 @@ Sistema integral de gestión administrativa para la empresa **SP Perfect Color**
 * **Uso de Traits en POO:** Lógica de sesiones, autenticación y permisos encapsulada horizontalmente en `SessionTrait` y centralizada en `AppTrait`.
 * **Servicio de Correo SMTP con PHPMailer:** Notificaciones automatizadas, recuperación segura de contraseñas mediante tokens temporales firmados con HMAC SHA-256, avisos de seguridad al modificar contraseñas y bienvenida con credenciales a nuevos usuarios.
 * **Módulo Dedicado de "Mi Perfil":** Consulta independiente de datos personales, permisos asignados y cambio de contraseña con validación obligatoria de la clave actual.
-* **Formulación Colorimétrica y BOM (Bill of Materials):** Preparación interactiva de pinturas personalizadas combinando hasta 6 tintes base concentrados medidos con precisión decimal (12,4) en fracciones de galón (hasta $1/128$).
+* **Formulación Colorimétrica y BOM (Bill of Materials):** Preparación interactiva de pinturas personalizadas combinando hasta 6 tintes base concentrados medidos con precisión decimal (14,7) en fracciones de galón (hasta $1/128$).
 * **Cadena Lineal de Ventas y Cobros (Cero Ciclos):** Flujo financiero libre de dependencias cíclicas (`notas_entrega` $\to$ `cuentas_cobrar` $\to$ `pagos_recibidos`).
 * **Reactivación Automática de Soft-Delete:** Recuperación transparente de registros inactivos al reingresar claves únicas duplicadas (cédula, RIF, código, correo o nombre).
 * **Exportación de Reportes Ejecutivos:** Descarga directa de notas de entrega y cartera de cuentas por cobrar en PDF horizontal (Dompdf) y Excel XLSX (OpenSpout).
@@ -116,7 +116,7 @@ Para garantizar la integridad referencial y cumplir con principios contables:
 ### Base de Datos
 - **Motor:** MySQL 8.0+ / MariaDB 10.4+.
 - **Driver:** PDO con emulación de consultas preparadas desactivada (`ATTR_EMULATE_PREPARES => false`).
-- **Collation:** `utf8mb4_spanish2_ci` uniforme en la base de datos y en las 24 tablas.
+- **Collation:** `utf8mb4_spanish2_ci` uniforme en la base de datos y en las 27 tablas.
 
 ### Frontend
 - **Framework CSS:** Bootstrap 5.3.3.
@@ -153,7 +153,7 @@ c:/xampp/htdocs/SP Perfect Color/
 │   │   └── usuarioController.php     # Gestión de usuarios y roles
 │   ├── core/
 │   │   ├── conexionBD.php            # Singleton de conexión PDO
-│   │   └── sp_perfect_color.sql      # Esquema oficial (25 tablas normalizadas)
+│   │   └── sp_perfect_color.sql      # Esquema oficial (27 tablas normalizadas)
 │   ├── helpers/                      # Funciones auxiliares globales
 │   │   ├── correoHelper.php          # Servicio de correo y plantillas HTML
 │   │   ├── exportarReporteHelper.php # Exportadores PDF y Excel
@@ -217,7 +217,7 @@ c:/xampp/htdocs/SP Perfect Color/
 ├── index.php                         # Punto de entrada de la aplicación
 ├── AGENTS.md                         # Bitácora técnica y registro de cambios
 ├── README.md                         # Documentación general del proyecto
-└── modelo_relacional.svg             # Diagrama vectorial ERD (25 tablas)
+└── modelo_relacional.svg             # Diagrama vectorial ERD (27 tablas)
 ```
 
 ---
@@ -266,32 +266,34 @@ c:/xampp/htdocs/SP Perfect Color/
                         [Pagos Recibidos: Referencia id_cuenta_cobrar]
 ```
 
-### Tablas Oficiales en Base de Datos (25 Tablas)
+### Tablas Oficiales en Base de Datos (27 Tablas)
 1. `banco` — Catálogo de entidades bancarias.
 2. `clientes` — Registro de clientes naturales o jurídicos.
-3. `cuentas_cobrar` — Deudas activas de clientes derivadas directamente de `ventas`.
-4. `cuentas_pagar` — Compromisos financieros con proveedores derivados de `nota_entrega`.
-5. `estado_venta` — Estados del ciclo comercial (1: Presupuesto, 2: Aprobado, 3: Rechazado, 4: Anulado).
-6. `mezcla_producto` — Receta de composición BOM de productos preparados a partir de tintes base.
-7. `modulos` — Catálogo de módulos del sistema para control de acceso y permisos.
-8. `nota_entrega` — Cabecera de compras y recepciones de mercancía de proveedores.
-9. `nota_entrega_producto` — Detalle de productos recibidos en compras a proveedores.
-10. `pagos_realizados` — Egresos y amortizaciones aplicados a cuentas por pagar.
-11. `pagos_recibidos` — Cobros aplicados exclusivamente a cuentas por cobrar.
-12. `producto_proveedor` — Catálogo puente N:M de proveedores y productos que suministran.
-13. `productos` — Catálogo maestro con soporte para fracciones de galón y precisión decimal (12,4).
-14. `proveedores` — Registro de proveedores comerciales.
-15. `rol_modulo` — Matriz de permisos de módulos autorizados por cada rol.
-16. `roles` — Roles de usuario (Administrador, Vendedor, etc.).
-17. `rubro` — Clasificación de especialidades y actividades de proveedores.
-18. `rubro_proveedor` — Asignación de rubros comerciales a cada proveedor.
-19. `telefono_cliente` — Entidad débil con clave primaria compuesta `(id_cliente, id_telefono_cliente)`.
-20. `telefono_proveedor` — Entidad débil con clave primaria compuesta `(id_proveedor, id_telefono_proveedor)`.
-21. `tipo_pago` — Instrumentos de pago (Efectivo, Pago Móvil, Transferencia, etc.).
-22. `tipo_producto` — Clasificación técnica del producto (1: Base, 2: Simple, 3: Preparado).
-23. `usuarios` — Usuarios autenticables con clave hasheada mediante Bcrypt.
-24. `ventas` — Cabecera unificada de cotizaciones y ventas con doble fecha (`fecha` y `fecha_aprobacion`).
-25. `venta_detalle` — Ítems comerciales y cantidades de cada presupuesto o venta.
+3. `compra` — Cabecera de compras y recepciones de mercancía de proveedores.
+4. `compra_detalle` — Productos recibidos en cada compra (`subtotal` generado).
+5. `cuentas_cobrar` — Deudas de clientes derivadas de `ventas`; `situacion` es columna generada a partir de `saldo_pendiente`.
+6. `cuentas_pagar` — Compromisos con proveedores derivados de `compra`; `situacion` es columna generada a partir de `saldo_pendiente`.
+7. `estado_venta` — Estados del ciclo comercial (1: Presupuesto, 2: Aprobado, 3: Rechazado, 4: Anulado).
+8. `merma_inventario` — Mermas de inventario: `id_presentacion` (1 a 8), `cantidad`, `equivalente_128` y `cantidad_descontada` (columnas generadas) y `motivo`.
+9. `mezcla_producto` — Receta de cada pintura preparada a partir de tintes base (`cantidad_galon`).
+10. `modulos` — Catálogo de módulos del sistema para control de acceso.
+11. `pagos_realizados` — Pagos aplicados a cuentas por pagar.
+12. `pagos_recibidos` — Cobros aplicados a cuentas por cobrar.
+13. `producto_proveedor` — Relación N:M entre proveedores y productos que suministran.
+14. `productos` — Catálogo maestro con fracciones de galón; stock en DECIMAL(14,7) y `unidad_medida` como ENUM (Galon, 1/2 a 1/128 Galon, Unidad, KG).
+15. `proveedores` — Registro de proveedores comerciales.
+16. `rol_modulo` — Permisos de módulos por rol.
+17. `roles` — Roles de usuario (Administrador, Vendedor, etc.).
+18. `rubro` — Clasificación de actividades de proveedores.
+19. `rubro_proveedor` — Rubros asignados a cada proveedor.
+20. `tasa_cambio` — Tasa diaria USD/Bs registrada manualmente, sin borrado.
+21. `telefono_cliente` — Entidad débil con clave `(id_cliente, id_telefono_cliente)`.
+22. `telefono_proveedor` — Entidad débil con clave `(id_proveedor, id_telefono_proveedor)`.
+23. `tipo_pago` — Instrumentos de pago (Efectivo, Pago Móvil, Transferencia, etc.).
+24. `tipo_producto` — Clasificación del producto (1: Base, 2: Simple, 3: Preparado).
+25. `usuarios` — Usuarios autenticables con clave hasheada con Bcrypt.
+26. `venta_detalle` — Ítems de cada presupuesto o venta.
+27. `ventas` — Cabecera unificada de cotizaciones y ventas con `fecha` y `fecha_aprobacion`.
 
 ---
 
@@ -338,6 +340,7 @@ composer dump-autoload
    ```bash
    mysql -u root -p sp_perfect_color < app/core/sp_perfect_color.sql
    ```
+   Advertencia: el dump reemplaza las tablas de la BD indicada; no lo importe sobre una BD con datos que quiera conservar.
 
 ### 4. Configurar la Conexión a Base de Datos
 Verifica o edita las credenciales en [`app/core/conexionBD.php`](file:///c:/xampp/htdocs/SP%20Perfect%20Color/app/core/conexionBD.php):

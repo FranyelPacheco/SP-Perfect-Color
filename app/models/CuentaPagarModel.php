@@ -59,7 +59,7 @@ class CuentaPagarModel extends ModeloBase
     public function validarDatosManual(array $datos): array
     {
         $proveedorId = intval($datos['id_proveedor'] ?? 0);
-        $montoTotal = floatval($datos['monto_total'] ?? 0);
+        $montoTotal = round(floatval($datos['monto_total'] ?? 0), 2);
         $fechaVencimiento = trim($datos['fecha_vencimiento'] ?? '');
 
         if ($proveedorId < 1) {
@@ -73,7 +73,7 @@ class CuentaPagarModel extends ModeloBase
             return ['valido' => false, 'mensaje' => 'El proveedor seleccionado no existe o está inactivo'];
         }
 
-        if ($montoTotal <= 0) {
+        if ($montoTotal < 0.01) {
             return ['valido' => false, 'mensaje' => 'El monto total debe ser mayor a cero'];
         }
 
@@ -220,8 +220,8 @@ class CuentaPagarModel extends ModeloBase
         $stmtNe->execute();
         $idNotaEntrega = (int)$this->conexion->lastInsertId();
 
-        $consulta = "INSERT INTO cuentas_pagar (id_compra, monto_total, saldo_pendiente, fecha_vencimiento, situacion, created_at, estado) 
-                     VALUES (:id_compra, :monto_total, :saldo_pendiente, :fecha_vencimiento, 'pendiente', NOW(), 1)";
+        $consulta = "INSERT INTO cuentas_pagar (id_compra, monto_total, saldo_pendiente, fecha_vencimiento, created_at, estado) 
+                     VALUES (:id_compra, :monto_total, :saldo_pendiente, :fecha_vencimiento, NOW(), 1)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id_compra', $idNotaEntrega, PDO::PARAM_INT);
         $stmt->bindParam(':monto_total', $this->montoTotal);
