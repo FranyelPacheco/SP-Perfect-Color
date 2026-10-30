@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     mostrarNotificacion(res.mensaje, 'exito');
                 } else { mostrarError(res.mensaje); }
             })
-            .catch(function() { mostrarError('Error de conexión'); });
+            .catch(function() { mostrarError('No se pudo conectar con el servidor. Intente de nuevo.'); });
     }
 
     function toggleTipoPagoEstado(id) {

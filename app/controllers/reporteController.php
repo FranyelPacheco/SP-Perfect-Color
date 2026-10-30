@@ -44,7 +44,7 @@ if ($metodo === 'index') {
     $idTipoPago = !empty($_GET['id_tipo_pago']) ? intval($_GET['id_tipo_pago']) : null;
 
     if (!validarFecha($desde) || !validarFecha($hasta)) {
-        respuestaJson('error', 'Formato de fecha invalido (use YYYY-MM-DD)');
+        respuestaJson('error', 'La fecha no es válida. Seleccione un rango con el calendario.');
     }
     $hoy = date('Y-m-d');
     if ($desde > $hoy || $hasta > $hoy) {
@@ -73,7 +73,7 @@ if ($metodo === 'index') {
     $condicion = !empty($_GET['condicion']) ? $_GET['condicion'] : null;
 
     if (!validarFecha($desde) || !validarFecha($hasta)) {
-        respuestaJson('error', 'Formato de fecha invalido (use YYYY-MM-DD)');
+        respuestaJson('error', 'La fecha no es válida. Seleccione un rango con el calendario.');
     }
     $hoy = date('Y-m-d');
     if ($desde > $hoy || $hasta > $hoy) {
@@ -100,7 +100,7 @@ if ($metodo === 'index') {
     $hasta = $_GET['hasta'] ?? date('Y-m-d');
 
     if (!validarFecha($desde) || !validarFecha($hasta)) {
-        respuestaJson('error', 'Formato de fecha invalido (use YYYY-MM-DD)');
+        respuestaJson('error', 'La fecha no es válida. Seleccione un rango con el calendario.');
     }
     $hoy = date('Y-m-d');
     if ($desde > $hoy || $hasta > $hoy) {
@@ -136,7 +136,7 @@ if ($metodo === 'index') {
     $estado = !empty($_GET['estado_cxc']) ? $_GET['estado_cxc'] : null;
 
     if (!validarFecha($desde) || !validarFecha($hasta)) {
-        respuestaJson('error', 'Formato de fecha invalido (use YYYY-MM-DD)');
+        respuestaJson('error', 'La fecha no es válida. Seleccione un rango con el calendario.');
     }
     $hoy = date('Y-m-d');
     if ($desde > $hoy || $hasta > $hoy) {
@@ -164,10 +164,10 @@ if ($metodo === 'index') {
 
     $tiposValidos = ['ventas', 'compras', 'ambas', 'carteraCxc'];
     if (!in_array($tipo, $tiposValidos)) {
-        respuestaJson('error', 'Tipo de reporte no valido');
+        respuestaJson('error', 'Seleccione un tipo de reporte válido.');
     }
     if (!validarFecha($desde) || !validarFecha($hasta)) {
-        respuestaJson('error', 'Formato de fecha invalido (use YYYY-MM-DD)');
+        respuestaJson('error', 'La fecha no es válida. Seleccione un rango con el calendario.');
     }
     $hoy = date('Y-m-d');
     if ($desde > $hoy || $hasta > $hoy) {
@@ -192,10 +192,10 @@ if ($metodo === 'index') {
 
     $tiposValidos = ['ventas', 'compras', 'ambas', 'carteraCxc'];
     if (!in_array($tipo, $tiposValidos)) {
-        respuestaJson('error', 'Tipo de reporte no valido');
+        respuestaJson('error', 'Seleccione un tipo de reporte válido.');
     }
     if (!validarFecha($desde) || !validarFecha($hasta)) {
-        respuestaJson('error', 'Formato de fecha invalido (use YYYY-MM-DD)');
+        respuestaJson('error', 'La fecha no es válida. Seleccione un rango con el calendario.');
     }
     $hoy = date('Y-m-d');
     if ($desde > $hoy || $hasta > $hoy) {

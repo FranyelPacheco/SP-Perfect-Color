@@ -93,7 +93,7 @@ if ($metodo === 'index') {
     $id = intval($_GET['id'] ?? 0);
 
     if ($id < 1) {
-        respuestaJson('error', 'ID de proveedor no valido');
+        respuestaJson('error', 'No se encontró el registro. Actualice la página e intente de nuevo.');
     }
 
     $proveedor = $proveedorModel->buscarPorId($id);

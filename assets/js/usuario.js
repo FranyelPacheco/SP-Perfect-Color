@@ -371,7 +371,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         } catch (error) {
             console.error('Error al obtener usuario:', error);
-            mostrarNotificacion('Error al cargar datos del usuario', 'error');
+            mostrarNotificacion('No se pudieron cargar los datos del usuario. Actualice la página e intente de nuevo.', 'error');
         }
     }
 
@@ -450,7 +450,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         } catch (error) {
             console.error('Error al guardar usuario:', error);
-            mostrarErrorUsuario('Error de conexión al guardar el usuario');
+            mostrarErrorUsuario('No se pudo guardar el usuario. Revise su conexión e intente de nuevo.');
         }
     }
 
@@ -477,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 })
                 .catch(function () {
-                    mostrarNotificacion('Error de conexión al eliminar usuario', 'error');
+                    mostrarNotificacion('No se pudo eliminar usuario. Revise su conexión e intente de nuevo.', 'error');
                 });
         });
     }
@@ -678,7 +678,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         } catch (error) {
             console.error('Error al obtener rol:', error);
-            mostrarNotificacion('Error al cargar datos del rol', 'error');
+            mostrarNotificacion('No se pudieron cargar los datos del rol. Actualice la página e intente de nuevo.', 'error');
         }
     }
 
@@ -721,7 +721,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         } catch (error) {
             console.error('Error al guardar rol:', error);
-            mostrarErrorRol('Error de conexión al guardar el rol');
+            mostrarErrorRol('No se pudo guardar el rol. Revise su conexión e intente de nuevo.');
         }
     }
 
@@ -757,7 +757,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 })
                 .catch(function () {
-                    mostrarNotificacion('Error de conexión al cambiar estado del rol', 'error');
+                    mostrarNotificacion('No se pudo cambiar el estado del rol. Revise su conexión e intente de nuevo.', 'error');
                 });
         }, claseBtn);
     }
@@ -798,7 +798,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 })
                 .catch(function () {
-                    mostrarNotificacion('Error de conexión al eliminar el rol', 'error');
+                    mostrarNotificacion('No se pudo eliminar el rol. Revise su conexión e intente de nuevo.', 'error');
                 });
         }, 'btn-danger');
     }

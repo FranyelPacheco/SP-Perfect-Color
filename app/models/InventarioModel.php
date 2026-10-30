@@ -172,7 +172,7 @@ class InventarioModel extends ModeloBase
 
         if ($esCreacion) {
             if (!is_numeric($stockActualRaw) || floor((float)$stockActualRaw) != (float)$stockActualRaw || (float)$stockActualRaw < 0) {
-                return ['valido' => false, 'mensaje' => 'El stock actual debe ser un numero entero no negativo'];
+                return ['valido' => false, 'mensaje' => 'El stock actual debe ser un número entero no negativo'];
             }
             $stockActual = (float)intval($stockActualRaw);
         } else {
@@ -180,7 +180,7 @@ class InventarioModel extends ModeloBase
         }
 
         if (!is_numeric($stockMinimoRaw) || floor((float)$stockMinimoRaw) != (float)$stockMinimoRaw || (float)$stockMinimoRaw < 0) {
-            return ['valido' => false, 'mensaje' => 'El stock minimo debe ser un numero entero no negativo'];
+            return ['valido' => false, 'mensaje' => 'El stock mínimo debe ser un número entero no negativo'];
         }
         $stockMinimo = (float)intval($stockMinimoRaw);
 
@@ -190,11 +190,11 @@ class InventarioModel extends ModeloBase
         }
 
         if ($precioVenta <= 0) {
-            return ['valido' => false, 'mensaje' => 'El precio de venta debe ser un numero positivo'];
+            return ['valido' => false, 'mensaje' => 'El precio de venta debe ser un número positivo'];
         }
 
         if ($this->codigoExiste($codigo, $idActual)) {
-            return ['valido' => false, 'mensaje' => ($idActual ? 'Ya existe otro insumo con ese codigo' : 'Ya existe un insumo con ese codigo')];
+            return ['valido' => false, 'mensaje' => ($idActual ? 'Ya existe otro insumo con ese código' : 'Ya existe un producto con ese código')];
         }
 
         return [
@@ -249,7 +249,7 @@ class InventarioModel extends ModeloBase
                 ]
             ];
         }
-        return ['exito' => false, 'mensaje' => 'Error al crear el insumo'];
+        return ['exito' => false, 'mensaje' => 'No se pudo crear el insumo. Intente de nuevo.'];
     }
 
     // FUNCIÓN: modificar
@@ -257,7 +257,7 @@ class InventarioModel extends ModeloBase
     public function modificar(int $id, array $datos): array
     {
         if ($id < 1) {
-            return ['exito' => false, 'mensaje' => 'ID de insumo no valido'];
+            return ['exito' => false, 'mensaje' => 'No se encontró el registro. Actualice la página e intente de nuevo.'];
         }
 
         $insumoExistente = $this->buscarPorId($id);
@@ -275,10 +275,10 @@ class InventarioModel extends ModeloBase
             return ['exito' => false, 'mensaje' => $error];
         }
         if ($precioVenta <= 0) {
-            return ['exito' => false, 'mensaje' => 'El precio de venta debe ser un numero positivo'];
+            return ['exito' => false, 'mensaje' => 'El precio de venta debe ser un número positivo'];
         }
         if (!is_numeric($stockMinimoRaw) || floor((float)$stockMinimoRaw) != (float)$stockMinimoRaw || (float)$stockMinimoRaw < 0) {
-            return ['exito' => false, 'mensaje' => 'El stock minimo debe ser un numero entero no negativo'];
+            return ['exito' => false, 'mensaje' => 'El stock mínimo debe ser un número entero no negativo'];
         }
 
         // Solo las presentaciones hijas pueden silenciar su alerta; el producto padre siempre alerta
@@ -293,7 +293,7 @@ class InventarioModel extends ModeloBase
         if ($stmt->execute()) {
             return ['exito' => true, 'mensaje' => 'Producto actualizado exitosamente'];
         }
-        return ['exito' => false, 'mensaje' => 'Error al actualizar el producto'];
+        return ['exito' => false, 'mensaje' => 'No se pudo actualizar el producto. Intente de nuevo.'];
     }
 
     // FUNCIÓN: darDeBaja
@@ -301,7 +301,7 @@ class InventarioModel extends ModeloBase
     public function darDeBaja(int $id): array
     {
         if ($id < 1) {
-            return ['exito' => false, 'mensaje' => 'ID de insumo no valido'];
+            return ['exito' => false, 'mensaje' => 'No se encontró el registro. Actualice la página e intente de nuevo.'];
         }
 
         if ($this->eliminarInsumo($id)) {
@@ -766,7 +766,7 @@ class InventarioModel extends ModeloBase
                 $this->conexion->rollBack();
             }
             error_log('Error al preparar mezcla: ' . $e->getMessage());
-            return ['exito' => false, 'mensaje' => 'Error al preparar la mezcla'];
+            return ['exito' => false, 'mensaje' => 'No se pudo preparar la mezcla. Verifique que haya existencia suficiente de los tintes base.'];
         }
     }
 
@@ -864,7 +864,7 @@ class InventarioModel extends ModeloBase
                 $this->conexion->rollBack();
             }
             error_log('Error en merma: ' . $e->getMessage());
-            return ['exito' => false, 'mensaje' => 'Error al registrar el ajuste'];
+            return ['exito' => false, 'mensaje' => 'No se pudo registrar el ajuste de inventario. Intente de nuevo.'];
         }
     }
 }

@@ -85,14 +85,14 @@ class PresupuestoModel extends ModeloBase
             if ($esMezcla) {
                 $descripcion = trim($item['descripcion'] ?? '');
                 if ($descripcion === '') {
-                    return ['valido' => false, 'mensaje' => 'La pintura preparada debe tener una descripcion valida'];
+                    return ['valido' => false, 'mensaje' => 'La pintura preparada debe tener una descripción válida'];
                 }
                 $mezclas = $item['mezclas'] ?? [];
                 if (empty($mezclas) || !is_array($mezclas)) {
                     return ['valido' => false, 'mensaje' => 'La pintura preparada debe contener al menos un tinte base'];
                 }
                 if (count($mezclas) > 6) {
-                    return ['valido' => false, 'mensaje' => 'Una formulacion no puede contener mas de 6 tintes base'];
+                    return ['valido' => false, 'mensaje' => 'Una fórmula no puede contener más de 6 tintes base'];
                 }
 
                 $mezclasValidadas = [];
@@ -134,7 +134,7 @@ class PresupuestoModel extends ModeloBase
             } else {
                 $insumoId = intval($item['id_insumo'] ?? $item['id_producto'] ?? 0);
                 if ($insumoId < 1) {
-                    return ['valido' => false, 'mensaje' => 'Datos invalidos en uno de los items'];
+                    return ['valido' => false, 'mensaje' => 'Los datos no son válidos. Revíselos e intente de nuevo en uno de los items'];
                 }
 
                 $stmtProd->bindParam(':id', $insumoId, PDO::PARAM_INT);
@@ -216,7 +216,8 @@ class PresupuestoModel extends ModeloBase
                 ]
             ];
         } catch (\PDOException $e) {
-            return ['exito' => false, 'mensaje' => 'Error al crear el presupuesto: ' . $e->getMessage()];
+            error_log('Error al crear presupuesto: ' . $e->getMessage());
+            return ['exito' => false, 'mensaje' => 'No se pudo crear el presupuesto. Revise los datos e intente de nuevo.'];
         }
     }
 
@@ -225,7 +226,7 @@ class PresupuestoModel extends ModeloBase
     public function actualizarEstado(int $id, string|int $estado): array
     {
         if ($id < 1 || !in_array((string)$estado, ['rechazado', 'anulado'], true)) {
-            return ['exito' => false, 'mensaje' => 'Datos invalidos'];
+            return ['exito' => false, 'mensaje' => 'Los datos no son válidos. Revíselos e intente de nuevo'];
         }
 
         $stmt = $this->conexion->prepare("SELECT id_estado_venta FROM ventas WHERE id_venta = :id AND estado = 1");
@@ -254,7 +255,7 @@ class PresupuestoModel extends ModeloBase
     public function darDeBaja(int $id): array
     {
         if ($id < 1) {
-            return ['exito' => false, 'mensaje' => 'ID invalido'];
+            return ['exito' => false, 'mensaje' => 'No se encontró el registro. Actualice la página e intente de nuevo.'];
         }
         try {
             $stmt = $this->conexion->prepare("SELECT id_estado_venta FROM ventas WHERE id_venta = :id AND estado = 1");
@@ -301,7 +302,7 @@ class PresupuestoModel extends ModeloBase
     public function obtenerDetalle(int $presupuestoId): array
     {
         if ($presupuestoId <= 0) {
-            throw new PDOException('ID de presupuesto no válido');
+            throw new PDOException('No se encontró el registro. Actualice la página e intente de nuevo.');
         }
         $this->id = $presupuestoId;
         return $this->_ejecutarSelectDetalle();

@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         } catch (error) {
-            console.error('Error al cargar insumos:', error);
+            console.error('No se pudo cargar el catálogo de productos. Recargue la página:', error);
         }
     }
 
@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     cargarInsumos();
                 }
             })
-            .catch(function() { mostrarNotificacion('Error de conexión', 'error'); });
+            .catch(function() { mostrarNotificacion('No se pudo conectar con el servidor. Intente de nuevo.', 'error'); });
     }
 
     // Muestra las alertas de stock bajo
@@ -531,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error al obtener insumo:', error);
-            mostrarNotificacion('Error al cargar los datos del insumo', 'error');
+            mostrarNotificacion('No se pudieron cargar los datos del producto. Actualice la página e intente de nuevo.', 'error');
         }
     }
 
@@ -592,7 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error al guardar insumo:', error);
-            mostrarError('Error de conexión al guardar el insumo');
+            mostrarError('No se pudo guardar el insumo. Revise su conexión e intente de nuevo.');
         }
     }
 
@@ -613,7 +613,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(function(error) {
                     console.error('Error al eliminar insumo:', error);
-                    mostrarNotificacion('Error de conexión al eliminar el insumo', 'error');
+                    mostrarNotificacion('No se pudo eliminar el insumo. Revise su conexión e intente de nuevo.', 'error');
                 });
         });
     }
@@ -976,7 +976,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (err) {
                 console.error(err);
-                mensajeErrorMezcla.textContent = 'Error de conexión al registrar la mezcla.';
+                mensajeErrorMezcla.textContent = 'No se pudo registrar la mezcla. Revise su conexión e intente de nuevo.';
                 mensajeErrorMezcla.classList.remove('d-none');
             }
         });
@@ -1268,7 +1268,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (err) {
                 console.error(err);
-                mensajeErrorAjuste.textContent = 'Error de conexión al registrar ajuste.';
+                mensajeErrorAjuste.textContent = 'No se pudo registrar el ajuste. Revise su conexión e intente de nuevo.';
                 mensajeErrorAjuste.classList.remove('d-none');
             }
         });

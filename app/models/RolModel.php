@@ -130,7 +130,7 @@ class RolModel extends ModeloBase
         if ($this->insertarRol($nombre, $modulos, 1)) {
             return ['exito' => true, 'mensaje' => 'Rol creado exitosamente'];
         }
-        return ['exito' => false, 'mensaje' => 'Error al crear el rol'];
+        return ['exito' => false, 'mensaje' => 'No se pudo crear el rol. Intente de nuevo.'];
     }
 
     // FUNCIÓN: modificar
@@ -138,7 +138,7 @@ class RolModel extends ModeloBase
     public function modificar(int $id, array $datos): array
     {
         if ($id < 1) {
-            return ['exito' => false, 'mensaje' => 'ID de rol no válido'];
+            return ['exito' => false, 'mensaje' => 'No se encontró el registro. Actualice la página e intente de nuevo.'];
         }
 
         $val = $this->validarDatosRol($datos, $id);
@@ -151,7 +151,7 @@ class RolModel extends ModeloBase
         if ($this->actualizarRol($id, $val['nombre'], $activo, $val['modulos'])) {
             return ['exito' => true, 'mensaje' => 'Rol actualizado exitosamente'];
         }
-        return ['exito' => false, 'mensaje' => 'Error al actualizar el rol'];
+        return ['exito' => false, 'mensaje' => 'No se pudo actualizar el rol. Intente de nuevo.'];
     }
 
     // FUNCIÓN: darDeBaja
@@ -159,7 +159,7 @@ class RolModel extends ModeloBase
     public function darDeBaja(int $id): array
     {
         if ($id < 1) {
-            return ['exito' => false, 'mensaje' => 'ID de rol no válido'];
+            return ['exito' => false, 'mensaje' => 'No se encontró el registro. Actualice la página e intente de nuevo.'];
         }
         if ($id === 1) {
             return ['exito' => false, 'mensaje' => 'No se puede eliminar el rol de Administrador'];

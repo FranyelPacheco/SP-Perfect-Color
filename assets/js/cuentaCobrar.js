@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (res.estado === 'exito') { mostrarNotificacion(res.mensaje, 'exito'); cargarCuentas(); }
                 else { mostrarNotificacion(res.mensaje, 'error'); }
             })
-            .catch(function() { mostrarNotificacion('Error de conexión', 'error'); });
+            .catch(function() { mostrarNotificacion('No se pudo conectar con el servidor. Intente de nuevo.', 'error'); });
         });
     });
 

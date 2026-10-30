@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     mostrarAlerta(alerta, 'danger', json.mensaje || 'Error al actualizar los datos');
                 }
             } catch (err) {
-                mostrarAlerta(alerta, 'danger', 'Error de conexión con el servidor.');
+                mostrarAlerta(alerta, 'danger', 'No se pudo conectar con el servidor. Intente de nuevo.');
             } finally {
                 setLoading(btn, spinner, texto, false);
             }
@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     mostrarAlerta(alerta, 'danger', json.mensaje || 'Error al actualizar la contraseña');
                 }
             } catch (err) {
-                mostrarAlerta(alerta, 'danger', 'Error de conexión con el servidor.');
+                mostrarAlerta(alerta, 'danger', 'No se pudo conectar con el servidor. Intente de nuevo.');
             } finally {
                 setLoading(btn, spinner, texto, false);
             }
@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     mostrarAlerta(alertaFoto, 'danger', json.mensaje || 'Error al subir la foto');
                 }
             } catch (err) {
-                mostrarAlerta(alertaFoto, 'danger', 'Error de conexión con el servidor.');
+                mostrarAlerta(alertaFoto, 'danger', 'No se pudo conectar con el servidor. Intente de nuevo.');
             } finally {
                 inputFoto.value = '';
                 setLoading(btnCambiarFoto, spinner, null, false);
@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     mostrarAlerta(alertaFoto, 'danger', json.mensaje || 'Error al eliminar la foto');
                 }
             } catch (err) {
-                mostrarAlerta(alertaFoto, 'danger', 'Error de conexión con el servidor.');
+                mostrarAlerta(alertaFoto, 'danger', 'No se pudo conectar con el servidor. Intente de nuevo.');
             } finally {
                 btnQuitarFoto.disabled = false;
             }

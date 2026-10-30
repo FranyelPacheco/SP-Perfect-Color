@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 btnSpinner.classList.add('d-none');
             }
         } catch (error) {
-            mensajeError.textContent = 'Error de conexión. Intente nuevamente.';
+            mensajeError.textContent = 'No se pudo conectar con el servidor. Intente de nuevo.';
             mensajeError.classList.remove('d-none');
             mensajeError.classList.add('shake');
             btnLogin.disabled = false;
@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (err) {
                 alerta.className = 'alert alert-danger';
-                alerta.textContent = 'Error de conexión con el servidor.';
+                alerta.textContent = 'No se pudo conectar con el servidor. Intente de nuevo.';
                 alerta.classList.remove('d-none');
             } finally {
                 btn.disabled = false;

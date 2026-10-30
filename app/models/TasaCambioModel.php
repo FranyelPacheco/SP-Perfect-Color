@@ -156,7 +156,7 @@ class TasaCambioModel extends ModeloBase
     public function modificar(int $id, array $datos): array
     {
         if ($id < 1) {
-            return ['exito' => false, 'mensaje' => 'ID de tasa no válido'];
+            return ['exito' => false, 'mensaje' => 'No se encontró el registro. Actualice la página e intente de nuevo.'];
         }
 
         $tasaRaw = trim($datos['tasa'] ?? '');

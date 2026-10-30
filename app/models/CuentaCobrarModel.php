@@ -51,7 +51,7 @@ class CuentaCobrarModel extends ModeloBase
     {
         $this->id = $cuentaId;
         if ($this->id < 1) {
-            throw new PDOException('ID de cuenta no válido');
+            throw new PDOException('No se encontró el registro. Actualice la página e intente de nuevo.');
         }
         return $this->_ejecutarSelectPagos();
     }
