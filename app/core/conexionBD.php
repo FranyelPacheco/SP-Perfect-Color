@@ -37,6 +37,8 @@ class ConexionBD
 
         $this->conexion = new PDO($dsn, $this->usuario, $this->clave, $opciones);
         $this->conexion->exec("SET NAMES 'utf8mb4' COLLATE 'utf8mb4_spanish2_ci'");
+        // Modo estricto: un ENUM o una columna generada con valor inválido falla en vez de guardarse vacío
+        $this->conexion->exec("SET SESSION sql_mode = CONCAT_WS(',', @@sql_mode, 'STRICT_TRANS_TABLES', 'ERROR_FOR_DIVISION_BY_ZERO')");
     }
 
     // FUNCIÓN: obtenerInstancia

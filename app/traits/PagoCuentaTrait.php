@@ -27,7 +27,7 @@ trait PagoCuentaTrait
     private function _ejecutarValidarDatosPago(array $datos): array
     {
         $cuentaId = intval($datos['cuenta_id'] ?? 0);
-        $monto = floatval($datos['monto'] ?? 0);
+        $monto = round(floatval($datos['monto'] ?? 0), 2);
         $tipoPagoId = intval($datos['id_tipo_pago'] ?? 0);
         $bancoId = !empty($datos['id_banco']) ? intval($datos['id_banco']) : null;
         $referencia = trim($datos['referencia'] ?? '');
@@ -54,7 +54,7 @@ trait PagoCuentaTrait
             return ['valido' => false, 'mensaje' => 'La referencia no puede superar los 100 caracteres'];
         }
 
-        if ($monto > (float)$cuenta['saldo_pendiente']) {
+        if (round($monto - (float)$cuenta['saldo_pendiente'], 2) > 0) {
             return ['valido' => false, 'mensaje' => 'El monto del pago supera el saldo pendiente'];
         }
 
@@ -106,7 +106,8 @@ trait PagoCuentaTrait
     // NOTA: Transacción con bloqueo de fila para que dos pagos simultáneos no pisen el saldo
     public function registrarPago(int $cuentaId, float $monto, int $tipoPagoId, ?int $bancoId = null, ?string $referencia = null, ?string $fecha = null): bool
     {
-        if ($cuentaId < 1 || $monto <= 0 || $tipoPagoId < 1) {
+        $monto = round($monto, 2);
+        if ($cuentaId < 1 || $monto < 0.01 || $tipoPagoId < 1) {
             throw new PDOException('Parámetros obligatorios faltantes');
         }
         return $this->_ejecutarRegistrarPago($cuentaId, $monto, $tipoPagoId, $bancoId, $referencia, $fecha ?? date('Y-m-d H:i:s'));
@@ -128,7 +129,7 @@ trait PagoCuentaTrait
             if ($saldo === false || !$this->buscarPorId($cuentaId)) {
                 throw new PDOException('Cuenta no encontrada');
             }
-            if ($monto > (float)$saldo) {
+            if (round($monto - (float)$saldo, 2) > 0) {
                 throw new PDOException('El monto del pago supera el saldo pendiente');
             }
 
@@ -143,16 +144,14 @@ trait PagoCuentaTrait
             $stmtPago->bindValue(':referencia', $referencia, $referencia === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmtPago->execute();
 
-            // Umbral para no dejar residuos de punto flotante como saldo
+            // Umbral para no dejar residuos de punto flotante como saldo; la situación la deriva la BD del saldo
             $nuevoSaldo = round((float)$saldo - $monto, 2);
-            $situacion = $nuevoSaldo <= 0.001 ? 'pagado' : 'pendiente';
-            if ($situacion === 'pagado') {
+            if ($nuevoSaldo <= 0.001) {
                 $nuevoSaldo = 0;
             }
 
-            $stmtActualizar = $this->conexion->prepare("UPDATE {$tabla} SET saldo_pendiente = :saldo, situacion = :situacion WHERE {$pk} = :id");
+            $stmtActualizar = $this->conexion->prepare("UPDATE {$tabla} SET saldo_pendiente = :saldo WHERE {$pk} = :id");
             $stmtActualizar->bindValue(':saldo', $nuevoSaldo);
-            $stmtActualizar->bindValue(':situacion', $situacion, PDO::PARAM_STR);
             $stmtActualizar->bindValue(':id', $cuentaId, PDO::PARAM_INT);
             $stmtActualizar->execute();
 

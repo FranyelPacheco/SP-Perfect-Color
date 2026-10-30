@@ -111,7 +111,7 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label for="precioVentaInsumo" class="form-label">Precio de Venta ($)</label>
-                            <input type="number" id="precioVentaInsumo" name="precio_venta" class="form-control" step="0.01" min="0" value="0" required>
+                            <input type="number" id="precioVentaInsumo" name="precio_venta" class="form-control" step="0.01" min="0.01" value="0.01" required>
                         </div>
                         <div class="col-md-6">
                             <label for="proveedorInsumo" class="form-label">Proveedor Asociado</label>

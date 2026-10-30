@@ -87,6 +87,9 @@ class PresupuestoModel extends ModeloBase
                 if ($descripcion === '') {
                     return ['valido' => false, 'mensaje' => 'La pintura preparada debe tener una descripción válida'];
                 }
+                if (mb_strlen($descripcion) > 150) {
+                    return ['valido' => false, 'mensaje' => 'El nombre de la pintura preparada no puede superar los 150 caracteres'];
+                }
                 $mezclas = $item['mezclas'] ?? [];
                 if (empty($mezclas) || !is_array($mezclas)) {
                     return ['valido' => false, 'mensaje' => 'La pintura preparada debe contener al menos un tinte base'];
@@ -161,6 +164,9 @@ class PresupuestoModel extends ModeloBase
                 }
 
                 $descripcion = !empty($item['descripcion']) ? $item['descripcion'] : ($insumoInfo['nombre'] ?? 'Producto');
+                if (mb_strlen($descripcion) > 200) {
+                    return ['valido' => false, 'mensaje' => 'La descripción de un item no puede superar los 200 caracteres'];
+                }
                 if (isset($insumoInfo['precio_venta']) && (float)$insumoInfo['precio_venta'] > 0) {
                     $precioUnitario = (float)$insumoInfo['precio_venta'];
                     $subtotal = round($cantidad * $precioUnitario, 2);
@@ -411,8 +417,8 @@ class PresupuestoModel extends ModeloBase
                                   VALUES (3, NULL, '1', :codigo, :nombre, 'Galon', :stock, 0, :precio_venta, 1)";
             $stmtProdNuevo = $this->conexion->prepare($consultaProdNuevo);
 
-            $consultaMezcla = "INSERT INTO mezcla_producto (id_producto_mezclado, id_producto_base, fraccion, cantidad_galon) 
-                               VALUES (:id_mezclado, :id_base, :fraccion, :cantidad_galon)";
+            $consultaMezcla = "INSERT INTO mezcla_producto (id_producto_mezclado, id_producto_base, cantidad_galon) 
+                               VALUES (:id_mezclado, :id_base, :cantidad_galon)";
             $stmtMezcla = $this->conexion->prepare($consultaMezcla);
 
             $consultaDetalle = "INSERT INTO venta_detalle (id_venta, id_producto, descripcion, cantidad, precio_unitario) 
@@ -438,10 +444,8 @@ class PresupuestoModel extends ModeloBase
                     foreach ($item['mezclas'] as $m) {
                         $idBase = (int)($m['id_producto_base'] ?? $m['id_producto'] ?? 0);
                         if ($idBase > 0) {
-                            $fraccionTexto = !empty($m['fraccion']) ? (string)$m['fraccion'] : (!empty($m['fraccion_128']) ? $m['fraccion_128'] . '/128' : '1/4');
                             $stmtMezcla->bindValue(':id_mezclado', $idProd, PDO::PARAM_INT);
                             $stmtMezcla->bindValue(':id_base', $idBase, PDO::PARAM_INT);
-                            $stmtMezcla->bindValue(':fraccion', $fraccionTexto, PDO::PARAM_STR);
                             $stmtMezcla->bindValue(':cantidad_galon', (float)($m['cantidad_consumida'] ?? $m['cantidad_galon'] ?? 0));
                             $stmtMezcla->execute();
                         }

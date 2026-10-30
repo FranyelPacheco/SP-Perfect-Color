@@ -138,7 +138,7 @@ class NotaEntregaModel extends ModeloBase
         $bancoId = !empty($datos['id_banco']) ? intval($datos['id_banco']) : null;
         $referencia = trim($datos['referencia'] ?? '');
         $fechaVencimiento = $datos['fecha_vencimiento'] ?? '';
-        $montoInicial = floatval($datos['monto_inicial'] ?? 0);
+        $montoInicial = round(floatval($datos['monto_inicial'] ?? 0), 2);
         $tipoPagoInicial = !empty($datos['id_tipo_pago_inicial']) ? intval($datos['id_tipo_pago_inicial']) : null;
         $bancoInicial = !empty($datos['id_banco_inicial']) ? intval($datos['id_banco_inicial']) : null;
         $referenciaInicial = trim($datos['referencia_inicial'] ?? '');
@@ -505,16 +505,14 @@ class NotaEntregaModel extends ModeloBase
     {
         $montoInicial = max(0, (float)$this->montoInicial);
         $saldoPendiente = max(0, $this->total - $montoInicial);
-        $situacion = ($saldoPendiente <= 0) ? 'pagado' : 'pendiente';
 
-        $consulta = "INSERT INTO cuentas_cobrar (id_venta, monto_total, saldo_pendiente, fecha_vencimiento, situacion, estado) 
-                     VALUES (:id_venta, :monto_total, :saldo_pendiente, :fecha_vencimiento, :situacion, 1)";
+        $consulta = "INSERT INTO cuentas_cobrar (id_venta, monto_total, saldo_pendiente, fecha_vencimiento, estado) 
+                     VALUES (:id_venta, :monto_total, :saldo_pendiente, :fecha_vencimiento, 1)";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindValue(':id_venta', $this->notaId, PDO::PARAM_INT);
         $stmt->bindValue(':monto_total', $this->total);
         $stmt->bindValue(':saldo_pendiente', $saldoPendiente);
         $stmt->bindValue(':fecha_vencimiento', $this->fechaVencimiento, PDO::PARAM_STR);
-        $stmt->bindValue(':situacion', $situacion, PDO::PARAM_STR);
         if (!$stmt->execute()) {
             $errInfo = $stmt->errorInfo();
             throw new PDOException('Error al insertar en cuentas_cobrar: ' . ($errInfo[2] ?? 'desconocido'));
@@ -542,8 +540,8 @@ class NotaEntregaModel extends ModeloBase
     // OBJETIVO: Crea la cuenta por cobrar para la venta de contado y registra su pago completo de inmediato
     private function _crearYPagardeInmediatoContado(): void
     {
-        $consultaCxc = "INSERT INTO cuentas_cobrar (id_venta, monto_total, saldo_pendiente, fecha_vencimiento, situacion, estado) 
-                        VALUES (:id_venta, :monto_total, 0, NOW(), 'pagado', 1)";
+        $consultaCxc = "INSERT INTO cuentas_cobrar (id_venta, monto_total, saldo_pendiente, fecha_vencimiento, estado) 
+                        VALUES (:id_venta, :monto_total, 0, NOW(), 1)";
         $stmtCxc = $this->conexion->prepare($consultaCxc);
         $stmtCxc->bindValue(':id_venta', $this->notaId, PDO::PARAM_INT);
         $stmtCxc->bindValue(':monto_total', $this->total);

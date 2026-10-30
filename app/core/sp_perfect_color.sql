@@ -3,8 +3,7 @@
 -- Motor: MariaDB / MySQL (InnoDB, UTF-8 mb4)
 -- ====================================================================
 
-CREATE DATABASE IF NOT EXISTS `sp_perfect_color` CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish2_ci;
-USE `sp_perfect_color`;
+-- Importar SOBRE la BD ya creada y seleccionada; reemplaza sus tablas.
 
 -- MariaDB dump 10.19  Distrib 10.4.32-MariaDB, for Win64 (AMD64)
 --
@@ -162,14 +161,15 @@ CREATE TABLE `cuentas_cobrar` (
   `monto_total` decimal(10,2) NOT NULL,
   `saldo_pendiente` decimal(10,2) NOT NULL,
   `fecha_vencimiento` datetime DEFAULT NULL,
-  `situacion` enum('pendiente','pagado') NOT NULL DEFAULT 'pendiente',
+  `situacion` enum('pendiente','pagado') GENERATED ALWAYS AS (if(`saldo_pendiente` <= 0,'pagado','pendiente')) STORED,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_cuenta_cobrar`),
   UNIQUE KEY `uk_cxc_venta` (`id_venta`),
   CONSTRAINT `fk_cc_venta` FOREIGN KEY (`id_venta`) REFERENCES `ventas` (`id_venta`) ON UPDATE CASCADE,
-  CONSTRAINT `chk_cxc_monto` CHECK (`monto_total` >= 0)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+  CONSTRAINT `chk_cxc_monto` CHECK (`monto_total` >= 0),
+  CONSTRAINT `chk_cxc_saldo` CHECK (`saldo_pendiente` >= 0 and `saldo_pendiente` <= `monto_total`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -178,7 +178,7 @@ CREATE TABLE `cuentas_cobrar` (
 
 LOCK TABLES `cuentas_cobrar` WRITE;
 /*!40000 ALTER TABLE `cuentas_cobrar` DISABLE KEYS */;
-INSERT INTO `cuentas_cobrar` VALUES (1,2,37.50,0.00,'2026-10-15 11:25:00','pagado','2026-10-15 11:25:00',1),(2,3,150.50,100.50,'2026-10-31 00:00:00','pendiente','2026-10-16 16:10:00',1);
+INSERT INTO `cuentas_cobrar` VALUES (1,2,37.50,0.00,'2026-10-15 11:25:00','pagado','2026-10-15 11:25:00',1),(2,3,150.50,100.50,'2026-10-31 00:00:00','pendiente','2026-10-16 16:10:00',1),(3,4,5.70,0.00,'2026-10-29 23:15:25','pagado','2026-10-29 23:15:25',1);
 /*!40000 ALTER TABLE `cuentas_cobrar` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -195,13 +195,14 @@ CREATE TABLE `cuentas_pagar` (
   `monto_total` decimal(10,2) NOT NULL,
   `saldo_pendiente` decimal(10,2) NOT NULL,
   `fecha_vencimiento` datetime DEFAULT NULL,
-  `situacion` enum('pendiente','pagado') NOT NULL DEFAULT 'pendiente',
+  `situacion` enum('pendiente','pagado') GENERATED ALWAYS AS (if(`saldo_pendiente` <= 0,'pagado','pendiente')) STORED,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_cuenta_pagar`),
   UNIQUE KEY `uk_cxp_compra` (`id_compra`),
   CONSTRAINT `fk_cp_compra` FOREIGN KEY (`id_compra`) REFERENCES `compra` (`id_compra`) ON UPDATE CASCADE,
-  CONSTRAINT `chk_cxp_monto` CHECK (`monto_total` >= 0)
+  CONSTRAINT `chk_cxp_monto` CHECK (`monto_total` >= 0),
+  CONSTRAINT `chk_cxp_saldo` CHECK (`saldo_pendiente` >= 0 and `saldo_pendiente` <= `monto_total`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -254,14 +255,16 @@ CREATE TABLE `merma_inventario` (
   `id_producto` int(11) NOT NULL,
   `id_presentacion` tinyint(4) DEFAULT NULL COMMENT 'Presentacion perdida; NULL en productos que no se miden en galones',
   `cantidad` int(11) NOT NULL COMMENT 'Unidades perdidas de la presentacion indicada',
-  `equivalente_128` int(11) DEFAULT NULL COMMENT 'Total perdido en 128avos de galon',
-  `cantidad_descontada` decimal(14,7) NOT NULL COMMENT 'Valor restado de stock_actual',
+  `equivalente_128` int(11) GENERATED ALWAYS AS (if(`id_presentacion` is null,NULL,`cantidad` << 8 - `id_presentacion`)) STORED COMMENT 'Total perdido en 128avos de galon',
+  `cantidad_descontada` decimal(14,7) GENERATED ALWAYS AS (if(`id_presentacion` is null,`cantidad`,`cantidad` * (1 << 8 - `id_presentacion`) / 128)) STORED COMMENT 'Valor restado de stock_actual',
   `motivo` varchar(250) NOT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_merma`),
   KEY `fk_merma_producto` (`id_producto`),
   CONSTRAINT `fk_merma_producto` FOREIGN KEY (`id_producto`) REFERENCES `productos` (`id_producto`) ON UPDATE CASCADE,
-  CONSTRAINT `chk_merma_cantidad` CHECK (`cantidad` > 0)
+  CONSTRAINT `chk_merma_cantidad` CHECK (`cantidad` > 0),
+  CONSTRAINT `chk_merma_presentacion` CHECK (`id_presentacion` is null or `id_presentacion` between 1 and 8),
+  CONSTRAINT `chk_merma_tope` CHECK (`cantidad` <= 1000000)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -286,7 +289,6 @@ CREATE TABLE `mezcla_producto` (
   `id_mezcla_producto` int(11) NOT NULL AUTO_INCREMENT,
   `id_producto_mezclado` int(11) NOT NULL COMMENT 'Producto nuevo resultante de la mezcla',
   `id_producto_base` int(11) NOT NULL COMMENT 'Pintura base o fraccion utilizada en la formula',
-  `fraccion` varchar(15) NOT NULL DEFAULT '1/4' COMMENT 'Medida usada: 1/2, 1/4, ..., 1/128',
   `cantidad_galon` decimal(14,7) NOT NULL COMMENT 'Equivalente decimal descontado del stock base',
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
@@ -296,7 +298,7 @@ CREATE TABLE `mezcla_producto` (
   CONSTRAINT `fk_mezcla_prod_base` FOREIGN KEY (`id_producto_base`) REFERENCES `productos` (`id_producto`) ON UPDATE CASCADE,
   CONSTRAINT `fk_mezcla_prod_mezclado` FOREIGN KEY (`id_producto_mezclado`) REFERENCES `productos` (`id_producto`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `chk_mezcla_producto` CHECK (`cantidad_galon` > 0 and `id_producto_base` <> `id_producto_mezclado`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -305,7 +307,7 @@ CREATE TABLE `mezcla_producto` (
 
 LOCK TABLES `mezcla_producto` WRITE;
 /*!40000 ALTER TABLE `mezcla_producto` DISABLE KEYS */;
-INSERT INTO `mezcla_producto` VALUES (1,17,1,'1/8',0.1250000,'2026-10-29 22:10:29',1),(2,17,2,'1/8',0.1250000,'2026-10-29 22:10:29',1);
+INSERT INTO `mezcla_producto` VALUES (1,17,1,0.1250000,'2026-10-29 22:10:29',1),(2,17,2,0.1250000,'2026-10-29 22:10:29',1),(3,18,5,0.1250000,'2026-10-30 18:01:59',1),(4,18,4,0.1250000,'2026-10-30 18:01:59',1);
 /*!40000 ALTER TABLE `mezcla_producto` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -405,7 +407,7 @@ CREATE TABLE `pagos_recibidos` (
   CONSTRAINT `fk_pr_cuenta_cobrar` FOREIGN KEY (`id_cuenta_cobrar`) REFERENCES `cuentas_cobrar` (`id_cuenta_cobrar`) ON UPDATE CASCADE,
   CONSTRAINT `fk_pr_tipo_pago` FOREIGN KEY (`id_tipo_pago`) REFERENCES `tipo_pago` (`id_tipo_pago`) ON UPDATE CASCADE,
   CONSTRAINT `chk_pago_recibido_monto` CHECK (`monto` > 0)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -414,7 +416,7 @@ CREATE TABLE `pagos_recibidos` (
 
 LOCK TABLES `pagos_recibidos` WRITE;
 /*!40000 ALTER TABLE `pagos_recibidos` DISABLE KEYS */;
-INSERT INTO `pagos_recibidos` VALUES (1,1,3,1,37.50,65.5000,'2026-10-15 11:25:00','PAGOMOVIL-998822','2026-10-29 22:10:29',1),(2,2,1,NULL,50.00,65.5000,'2026-10-16 16:10:00','Abono Inicial','2026-10-29 22:10:29',1);
+INSERT INTO `pagos_recibidos` VALUES (1,1,3,1,37.50,65.5000,'2026-10-15 11:25:00','PAGOMOVIL-998822','2026-10-29 22:10:29',1),(2,2,1,NULL,50.00,65.5000,'2026-10-16 16:10:00','Abono Inicial','2026-10-29 22:10:29',1),(3,3,1,NULL,5.70,66.2000,'2026-10-29 23:15:25','Efectivo','2026-10-29 23:15:25',1);
 /*!40000 ALTER TABLE `pagos_recibidos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -463,7 +465,7 @@ CREATE TABLE `productos` (
   `fraccion` varchar(15) NOT NULL DEFAULT '1' COMMENT 'Presentacion: 1, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64, 1/128',
   `codigo` varchar(50) NOT NULL,
   `nombre` varchar(150) NOT NULL,
-  `unidad_medida` varchar(30) DEFAULT NULL,
+  `unidad_medida` enum('Galon','1/2 Galon','1/4 Galon','1/8 Galon','1/16 Galon','1/32 Galon','1/64 Galon','1/128 Galon','Unidad','KG') NOT NULL DEFAULT 'Unidad',
   `stock_actual` decimal(14,7) NOT NULL DEFAULT 0.0000000,
   `stock_minimo` decimal(14,7) NOT NULL DEFAULT 5.0000000,
   `alerta_activa` tinyint(1) NOT NULL DEFAULT 1,
@@ -479,7 +481,7 @@ CREATE TABLE `productos` (
   CONSTRAINT `chk_producto_stock` CHECK (`stock_actual` >= 0 and `stock_minimo` >= 0),
   CONSTRAINT `chk_producto_precio` CHECK (`precio_venta` >= 0),
   CONSTRAINT `chk_producto_fraccion` CHECK (`fraccion` in ('1','1/2','1/4','1/8','1/16','1/32','1/64','1/128'))
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -488,7 +490,7 @@ CREATE TABLE `productos` (
 
 LOCK TABLES `productos` WRITE;
 /*!40000 ALTER TABLE `productos` DISABLE KEYS */;
-INSERT INTO `productos` VALUES (1,1,NULL,'1','BAS-001','Tinte Concentrado Blanco Puro (Galon)','Galon',15.0000000,2.0000000,1,48.00,'2026-10-17 11:58:45',1),(2,1,NULL,'1','BAS-002','Tinte Concentrado Negro Profundo (Galon)','Galon',12.0000000,2.0000000,1,45.00,'2026-10-17 11:58:45',1),(3,1,NULL,'1','BAS-003','Tinte Concentrado Rojo Oxido (Galon)','Galon',10.0000000,2.0000000,1,52.00,'2026-10-17 11:58:45',1),(4,1,NULL,'1','BAS-004','Tinte Concentrado Azul Rey Perlado (Galon)','Galon',8.0000000,2.0000000,1,55.00,'2026-10-17 11:58:45',1),(5,1,NULL,'1','BAS-005','Tinte Concentrado Amarillo Cromo (Galon)','Galon',6.0000000,2.0000000,1,50.00,'2026-10-17 11:58:45',1),(6,1,1,'1/2','BAS-001-1/2','Tinte Concentrado Blanco Puro 1/2','1/2 Galon',8.0000000,2.0000000,1,26.00,'2026-10-17 11:58:45',1),(7,1,1,'1/4','BAS-001-1/4','Tinte Concentrado Blanco Puro 1/4','1/4 Galon',14.0000000,3.0000000,1,14.00,'2026-10-17 11:58:45',1),(8,1,2,'1/4','BAS-002-1/4','Tinte Concentrado Negro Profundo 1/4','1/4 Galon',10.0000000,2.0000000,1,13.00,'2026-10-17 11:58:45',1),(9,1,3,'1/8','BAS-003-1/8','Tinte Concentrado Rojo Oxido 1/8','1/8 Galon',12.0000000,2.0000000,1,8.00,'2026-10-17 11:58:45',1),(10,1,4,'1/8','BAS-004-1/8','Tinte Concentrado Azul Rey Perlado 1/8','1/8 Galon',9.0000000,2.0000000,1,8.50,'2026-10-17 11:58:45',1),(11,1,5,'1/16','BAS-005-1/16','Tinte Concentrado Amarillo Cromo 1/16','1/16 Galon',16.0000000,4.0000000,1,4.50,'2026-10-17 11:58:45',1),(12,2,NULL,'1','ART-001','Tirro de Enmascarar 3M 3/4 pulgada','Unidad',45.0000000,10.0000000,1,3.50,'2026-10-17 11:58:45',1),(13,2,NULL,'1','ART-002','Lija al Agua Grano 1500 Automotriz','Pliego',120.0000000,20.0000000,1,1.20,'2026-10-17 11:58:45',1),(14,2,NULL,'1','ART-003','Brocha de Cerdas Finas 2 pulgadas','Unidad',30.0000000,5.0000000,1,4.50,'2026-10-17 11:58:45',1),(15,2,NULL,'1','ART-004','Solvente Thinner Acrilico 1L','Litro',50.0000000,10.0000000,1,8.50,'2026-10-17 11:58:45',1),(16,2,NULL,'1','ART-005','Pulitura Pasta Fina 500g','Pote',20.0000000,5.0000000,1,12.00,'2026-10-17 11:58:45',1),(17,3,NULL,'1','MEZ-001','Gris Grafito Perlado Met 1/4','1/4 Galon',4.0000000,0.0000000,1,28.00,'2026-10-17 11:58:45',1);
+INSERT INTO `productos` VALUES (1,1,NULL,'1','BAS-001','Tinte Concentrado Blanco Puro (Galon)','Galon',15.0000000,2.0000000,1,48.00,'2026-10-17 11:58:45',1),(2,1,NULL,'1','BAS-002','Tinte Concentrado Negro Profundo (Galon)','Galon',12.0000000,2.0000000,1,45.00,'2026-10-17 11:58:45',1),(3,1,NULL,'1','BAS-003','Tinte Concentrado Rojo Oxido (Galon)','Galon',10.0000000,2.0000000,1,52.00,'2026-10-17 11:58:45',1),(4,1,NULL,'1','BAS-004','Tinte Concentrado Azul Rey Perlado (Galon)','Galon',8.0000000,2.0000000,1,55.00,'2026-10-17 11:58:45',1),(5,1,NULL,'1','BAS-005','Tinte Concentrado Amarillo Cromo (Galon)','Galon',6.0000000,2.0000000,1,50.00,'2026-10-17 11:58:45',1),(6,1,1,'1/2','BAS-001-1/2','Tinte Concentrado Blanco Puro 1/2','1/2 Galon',8.0000000,2.0000000,1,26.00,'2026-10-17 11:58:45',1),(7,1,1,'1/4','BAS-001-1/4','Tinte Concentrado Blanco Puro 1/4','1/4 Galon',14.0000000,3.0000000,1,14.00,'2026-10-17 11:58:45',1),(8,1,2,'1/4','BAS-002-1/4','Tinte Concentrado Negro Profundo 1/4','1/4 Galon',10.0000000,2.0000000,1,13.00,'2026-10-17 11:58:45',1),(9,1,3,'1/8','BAS-003-1/8','Tinte Concentrado Rojo Oxido 1/8','1/8 Galon',12.0000000,2.0000000,1,8.00,'2026-10-17 11:58:45',1),(10,1,4,'1/8','BAS-004-1/8','Tinte Concentrado Azul Rey Perlado 1/8','1/8 Galon',9.0000000,2.0000000,1,8.50,'2026-10-17 11:58:45',1),(11,1,5,'1/16','BAS-005-1/16','Tinte Concentrado Amarillo Cromo 1/16','1/16 Galon',16.0000000,4.0000000,1,4.50,'2026-10-17 11:58:45',1),(12,2,NULL,'1','ART-001','Tirro de Enmascarar 3M 3/4 pulgada','Unidad',45.0000000,10.0000000,1,3.50,'2026-10-17 11:58:45',1),(13,2,NULL,'1','ART-002','Lija al Agua Grano 1500 Automotriz (Pliego)','Unidad',119.0000000,20.0000000,1,1.20,'2026-10-17 11:58:45',1),(14,2,NULL,'1','ART-003','Brocha de Cerdas Finas 2 pulgadas','Unidad',29.0000000,5.0000000,1,4.50,'2026-10-17 11:58:45',1),(15,2,NULL,'1','ART-004','Solvente Thinner Acrilico 1L','Unidad',50.0000000,10.0000000,1,8.50,'2026-10-17 11:58:45',1),(16,2,NULL,'1','ART-005','Pulitura Pasta Fina 500g','Unidad',3.0000000,5.0000000,1,12.00,'2026-10-17 11:58:45',1),(17,3,NULL,'1','MEZ-001','Gris Grafito Perlado Met 1/4','1/4 Galon',4.0000000,0.0000000,1,28.00,'2026-10-17 11:58:45',1),(18,3,NULL,'1','PREP-5-1-46fe','Verde Esmeralda Prueba','Galon',0.0000000,0.0000000,1,35.00,'2026-10-30 18:01:59',1);
 /*!40000 ALTER TABLE `productos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -655,7 +657,7 @@ CREATE TABLE `tasa_cambio` (
   PRIMARY KEY (`id_tasa_cambio`),
   UNIQUE KEY `uk_tasa_fecha` (`fecha`),
   CONSTRAINT `chk_tasa_valor` CHECK (`tasa` > 0)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -664,7 +666,7 @@ CREATE TABLE `tasa_cambio` (
 
 LOCK TABLES `tasa_cambio` WRITE;
 /*!40000 ALTER TABLE `tasa_cambio` DISABLE KEYS */;
-INSERT INTO `tasa_cambio` VALUES (1,65.5000,'2026-10-16','2026-10-16 08:00:00',1),(2,66.2000,'2026-10-17','2026-10-17 11:58:45',1);
+INSERT INTO `tasa_cambio` VALUES (1,65.5000,'2026-10-16','2026-10-16 08:00:00',1),(2,66.2000,'2026-10-17','2026-10-17 11:58:45',1),(3,66.8000,'2026-10-29','2026-10-30 18:01:59',1),(4,67.1500,'2026-10-30','2026-10-30 18:01:59',1);
 /*!40000 ALTER TABLE `tasa_cambio` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -836,7 +838,7 @@ CREATE TABLE `venta_detalle` (
   CONSTRAINT `fk_vdetalle_producto` FOREIGN KEY (`id_producto`) REFERENCES `productos` (`id_producto`) ON UPDATE CASCADE,
   CONSTRAINT `fk_vdetalle_venta` FOREIGN KEY (`id_venta`) REFERENCES `ventas` (`id_venta`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `chk_venta_detalle` CHECK (`cantidad` > 0 and `precio_unitario` >= 0)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -845,7 +847,7 @@ CREATE TABLE `venta_detalle` (
 
 LOCK TABLES `venta_detalle` WRITE;
 /*!40000 ALTER TABLE `venta_detalle` DISABLE KEYS */;
-INSERT INTO `venta_detalle` VALUES (1,1,17,'Gris Grafito Perlado Met 1/4',1.0000,28.00,28.00,'2026-10-29 22:10:29'),(2,1,13,'Lija al Agua Grano 1500 Automotriz',5.0000,1.20,6.00,'2026-10-29 22:10:29'),(3,1,17,'Gris Grafito Perlado Met 1/4',1.0000,28.00,28.00,'2026-10-29 22:10:29'),(4,2,6,'Tinte Concentrado Blanco Puro 1/2',1.0000,26.00,26.00,'2026-10-29 22:10:29'),(5,2,12,'Tirro de Enmascarar 3M 3/4 pulgada',2.0000,3.50,7.00,'2026-10-29 22:10:29'),(6,2,14,'Brocha de Cerdas Finas 2 pulgadas',1.0000,4.50,4.50,'2026-10-29 22:10:29'),(7,3,1,'Tinte Concentrado Blanco Puro (Galon)',2.0000,48.00,96.00,'2026-10-29 22:10:29'),(8,3,15,'Solvente Thinner Acrilico 1L',5.0000,8.50,42.50,'2026-10-29 22:10:29'),(9,3,13,'Lija al Agua Grano 1500 Automotriz',10.0000,1.20,12.00,'2026-10-29 22:10:29');
+INSERT INTO `venta_detalle` VALUES (1,1,17,'Gris Grafito Perlado Met 1/4',1.0000,28.00,28.00,'2026-10-29 22:10:29'),(2,1,13,'Lija al Agua Grano 1500 Automotriz',5.0000,1.20,6.00,'2026-10-29 22:10:29'),(3,1,17,'Gris Grafito Perlado Met 1/4',1.0000,28.00,28.00,'2026-10-29 22:10:29'),(4,2,6,'Tinte Concentrado Blanco Puro 1/2',1.0000,26.00,26.00,'2026-10-29 22:10:29'),(5,2,12,'Tirro de Enmascarar 3M 3/4 pulgada',2.0000,3.50,7.00,'2026-10-29 22:10:29'),(6,2,14,'Brocha de Cerdas Finas 2 pulgadas',1.0000,4.50,4.50,'2026-10-29 22:10:29'),(7,3,1,'Tinte Concentrado Blanco Puro (Galon)',2.0000,48.00,96.00,'2026-10-29 22:10:29'),(8,3,15,'Solvente Thinner Acrilico 1L',5.0000,8.50,42.50,'2026-10-29 22:10:29'),(9,3,13,'Lija al Agua Grano 1500 Automotriz',10.0000,1.20,12.00,'2026-10-29 22:10:29'),(10,4,14,'Brocha de Cerdas Finas 2 pulgadas',1.0000,4.50,4.50,'2026-10-29 23:15:15'),(11,4,13,'Lija al Agua Grano 1500 Automotriz',1.0000,1.20,1.20,'2026-10-29 23:15:15'),(12,5,18,'Verde Esmeralda Prueba',1.0000,35.00,35.00,'2026-10-30 18:01:59'),(13,5,14,'Brocha de Cerdas Finas 2 pulgadas',2.0000,4.50,9.00,'2026-10-30 18:01:59'),(14,6,12,'Tirro de Enmascarar 3M 3/4 pulgada',3.0000,3.50,10.50,'2026-10-30 18:01:59');
 /*!40000 ALTER TABLE `venta_detalle` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -874,7 +876,7 @@ CREATE TABLE `ventas` (
   CONSTRAINT `fk_ventas_cliente` FOREIGN KEY (`id_cliente`) REFERENCES `clientes` (`id_cliente`) ON UPDATE CASCADE,
   CONSTRAINT `fk_ventas_estado` FOREIGN KEY (`id_estado_venta`) REFERENCES `estado_venta` (`id_estado_venta`) ON UPDATE CASCADE,
   CONSTRAINT `chk_venta_total` CHECK (`total` >= 0)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -883,7 +885,7 @@ CREATE TABLE `ventas` (
 
 LOCK TABLES `ventas` WRITE;
 /*!40000 ALTER TABLE `ventas` DISABLE KEYS */;
-INSERT INTO `ventas` VALUES (1,1,1,'2026-10-17 09:00:00',NULL,62.00,'contado','Cotizacion para repintado de guardafango','2026-10-17 09:00:00',1),(2,2,2,'2026-10-15 11:20:00','2026-10-15 11:25:00',37.50,'contado','Despacho cliente particular','2026-10-15 11:20:00',1),(3,3,2,'2026-10-16 16:00:00','2026-10-16 16:10:00',150.50,'credito','Material para taller mecanico','2026-10-16 16:00:00',1);
+INSERT INTO `ventas` VALUES (1,1,3,'2026-10-17 09:00:00',NULL,62.00,'contado','Cotizacion para repintado de guardafango','2026-10-17 09:00:00',1),(2,2,2,'2026-10-15 11:20:00','2026-10-15 11:25:00',37.50,'contado','Despacho cliente particular','2026-10-15 11:20:00',1),(3,3,2,'2026-10-16 16:00:00','2026-10-16 16:10:00',150.50,'credito','Material para taller mecanico','2026-10-16 16:00:00',1),(4,3,2,'2026-10-29 23:15:15','2026-10-29 23:15:25',5.70,'contado','wgeg','2026-10-29 23:15:15',1),(5,4,1,'2026-10-30 18:01:59',NULL,44.00,'credito','Prueba: presupuesto pendiente','2026-10-30 18:01:59',1),(6,1,4,'2026-10-30 18:01:59',NULL,10.50,'contado','Prueba: presupuesto anulado','2026-10-30 18:01:59',1);
 /*!40000 ALTER TABLE `ventas` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -896,4 +898,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-10-29 22:12:36
+-- Dump completed on 2026-10-30 18:02:10

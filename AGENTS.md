@@ -148,14 +148,14 @@
    - Eliminado `id_usuario` de `presupuestos` y `nota_venta`. Las 4 tablas de seguridad quedan como una isla independiente dedicada a autenticación y permisos en su posición original, sin adornos ni cuadros punteados y con cero conexiones salientes.
 2. **Atributo `activo` $\to$ `estado` al final de cada tabla:**
    - Todas las tablas tienen `estado TINYINT(1) NOT NULL DEFAULT 1` como última columna para borrado lógico.
-   - En `cuentas_cobrar` y `cuentas_pagar`, el estatus de cobro/pago (`pendiente`, `pagado`, `moroso`/`vencido`) se renombró a `situacion` para mantener `estado TINYINT(1)` al final.
+   - En `cuentas_cobrar` y `cuentas_pagar`, el estatus de cobro/pago pasó a `situacion` ENUM('pendiente','pagado'), columna generada (`saldo_pendiente <= 0` => `pagado`).
 3. **Normalización de Atributos Transitivos (`id_cliente`):**
    - Eliminado `id_cliente` de `nota_venta` y de `cuentas_cobrar`: el cliente se obtiene legítimamente a través de `presupuestos` (`nota_venta` $\to$ `presupuestos` $\to$ `clientes`), eliminando redundancias y claves foráneas duplicadas tanto en la base de datos como en el diagrama.
 4. **Teléfonos como Entidad Débil (Clave Primaria Compuesta):**
    - `telefono_cliente`: `PRIMARY KEY (id_cliente, id_telefono_cliente)` con `id_cliente` primero para indexar/buscar por cliente.
    - `telefono_proveedor`: `PRIMARY KEY (id_proveedor, id_telefono_proveedor)` con `id_proveedor` primero.
 5. **Tabla `mezcla_producto` y Productos Preparados:**
-   - Reemplazado `item_composicion` por `mezcla_producto` (`id_mezcla_producto`, `id_producto_mezclado`, `id_producto_base`, `fraccion`, `cantidad_galon`, `estado`).
+   - Reemplazado `item_composicion` por `mezcla_producto` (`id_mezcla_producto`, `id_producto_mezclado`, `id_producto_base`, `cantidad_galon`, `estado`).
    - Cuando se formula una pintura preparada, se registra como un producto nuevo en `productos` (`id_tipo_producto = 3`) y su receta de tintes base queda en `mezcla_producto`.
    - `presupuesto_detalle` apunta directamente a `productos` (`id_producto`).
 6. **Sub-productos por Fracciones ($1, 1/2, 1/4, \dots, 1/128$):**
@@ -218,7 +218,7 @@
 2. **Renombrada tabla `insumos` $\rightarrow$ `productos`:**
    - PK `id_insumo` $\rightarrow$ `id_producto`.
    - Agregada columna `id_tipo_producto` (FK a `tipo_producto`, default 2).
-   - Precisión ampliada: `stock_actual` y `stock_minimo` de `DECIMAL(10,2)` a `DECIMAL(12,4)` para soportar con exactitud fracciones de galón (hasta $1/128 = 0.0078125$).
+   - Precisión ampliada: `stock_actual` y `stock_minimo` de `DECIMAL(10,2)` a `DECIMAL(14,7)` para soportar con exactitud fracciones de galón (hasta $1/128 = 0.0078125$).
 3. **Renombrada tabla `insumo_proveedor` $\rightarrow$ `producto_proveedor`:**
    - PK `id_insumo_proveedor` $\rightarrow$ `id_producto_proveedor`, FK `id_insumo` $\rightarrow$ `id_producto`.
 4. **Cadena Lineal BOM sin ciclos (`presupuestos` $\to$ `presupuesto_detalle` $\to$ `item_composicion` $\to$ `productos`):**
@@ -868,3 +868,16 @@ Las FK tenían nombres inconsistentes con las PKs que referenciaban. Ej: `cuenta
 - **/antislop-ui**: Cero clases CSS inventadas o colores arbitrarios; reutilización estricta de variables CSS corporativas (`var(--brand-gradient)`, `var(--brand-bright)`). Interfaz limpia en español.
 - **/ponytail**: Máxima economía de código (YAGNI). Cero dependencias añadidas; se reutilizó la infraestructura CSS/JS existente para `.dropdown-hover` sin modificar archivos externos.
 - **/break-ui**: Verificado en resoluciones móviles estrechas (320px offcanvas con comportamiento accordion inline) y en sidebar colapsado (70px con `left: 70px !important` y ocultamiento del chevron indicador). Cero solapamientos ni desbordes horizontales. Cero errores de sintaxis en PHP y JS.
+
+---
+
+## Sesión — Pulido de normalización (derivados, unidad_medida y modo estricto)
+
+- `cuentas_cobrar.situacion` y `cuentas_pagar.situacion`: columnas generadas STORED desde `saldo_pendiente`; los modelos ya no las escriben. `CHECK` de `saldo_pendiente` entre 0 y `monto_total`.
+- `mezcla_producto.fraccion` eliminada (redundante con `cantidad_galon`).
+- `merma_inventario`: `equivalente_128` y `cantidad_descontada` generadas desde `id_presentacion` y `cantidad`; `CHECK` de `id_presentacion` (NULL o 1 a 8) y de `cantidad` (máx. 1.000.000).
+- `productos.unidad_medida`: ENUM (`Galon`, `1/2 Galon` … `1/128 Galon`, `Unidad`, `KG`) NOT NULL, por defecto `Unidad`.
+- `app/core/conexionBD.php`: sesión en `STRICT_TRANS_TABLES` para que un ENUM o valor inválido falle en vez de guardarse vacío.
+- Se mantienen como snapshot contable `ventas.total`, `compra.total` y `cuentas_*.monto_total/saldo_pendiente`. `estado` (borrado lógico) e `id_estado_venta` siguen separados por convención.
+El dump trae `DROP TABLE`: importarlo reemplaza las tablas de la BD seleccionada (ya no incluye `CREATE DATABASE`/`USE`; crear la BD antes). `ART-002` pasó a llevar '(Pliego)' en el nombre; la unidad de los productos Simples es solo Unidad o KG.
+Datos de prueba en el dump: presupuesto pendiente (#5, con mezcla), presupuesto anulado (#6), tasas del 29 y 30 de octubre de 2026 y `ART-005` bajo el stock mínimo. `banco` y `usuarios` no se modificaron.

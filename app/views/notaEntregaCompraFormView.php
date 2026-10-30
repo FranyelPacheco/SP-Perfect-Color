@@ -255,7 +255,7 @@
                         <div class="col-md-6">
                             <label for="rapidoUnidad" class="form-label small fw-semibold">Unidad de Medida <span class="text-danger">*</span></label>
                             <select id="rapidoUnidad" name="unidad_medida" class="form-select form-select-sm" required>
-                                <option value="Unidad">Unidad / Galón</option>
+                                <option value="Unidad">Unidad</option>
                                 <option value="KG">KG</option>
                             </select>
                         </div>
@@ -268,7 +268,7 @@
                     <div class="row g-3 mb-2">
                         <div class="col-md-6">
                             <label for="rapidoPrecioVenta" class="form-label small fw-semibold">Precio de Venta ($) <span class="text-danger">*</span></label>
-                            <input type="number" id="rapidoPrecioVenta" name="precio_venta" class="form-control form-control-sm" step="0.01" min="0" value="0.00" required>
+                            <input type="number" id="rapidoPrecioVenta" name="precio_venta" class="form-control form-control-sm" step="0.01" min="0.01" value="0.01" required>
                         </div>
                         <div class="col-md-6">
                             <label for="rapidoPrecioCompra" class="form-label small fw-semibold">Costo Estimado ($)</label>

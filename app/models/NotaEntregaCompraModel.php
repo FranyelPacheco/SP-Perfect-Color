@@ -325,16 +325,14 @@ class NotaEntregaCompraModel extends ModeloBase
                 $fechaVenc = !empty($fechaVencimiento) ? $fechaVencimiento : date('Y-m-d H:i:s', strtotime('+15 days'));
                 $abonoInicial = max(0.00, round($montoInicial, 2));
                 $saldoPendiente = max(0.00, round($totalCompra - $abonoInicial, 2));
-                $situacionCxp = ($saldoPendiente <= 0) ? 'pagado' : 'pendiente';
 
-                $sqlCxp = "INSERT INTO cuentas_pagar (id_compra, monto_total, saldo_pendiente, fecha_vencimiento, situacion, created_at, estado)
-                           VALUES (:id_compra, :monto_total, :saldo_pendiente, :fecha_vencimiento, :situacion, NOW(), 1)";
+                $sqlCxp = "INSERT INTO cuentas_pagar (id_compra, monto_total, saldo_pendiente, fecha_vencimiento, created_at, estado)
+                           VALUES (:id_compra, :monto_total, :saldo_pendiente, :fecha_vencimiento, NOW(), 1)";
                 $stmtCxp = $this->conexion->prepare($sqlCxp);
                 $stmtCxp->bindParam(':id_compra', $idNotaEntrega, PDO::PARAM_INT);
                 $stmtCxp->bindParam(':monto_total', $totalCompra);
                 $stmtCxp->bindParam(':saldo_pendiente', $saldoPendiente);
                 $stmtCxp->bindParam(':fecha_vencimiento', $fechaVenc, PDO::PARAM_STR);
-                $stmtCxp->bindParam(':situacion', $situacionCxp, PDO::PARAM_STR);
                 $stmtCxp->execute();
 
                 $idCxp = (int)$this->conexion->lastInsertId();
@@ -361,8 +359,8 @@ class NotaEntregaCompraModel extends ModeloBase
                 }
             } else {
                 // Contado: registrar cuenta saldada y pago realizado inmediato
-                $sqlCxp = "INSERT INTO cuentas_pagar (id_compra, monto_total, saldo_pendiente, fecha_vencimiento, situacion, created_at, estado)
-                           VALUES (:id_compra, :monto_total, 0.00, :fecha_vencimiento, 'pagado', NOW(), 1)";
+                $sqlCxp = "INSERT INTO cuentas_pagar (id_compra, monto_total, saldo_pendiente, fecha_vencimiento, created_at, estado)
+                           VALUES (:id_compra, :monto_total, 0.00, :fecha_vencimiento, NOW(), 1)";
                 $stmtCxp = $this->conexion->prepare($sqlCxp);
                 $stmtCxp->bindParam(':id_compra', $idNotaEntrega, PDO::PARAM_INT);
                 $stmtCxp->bindParam(':monto_total', $totalCompra);
