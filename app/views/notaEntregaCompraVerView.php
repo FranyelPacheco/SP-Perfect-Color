@@ -7,7 +7,7 @@
         <a href="/SP%20Perfect%20Color/notaEntregaCompra" class="btn btn-outline-secondary" title="Volver" data-bs-toggle="tooltip">
             <i class="bi bi-arrow-left"></i>
         </a>
-        <h2 class="h4 mb-0">Nota de Entrega (Compra) #<?php echo str_pad((string)$nota['id_nota_entrega'], 5, '0', STR_PAD_LEFT); ?></h2>
+        <h2 class="h4 mb-0">Nota de Entrega (Compra) #<?php echo str_pad((string)$nota['id_compra'], 5, '0', STR_PAD_LEFT); ?></h2>
     </div>
     <div class="d-flex gap-2">
         <button type="button" class="btn btn-outline-primary" onclick="window.print();" title="Imprimir" data-bs-toggle="tooltip">

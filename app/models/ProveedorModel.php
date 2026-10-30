@@ -295,7 +295,7 @@ class ProveedorModel extends ModeloBase
 
         $consulta = "SELECT COUNT(*) as total 
                      FROM cuentas_pagar cp
-                     INNER JOIN nota_entrega ne ON cp.id_nota_entrega = ne.id_nota_entrega
+                     INNER JOIN compra ne ON cp.id_compra = ne.id_compra
                      WHERE ne.id_proveedor = :id AND cp.situacion = 'pendiente' AND cp.estado = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);

@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 order: [[0, 'desc']],
                 columns: [
                     {
-                        data: 'id_nota_entrega',
+                        data: 'id_compra',
                         render: function(data) {
                             return '<strong class="text-primary">#' + String(data).padStart(5, '0') + '</strong>';
                         }
@@ -126,11 +126,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         orderable: false,
                         render: function(data, type, row) {
                             return '<div class="d-flex gap-2">' +
-                                '<a href="/SP%20Perfect%20Color/notaEntregaCompra/ver?id=' + row.id_nota_entrega + '" class="btn btn-sm btn-info text-white" title="Ver Detalle">' +
+                                '<a href="/SP%20Perfect%20Color/notaEntregaCompra/ver?id=' + row.id_compra + '" class="btn btn-sm btn-info text-white" title="Ver Detalle">' +
                                 '<i class="bi bi-eye"></i>' +
                                 '</a>' +
                                 (row.id_cuenta_pagar ? '' :
-                                    '<button type="button" class="btn btn-sm btn-outline-danger btn-anular-nota-compra" data-id="' + row.id_nota_entrega + '" title="Anular Recepción" aria-label="Anular Recepción">' +
+                                    '<button type="button" class="btn btn-sm btn-outline-danger btn-anular-nota-compra" data-id="' + row.id_compra + '" title="Anular Recepción" aria-label="Anular Recepción">' +
                                     '<i class="bi bi-x-circle"></i>' +
                                     '</button>') +
                                 '</div>';
@@ -619,7 +619,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (res.estado === 'exito') {
                     mostrarNotificacion(res.mensaje, 'exito');
                     setTimeout(function() {
-                        window.location.href = '/SP%20Perfect%20Color/notaEntregaCompra/ver?id=' + res.datos.id_nota_entrega;
+                        window.location.href = '/SP%20Perfect%20Color/notaEntregaCompra/ver?id=' + res.datos.id_compra;
                     }, 800);
                 } else {
                     btnSubmit.disabled = false;

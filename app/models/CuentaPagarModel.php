@@ -139,14 +139,14 @@ class CuentaPagarModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarSelectAll
-    // OBJETIVO: Ejecuta la consulta que lista todas las cuentas activas con datos del proveedor obtenido vía nota_entrega
+    // OBJETIVO: Ejecuta la consulta que lista todas las cuentas activas con datos del proveedor obtenido vía compra
     private function _ejecutarSelectAll(): array
     {
         $consulta = "SELECT cp.*, cp.estado as activo, cp.situacion as estado, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif,
                             ne.fecha as nota_fecha,
                             {$this->sqlTasaBcv('ne.fecha')}
                      FROM cuentas_pagar cp 
-                     INNER JOIN nota_entrega ne ON cp.id_nota_entrega = ne.id_nota_entrega
+                     INNER JOIN compra ne ON cp.id_compra = ne.id_compra
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
                      WHERE cp.estado = 1
                      ORDER BY cp.situacion ASC, cp.fecha_vencimiento ASC";
@@ -155,7 +155,7 @@ class CuentaPagarModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarSelectById
-    // OBJETIVO: Ejecuta la búsqueda de una cuenta por ID con teléfonos del proveedor obtenido vía nota_entrega
+    // OBJETIVO: Ejecuta la búsqueda de una cuenta por ID con teléfonos del proveedor obtenido vía compra
     private function _ejecutarSelectById(): array|false
     {
         $consulta = "SELECT cp.*, cp.estado as activo, cp.situacion as estado, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif,
@@ -163,7 +163,7 @@ class CuentaPagarModel extends ModeloBase
                             (SELECT GROUP_CONCAT(tp.telefono SEPARATOR ', ') FROM telefono_proveedor tp WHERE tp.id_proveedor = p.id_proveedor) as proveedor_telefonos,
                             {$this->sqlTasaBcv('ne.fecha')}
                      FROM cuentas_pagar cp 
-                     INNER JOIN nota_entrega ne ON cp.id_nota_entrega = ne.id_nota_entrega
+                     INNER JOIN compra ne ON cp.id_compra = ne.id_compra
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
                      WHERE cp.id_cuenta_pagar = :id AND cp.estado = 1";
         $stmt = $this->conexion->prepare($consulta);
@@ -193,17 +193,17 @@ class CuentaPagarModel extends ModeloBase
     // OBJETIVO: Ejecuta la inserción de una nueva cuenta por pagar asociada a su nota de entrega
     private function _ejecutarInsert(): int|false
     {
-        $stmtNe = $this->conexion->prepare("INSERT INTO nota_entrega (id_proveedor, fecha, total, observaciones, created_at, estado) 
+        $stmtNe = $this->conexion->prepare("INSERT INTO compra (id_proveedor, fecha, total, observaciones, created_at, estado) 
                                             VALUES (:id_proveedor, NOW(), :total, 'Cuenta por pagar registrada directamente', NOW(), 1)");
         $stmtNe->bindParam(':id_proveedor', $this->idProveedor, PDO::PARAM_INT);
         $stmtNe->bindParam(':total', $this->montoTotal);
         $stmtNe->execute();
         $idNotaEntrega = (int)$this->conexion->lastInsertId();
 
-        $consulta = "INSERT INTO cuentas_pagar (id_nota_entrega, monto_total, saldo_pendiente, fecha_vencimiento, situacion, created_at, estado) 
-                     VALUES (:id_nota_entrega, :monto_total, :saldo_pendiente, :fecha_vencimiento, 'pendiente', NOW(), 1)";
+        $consulta = "INSERT INTO cuentas_pagar (id_compra, monto_total, saldo_pendiente, fecha_vencimiento, situacion, created_at, estado) 
+                     VALUES (:id_compra, :monto_total, :saldo_pendiente, :fecha_vencimiento, 'pendiente', NOW(), 1)";
         $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':id_nota_entrega', $idNotaEntrega, PDO::PARAM_INT);
+        $stmt->bindParam(':id_compra', $idNotaEntrega, PDO::PARAM_INT);
         $stmt->bindParam(':monto_total', $this->montoTotal);
         $stmt->bindParam(':saldo_pendiente', $this->saldoPendiente);
         $stmt->bindParam(':fecha_vencimiento', $this->fechaVencimiento, PDO::PARAM_STR);
@@ -215,13 +215,13 @@ class CuentaPagarModel extends ModeloBase
     }
 
     // FUNCIÓN: _ejecutarSearch
-    // OBJETIVO: Busca cuentas por pagar filtrando por nombre de empresa o RIF del proveedor vía nota_entrega
+    // OBJETIVO: Busca cuentas por pagar filtrando por nombre de empresa o RIF del proveedor vía compra
     private function _ejecutarSearch(): array
     {
         $terminoLike = '%' . $this->termino . '%';
         $consulta = "SELECT cp.*, cp.estado as activo, cp.situacion as estado, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif
                      FROM cuentas_pagar cp 
-                     INNER JOIN nota_entrega ne ON cp.id_nota_entrega = ne.id_nota_entrega
+                     INNER JOIN compra ne ON cp.id_compra = ne.id_compra
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
                      WHERE cp.estado = 1 AND (p.nombre_empresa LIKE :termino1 
                         OR p.rif LIKE :termino2) 

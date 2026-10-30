@@ -33,7 +33,7 @@ DROP TABLE IF EXISTS `banco`;
 CREATE TABLE `banco` (
   `id_banco` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(150) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_banco`),
   UNIQUE KEY `nombre` (`nombre`)
@@ -46,7 +46,7 @@ CREATE TABLE `banco` (
 
 LOCK TABLES `banco` WRITE;
 /*!40000 ALTER TABLE `banco` DISABLE KEYS */;
-INSERT INTO `banco` VALUES (1,'Banco de Venezuela','2026-10-12 03:10:59',1),(2,'Banesco','2026-10-12 03:10:59',1),(3,'Mercantil','2026-10-12 03:10:59',1),(4,'Banco Provincial','2026-10-12 03:10:59',1);
+INSERT INTO `banco` VALUES (1,'Banco de Venezuela','2026-10-11 23:10:59',1),(2,'Banesco','2026-10-11 23:10:59',1),(3,'Mercantil','2026-10-11 23:10:59',1),(4,'Banco Provincial','2026-10-11 23:10:59',1);
 /*!40000 ALTER TABLE `banco` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -64,7 +64,7 @@ CREATE TABLE `clientes` (
   `apellidos` varchar(100) NOT NULL,
   `correo` varchar(100) DEFAULT NULL,
   `direccion` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_cliente`),
   UNIQUE KEY `cedula` (`cedula`)
@@ -77,8 +77,75 @@ CREATE TABLE `clientes` (
 
 LOCK TABLES `clientes` WRITE;
 /*!40000 ALTER TABLE `clientes` DISABLE KEYS */;
-INSERT INTO `clientes` VALUES (1,'V-12345678','Juan Carlos','Perez Silva','juan.perez@email.com','Av. Bolivar, Edf. Los Andes, Barquisimeto','2026-10-17 15:58:45',1),(2,'V-19876543','Maria Alejandra','Gonzalez Rivas','maria.gonzalez@email.com','Calle 30 con Carrera 19, Barquisimeto','2026-10-17 15:58:45',1),(3,'J-30123456','Taller Automotriz','Los Andes C.A.','contacto@tallerlosandes.com','Zona Industrial 1, Galpon 4B, Barquisimeto','2026-10-17 15:58:45',1),(4,'V-564716877','wegt','ewg','w3qe421@gmail.com','','2026-10-29 21:07:54',1);
+INSERT INTO `clientes` VALUES (1,'V-12345678','Juan Carlos','Perez Silva','juan.perez@email.com','Av. Bolivar, Edf. Los Andes, Barquisimeto','2026-10-17 11:58:45',1),(2,'V-19876543','Maria Alejandra','Gonzalez Rivas','maria.gonzalez@email.com','Calle 30 con Carrera 19, Barquisimeto','2026-10-17 11:58:45',1),(3,'J-30123456','Taller Automotriz','Los Andes C.A.','contacto@tallerlosandes.com','Zona Industrial 1, Galpon 4B, Barquisimeto','2026-10-17 11:58:45',1),(4,'V-564716877','wegt','ewg','w3qe421@gmail.com','','2026-10-29 17:07:54',1);
 /*!40000 ALTER TABLE `clientes` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `compra`
+--
+
+DROP TABLE IF EXISTS `compra`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `compra` (
+  `id_compra` int(11) NOT NULL AUTO_INCREMENT,
+  `id_proveedor` int(11) NOT NULL,
+  `fecha` datetime NOT NULL DEFAULT current_timestamp(),
+  `total` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `observaciones` text DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `estado` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id_compra`),
+  KEY `id_proveedor` (`id_proveedor`),
+  KEY `idx_compra_fecha` (`fecha`),
+  CONSTRAINT `fk_compra_proveedor` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedores` (`id_proveedor`) ON UPDATE CASCADE,
+  CONSTRAINT `chk_compra_total` CHECK (`total` >= 0)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `compra`
+--
+
+LOCK TABLES `compra` WRITE;
+/*!40000 ALTER TABLE `compra` DISABLE KEYS */;
+INSERT INTO `compra` VALUES (1,1,'2026-10-14 10:30:00',480.00,'Recepcion de tintes base montana lote 104','2026-10-14 10:30:00',1),(2,2,'2026-10-16 14:15:00',250.00,'Insumos de lijado y enmascarar','2026-10-16 14:15:00',1);
+/*!40000 ALTER TABLE `compra` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `compra_detalle`
+--
+
+DROP TABLE IF EXISTS `compra_detalle`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `compra_detalle` (
+  `id_compra_detalle` int(11) NOT NULL AUTO_INCREMENT,
+  `id_compra` int(11) NOT NULL,
+  `id_producto` int(11) NOT NULL,
+  `cantidad` decimal(12,4) NOT NULL,
+  `precio_compra` decimal(10,2) NOT NULL,
+  `subtotal` decimal(10,2) NOT NULL,
+  `estado` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id_compra_detalle`),
+  KEY `id_producto` (`id_producto`),
+  KEY `id_compra` (`id_compra`),
+  CONSTRAINT `fk_cd_compra` FOREIGN KEY (`id_compra`) REFERENCES `compra` (`id_compra`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_cd_producto` FOREIGN KEY (`id_producto`) REFERENCES `productos` (`id_producto`) ON UPDATE CASCADE,
+  CONSTRAINT `chk_compra_detalle` CHECK (`cantidad` > 0 and `precio_compra` >= 0 and `subtotal` >= 0)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `compra_detalle`
+--
+
+LOCK TABLES `compra_detalle` WRITE;
+/*!40000 ALTER TABLE `compra_detalle` DISABLE KEYS */;
+INSERT INTO `compra_detalle` VALUES (1,1,1,10.0000,35.00,350.00,1),(2,1,15,15.0000,6.00,90.00,1),(3,1,12,10.0000,4.00,40.00,1),(4,2,12,20.0000,2.50,50.00,1),(5,2,13,100.0000,0.80,80.00,1),(6,2,16,10.0000,12.00,120.00,1);
+/*!40000 ALTER TABLE `compra_detalle` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -123,7 +190,7 @@ DROP TABLE IF EXISTS `cuentas_pagar`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `cuentas_pagar` (
   `id_cuenta_pagar` int(11) NOT NULL AUTO_INCREMENT,
-  `id_nota_entrega` int(11) NOT NULL,
+  `id_compra` int(11) NOT NULL,
   `monto_total` decimal(10,2) NOT NULL,
   `saldo_pendiente` decimal(10,2) NOT NULL,
   `fecha_vencimiento` datetime DEFAULT NULL,
@@ -131,8 +198,8 @@ CREATE TABLE `cuentas_pagar` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_cuenta_pagar`),
-  UNIQUE KEY `uk_cxp_nota_entrega` (`id_nota_entrega`),
-  CONSTRAINT `fk_cp_nota_entrega` FOREIGN KEY (`id_nota_entrega`) REFERENCES `nota_entrega` (`id_nota_entrega`) ON UPDATE CASCADE,
+  UNIQUE KEY `uk_cxp_compra` (`id_compra`),
+  CONSTRAINT `fk_cp_compra` FOREIGN KEY (`id_compra`) REFERENCES `compra` (`id_compra`) ON UPDATE CASCADE,
   CONSTRAINT `chk_cxp_monto` CHECK (`monto_total` >= 0)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -268,72 +335,6 @@ INSERT INTO `modulos` VALUES (1,'dashboard','Dashboard','Panel principal y estad
 UNLOCK TABLES;
 
 --
--- Table structure for table `nota_entrega`
---
-
-DROP TABLE IF EXISTS `nota_entrega`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `nota_entrega` (
-  `id_nota_entrega` int(11) NOT NULL AUTO_INCREMENT,
-  `id_proveedor` int(11) NOT NULL,
-  `fecha` datetime NOT NULL DEFAULT current_timestamp(),
-  `total` decimal(10,2) NOT NULL DEFAULT 0.00,
-  `observaciones` text DEFAULT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `estado` tinyint(1) NOT NULL DEFAULT 1,
-  PRIMARY KEY (`id_nota_entrega`),
-  KEY `id_proveedor` (`id_proveedor`),
-  CONSTRAINT `fk_ne_compra_proveedor` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedores` (`id_proveedor`) ON UPDATE CASCADE,
-  CONSTRAINT `chk_nota_entrega_total` CHECK (`total` >= 0)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `nota_entrega`
---
-
-LOCK TABLES `nota_entrega` WRITE;
-/*!40000 ALTER TABLE `nota_entrega` DISABLE KEYS */;
-INSERT INTO `nota_entrega` VALUES (1,1,'2026-10-14 10:30:00',480.00,'Recepcion de tintes base montana lote 104','2026-10-14 10:30:00',1),(2,2,'2026-10-16 14:15:00',250.00,'Insumos de lijado y enmascarar','2026-10-16 14:15:00',1);
-/*!40000 ALTER TABLE `nota_entrega` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `nota_entrega_producto`
---
-
-DROP TABLE IF EXISTS `nota_entrega_producto`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `nota_entrega_producto` (
-  `id_nota_entrega_producto` int(11) NOT NULL AUTO_INCREMENT,
-  `id_nota_entrega` int(11) NOT NULL,
-  `id_producto` int(11) NOT NULL,
-  `cantidad` decimal(12,4) NOT NULL,
-  `precio_compra` decimal(10,2) NOT NULL,
-  `subtotal` decimal(10,2) NOT NULL,
-  `estado` tinyint(1) NOT NULL DEFAULT 1,
-  PRIMARY KEY (`id_nota_entrega_producto`),
-  KEY `id_nota_entrega` (`id_nota_entrega`),
-  KEY `id_producto` (`id_producto`),
-  CONSTRAINT `fk_nep_nota_entrega` FOREIGN KEY (`id_nota_entrega`) REFERENCES `nota_entrega` (`id_nota_entrega`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_nep_producto` FOREIGN KEY (`id_producto`) REFERENCES `productos` (`id_producto`) ON UPDATE CASCADE,
-  CONSTRAINT `chk_nota_entrega_producto` CHECK (`cantidad` > 0 and `precio_compra` >= 0 and `subtotal` >= 0)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `nota_entrega_producto`
---
-
-LOCK TABLES `nota_entrega_producto` WRITE;
-/*!40000 ALTER TABLE `nota_entrega_producto` DISABLE KEYS */;
-INSERT INTO `nota_entrega_producto` VALUES (1,1,1,10.0000,35.00,350.00,1),(2,1,15,15.0000,6.00,90.00,1),(3,1,12,10.0000,4.00,40.00,1),(4,2,12,20.0000,2.50,50.00,1),(5,2,13,100.0000,0.80,80.00,1),(6,2,16,10.0000,12.00,120.00,1);
-/*!40000 ALTER TABLE `nota_entrega_producto` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `pagos_realizados`
 --
 
@@ -354,6 +355,7 @@ CREATE TABLE `pagos_realizados` (
   KEY `id_cuenta_pagar` (`id_cuenta_pagar`),
   KEY `id_tipo_pago` (`id_tipo_pago`),
   KEY `id_banco` (`id_banco`),
+  KEY `idx_pago_realizado_fecha` (`fecha`),
   CONSTRAINT `fk_preal_banco` FOREIGN KEY (`id_banco`) REFERENCES `banco` (`id_banco`) ON UPDATE CASCADE,
   CONSTRAINT `fk_preal_cuenta_pagar` FOREIGN KEY (`id_cuenta_pagar`) REFERENCES `cuentas_pagar` (`id_cuenta_pagar`) ON UPDATE CASCADE,
   CONSTRAINT `fk_preal_tipo_pago` FOREIGN KEY (`id_tipo_pago`) REFERENCES `tipo_pago` (`id_tipo_pago`) ON UPDATE CASCADE,
@@ -392,6 +394,7 @@ CREATE TABLE `pagos_recibidos` (
   KEY `id_cuenta_cobrar` (`id_cuenta_cobrar`),
   KEY `id_tipo_pago` (`id_tipo_pago`),
   KEY `id_banco` (`id_banco`),
+  KEY `idx_pago_recibido_fecha` (`fecha`),
   CONSTRAINT `fk_pr_banco` FOREIGN KEY (`id_banco`) REFERENCES `banco` (`id_banco`) ON UPDATE CASCADE,
   CONSTRAINT `fk_pr_cuenta_cobrar` FOREIGN KEY (`id_cuenta_cobrar`) REFERENCES `cuentas_cobrar` (`id_cuenta_cobrar`) ON UPDATE CASCADE,
   CONSTRAINT `fk_pr_tipo_pago` FOREIGN KEY (`id_tipo_pago`) REFERENCES `tipo_pago` (`id_tipo_pago`) ON UPDATE CASCADE,
@@ -552,7 +555,7 @@ DROP TABLE IF EXISTS `roles`;
 CREATE TABLE `roles` (
   `id_rol` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(50) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_rol`),
   UNIQUE KEY `nombre` (`nombre`)
@@ -565,7 +568,7 @@ CREATE TABLE `roles` (
 
 LOCK TABLES `roles` WRITE;
 /*!40000 ALTER TABLE `roles` DISABLE KEYS */;
-INSERT INTO `roles` VALUES (1,'Administrador','2026-10-12 03:10:59',1),(2,'Vendedor','2026-10-12 03:10:59',1);
+INSERT INTO `roles` VALUES (1,'Administrador','2026-10-11 23:10:59',1),(2,'Vendedor','2026-10-11 23:10:59',1);
 /*!40000 ALTER TABLE `roles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -778,7 +781,7 @@ CREATE TABLE `usuarios` (
   `password_hash` varchar(255) NOT NULL,
   `foto` varchar(255) DEFAULT NULL,
   `id_rol` int(11) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_usuario`),
   UNIQUE KEY `correo` (`correo`),
@@ -793,7 +796,7 @@ CREATE TABLE `usuarios` (
 
 LOCK TABLES `usuarios` WRITE;
 /*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
-INSERT INTO `usuarios` VALUES (2,'Administrador','admin@perfectcolor.com','$2y$10$ZqUk5Awoey5CVkqx3Tgg2.A9YTTQwRHLehxDLtLN/fYLkyGrMi5HC',NULL,1,'2026-10-12 03:10:59',1),(5,'Fran','pacheco@ejemplo.com','$2y$10$ZqUk5Awoey5CVkqx3Tgg2.A9YTTQwRHLehxDLtLN/fYLkyGrMi5HC',NULL,2,'2026-10-12 03:10:59',1);
+INSERT INTO `usuarios` VALUES (2,'Administrador','admin@perfectcolor.com','$2y$10$ZqUk5Awoey5CVkqx3Tgg2.A9YTTQwRHLehxDLtLN/fYLkyGrMi5HC',NULL,1,'2026-10-11 23:10:59',1),(5,'Fran','pacheco@ejemplo.com','$2y$10$ZqUk5Awoey5CVkqx3Tgg2.A9YTTQwRHLehxDLtLN/fYLkyGrMi5HC',NULL,2,'2026-10-11 23:10:59',1);
 /*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -852,6 +855,7 @@ CREATE TABLE `ventas` (
   PRIMARY KEY (`id_venta`),
   KEY `id_cliente` (`id_cliente`),
   KEY `id_estado_venta` (`id_estado_venta`),
+  KEY `idx_ventas_fecha` (`fecha`),
   CONSTRAINT `fk_ventas_cliente` FOREIGN KEY (`id_cliente`) REFERENCES `clientes` (`id_cliente`) ON UPDATE CASCADE,
   CONSTRAINT `fk_ventas_estado` FOREIGN KEY (`id_estado_venta`) REFERENCES `estado_venta` (`id_estado_venta`) ON UPDATE CASCADE,
   CONSTRAINT `chk_venta_total` CHECK (`total` >= 0)
@@ -877,4 +881,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-10-29 21:42:15
+-- Dump completed on 2026-10-29 21:56:18
