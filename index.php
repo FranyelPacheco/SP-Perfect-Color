@@ -1,4 +1,5 @@
 <?php
+header_remove('X-Powered-By');
 require_once __DIR__ . '/app/helpers/envHelper.php';
 require_once __DIR__ . '/vendor/autoload.php';
 

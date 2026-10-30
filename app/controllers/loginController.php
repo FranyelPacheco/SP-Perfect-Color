@@ -22,6 +22,45 @@ if (!defined('TOKEN_SECRET')) {
     define('TOKEN_SECRET', env('TOKEN_SECRET', ''));
 }
 
+// FUNCIÓN: intentosLogin
+// OBJETIVO: Cuenta los intentos fallidos por IP y correo en una ventana de 15 minutos (archivo bloqueado por web en app/logs)
+// NOTA: accion 'bloqueado' consulta, 'fallo' suma un intento y 'exito' limpia el contador
+function intentosLogin(string $clave, string $accion): bool
+{
+    $limite = 5;
+    $ventana = 900;
+    $dir = __DIR__ . '/../logs';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0777, true);
+    }
+    $archivo = $dir . '/intentos_login.json';
+    $h = @fopen($archivo, 'c+');
+    if (!$h) {
+        return false;
+    }
+    flock($h, LOCK_EX);
+    $datos = json_decode(stream_get_contents($h) ?: '[]', true) ?: [];
+    $ahora = time();
+    foreach ($datos as $k => $lista) {
+        $datos[$k] = array_values(array_filter($lista, fn($t) => $t > $ahora - $ventana));
+        if (!$datos[$k]) {
+            unset($datos[$k]);
+        }
+    }
+    if ($accion === 'fallo') {
+        $datos[$clave][] = $ahora;
+    } elseif ($accion === 'exito') {
+        unset($datos[$clave]);
+    }
+    $bloqueado = count($datos[$clave] ?? []) >= $limite;
+    ftruncate($h, 0);
+    rewind($h);
+    fwrite($h, json_encode($datos));
+    flock($h, LOCK_UN);
+    fclose($h);
+    return $bloqueado;
+}
+
 // FUNCIÓN: index
 // OBJETIVO: Muestra el formulario de inicio de sesión; redirige al dashboard si ya hay sesión activa
 if ($metodo === 'index') {
@@ -40,10 +79,17 @@ if ($metodo === 'index') {
     $correo = trim($_POST['correo'] ?? '');
     $clave = $_POST['clave'] ?? '';
 
+    $claveIntentos = sha1(($_SERVER['REMOTE_ADDR'] ?? '') . '|' . strtolower($correo));
+    if (intentosLogin($claveIntentos, 'bloqueado')) {
+        respuestaJson('error', 'Demasiados intentos fallidos. Espere 15 minutos antes de volver a intentarlo.');
+    }
+
     $resultado = $usuarioModel->autenticar($correo, $clave);
     if (!$resultado['exito']) {
+        intentosLogin($claveIntentos, 'fallo');
         respuestaJson('error', $resultado['mensaje']);
     }
+    intentosLogin($claveIntentos, 'exito');
 
     // Iniciar sesión centralizada a través de SessionTrait
     $sesionManager->iniciarSesion($resultado['usuario']);
@@ -102,7 +148,7 @@ if ($metodo === 'index') {
             if (!is_dir($dirLogs)) {
                 @mkdir($dirLogs, 0777, true);
             }
-            $logMsg = '[' . date('Y-m-d H:i:s') . '] Falló envío a ' . $usuario['correo'] . ': ' . $resultadoEnvio['mensaje'] . ' | Enlace de recuperación: ' . $enlace . PHP_EOL;
+            $logMsg = '[' . date('Y-m-d H:i:s') . '] Falló envío a ' . $usuario['correo'] . ': ' . $resultadoEnvio['mensaje'] . PHP_EOL;
             @file_put_contents($dirLogs . '/recuperacion.log', $logMsg, FILE_APPEND);
             error_log('[RECUPERACION CLAVE] ' . $logMsg);
         }

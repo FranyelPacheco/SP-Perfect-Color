@@ -107,14 +107,33 @@ trait SessionTrait
 
     private function _ejecutarVerificarAutenticacion(): void
     {
-        if ($this->estaAutenticado()) {
+        if ($this->estaAutenticado() && $this->_ejecutarSesionVigente()) {
             return;
         }
         if ($this->_ejecutarEsPeticionAjax()) {
-            respuestaJson('error', 'Debe iniciar sesion para acceder');
+            respuestaJson('error', 'Debe iniciar sesión para acceder');
         }
         header('Location: /SP%20Perfect%20Color/login');
         exit;
+    }
+
+    // FUNCIÓN: _ejecutarSesionVigente
+    // OBJETIVO: Cada 60 s confirma que el usuario y su rol siguen activos y refresca los módulos permitidos
+    private function _ejecutarSesionVigente(): bool
+    {
+        if (time() - (int)($_SESSION['sesion_verificada'] ?? 0) < 60) {
+            return true;
+        }
+        $usuario = (new \App\Models\UsuarioModel())->buscarConRolPorId((int)$_SESSION['id_usuario']);
+        if (!$usuario || (int)($usuario['rol_activo'] ?? 1) === 0) {
+            $this->cerrarSesion();
+            return false;
+        }
+        $_SESSION['usuario_rol'] = (int)$usuario['id_rol'];
+        $_SESSION['usuario_rol_nombre'] = $usuario['rol_nombre'] ?? '';
+        $_SESSION['usuario_modulos'] = $usuario['rol_modulos'] ?? '';
+        $_SESSION['sesion_verificada'] = time();
+        return true;
     }
 
     // FUNCIÓN: verificarPermiso
