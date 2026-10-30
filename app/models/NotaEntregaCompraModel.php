@@ -118,11 +118,13 @@ class NotaEntregaCompraModel extends ModeloBase
             $fecha = date('Y-m-d H:i:s');
         }
 
-        if ($condicionPago === 'contado' && $idTipoPago === 1) {
-            $idBanco = null;
-            if (empty($referencia)) {
-                $referencia = 'Efectivo';
+        if ($condicionPago === 'contado') {
+            $pago = $this->validarPagoBancario((int)$idTipoPago, $idBanco, $referencia, 'el pago', null);
+            if (!$pago['valido']) {
+                return ['valido' => false, 'mensaje' => $pago['mensaje']];
             }
+            $idBanco = $pago['id_banco'];
+            $referencia = $pago['referencia'];
         }
 
         if ($condicionPago === 'credito' && $montoInicial > 0) {
@@ -218,11 +220,14 @@ class NotaEntregaCompraModel extends ModeloBase
         }
 
         try {
-            $stmtCp = $this->conexion->prepare("SELECT COUNT(*) FROM cuentas_pagar WHERE id_compra = :id AND estado = 1");
+            $stmtCp = $this->conexion->prepare("SELECT COUNT(*) FROM pagos_realizados pr
+                                                INNER JOIN cuentas_pagar cp ON pr.id_cuenta_pagar = cp.id_cuenta_pagar
+                                                WHERE cp.id_compra = :id AND pr.estado = 1
+                                                  AND pr.created_at > DATE_ADD(cp.created_at, INTERVAL 10 SECOND)");
             $stmtCp->bindValue(':id', $id, PDO::PARAM_INT);
             $stmtCp->execute();
             if ((int)$stmtCp->fetchColumn() > 0) {
-                return ['exito' => false, 'mensaje' => 'No se puede anular: la compra ya está registrada en cuentas por pagar'];
+                return ['exito' => false, 'mensaje' => 'No se puede anular: la compra ya tiene abonos registrados en cuentas por pagar'];
             }
             if ($this->anular($id)) {
                 return ['exito' => true, 'mensaje' => 'Nota de entrega anulada y stock revertido correctamente'];
@@ -424,7 +429,11 @@ class NotaEntregaCompraModel extends ModeloBase
             $stmtNe->bindParam(':id', $id, PDO::PARAM_INT);
             $stmtNe->execute();
 
-            // Desactivar cuenta por pagar asociada
+            // Anular los pagos de la cuenta (el de contado o el abono inicial) y desactivarla
+            $stmtPagos = $this->conexion->prepare("UPDATE pagos_realizados pr INNER JOIN cuentas_pagar cp ON pr.id_cuenta_pagar = cp.id_cuenta_pagar SET pr.estado = 0 WHERE cp.id_compra = :id");
+            $stmtPagos->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmtPagos->execute();
+
             $stmtCp = $this->conexion->prepare("UPDATE cuentas_pagar SET estado = 0 WHERE id_compra = :id");
             $stmtCp->bindParam(':id', $id, PDO::PARAM_INT);
             $stmtCp->execute();

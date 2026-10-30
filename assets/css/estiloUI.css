@@ -528,3 +528,25 @@ html body .aviso-campo {
 }
 html body .aviso-campo i { font-size: 0.9rem; }
 @media (prefers-reduced-motion: reduce) { html body .campo-vibra, html body .aviso-campo { animation: none; } }
+
+
+/* ============================================================
+   REVISION QA: desbordes en movil, contraste AA y objetivos tactiles
+   ============================================================ */
+html body .card-body > .d-flex > * { min-width: 0; max-width: 100%; }
+html body #grupoFiltroNotas, html body #grupoFiltroPresupuestos { max-width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+html body #grupoFiltroNotas .btn, html body #grupoFiltroPresupuestos .btn { white-space: nowrap; flex: 0 0 auto; }
+html body .saldo-pendiente-positivo { color: #B91C1C; }
+html body .catalogo-codigo { color: #475569; }
+html body .text-danger { color: #B91C1C !important; }
+html body .text-secondary { color: #475569 !important; }
+html body .badge.bg-light { color: #1e293b !important; }
+html body .nav-pills .nav-link:not(.active) { color: #334155; }
+html body .table td .btn-success { --b: #166534; }
+html body .sidebar-brand small, html body .sidebar .logout-link { font-size: 0.8125rem; }
+@media (max-width: 575.98px) {
+  html body .table-mezcla-wrapper { overflow-x: auto !important; }
+  html body .btn-catalogo-add, html body .catalogo-card-item .btn { min-height: 44px; }
+  html body .table td .btn-sm { min-width: 2.5rem; height: 2.5rem; }
+  html body .btn-close { padding: 0.75rem; }
+}
