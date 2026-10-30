@@ -114,7 +114,7 @@ class NotaEntregaModel extends ModeloBase
 
         $decision = trim($datos['decision'] ?? 'aprobar');
         if ($decision === 'rechazar') {
-            $stmtRechazar = $this->conexion->prepare("UPDATE ventas SET id_estado_venta = 3 WHERE id_venta = :id");
+            $stmtRechazar = $this->conexion->prepare("UPDATE ventas SET id_estado_venta = 3 WHERE id_venta = :id AND id_estado_venta = 1");
             $stmtRechazar->bindParam(':id', $presupuestoId, PDO::PARAM_INT);
             if ($stmtRechazar->execute()) {
                 return ['exito' => true, 'mensaje' => 'Nota de entrega / Presupuesto #' . $presupuestoId . ' rechazada correctamente'];
@@ -368,12 +368,15 @@ class NotaEntregaModel extends ModeloBase
                              fecha_aprobacion = NOW(), 
                              total = :total, 
                              condicion_pago = :condicion_pago 
-                         WHERE id_venta = :id_venta";
+                         WHERE id_venta = :id_venta AND id_estado_venta = 1";
             $stmt = $this->conexion->prepare($consulta);
             $stmt->bindValue(':id_venta', $this->idPresupuesto, PDO::PARAM_INT);
             $stmt->bindValue(':total', $this->total);
             $stmt->bindValue(':condicion_pago', $condicionPagoVal, PDO::PARAM_STR);
             $stmt->execute();
+            if ($stmt->rowCount() === 0) {
+                throw new \RuntimeException('El presupuesto ya fue procesado por otro usuario');
+            }
 
             $this->notaId = $this->idPresupuesto;
 
@@ -589,8 +592,8 @@ class NotaEntregaModel extends ModeloBase
         $consulta = "SELECT COALESCE(SUM(total), 0) as total
                      FROM ventas
                      WHERE estado = 1 AND id_estado_venta = 2
-                       AND MONTH(fecha) = MONTH(CURDATE())
-                       AND YEAR(fecha) = YEAR(CURDATE())";
+                       AND MONTH(COALESCE(fecha_aprobacion, fecha)) = MONTH(CURDATE())
+                       AND YEAR(COALESCE(fecha_aprobacion, fecha)) = YEAR(CURDATE())";
         $stmt = $this->conexion->query($consulta);
         return (string)$stmt->fetchColumn();
     }
@@ -604,7 +607,7 @@ class NotaEntregaModel extends ModeloBase
                      FROM ventas v
                      INNER JOIN venta_detalle vd ON v.id_venta = vd.id_venta
                      INNER JOIN productos p ON vd.id_producto = p.id_producto
-                     WHERE DATE(v.fecha) = CURDATE() AND v.estado = 1 AND v.id_estado_venta = 2
+                     WHERE DATE(COALESCE(v.fecha_aprobacion, v.fecha)) = CURDATE() AND v.estado = 1 AND v.id_estado_venta = 2
                      GROUP BY p.id_producto
                      ORDER BY total_vendido DESC
                      LIMIT :limite";
@@ -623,8 +626,8 @@ class NotaEntregaModel extends ModeloBase
                      FROM ventas v
                      INNER JOIN clientes c ON v.id_cliente = c.id_cliente
                      WHERE v.estado = 1 AND v.id_estado_venta = 2
-                       AND MONTH(v.fecha) = MONTH(CURDATE())
-                       AND YEAR(v.fecha) = YEAR(CURDATE())
+                       AND MONTH(COALESCE(v.fecha_aprobacion, v.fecha)) = MONTH(CURDATE())
+                       AND YEAR(COALESCE(v.fecha_aprobacion, v.fecha)) = YEAR(CURDATE())
                      GROUP BY c.id_cliente
                      ORDER BY total_comprado DESC
                      LIMIT 1";

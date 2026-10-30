@@ -698,14 +698,14 @@ document.addEventListener('DOMContentLoaded', function() {
             '<td class="position-relative">' +
                 '<div class="input-group input-group-sm">' +
                     '<span class="input-group-text bg-light text-muted px-2"><i class="bi bi-search"></i></span>' +
-                    '<input type="text" class="form-control form-control-sm input-buscar-base" placeholder="Buscar base por código o nombre..." autocomplete="off">' +
+                    '<input type="text" class="form-control form-control-sm input-buscar-base" aria-label="Buscar base" placeholder="Buscar base por código o nombre..." autocomplete="off">' +
                     '<button type="button" class="btn btn-outline-secondary btn-limpiar-base d-none" title="Limpiar"><i class="bi bi-x"></i></button>' +
                 '</div>' +
                 '<input type="hidden" class="select-base-tinte" value="" required>' +
                 '<div class="dropdown-menu w-100 lista-sugerencias-base buscador-dropdown-lista"></div>' +
             '</td>' +
             '<td>' +
-                '<select class="form-select form-select-sm select-fraccion-tinte">' +
+                '<select class="form-select form-select-sm select-fraccion-tinte" aria-label="Fracción del tinte">' +
                     '<option value="1" data-galon="1.0">1 Galón (1.00 gal)</option>' +
                     '<option value="1/2" data-galon="0.5">1/2 Galón (0.50 gal)</option>' +
                     '<option value="1/4" data-galon="0.25" selected>1/4 Galón (0.25 gal)</option>' +

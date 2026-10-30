@@ -100,6 +100,9 @@ class CuentaPagarModel extends ModeloBase
 
         try {
             $cuentaId = $this->crearCuenta($val['id_proveedor'], $val['monto_total'], $val['fecha_vencimiento']);
+            if ($cuentaId === false) {
+                return ['exito' => false, 'mensaje' => 'La fecha de vencimiento no es válida. Seleccione una fecha del calendario.'];
+            }
             return [
                 'exito' => true,
                 'mensaje' => 'Cuenta por pagar creada exitosamente',
@@ -193,6 +196,23 @@ class CuentaPagarModel extends ModeloBase
     // OBJETIVO: Ejecuta la inserción de una nueva cuenta por pagar asociada a su nota de entrega
     private function _ejecutarInsert(): int|false
     {
+        $venc = substr((string)$this->fechaVencimiento, 0, 10);
+        $fechaValida = \DateTime::createFromFormat('Y-m-d', $venc);
+        if (!$fechaValida || $fechaValida->format('Y-m-d') !== $venc) {
+            return false;
+        }
+
+        $this->conexion->beginTransaction();
+        try {
+            return $this->_insertarCompraYCuenta();
+        } catch (\Throwable $e) {
+            $this->conexion->rollBack();
+            throw $e;
+        }
+    }
+
+    private function _insertarCompraYCuenta(): int|false
+    {
         $stmtNe = $this->conexion->prepare("INSERT INTO compra (id_proveedor, fecha, total, observaciones, created_at, estado) 
                                             VALUES (:id_proveedor, NOW(), :total, 'Cuenta por pagar registrada directamente', NOW(), 1)");
         $stmtNe->bindParam(':id_proveedor', $this->idProveedor, PDO::PARAM_INT);
@@ -209,8 +229,11 @@ class CuentaPagarModel extends ModeloBase
         $stmt->bindParam(':fecha_vencimiento', $this->fechaVencimiento, PDO::PARAM_STR);
 
         if ($stmt->execute()) {
-            return (int)$this->conexion->lastInsertId();
+            $idCuenta = (int)$this->conexion->lastInsertId();
+            $this->conexion->commit();
+            return $idCuenta;
         }
+        $this->conexion->rollBack();
         return false;
     }
 

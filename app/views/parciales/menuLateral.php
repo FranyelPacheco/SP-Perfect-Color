@@ -36,7 +36,7 @@
 
 <?php if (\App\Helpers\tienePermiso('notaEntregaCompra') || \App\Helpers\tienePermiso('cuentaPagar')): ?>
 <li class="nav-item dropdown-hover">
-    <a href="#" aria-haspopup="true" aria-expanded="false" class="nav-link<?php echo $isComprasActive ? ' active' : ''; ?>"><i class="bi bi-cart-plus-fill me-2"></i><span>Compras</span> <i class="bi bi-chevron-down ms-auto"></i></a>
+    <a href="#" aria-haspopup="true" aria-expanded="false" class="nav-link<?php echo $isComprasActive ? ' active' : ''; ?>"><i class="bi bi-bag-plus-fill me-2"></i><span>Compras</span> <i class="bi bi-chevron-down ms-auto"></i></a>
     <ul class="dropdown-submenu">
         <?php if (\App\Helpers\tienePermiso('notaEntregaCompra')): ?>
         <li><a href="/SP%20Perfect%20Color/notaEntregaCompra" class="<?php echo ($ctrlLower === 'notaentregacompra') ? 'active' : ''; ?>"><i class="bi bi-inboxes-fill me-2"></i><span>Notas de Entrega</span></a></li>
@@ -50,7 +50,7 @@
 
 <?php if (\App\Helpers\tienePermiso('banco') || \App\Helpers\tienePermiso('tipoPago')): ?>
 <li class="nav-item dropdown-hover">
-    <a href="#" aria-haspopup="true" aria-expanded="false" class="nav-link<?php echo $isConfigPagoActive ? ' active' : ''; ?>"><i class="bi bi-gear-fill me-2"></i><span>Configuración de pago</span> <i class="bi bi-chevron-down ms-auto"></i></a>
+    <a href="#" aria-haspopup="true" aria-expanded="false" class="nav-link<?php echo $isConfigPagoActive ? ' active' : ''; ?>"><i class="bi bi-gear-fill me-2"></i><span>Config. de pago</span> <i class="bi bi-chevron-down ms-auto"></i></a>
     <ul class="dropdown-submenu">
         <?php if (\App\Helpers\tienePermiso('banco')): ?>
         <li><a href="/SP%20Perfect%20Color/banco" class="<?php echo ($ctrlLower === 'banco') ? 'active' : ''; ?>"><i class="bi bi-building-fill me-2"></i><span>Bancos</span></a></li>

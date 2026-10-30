@@ -429,7 +429,7 @@ class PresupuestoModel extends ModeloBase
                     $mixSeq++;
                     $stmtProdNuevo->bindValue(':codigo', $codigoMezcla, PDO::PARAM_STR);
                     $stmtProdNuevo->bindValue(':nombre', $descripcion, PDO::PARAM_STR);
-                    $stmtProdNuevo->bindValue(':stock', (float)$item['cantidad']);
+                    $stmtProdNuevo->bindValue(':stock', 0);
                     $stmtProdNuevo->bindValue(':precio_venta', (float)$item['precio_unitario']);
                     $stmtProdNuevo->execute();
 

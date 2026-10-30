@@ -106,7 +106,7 @@ class UsuarioModel extends ModeloBase
     // OBJETIVO: Ejecuta la consulta que lista usuarios con JOIN a roles
     private function _ejecutarSelectAll(): array
     {
-        $consulta = "SELECT u.*, u.estado as activo, r.nombre as rol_nombre
+        $consulta = "SELECT u.id_usuario, u.nombre, u.correo, u.foto, u.id_rol, u.created_at, u.estado, u.estado as activo, r.nombre as rol_nombre
                      FROM usuarios u
                      INNER JOIN roles r ON u.id_rol = r.id_rol
                      WHERE u.estado = 1
