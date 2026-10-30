@@ -839,15 +839,14 @@ class InventarioModel extends ModeloBase
 
             $descuentoTexto = number_format($descuento, 7, '.', '');
 
-            $stmtLog = $this->conexion->prepare("INSERT INTO merma_inventario (id_producto, id_presentacion, cantidad, equivalente_128, cantidad_descontada, motivo, id_usuario)
-                                                 VALUES (:producto, :presentacion, :cantidad, :equivalente, :descontada, :motivo, :usuario)");
+            $stmtLog = $this->conexion->prepare("INSERT INTO merma_inventario (id_producto, id_presentacion, cantidad, equivalente_128, cantidad_descontada, motivo)
+                                                 VALUES (:producto, :presentacion, :cantidad, :equivalente, :descontada, :motivo)");
             $stmtLog->bindValue(':producto', $idProducto, PDO::PARAM_INT);
             $stmtLog->bindValue(':presentacion', $idPresentacion ?: null, $idPresentacion ? PDO::PARAM_INT : PDO::PARAM_NULL);
             $stmtLog->bindValue(':cantidad', $cantidad, PDO::PARAM_INT);
             $stmtLog->bindValue(':equivalente', $equivalente128, $equivalente128 === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
             $stmtLog->bindValue(':descontada', $descuentoTexto);
             $stmtLog->bindValue(':motivo', $motivo);
-            $stmtLog->bindValue(':usuario', $_SESSION['id_usuario'] ?? null, isset($_SESSION['id_usuario']) ? PDO::PARAM_INT : PDO::PARAM_NULL);
             $stmtLog->execute();
 
             $this->conexion->commit();
