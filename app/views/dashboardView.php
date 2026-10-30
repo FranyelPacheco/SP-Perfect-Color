@@ -200,57 +200,15 @@
 </div>
 <?php endif; ?>
 
-<div class="entrada-animada row g-3 mt-2">
-    <div class="col-lg-12">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-info-circle-fill me-2 text-info"></i>Acceso Rápido</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-2">
-                    <div class="col-6">
-                        <a href="/SP%20Perfect%20Color/cliente" class="btn btn-outline-primary w-100 py-3 d-flex flex-column align-items-center gap-1">
-                            <i class="bi bi-people-fill fs-4"></i>
-                            <span class="small">Clientes</span>
-                        </a>
-                    </div>
-                    <?php if ($_SESSION['usuario_rol'] === 1): ?>
-                    <div class="col-6">
-                        <a href="/SP%20Perfect%20Color/proveedor" class="btn btn-outline-primary w-100 py-3 d-flex flex-column align-items-center gap-1">
-                            <i class="bi bi-truck fs-4"></i>
-                            <span class="small">Proveedores</span>
-                        </a>
-                    </div>
-                    <?php endif; ?>
-                    <div class="col-6">
-                        <a href="/SP%20Perfect%20Color/presupuesto" class="btn btn-outline-primary w-100 py-3 d-flex flex-column align-items-center gap-1">
-                            <i class="bi bi-file-earmark-text-fill fs-4"></i>
-                            <span class="small">Presupuestos</span>
-                        </a>
-                    </div>
-                    <div class="col-6">
-                        <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-outline-primary w-100 py-3 d-flex flex-column align-items-center gap-1">
-                            <i class="bi bi-receipt-cutoff fs-4"></i>
-                            <span class="small">Notas Entrega</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <?php if ($_SESSION['usuario_rol'] === 1): ?>
 <div class="entrada-animada row g-3 mt-2">
     <div class="col-12">
         <div class="card border-0 shadow-sm">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-graph-up-arrow me-2 text-success"></i>Ingresos Diarios (Últimos 7 Días)</h5>
+                <h5 class="mb-0"><i class="bi bi-graph-up-arrow me-2 text-success"></i>Ingresos de los últimos 7 días</h5>
             </div>
             <div class="card-body">
-                <div style="position: relative; height: 260px; width: 100%;">
-                    <canvas id="graficoIngresos" role="img" aria-label="Gráfico de barras con los ingresos de los últimos 7 días"></canvas>
-                </div>
+                <div id="graficoIngresos" class="grafico-barras" aria-label="Ingresos de los últimos 7 días"></div>
             </div>
         </div>
     </div>

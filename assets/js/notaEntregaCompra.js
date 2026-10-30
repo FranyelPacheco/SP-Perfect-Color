@@ -595,8 +595,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             mostrarError('Seleccione el banco para el abono inicial.');
                             return;
                         }
-                        if (!refIni || !refIni.value.trim()) {
-                            mostrarError('Ingrese la referencia del abono inicial.');
+                        if (!refIni || !/^\d{5}$/.test(refIni.value.trim())) {
+                            mostrarError('La referencia debe tener los últimos 5 dígitos del comprobante.');
                             return;
                         }
                     }

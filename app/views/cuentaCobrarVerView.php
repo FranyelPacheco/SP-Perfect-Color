@@ -166,8 +166,8 @@ $saldoPendCxc = (float)($cuenta['saldo_pendiente'] ?? 0);
                     </div>
 
                     <div class="mb-3" id="contenedorRefPago" style="display:none">
-                        <label for="referenciaPago" class="form-label">Referencia</label>
-                        <input type="text" id="referenciaPago" class="form-control" placeholder="Numero de confirmacion">
+                        <label for="referenciaPago" class="form-label">Referencia (últimos 5 dígitos)</label>
+                        <input type="text" id="referenciaPago" class="form-control" placeholder="Ej: 48215">
                     </div>
 
                     <div id="mensajeErrorPago" class="alert alert-danger d-none"></div>
@@ -263,8 +263,8 @@ document.getElementById('formularioPago').addEventListener('submit', function(ev
             mensajeError.classList.remove('d-none');
             return;
         }
-        if (!referencia.trim()) {
-            mensajeError.textContent = 'Debe ingresar el número de referencia para transferencia o pago móvil';
+        if (!/^\d{5}$/.test(referencia.trim())) {
+            mensajeError.textContent = 'La referencia debe tener los últimos 5 dígitos del comprobante';
             mensajeError.classList.remove('d-none');
             return;
         }
