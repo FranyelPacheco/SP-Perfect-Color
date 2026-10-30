@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(function(error) {
-                console.error('Error al cargar clientes:', error);
+                console.error('No se pudieron cargar los clientes. Recargue la página:', error);
             });
     }
 
@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else {
                 if (!clienteNota) {
-                    mostrarError('Error interno: campo cliente no encontrado');
+                    mostrarError('No se pudo leer el cliente. Recargue la página.');
                     return;
                 }
                 if (!clienteNota.value) {
@@ -335,11 +335,11 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(function(error) {
                 console.error('Error en el fetch:', error);
-                mostrarError('Error de conexión: ' + error.message);
+                mostrarError('No se pudo conectar con el servidor. Intente de nuevo.');
             });
         } catch (error) {
             console.error('Error en guardarNotaEntrega:', error);
-            mostrarError('Error interno: ' + error.message);
+            mostrarError('Ocurrió un problema inesperado. Recargue la página e intente de nuevo.');
         }
     }
 

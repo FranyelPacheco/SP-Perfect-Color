@@ -46,7 +46,7 @@ if ($metodo === 'index') {
     verificarRolAdmin();
 
     $id = intval($_GET['id'] ?? 0);
-    if ($id < 1) respuestaJson('error', 'ID de banco no valido');
+    if ($id < 1) respuestaJson('error', 'No se encontró el registro. Actualice la página e intente de nuevo.');
 
     $banco = $bancoModel->buscarPorId($id);
     if ($banco) {

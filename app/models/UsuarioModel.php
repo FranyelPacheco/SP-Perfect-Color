@@ -168,7 +168,7 @@ class UsuarioModel extends ModeloBase
         }
 
         if ($this->correoExiste($correo, $idActual)) {
-            return ['valido' => false, 'mensaje' => ($idActual ? 'El correo electronico ya esta registrado en otro usuario' : 'El correo electronico ya esta registrado')];
+            return ['valido' => false, 'mensaje' => ($idActual ? 'El correo electrónico ya está registrado en otro usuario' : 'El correo electrónico ya está registrado')];
         }
 
         return [
@@ -204,7 +204,7 @@ class UsuarioModel extends ModeloBase
             \App\Helpers\enviarCredencialesUsuario($val['correo'], $val['nombre'], $val['clave']);
             return ['exito' => true, 'mensaje' => 'Usuario creado exitosamente'];
         }
-        return ['exito' => false, 'mensaje' => 'Error al crear el usuario'];
+        return ['exito' => false, 'mensaje' => 'No se pudo crear el usuario. Intente de nuevo.'];
     }
 
     // FUNCIÓN: modificar
@@ -212,7 +212,7 @@ class UsuarioModel extends ModeloBase
     public function modificar(int $id, array $datos, bool $puedeGestionarRoles = true): array
     {
         if ($id < 1) {
-            return ['exito' => false, 'mensaje' => 'ID de usuario no valido'];
+            return ['exito' => false, 'mensaje' => 'No se encontró el registro. Actualice la página e intente de nuevo.'];
         }
 
         $usuarioActual = $this->buscarPorId($id);
@@ -231,7 +231,7 @@ class UsuarioModel extends ModeloBase
         }
 
         if (!$this->actualizarUsuario($id, $val['nombre'], $val['correo'], $val['id_rol'], $val['activo'])) {
-            return ['exito' => false, 'mensaje' => 'Error al actualizar el usuario'];
+            return ['exito' => false, 'mensaje' => 'No se pudo actualizar el usuario. Intente de nuevo.'];
         }
 
         $cambiarClave = isset($datos['cambiar_clave']) && $datos['cambiar_clave'] == '1';
@@ -256,7 +256,7 @@ class UsuarioModel extends ModeloBase
     public function darDeBaja(int $id, int $idSesionActual): array
     {
         if ($id < 1) {
-            return ['exito' => false, 'mensaje' => 'ID de usuario no valido'];
+            return ['exito' => false, 'mensaje' => 'No se encontró el registro. Actualice la página e intente de nuevo.'];
         }
         if ($id === $idSesionActual) {
             return ['exito' => false, 'mensaje' => 'No puede eliminar su propio usuario'];
@@ -265,7 +265,7 @@ class UsuarioModel extends ModeloBase
         if ($this->eliminarUsuario($id)) {
             return ['exito' => true, 'mensaje' => 'Usuario eliminado exitosamente'];
         }
-        return ['exito' => false, 'mensaje' => 'No se puede eliminar al unico administrador del sistema'];
+        return ['exito' => false, 'mensaje' => 'No se puede eliminar al único administrador del sistema'];
     }
 
     // FUNCIÓN: autenticar
@@ -427,7 +427,7 @@ class UsuarioModel extends ModeloBase
             \App\Helpers\enviarNotificacionCambioClave($usuarioActual['correo'], $usuarioActual['nombre']);
             return ['exito' => true, 'mensaje' => 'Contraseña modificada exitosamente. Se ha enviado un aviso a su correo.'];
         }
-        return ['exito' => false, 'mensaje' => 'Error al actualizar la contraseña'];
+        return ['exito' => false, 'mensaje' => 'No se pudo actualizar la contraseña. Intente de nuevo.'];
     }
 
     // FUNCIÓN: restablecerClaveConToken

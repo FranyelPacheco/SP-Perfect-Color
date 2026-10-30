@@ -205,7 +205,7 @@ class NotaEntregaCompraModel extends ModeloBase
             ];
         } catch (\PDOException $e) {
             error_log('Error al guardar nota de compra: ' . $e->getMessage());
-            return ['exito' => false, 'mensaje' => 'Error al procesar la compra: ' . $e->getMessage()];
+            return ['exito' => false, 'mensaje' => 'No se pudo registrar la compra. Revise los productos y montos e intente de nuevo.'];
         }
     }
 

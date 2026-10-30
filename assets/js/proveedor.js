@@ -496,7 +496,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error al obtener proveedor:', error);
-            mostrarNotificacion('Error al cargar los datos del proveedor', 'error');
+            mostrarNotificacion('No se pudieron cargar los datos del proveedor. Actualice la página e intente de nuevo.', 'error');
         }
     }
 
@@ -539,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const correoVal = correoProveedor.value.trim();
         if (!correoVal) {
-            mostrarError('El correo electronico es obligatorio');
+            mostrarError('El correo electrónico es obligatorio');
             correoProveedor.focus();
             return;
         }
@@ -633,7 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error al guardar proveedor:', error);
-            mostrarError('Error de conexión al guardar el proveedor');
+            mostrarError('No se pudo guardar el proveedor. Revise su conexión e intente de nuevo.');
         }
     }
 
@@ -657,7 +657,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(function(error) {
                 console.error('Error al eliminar proveedor:', error);
-                mostrarNotificacion('Error de conexión al eliminar el proveedor', 'error');
+                mostrarNotificacion('No se pudo eliminar el proveedor. Revise su conexión e intente de nuevo.', 'error');
             });
         });
     }

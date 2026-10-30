@@ -74,10 +74,10 @@ class ClienteModel extends ModeloBase
         [$telefono, $telefono2] = $this->procesarTelefonosPayload($datos);
 
         if ($cedula === '') {
-            return ['valido' => false, 'mensaje' => 'La cedula es obligatoria'];
+            return ['valido' => false, 'mensaje' => 'La cédula es obligatoria'];
         }
         if (!preg_match('/^[VEJ]-\d{6,9}$/i', $cedula)) {
-            return ['valido' => false, 'mensaje' => 'El documento debe tener formato V, E o J seguido de 6 a 9 digitos'];
+            return ['valido' => false, 'mensaje' => 'El documento debe tener formato V, E o J seguido de 6 a 9 dígitos'];
         }
 
         $error = $this->validarNombrePersona($nombres, 40, 'El nombre') ?? $this->validarNombrePersona($apellidos, 40, 'El apellido');
@@ -101,7 +101,7 @@ class ClienteModel extends ModeloBase
         }
 
         if ($this->cedulaExiste($cedula, $idActual)) {
-            return ['valido' => false, 'mensaje' => ($idActual ? 'Ya existe otro cliente con esa cedula' : 'Ya existe un cliente con esa cedula')];
+            return ['valido' => false, 'mensaje' => ($idActual ? 'Ya existe otro cliente con esa cédula' : 'Ya existe un cliente con esa cédula')];
         }
 
         return [
@@ -151,7 +151,7 @@ class ClienteModel extends ModeloBase
             $nuevoId = $this->insertarCliente($d['cedula'], $d['nombres'], $d['apellidos'], $d['correo'], $d['direccion']);
             if (!$nuevoId) {
                 $this->conexion->rollBack();
-                return ['exito' => false, 'mensaje' => 'Error al crear el cliente'];
+                return ['exito' => false, 'mensaje' => 'No se pudo crear el cliente. Intente de nuevo.'];
             }
 
             $this->insertarTelefono($nuevoId, $d['telefono'], 'movil');
@@ -165,7 +165,8 @@ class ClienteModel extends ModeloBase
             if ($this->conexion->inTransaction()) {
                 $this->conexion->rollBack();
             }
-            return ['exito' => false, 'mensaje' => 'Error en base de datos: ' . $e->getMessage()];
+            error_log('Error en base de datos: ' . $e->getMessage());
+            return ['exito' => false, 'mensaje' => 'No se pudo guardar. Revise los datos e intente de nuevo.'];
         }
     }
 
@@ -174,7 +175,7 @@ class ClienteModel extends ModeloBase
     public function modificar(int $id, array $datos): array
     {
         if ($id < 1) {
-            return ['exito' => false, 'mensaje' => 'ID de cliente no valido'];
+            return ['exito' => false, 'mensaje' => 'No se encontró el registro. Actualice la página e intente de nuevo.'];
         }
 
         $actual = $this->buscarPorId($id);
@@ -195,7 +196,7 @@ class ClienteModel extends ModeloBase
 
             if (!$this->actualizarCliente($id, $d['cedula'], $d['nombres'], $d['apellidos'], $d['correo'], $d['direccion'])) {
                 $this->conexion->rollBack();
-                return ['exito' => false, 'mensaje' => 'Error al actualizar el cliente'];
+                return ['exito' => false, 'mensaje' => 'No se pudo actualizar el cliente. Intente de nuevo.'];
             }
 
             $this->eliminarTelefonos($id);
@@ -210,7 +211,8 @@ class ClienteModel extends ModeloBase
             if ($this->conexion->inTransaction()) {
                 $this->conexion->rollBack();
             }
-            return ['exito' => false, 'mensaje' => 'Error en base de datos: ' . $e->getMessage()];
+            error_log('Error en base de datos: ' . $e->getMessage());
+            return ['exito' => false, 'mensaje' => 'No se pudo guardar. Revise los datos e intente de nuevo.'];
         }
     }
 
@@ -219,7 +221,7 @@ class ClienteModel extends ModeloBase
     public function eliminar(int $id): array
     {
         if ($id < 1) {
-            return ['exito' => false, 'mensaje' => 'ID de cliente no valido'];
+            return ['exito' => false, 'mensaje' => 'No se encontró el registro. Actualice la página e intente de nuevo.'];
         }
 
         if ($this->eliminarCliente($id)) {

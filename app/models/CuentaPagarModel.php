@@ -49,7 +49,7 @@ class CuentaPagarModel extends ModeloBase
     {
         $this->id = $cuentaId;
         if ($this->id < 1) {
-            throw new PDOException('ID de cuenta no válido');
+            throw new PDOException('No se encontró el registro. Actualice la página e intente de nuevo.');
         }
         return $this->_ejecutarSelectPagos();
     }
@@ -107,7 +107,7 @@ class CuentaPagarModel extends ModeloBase
             ];
         } catch (\PDOException $e) {
             error_log('Error al crear CxP manual: ' . $e->getMessage());
-            return ['exito' => false, 'mensaje' => 'Error al crear la cuenta'];
+            return ['exito' => false, 'mensaje' => 'No se pudo crear la cuenta por pagar. Intente de nuevo.'];
         }
     }
 

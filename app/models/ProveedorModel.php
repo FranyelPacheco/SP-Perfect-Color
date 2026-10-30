@@ -82,7 +82,7 @@ class ProveedorModel extends ModeloBase
             return ['valido' => false, 'mensaje' => 'El RIF es obligatorio'];
         }
         if (!preg_match('/^[JVEG]-\d{1,9}$/', $rif)) {
-            return ['valido' => false, 'mensaje' => 'El RIF debe tener formato valido (Ej: J-123456789)'];
+            return ['valido' => false, 'mensaje' => 'El RIF debe tener formato válido (Ej: J-123456789)'];
         }
 
         if ($nombreEmpresa === '') {
@@ -167,7 +167,7 @@ class ProveedorModel extends ModeloBase
             $nuevoId = $this->insertarProveedor($d['rif'], $d['nombre_empresa'], $d['direccion'], null, $d['correo']);
             if (!$nuevoId) {
                 $this->conexion->rollBack();
-                return ['exito' => false, 'mensaje' => 'Error al crear el proveedor'];
+                return ['exito' => false, 'mensaje' => 'No se pudo crear el proveedor. Intente de nuevo.'];
             }
 
             $this->insertarTelefono($nuevoId, $d['telefono'], 'movil');
@@ -185,7 +185,8 @@ class ProveedorModel extends ModeloBase
             if ($this->conexion->inTransaction()) {
                 $this->conexion->rollBack();
             }
-            return ['exito' => false, 'mensaje' => 'Error en base de datos: ' . $e->getMessage()];
+            error_log('Error en base de datos: ' . $e->getMessage());
+            return ['exito' => false, 'mensaje' => 'No se pudo guardar. Revise los datos e intente de nuevo.'];
         }
     }
 
@@ -194,7 +195,7 @@ class ProveedorModel extends ModeloBase
     public function modificar(int $id, array $datos): array
     {
         if ($id < 1) {
-            return ['exito' => false, 'mensaje' => 'ID de proveedor no valido'];
+            return ['exito' => false, 'mensaje' => 'No se encontró el registro. Actualice la página e intente de nuevo.'];
         }
 
         $actual = $this->buscarPorId($id);
@@ -215,7 +216,7 @@ class ProveedorModel extends ModeloBase
 
             if (!$this->actualizarProveedor($id, $d['rif'], $d['nombre_empresa'], $d['direccion'], null, $d['correo'])) {
                 $this->conexion->rollBack();
-                return ['exito' => false, 'mensaje' => 'Error al actualizar el proveedor'];
+                return ['exito' => false, 'mensaje' => 'No se pudo actualizar el proveedor. Intente de nuevo.'];
             }
 
             $this->eliminarTelefonos($id);
@@ -235,7 +236,8 @@ class ProveedorModel extends ModeloBase
             if ($this->conexion->inTransaction()) {
                 $this->conexion->rollBack();
             }
-            return ['exito' => false, 'mensaje' => 'Error en base de datos: ' . $e->getMessage()];
+            error_log('Error en base de datos: ' . $e->getMessage());
+            return ['exito' => false, 'mensaje' => 'No se pudo guardar. Revise los datos e intente de nuevo.'];
         }
     }
 
@@ -244,7 +246,7 @@ class ProveedorModel extends ModeloBase
     public function eliminar(int $id): array
     {
         if ($id < 1) {
-            return ['exito' => false, 'mensaje' => 'ID de proveedor no valido'];
+            return ['exito' => false, 'mensaje' => 'No se encontró el registro. Actualice la página e intente de nuevo.'];
         }
 
         if ($this->eliminarProveedor($id)) {

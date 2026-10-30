@@ -2,7 +2,7 @@
 // Funciones utilitarias comunes para todas las vistas
 
 window.DATATABLES_SPANISH = {
-    "emptyTable": "No hay registros para mostrar",
+    "emptyTable": "Aún no hay registros para mostrar",
     "zeroRecords": "No se encontraron registros",
     "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
     "infoEmpty": "Mostrando 0 a 0 de 0 registros",

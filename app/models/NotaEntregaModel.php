@@ -52,7 +52,7 @@ class NotaEntregaModel extends ModeloBase
     public function obtenerDetalle(int $notaId): array
     {
         if ($notaId <= 0) {
-            throw new PDOException('ID de nota no válido');
+            throw new PDOException('No se encontró el registro. Actualice la página e intente de nuevo.');
         }
         $this->id = $notaId;
         return $this->_ejecutarSelectDetalle();
@@ -152,7 +152,7 @@ class NotaEntregaModel extends ModeloBase
 
         if ($condicionPago === 'credito') {
             if (empty($fechaVencimiento)) {
-                return ['exito' => false, 'mensaje' => 'Debe seleccionar una fecha de vencimiento para pagos a credito'];
+                return ['exito' => false, 'mensaje' => 'Debe seleccionar una fecha de vencimiento para pagos a crédito'];
             }
             if ($montoInicial > 0) {
                 if (empty($tipoPagoInicial)) {

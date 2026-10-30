@@ -113,13 +113,13 @@ function enviarCorreo(string $destinatario, string $nombreDestinatario, string $
         error_log('[ERROR SMTP PHPMailer] No se pudo enviar el correo a ' . $destinatario . ': ' . $e->getMessage());
         return [
             'exito'   => false,
-            'mensaje' => 'Error al enviar el correo: ' . $e->getMessage()
+            'mensaje' => 'No se pudo enviar el correo. Intente más tarde o contacte al administrador.'
         ];
     } catch (\Throwable $t) {
         error_log('[ERROR PHPMailer] Error inesperado: ' . $t->getMessage());
         return [
             'exito'   => false,
-            'mensaje' => 'Error inesperado al enviar el correo.'
+            'mensaje' => 'No se pudo enviar el correo. Intente más tarde o contacte al administrador.'
         ];
     }
 }

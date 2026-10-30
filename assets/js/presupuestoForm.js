@@ -123,14 +123,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     console.error('Error del servidor:', resultado.mensaje);
                     if (clientePresupuesto) {
-                        clientePresupuesto.innerHTML = '<option value="">Error al cargar clientes</option>';
+                        clientePresupuesto.innerHTML = '<option value="">No se pudieron cargar los clientes. Recargue la página</option>';
                     }
                 }
             })
             .catch(function(error) {
-                console.error('Error al cargar clientes:', error);
+                console.error('No se pudieron cargar los clientes. Recargue la página:', error);
                 if (clientePresupuesto) {
-                    clientePresupuesto.innerHTML = '<option value="">Error de conexión al cargar clientes</option>';
+                    clientePresupuesto.innerHTML = '<option value="">No se pudieron cargar los clientes. Recargue la página</option>';
                 }
             });
     }
@@ -148,14 +148,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     console.error('Error del servidor:', resultado.mensaje);
                     if (listaInsumosDisponibles) {
-                        listaInsumosDisponibles.innerHTML = '<div class="text-center text-danger py-4">Error al cargar insumos</div>';
+                        listaInsumosDisponibles.innerHTML = '<div class="text-center text-danger py-4">No se pudo cargar el catálogo de productos. Recargue la página</div>';
                     }
                 }
             })
             .catch(function(error) {
-                console.error('Error al cargar insumos:', error);
+                console.error('No se pudo cargar el catálogo de productos. Recargue la página:', error);
                 if (listaInsumosDisponibles) {
-                    listaInsumosDisponibles.innerHTML = '<div class="text-center text-danger py-4">Error de conexión al cargar insumos</div>';
+                    listaInsumosDisponibles.innerHTML = '<div class="text-center text-danger py-4">No se pudo cargar el catálogo de productos. Recargue la página</div>';
                 }
             });
     }
@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         clientePresupuesto.innerHTML = '<option value="">Seleccione un cliente...</option>';
         if (clientesDisponibles.length === 0) {
-            clientePresupuesto.innerHTML += '<option value="" disabled>No hay clientes registrados</option>';
+            clientePresupuesto.innerHTML += '<option value="" disabled>No hay clientes. Registre uno en el módulo Clientes.</option>';
             return;
         }
 
@@ -623,7 +623,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(function(error) {
             console.error('Error al guardar presupuesto:', error);
-            mostrarError('Error de conexión al guardar el presupuesto');
+            mostrarError('No se pudo guardar el presupuesto. Revise su conexión e intente de nuevo.');
             if (btnGuardarPresupuesto) {
                 btnGuardarPresupuesto.disabled = false;
                 btnGuardarPresupuesto.innerHTML = '<i class="bi bi-check-lg me-1"></i>Guardar';

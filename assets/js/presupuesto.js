@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 })
                 .catch(function() {
-                    mostrarNotificacion('Error de conexión', 'error');
+                    mostrarNotificacion('No se pudo conectar con el servidor. Intente de nuevo.', 'error');
                 });
             });
         }
@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(function(error) {
                 console.error('Error:', error);
-                mostrarNotificacion('Error de conexión', 'error');
+                mostrarNotificacion('No se pudo conectar con el servidor. Intente de nuevo.', 'error');
             });
         });
     }

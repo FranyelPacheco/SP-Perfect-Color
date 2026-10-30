@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 mostrarClientes(resultado.datos.clientes);
             }
         } catch (error) {
-            console.error('Error al cargar clientes:', error);
+            console.error('No se pudieron cargar los clientes. Recargue la página:', error);
         }
     }
 
@@ -424,7 +424,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error al obtener cliente:', error);
-            mostrarNotificacion('Error al cargar los datos del cliente', 'error');
+            mostrarNotificacion('No se pudieron cargar los datos del cliente. Actualice la página e intente de nuevo.', 'error');
         }
     }
 
@@ -483,7 +483,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const correoVal = correoCliente.value.trim();
         if (!correoVal) {
-            mostrarError('El correo electronico es obligatorio');
+            mostrarError('El correo electrónico es obligatorio');
             correoCliente.focus();
             return;
         }
@@ -562,7 +562,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error al guardar cliente:', error);
-            mostrarError('Error de conexión al guardar el cliente');
+            mostrarError('No se pudo guardar el cliente. Revise su conexión e intente de nuevo.');
         }
     }
 
@@ -583,7 +583,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(function(error) {
                     console.error('Error al eliminar cliente:', error);
-                    mostrarNotificacion('Error de conexión al eliminar el cliente', 'error');
+                    mostrarNotificacion('No se pudo eliminar el cliente. Revise su conexión e intente de nuevo.', 'error');
                 });
         });
     }

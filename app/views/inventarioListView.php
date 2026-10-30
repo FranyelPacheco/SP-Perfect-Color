@@ -5,7 +5,7 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-            <h4 class="mb-0 toolbar-title"><i class="bi bi-box-seam-fill me-2 text-primary"></i>Gestión de Inventario</h4>
+            <h4 class="mb-0 toolbar-title"><i class="bi bi-box-seam-fill me-2 text-primary"></i>Inventario</h4>
             <div class="d-flex gap-2 align-items-center flex-wrap">
                 <input type="text" id="busquedaInsumos" class="form-control input-busqueda" placeholder="Buscar por código, nombre...">
                 <?php if ($_SESSION['usuario_rol'] == 1): ?>

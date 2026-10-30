@@ -34,7 +34,7 @@ trait PagoCuentaTrait
         $fecha = !empty($datos['fecha']) ? trim($datos['fecha']) : date('Y-m-d');
 
         if ($cuentaId < 1) {
-            return ['valido' => false, 'mensaje' => 'Cuenta no valida'];
+            return ['valido' => false, 'mensaje' => 'No se encontró la cuenta. Actualice la página e intente de nuevo.'];
         }
 
         $cuenta = $this->buscarPorId($cuentaId);
@@ -97,7 +97,7 @@ trait PagoCuentaTrait
         } catch (PDOException $e) {
             error_log('Error al registrar pago de cuenta ' . $this->etiquetaCuenta() . ': ' . $e->getMessage());
             $esMensajePropio = str_starts_with($e->getMessage(), 'El monto') || str_starts_with($e->getMessage(), 'Cuenta');
-            return $this->respuestaError($esMensajePropio ? $e->getMessage() : 'Error al registrar el pago');
+            return $this->respuestaError($esMensajePropio ? $e->getMessage() : 'No se pudo registrar el pago. Verifique el monto y vuelva a intentarlo.');
         }
     }
 
@@ -171,7 +171,7 @@ trait PagoCuentaTrait
     public function darDeBaja(int $id): array
     {
         if ($id < 1) {
-            return $this->respuestaError('ID invalido');
+            return $this->respuestaError('No se encontró el registro. Actualice la página e intente de nuevo.');
         }
         return $this->_ejecutarDarDeBaja($id);
     }
@@ -194,7 +194,7 @@ trait PagoCuentaTrait
             return $this->respuestaExito('Cuenta eliminada correctamente');
         } catch (PDOException $e) {
             error_log('Error al eliminar cuenta ' . $this->etiquetaCuenta() . ': ' . $e->getMessage());
-            return $this->respuestaError('Error al eliminar la cuenta');
+            return $this->respuestaError('No se pudo eliminar la cuenta. Intente de nuevo.');
         }
     }
 

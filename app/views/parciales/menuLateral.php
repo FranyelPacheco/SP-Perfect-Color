@@ -14,7 +14,7 @@
 <?php endif; ?>
 
 <?php if (\App\Helpers\tienePermiso('inventario')): ?>
-<li class="nav-item"><a href="/SP%20Perfect%20Color/inventario" class="nav-link<?php echo ($ctrlLower === 'inventario') ? ' active' : ''; ?>"><i class="bi bi-box-seam-fill me-2"></i><span>Gestión de Inventario</span></a></li>
+<li class="nav-item"><a href="/SP%20Perfect%20Color/inventario" class="nav-link<?php echo ($ctrlLower === 'inventario') ? ' active' : ''; ?>"><i class="bi bi-box-seam-fill me-2"></i><span>Inventario</span></a></li>
 <?php endif; ?>
 
 <?php if (\App\Helpers\tienePermiso('presupuesto') || \App\Helpers\tienePermiso('notaEntrega') || \App\Helpers\tienePermiso('cuentaCobrar')): ?>
@@ -50,7 +50,7 @@
 
 <?php if (\App\Helpers\tienePermiso('banco') || \App\Helpers\tienePermiso('tipoPago')): ?>
 <li class="nav-item dropdown-hover">
-    <a href="#" aria-haspopup="true" aria-expanded="false" class="nav-link<?php echo $isConfigPagoActive ? ' active' : ''; ?>"><i class="bi bi-gear-fill me-2"></i><span>Config. de Pago</span> <i class="bi bi-chevron-down ms-auto"></i></a>
+    <a href="#" aria-haspopup="true" aria-expanded="false" class="nav-link<?php echo $isConfigPagoActive ? ' active' : ''; ?>"><i class="bi bi-gear-fill me-2"></i><span>Configuración de pago</span> <i class="bi bi-chevron-down ms-auto"></i></a>
     <ul class="dropdown-submenu">
         <?php if (\App\Helpers\tienePermiso('banco')): ?>
         <li><a href="/SP%20Perfect%20Color/banco" class="<?php echo ($ctrlLower === 'banco') ? 'active' : ''; ?>"><i class="bi bi-building-fill me-2"></i><span>Bancos</span></a></li>

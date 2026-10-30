@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(function() {
-            mostrarNotificacion('Error de conexión', 'error');
+            mostrarNotificacion('No se pudo conectar con el servidor. Intente de nuevo.', 'error');
         });
     }
 
@@ -405,7 +405,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var precio = parseFloat(precioInput.value);
 
             if (!idProd || isNaN(idProd)) {
-                mostrarError('Seleccione un producto o insumo de la lista.');
+                mostrarError('Seleccione un producto de la lista.');
                 inputBuscarProd.focus();
                 return;
             }
@@ -512,7 +512,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     btnGuardar.disabled = false;
                     btnGuardar.innerHTML = '<i class="bi bi-check-lg me-1"></i>Crear e Insertar en Compra';
                     if (alertaRapida) {
-                        alertaRapida.textContent = 'Error de conexión con el servidor.';
+                        alertaRapida.textContent = 'No se pudo conectar con el servidor. Intente de nuevo.';
                         alertaRapida.classList.remove('d-none');
                     }
                 });
@@ -569,7 +569,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ocultarError();
 
             if (itemsCompra.length === 0) {
-                mostrarError('Debe agregar al menos un insumo/producto a la nota de entrega.');
+                mostrarError('Debe agregar al menos un producto a la nota de entrega.');
                 return;
             }
 
@@ -630,7 +630,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(function(err) {
                 btnSubmit.disabled = false;
                 btnSubmit.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Registrar Recepción y Sumar Stock';
-                mostrarError('Error de comunicación con el servidor.');
+                mostrarError('No se pudo conectar con el servidor. Intente de nuevo.');
                 console.error(err);
             });
         });

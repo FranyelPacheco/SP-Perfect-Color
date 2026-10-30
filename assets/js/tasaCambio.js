@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(function(err) {
                 console.error('[TasaCambio] Error:', err);
-                mostrarNotificacion('Error de conexión con el servidor', 'error');
+                mostrarNotificacion('No se pudo conectar con el servidor. Intente de nuevo.', 'error');
             });
     });
 
@@ -321,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(function(err) {
                 if (btnGuardarTasa) btnGuardarTasa.disabled = false;
                 console.error('[TasaCambio] Error al guardar:', err);
-                mostrarErrorEnModal('Error de comunicación con el servidor.');
+                mostrarErrorEnModal('No se pudo conectar con el servidor. Intente de nuevo.');
             });
         }
 

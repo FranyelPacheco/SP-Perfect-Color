@@ -97,7 +97,7 @@ if ($metodo === 'index') {
     verificarAutenticacion();
 
     $id = intval($_GET['id'] ?? 0);
-    if ($id < 1) respuestaJson('error', 'ID de usuario no valido');
+    if ($id < 1) respuestaJson('error', 'No se encontró el registro. Actualice la página e intente de nuevo.');
 
     if (!tienePermiso('usuario')) {
         verificarPropietario($id);
@@ -124,7 +124,7 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_POST['id'] ?? 0);
-    if ($id < 1) respuestaJson('error', 'ID de usuario no valido');
+    if ($id < 1) respuestaJson('error', 'No se encontró el registro. Actualice la página e intente de nuevo.');
 
     if (!tienePermiso('usuario')) {
         verificarPropietario($id);
@@ -185,7 +185,7 @@ if ($metodo === 'index') {
     }
 
     $id = intval($_GET['id'] ?? 0);
-    if ($id < 1) respuestaJson('error', 'ID de rol no válido');
+    if ($id < 1) respuestaJson('error', 'No se encontró el registro. Actualice la página e intente de nuevo.');
 
     $rol = $rolModel->buscarPorId($id);
     if ($rol) {
@@ -239,7 +239,7 @@ if ($metodo === 'index') {
     $id = intval($_POST['id'] ?? 0);
     $activo = intval($_POST['activo'] ?? 0);
 
-    if ($id < 1) respuestaJson('error', 'ID de rol no válido');
+    if ($id < 1) respuestaJson('error', 'No se encontró el registro. Actualice la página e intente de nuevo.');
     if ($id === 1) {
         respuestaJson('error', 'El rol de Administrador no puede ser deshabilitado');
     }
