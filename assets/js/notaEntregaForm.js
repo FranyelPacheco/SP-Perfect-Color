@@ -258,8 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             return;
                         }
                         var referenciaInput = document.getElementById('referenciaPago');
-                        if (!referenciaInput || !referenciaInput.value.trim()) {
-                            mostrarError('Debe ingresar la referencia para el pago al contado');
+                        if (!referenciaInput || !/^\d{5}$/.test(referenciaInput.value.trim())) {
+                            mostrarError('La referencia debe tener los últimos 5 dígitos del comprobante');
                             return;
                         }
                         formData.append('id_banco', bancoInput.value);
@@ -294,8 +294,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 return;
                             }
                             var refIni = document.getElementById('referenciaPagoInicial');
-                            if (!refIni || !refIni.value.trim()) {
-                                mostrarError('Debe ingresar el número de referencia para el abono inicial');
+                            if (!refIni || !/^\d{5}$/.test(refIni.value.trim())) {
+                                mostrarError('La referencia debe tener los últimos 5 dígitos del comprobante');
                                 return;
                             }
                             formData.append('id_banco_inicial', bancoIni.value);

@@ -135,6 +135,9 @@ trait ValidacionTrait
             if ($referencia === '') {
                 return ['valido' => false, 'mensaje' => "Debe ingresar el número de referencia para {$contexto}"];
             }
+            if (!preg_match('/^\d{5}$/', $referencia)) {
+                return ['valido' => false, 'mensaje' => 'La referencia debe tener los últimos 5 dígitos del comprobante'];
+            }
         }
 
         return ['valido' => true, 'mensaje' => '', 'id_banco' => $banco ?: null, 'referencia' => $referencia !== '' ? $referencia : null];

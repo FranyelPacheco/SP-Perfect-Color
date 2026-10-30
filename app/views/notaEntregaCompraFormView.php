@@ -84,8 +84,8 @@
                                     </select>
                                 </div>
                                 <div class="mb-1" id="contenedorRefInicialCompra" style="display: none;">
-                                    <label for="referenciaInicialCompra" class="form-label small fw-semibold mb-1">Referencia (Últimos 4 dígitos) <span class="text-danger">*</span></label>
-                                    <input type="text" id="referenciaInicialCompra" name="referencia_inicial" class="form-control form-control-sm" placeholder="Ej: 4821" maxlength="20">
+                                    <label for="referenciaInicialCompra" class="form-label small fw-semibold mb-1">Referencia (últimos 5 dígitos) <span class="text-danger">*</span></label>
+                                    <input type="text" id="referenciaInicialCompra" name="referencia_inicial" class="form-control form-control-sm" placeholder="Ej: 48215" maxlength="5">
                                 </div>
                             </div>
                         </div>
@@ -111,8 +111,8 @@
                             </select>
                         </div>
                         <div class="mb-2" id="contenedorReferenciaCompra" style="display: none;">
-                            <label for="referenciaPago" class="form-label fw-semibold">Referencia (Últimos 4 dígitos)</label>
-                            <input type="text" id="referenciaPago" name="referencia" class="form-control" placeholder="Ej: 4821 (últimos 4 dígitos)" maxlength="20">
+                            <label for="referenciaPago" class="form-label fw-semibold">Referencia (últimos 5 dígitos)</label>
+                            <input type="text" id="referenciaPago" name="referencia" class="form-control" placeholder="Ej: 48215" maxlength="5">
                         </div>
                     </div>
 
