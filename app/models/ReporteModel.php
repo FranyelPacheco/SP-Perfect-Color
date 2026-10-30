@@ -159,8 +159,7 @@ class ReporteModel extends ModeloBase
         }
 
         $where = implode(' AND ', $condiciones);
-        $consulta = "SELECT ne.id_nota_entrega as id_compra,
-                            ne.id_nota_entrega,
+        $consulta = "SELECT ne.id_compra,
                             ne.fecha,
                             ne.total,
                             ne.observaciones,
@@ -170,11 +169,11 @@ class ReporteModel extends ModeloBase
                             COALESCE(cp.situacion, 'pagado') as situacion_pago,
                             COALESCE(cp.saldo_pendiente, 0.00) as saldo_pendiente,
                             CASE WHEN cp.id_cuenta_pagar IS NOT NULL AND cp.saldo_pendiente > 0 THEN 'Crédito' ELSE 'Contado' END as condicion_pago
-                     FROM nota_entrega ne
+                     FROM compra ne
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
-                     LEFT JOIN cuentas_pagar cp ON cp.id_nota_entrega = ne.id_nota_entrega AND cp.estado = 1
+                     LEFT JOIN cuentas_pagar cp ON cp.id_compra = ne.id_compra AND cp.estado = 1
                      WHERE $where
-                     ORDER BY ne.fecha DESC, ne.id_nota_entrega DESC";
+                     ORDER BY ne.fecha DESC, ne.id_compra DESC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->execute($params);
         return $stmt->fetchAll();
@@ -198,7 +197,7 @@ class ReporteModel extends ModeloBase
                      UNION ALL
 
                      SELECT 'Compra' as tipo_transaccion,
-                            ne.id_nota_entrega as doc_numero,
+                            ne.id_compra as doc_numero,
                             DATE(ne.fecha) as fecha,
                             p.nombre_empresa as tercero_nombre,
                             p.rif as tercero_doc,
@@ -206,9 +205,9 @@ class ReporteModel extends ModeloBase
                             0.00 as monto_ingreso,
                             ne.total as monto_egreso,
                             -ne.total as balance_fila
-                     FROM nota_entrega ne
+                     FROM compra ne
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
-                     LEFT JOIN cuentas_pagar cp ON cp.id_nota_entrega = ne.id_nota_entrega AND cp.estado = 1
+                     LEFT JOIN cuentas_pagar cp ON cp.id_compra = ne.id_compra AND cp.estado = 1
                      WHERE ne.estado = 1 AND DATE(ne.fecha) BETWEEN :desde2 AND :hasta2
 
                      ORDER BY fecha DESC, doc_numero DESC";

@@ -236,13 +236,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     var badgeCond = c.condicion_pago === 'Contado' ? 'success' : 'warning';
                     fila.innerHTML =
                         '<td>' + (c.fecha ? c.fecha.substring(0, 10) : '-') + '</td>' +
-                        '<td><strong>#' + (c.id_nota_entrega || '-') + '</strong></td>' +
+                        '<td><strong>#' + (c.id_compra || '-') + '</strong></td>' +
                         '<td>' + escapeHtml(c.proveedor_nombre || '-') + '</td>' +
                         '<td>' + escapeHtml(c.proveedor_rif || '-') + '</td>' +
                         '<td class="fw-bold text-danger">$ ' + formatearMonedaLocal(c.total) + '</td>' +
                         '<td><span class="badge bg-' + badgeCond + '">' + escapeHtml(c.condicion_pago || '-') + '</span></td>' +
                         '<td>' + (c.situacion_pago ? c.situacion_pago.charAt(0).toUpperCase() + c.situacion_pago.slice(1) : '-') + '</td>' +
-                        '<td><a href="/SP%20Perfect%20Color/notaEntregaCompra/ver?id=' + c.id_nota_entrega + '" class="btn btn-sm btn-outline-secondary" title="Ver Recepción"><i class="bi bi-eye"></i></a></td>';
+                        '<td><a href="/SP%20Perfect%20Color/notaEntregaCompra/ver?id=' + c.id_compra + '" class="btn btn-sm btn-outline-secondary" title="Ver Recepción"><i class="bi bi-eye"></i></a></td>';
                     cuerpoReporte.appendChild(fila);
                 });
             }

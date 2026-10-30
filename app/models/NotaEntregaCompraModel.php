@@ -24,18 +24,18 @@ class NotaEntregaCompraModel extends ModeloBase
     // OBJETIVO: Lista todas las notas de entrega de compras con datos del proveedor y situación de pago
     public function listarTodas(): array
     {
-        $consulta = "SELECT ne.id_nota_entrega, ne.fecha, ne.total, ne.observaciones, ne.created_at, ne.estado,
+        $consulta = "SELECT ne.id_compra, ne.fecha, ne.total, ne.observaciones, ne.created_at, ne.estado,
                             p.id_proveedor, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif,
                             cp.id_cuenta_pagar, 
                             COALESCE(cp.situacion, 'pagado') as situacion_pago,
                             COALESCE(cp.saldo_pendiente, 0.00) as saldo_pendiente,
                             cp.fecha_vencimiento,
                             {$this->sqlTasaBcv('ne.fecha')}
-                     FROM nota_entrega ne
+                     FROM compra ne
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
-                     LEFT JOIN cuentas_pagar cp ON cp.id_nota_entrega = ne.id_nota_entrega AND cp.estado = 1
+                     LEFT JOIN cuentas_pagar cp ON cp.id_compra = ne.id_compra AND cp.estado = 1
                      WHERE ne.estado = 1
-                     ORDER BY ne.fecha DESC, ne.id_nota_entrega DESC";
+                     ORDER BY ne.fecha DESC, ne.id_compra DESC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -44,7 +44,7 @@ class NotaEntregaCompraModel extends ModeloBase
     // OBJETIVO: Obtiene la cabecera de una nota de entrega de compra por su ID
     public function buscarPorId(int $id): array|false
     {
-        $consulta = "SELECT ne.id_nota_entrega, ne.fecha, ne.total, ne.observaciones, ne.created_at, ne.estado,
+        $consulta = "SELECT ne.id_compra, ne.fecha, ne.total, ne.observaciones, ne.created_at, ne.estado,
                             p.id_proveedor, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif, p.direccion as proveedor_direccion,
                             (SELECT GROUP_CONCAT(tp.telefono SEPARATOR ', ') FROM telefono_proveedor tp WHERE tp.id_proveedor = p.id_proveedor AND tp.estado = 1) as proveedor_telefonos,
                             cp.id_cuenta_pagar, 
@@ -52,10 +52,10 @@ class NotaEntregaCompraModel extends ModeloBase
                             COALESCE(cp.saldo_pendiente, 0.00) as saldo_pendiente,
                             cp.fecha_vencimiento,
                             {$this->sqlTasaBcv('ne.fecha')}
-                     FROM nota_entrega ne
+                     FROM compra ne
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
-                     LEFT JOIN cuentas_pagar cp ON cp.id_nota_entrega = ne.id_nota_entrega AND cp.estado = 1
-                     WHERE ne.id_nota_entrega = :id AND ne.estado = 1";
+                     LEFT JOIN cuentas_pagar cp ON cp.id_compra = ne.id_compra AND cp.estado = 1
+                     WHERE ne.id_compra = :id AND ne.estado = 1";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -66,14 +66,14 @@ class NotaEntregaCompraModel extends ModeloBase
     // OBJETIVO: Obtiene las líneas de insumos/productos recibidos en la nota de compra
     public function obtenerDetalle(int $idNotaEntrega): array
     {
-        $consulta = "SELECT nep.id_nota_entrega_producto, nep.id_nota_entrega, nep.id_producto,
+        $consulta = "SELECT nep.id_compra_detalle, nep.id_compra, nep.id_producto,
                             nep.cantidad, nep.precio_compra, nep.subtotal, nep.estado,
                             prod.nombre as producto_nombre, prod.codigo as producto_codigo,
                             prod.stock_actual
-                     FROM nota_entrega_producto nep
+                     FROM compra_detalle nep
                      INNER JOIN productos prod ON nep.id_producto = prod.id_producto
-                     WHERE nep.id_nota_entrega = :id AND nep.estado = 1
-                     ORDER BY nep.id_nota_entrega_producto ASC";
+                     WHERE nep.id_compra = :id AND nep.estado = 1
+                     ORDER BY nep.id_compra_detalle ASC";
         $stmt = $this->conexion->prepare($consulta);
         $stmt->bindParam(':id', $idNotaEntrega, PDO::PARAM_INT);
         $stmt->execute();
@@ -201,7 +201,7 @@ class NotaEntregaCompraModel extends ModeloBase
             return [
                 'exito' => true,
                 'mensaje' => 'Nota de entrega de compra #' . $idNota . ' registrada con éxito. Stock de inventario actualizado.',
-                'datos' => ['id_nota_entrega' => $idNota]
+                'datos' => ['id_compra' => $idNota]
             ];
         } catch (\PDOException $e) {
             error_log('Error al guardar nota de compra: ' . $e->getMessage());
@@ -218,7 +218,7 @@ class NotaEntregaCompraModel extends ModeloBase
         }
 
         try {
-            $stmtCp = $this->conexion->prepare("SELECT COUNT(*) FROM cuentas_pagar WHERE id_nota_entrega = :id AND estado = 1");
+            $stmtCp = $this->conexion->prepare("SELECT COUNT(*) FROM cuentas_pagar WHERE id_compra = :id AND estado = 1");
             $stmtCp->bindValue(':id', $id, PDO::PARAM_INT);
             $stmtCp->execute();
             if ((int)$stmtCp->fetchColumn() > 0) {
@@ -275,8 +275,8 @@ class NotaEntregaCompraModel extends ModeloBase
                 throw new PDOException('El abono inicial no puede superar el monto total de la compra.');
             }
 
-            // 2. Insertar cabecera en nota_entrega
-            $sqlNota = "INSERT INTO nota_entrega (id_proveedor, fecha, total, observaciones, created_at, estado)
+            // 2. Insertar cabecera en compra
+            $sqlNota = "INSERT INTO compra (id_proveedor, fecha, total, observaciones, created_at, estado)
                         VALUES (:id_proveedor, :fecha, :total, :observaciones, NOW(), 1)";
             $stmtNota = $this->conexion->prepare($sqlNota);
             $stmtNota->bindParam(':id_proveedor', $idProveedor, PDO::PARAM_INT);
@@ -287,9 +287,9 @@ class NotaEntregaCompraModel extends ModeloBase
 
             $idNotaEntrega = (int)$this->conexion->lastInsertId();
 
-            // 3. Insertar detalle en nota_entrega_producto y SUMAR stock a cada producto inmediatamente
-            $sqlDetalle = "INSERT INTO nota_entrega_producto (id_nota_entrega, id_producto, cantidad, precio_compra, subtotal, estado)
-                           VALUES (:id_nota_entrega, :id_producto, :cantidad, :precio_compra, :subtotal, 1)";
+            // 3. Insertar detalle en compra_detalle y SUMAR stock a cada producto inmediatamente
+            $sqlDetalle = "INSERT INTO compra_detalle (id_compra, id_producto, cantidad, precio_compra, subtotal, estado)
+                           VALUES (:id_compra, :id_producto, :cantidad, :precio_compra, :subtotal, 1)";
             $stmtDetalle = $this->conexion->prepare($sqlDetalle);
 
             $sqlStock = "UPDATE productos 
@@ -304,7 +304,7 @@ class NotaEntregaCompraModel extends ModeloBase
                 $subtotal = round($cant * $precio, 2);
 
                 // Insertar ítem
-                $stmtDetalle->bindParam(':id_nota_entrega', $idNotaEntrega, PDO::PARAM_INT);
+                $stmtDetalle->bindParam(':id_compra', $idNotaEntrega, PDO::PARAM_INT);
                 $stmtDetalle->bindParam(':id_producto', $idProducto, PDO::PARAM_INT);
                 $stmtDetalle->bindParam(':cantidad', $cant, PDO::PARAM_INT);
                 $stmtDetalle->bindParam(':precio_compra', $precio);
@@ -324,10 +324,10 @@ class NotaEntregaCompraModel extends ModeloBase
                 $saldoPendiente = max(0.00, round($totalCompra - $abonoInicial, 2));
                 $situacionCxp = ($saldoPendiente <= 0) ? 'pagado' : 'pendiente';
 
-                $sqlCxp = "INSERT INTO cuentas_pagar (id_nota_entrega, monto_total, saldo_pendiente, fecha_vencimiento, situacion, created_at, estado)
-                           VALUES (:id_nota_entrega, :monto_total, :saldo_pendiente, :fecha_vencimiento, :situacion, NOW(), 1)";
+                $sqlCxp = "INSERT INTO cuentas_pagar (id_compra, monto_total, saldo_pendiente, fecha_vencimiento, situacion, created_at, estado)
+                           VALUES (:id_compra, :monto_total, :saldo_pendiente, :fecha_vencimiento, :situacion, NOW(), 1)";
                 $stmtCxp = $this->conexion->prepare($sqlCxp);
-                $stmtCxp->bindParam(':id_nota_entrega', $idNotaEntrega, PDO::PARAM_INT);
+                $stmtCxp->bindParam(':id_compra', $idNotaEntrega, PDO::PARAM_INT);
                 $stmtCxp->bindParam(':monto_total', $totalCompra);
                 $stmtCxp->bindParam(':saldo_pendiente', $saldoPendiente);
                 $stmtCxp->bindParam(':fecha_vencimiento', $fechaVenc, PDO::PARAM_STR);
@@ -358,10 +358,10 @@ class NotaEntregaCompraModel extends ModeloBase
                 }
             } else {
                 // Contado: registrar cuenta saldada y pago realizado inmediato
-                $sqlCxp = "INSERT INTO cuentas_pagar (id_nota_entrega, monto_total, saldo_pendiente, fecha_vencimiento, situacion, created_at, estado)
-                           VALUES (:id_nota_entrega, :monto_total, 0.00, :fecha_vencimiento, 'pagado', NOW(), 1)";
+                $sqlCxp = "INSERT INTO cuentas_pagar (id_compra, monto_total, saldo_pendiente, fecha_vencimiento, situacion, created_at, estado)
+                           VALUES (:id_compra, :monto_total, 0.00, :fecha_vencimiento, 'pagado', NOW(), 1)";
                 $stmtCxp = $this->conexion->prepare($sqlCxp);
-                $stmtCxp->bindParam(':id_nota_entrega', $idNotaEntrega, PDO::PARAM_INT);
+                $stmtCxp->bindParam(':id_compra', $idNotaEntrega, PDO::PARAM_INT);
                 $stmtCxp->bindParam(':monto_total', $totalCompra);
                 $stmtCxp->bindParam(':fecha_vencimiento', $fecha, PDO::PARAM_STR);
                 $stmtCxp->execute();
@@ -398,7 +398,7 @@ class NotaEntregaCompraModel extends ModeloBase
         try {
             $this->conexion->beginTransaction();
 
-            $stmtEstado = $this->conexion->prepare("SELECT estado FROM nota_entrega WHERE id_nota_entrega = :id FOR UPDATE");
+            $stmtEstado = $this->conexion->prepare("SELECT estado FROM compra WHERE id_compra = :id FOR UPDATE");
             $stmtEstado->bindParam(':id', $id, PDO::PARAM_INT);
             $stmtEstado->execute();
             if ((int)$stmtEstado->fetchColumn() !== 1) {
@@ -421,13 +421,13 @@ class NotaEntregaCompraModel extends ModeloBase
                 }
             }
 
-            // Marcar nota_entrega inactiva
-            $stmtNe = $this->conexion->prepare("UPDATE nota_entrega SET estado = 0 WHERE id_nota_entrega = :id");
+            // Marcar compra inactiva
+            $stmtNe = $this->conexion->prepare("UPDATE compra SET estado = 0 WHERE id_compra = :id");
             $stmtNe->bindParam(':id', $id, PDO::PARAM_INT);
             $stmtNe->execute();
 
             // Desactivar cuenta por pagar asociada
-            $stmtCp = $this->conexion->prepare("UPDATE cuentas_pagar SET estado = 0 WHERE id_nota_entrega = :id");
+            $stmtCp = $this->conexion->prepare("UPDATE cuentas_pagar SET estado = 0 WHERE id_compra = :id");
             $stmtCp->bindParam(':id', $id, PDO::PARAM_INT);
             $stmtCp->execute();
 

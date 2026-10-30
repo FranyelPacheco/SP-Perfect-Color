@@ -83,7 +83,7 @@ function generarPDF($tipo, $desde, $hasta, $filtros = [])
             $fechaFmt = !empty($fila['fecha']) ? date('d/m/Y', strtotime($fila['fecha'])) : '-';
 
             $filasHtml .= '<td style="padding: 7px 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px; text-align: center;">' . $fechaFmt . '</td>';
-            $filasHtml .= '<td style="padding: 7px 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px; text-align: center; font-weight: 600;">#' . htmlspecialchars($fila['id_nota_entrega'] ?? '-') . '</td>';
+            $filasHtml .= '<td style="padding: 7px 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px; text-align: center; font-weight: 600;">#' . htmlspecialchars($fila['id_compra'] ?? '-') . '</td>';
             $filasHtml .= '<td style="padding: 7px 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px; font-weight: 500;">' . htmlspecialchars($fila['proveedor_nombre'] ?? '-') . '</td>';
             $filasHtml .= '<td style="padding: 7px 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px; text-align: center;">' . htmlspecialchars($fila['proveedor_rif'] ?? '-') . '</td>';
             $filasHtml .= '<td style="padding: 7px 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px; text-align: right; font-weight: bold; color: #dc2626;">$ ' . number_format($monto, 2, ',', '.') . '</td>';
@@ -474,7 +474,7 @@ function generarExcel($tipo, $desde, $hasta, $filtros = [])
 
             $writer->addRow(Row::fromValues([
                 $fila['fecha'],
-                '#' . ($fila['id_nota_entrega'] ?? '-'),
+                '#' . ($fila['id_compra'] ?? '-'),
                 $fila['proveedor_nombre'] ?? '-',
                 $fila['proveedor_rif'] ?? '-',
                 $monto,
