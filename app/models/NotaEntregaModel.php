@@ -279,13 +279,12 @@ class NotaEntregaModel extends ModeloBase
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
                             'Sistema' as usuario_nombre,
-                            COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre,
+                            COALESCE(tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre,
                             COALESCE(ev.nombre, CASE WHEN v.id_estado_venta = 1 THEN 'En Espera' WHEN v.id_estado_venta = 2 THEN 'Aprobado' WHEN v.id_estado_venta = 3 THEN 'Rechazado' ELSE 'Otro' END) as estado_nombre,
                             {$this->sqlTasaBcv('COALESCE(v.fecha_aprobacion, v.fecha)')}
                      FROM ventas v 
                      INNER JOIN clientes c ON v.id_cliente = c.id_cliente
                      LEFT JOIN estado_venta ev ON v.id_estado_venta = ev.id_estado_venta
-                     LEFT JOIN tipo_pago tp_v ON v.id_tipo_pago = tp_v.id_tipo_pago
                      LEFT JOIN cuentas_cobrar cc ON cc.id_venta = v.id_venta
                      LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
                      LEFT JOIN tipo_pago tp_pr ON pr.id_tipo_pago = tp_pr.id_tipo_pago
@@ -312,11 +311,11 @@ class NotaEntregaModel extends ModeloBase
                             c.direccion as cliente_direccion,
                             (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
                             'Sistema' as usuario_nombre,
-                            COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre,
+                            COALESCE(tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre,
+                            pr.id_tipo_pago, pr.id_banco, pr.referencia,
                             {$this->sqlTasaBcv('COALESCE(v.fecha_aprobacion, v.fecha)')}
                      FROM ventas v 
                      INNER JOIN clientes c ON v.id_cliente = c.id_cliente
-                     LEFT JOIN tipo_pago tp_v ON v.id_tipo_pago = tp_v.id_tipo_pago
                      LEFT JOIN cuentas_cobrar cc ON cc.id_venta = v.id_venta
                      LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
                      LEFT JOIN tipo_pago tp_pr ON pr.id_tipo_pago = tp_pr.id_tipo_pago
@@ -363,18 +362,15 @@ class NotaEntregaModel extends ModeloBase
             $this->conexion->beginTransaction();
 
             $condicionPagoVal = !empty($this->condicionPago) ? $this->condicionPago : 'contado';
-            $tipoPagoId = ($condicionPagoVal === 'contado') ? ($this->idTipoPago ?? 1) : $this->idTipoPago;
 
             $consulta = "UPDATE ventas 
                          SET id_estado_venta = 2, 
-                             id_tipo_pago = :id_tipo_pago, 
                              fecha_aprobacion = NOW(), 
                              total = :total, 
                              condicion_pago = :condicion_pago 
                          WHERE id_venta = :id_venta";
             $stmt = $this->conexion->prepare($consulta);
             $stmt->bindValue(':id_venta', $this->idPresupuesto, PDO::PARAM_INT);
-            $stmt->bindValue(':id_tipo_pago', $tipoPagoId, empty($tipoPagoId) ? PDO::PARAM_NULL : PDO::PARAM_INT);
             $stmt->bindValue(':total', $this->total);
             $stmt->bindValue(':condicion_pago', $condicionPagoVal, PDO::PARAM_STR);
             $stmt->execute();
@@ -418,10 +414,9 @@ class NotaEntregaModel extends ModeloBase
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
                             'Sistema' as usuario_nombre,
-                            COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre
+                            COALESCE(tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre
                      FROM ventas v 
                      INNER JOIN clientes c ON v.id_cliente = c.id_cliente
-                     LEFT JOIN tipo_pago tp_v ON v.id_tipo_pago = tp_v.id_tipo_pago
                      LEFT JOIN cuentas_cobrar cc ON cc.id_venta = v.id_venta
                      LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
                      LEFT JOIN tipo_pago tp_pr ON pr.id_tipo_pago = tp_pr.id_tipo_pago

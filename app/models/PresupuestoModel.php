@@ -20,9 +20,6 @@ class PresupuestoModel extends ModeloBase
     private array $detalle;
     private string $termino;
     private string $condicionPago = 'contado';
-    private ?int $idTipoPago = null;
-    private ?int $idBanco = null;
-    private ?string $referencia = null;
 
     // FUNCIÓN: listarTodos
     // OBJETIVO: Obtiene todos los presupuestos activos con datos del cliente y usuario
@@ -49,9 +46,6 @@ class PresupuestoModel extends ModeloBase
         $clienteId = intval($datos['id_cliente'] ?? 0);
         $observaciones = trim($datos['observaciones'] ?? '');
         $condicionPago = trim($datos['condicion_pago'] ?? 'contado');
-        $idTipoPago = !empty($datos['id_tipo_pago']) ? intval($datos['id_tipo_pago']) : null;
-        $idBanco = !empty($datos['id_banco']) ? intval($datos['id_banco']) : null;
-        $referencia = trim($datos['referencia'] ?? '');
 
         $itemsRaw = $datos['items'] ?? '[]';
         $items = is_array($itemsRaw) ? $itemsRaw : json_decode((string)$itemsRaw, true);
@@ -190,9 +184,6 @@ class PresupuestoModel extends ModeloBase
             'total' => $total,
             'observaciones' => $observaciones,
             'condicion_pago' => $condicionPago,
-            'id_tipo_pago' => $idTipoPago,
-            'id_banco' => $idBanco,
-            'referencia' => $referencia,
             'detalle' => $detalle
         ];
     }
@@ -213,10 +204,7 @@ class PresupuestoModel extends ModeloBase
                 $val['total'],
                 $val['observaciones'],
                 $val['detalle'],
-                $val['condicion_pago'],
-                $val['id_tipo_pago'],
-                $val['id_banco'],
-                $val['referencia']
+                $val['condicion_pago']
             );
 
             return [
@@ -296,10 +284,7 @@ class PresupuestoModel extends ModeloBase
         float $total,
         string $observaciones,
         array $detalle,
-        string $condicionPago = 'contado',
-        ?int $idTipoPago = null,
-        ?int $idBanco = null,
-        ?string $referencia = null
+        string $condicionPago = 'contado'
     ): int
     {
         $this->idCliente = $idCliente;
@@ -308,9 +293,6 @@ class PresupuestoModel extends ModeloBase
         $this->observaciones = $observaciones;
         $this->detalle = $detalle;
         $this->condicionPago = in_array(strtolower($condicionPago), ['contado', 'credito'], true) ? strtolower($condicionPago) : 'contado';
-        $this->idTipoPago = $idTipoPago ?: null;
-        $this->idBanco = $idBanco ?: null;
-        $this->referencia = !empty($referencia) ? trim($referencia) : null;
         return $this->_ejecutarInsert();
     }
 
@@ -413,15 +395,12 @@ class PresupuestoModel extends ModeloBase
         try {
             $this->conexion->beginTransaction();
 
-            $consulta = "INSERT INTO ventas (id_cliente, id_estado_venta, fecha, fecha_aprobacion, total, condicion_pago, id_tipo_pago, id_banco, referencia, observaciones, estado) 
-                         VALUES (:id_cliente, 1, NOW(), NULL, :total, :condicion_pago, :id_tipo_pago, :id_banco, :referencia, :observaciones, 1)";
+            $consulta = "INSERT INTO ventas (id_cliente, id_estado_venta, fecha, fecha_aprobacion, total, condicion_pago, observaciones, estado) 
+                         VALUES (:id_cliente, 1, NOW(), NULL, :total, :condicion_pago, :observaciones, 1)";
             $stmt = $this->conexion->prepare($consulta);
             $stmt->bindParam(':id_cliente', $this->idCliente, PDO::PARAM_INT);
             $stmt->bindParam(':total', $this->total);
             $stmt->bindParam(':condicion_pago', $this->condicionPago, PDO::PARAM_STR);
-            $stmt->bindParam(':id_tipo_pago', $this->idTipoPago, $this->idTipoPago === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-            $stmt->bindParam(':id_banco', $this->idBanco, $this->idBanco === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-            $stmt->bindParam(':referencia', $this->referencia, $this->referencia === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $stmt->bindParam(':observaciones', $this->observaciones, PDO::PARAM_STR);
             $stmt->execute();
 

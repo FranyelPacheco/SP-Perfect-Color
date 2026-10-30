@@ -77,7 +77,7 @@ class ReporteModel extends ModeloBase
             $params[':condicion'] = $condicion;
         }
         if ($idTipoPago !== null) {
-            $condiciones[] = "COALESCE(v.id_tipo_pago, pr.id_tipo_pago) = :id_tipo_pago";
+            $condiciones[] = "pr.id_tipo_pago = :id_tipo_pago";
             $params[':id_tipo_pago'] = $idTipoPago;
         }
 
@@ -91,10 +91,9 @@ class ReporteModel extends ModeloBase
                             CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
                             c.cedula as cliente_cedula,
                             'Sistema' as usuario_nombre,
-                            COALESCE(tp_v.nombre, tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre
+                            COALESCE(tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre
                      FROM ventas v
                      INNER JOIN clientes c ON v.id_cliente = c.id_cliente
-                     LEFT JOIN tipo_pago tp_v ON v.id_tipo_pago = tp_v.id_tipo_pago
                      LEFT JOIN cuentas_cobrar cc ON cc.id_venta = v.id_venta
                      LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
                      LEFT JOIN tipo_pago tp_pr ON pr.id_tipo_pago = tp_pr.id_tipo_pago
