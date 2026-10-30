@@ -74,6 +74,9 @@ if ($metodo === 'index') {
     verificarAutenticacion();
     $correo = trim($_GET['correo'] ?? '');
     $id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : null;
+    if (!tienePermiso('usuario') && $id !== (int)($_SESSION['id_usuario'] ?? 0)) {
+        respuestaJson('error', 'Acceso denegado');
+    }
     $existe = !empty($correo) && $usuarioModel->correoExiste($correo, $id);
     respuestaJson('exito', 'Verificacion realizada', ['existe' => $existe]);
 

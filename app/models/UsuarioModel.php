@@ -80,7 +80,7 @@ class UsuarioModel extends ModeloBase
     // OBJETIVO: Ejecuta la consulta con JOIN a roles para datos de perfil
     private function _ejecutarSelectConRolById(): array|false
     {
-        $consulta = "SELECT u.*, u.estado as activo, r.nombre as rol_nombre,
+        $consulta = "SELECT u.*, u.estado as activo, r.nombre as rol_nombre, r.estado as rol_activo,
                             (SELECT GROUP_CONCAT(m.codigo SEPARATOR ',') 
                              FROM rol_modulo rm 
                              JOIN modulos m ON rm.id_modulo = m.id_modulo 
@@ -283,6 +283,8 @@ class UsuarioModel extends ModeloBase
 
         $usuario = $this->buscarPorCorreo($correo);
         if (!$usuario) {
+            // Mismo costo que una clave real para que el tiempo de respuesta no delate si el correo existe
+            password_verify($clave, '$2y$12$tnCb3mJLb1AHSf6DlxbTuec4fs.YR.RvKX3DnxMiSAHUbkkDKvSzi');
             return ['exito' => false, 'mensaje' => 'Correo o clave incorrectos'];
         }
 
