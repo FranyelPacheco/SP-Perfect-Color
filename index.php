@@ -28,4 +28,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$objeto = new \App\Controllers\frontController();
+try {
+    $objeto = new \App\Controllers\frontController();
+} catch (\TypeError $e) {
+    error_log('Parametros no validos: ' . $e->getMessage());
+    http_response_code(400);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['estado' => 'error', 'mensaje' => 'Los datos enviados no son válidos. Revise el formulario e intente de nuevo.', 'datos' => null], JSON_UNESCAPED_UNICODE);
+}

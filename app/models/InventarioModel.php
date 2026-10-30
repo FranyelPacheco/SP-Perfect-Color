@@ -192,6 +192,12 @@ class InventarioModel extends ModeloBase
         if ($precioVenta <= 0) {
             return ['valido' => false, 'mensaje' => 'El precio de venta debe ser un número positivo'];
         }
+        if ($precioVenta > 99999999.99 || $precioCompra > 99999999.99 || $precioCompra < 0) {
+            return ['valido' => false, 'mensaje' => 'Los precios deben estar entre 0 y 99.999.999,99'];
+        }
+        if ($stockActual > 9999999 || $stockMinimo > 9999999) {
+            return ['valido' => false, 'mensaje' => 'El stock no puede superar 9.999.999 unidades'];
+        }
 
         if ($this->codigoExiste($codigo, $idActual)) {
             return ['valido' => false, 'mensaje' => ($idActual ? 'Ya existe otro insumo con ese código' : 'Ya existe un producto con ese código')];
@@ -314,6 +320,10 @@ class InventarioModel extends ModeloBase
     {
         if ($id < 1) {
             return ['exito' => false, 'mensaje' => 'No se encontró el registro. Actualice la página e intente de nuevo.'];
+        }
+
+        if (!$this->buscarPorId($id)) {
+            return ['exito' => false, 'mensaje' => 'No se encontró el insumo. Actualice la página e intente de nuevo.'];
         }
 
         if ($this->eliminarInsumo($id)) {

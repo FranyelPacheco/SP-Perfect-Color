@@ -452,6 +452,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Gestión del modal de nuevo insumo rápido
         var formRapidoInsumo = document.getElementById('formularioRapidoInsumo');
+        var rapidoTipo = document.getElementById('rapidoTipo');
+        var rapidoUnidad = document.getElementById('rapidoUnidad');
+        if (rapidoTipo && rapidoUnidad) {
+            rapidoTipo.addEventListener('change', function() {
+                rapidoUnidad.innerHTML = this.value === '1'
+                    ? '<option value="Galon">Galón</option>'
+                    : '<option value="Unidad">Unidad</option><option value="KG">KG</option>';
+            });
+        }
         if (formRapidoInsumo) {
             formRapidoInsumo.addEventListener('submit', function(e) {
                 e.preventDefault();

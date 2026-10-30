@@ -777,7 +777,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        var mensajeConfirmacion = '¿Está seguro de eliminar permanentemente el rol <strong>' + nombre + '</strong>?' +
+        var mensajeConfirmacion = '¿Está seguro de eliminar permanentemente el rol <strong>' + escapeHtml(nombre) + '</strong>?' +
             '<div class="alert alert-danger py-2 px-3 small mt-2 mb-0 text-start">' +
             '<i class="bi bi-trash-fill me-1"></i> <strong>Advertencia:</strong> Esta acción no se puede deshacer.' +
             '</div>';
