@@ -127,14 +127,15 @@ CREATE TABLE `compra_detalle` (
   `id_producto` int(11) NOT NULL,
   `cantidad` decimal(12,4) NOT NULL,
   `precio_compra` decimal(10,2) NOT NULL,
-  `subtotal` decimal(10,2) NOT NULL,
+  `subtotal` decimal(10,2) GENERATED ALWAYS AS (round(`cantidad` * `precio_compra`,2)) STORED,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_compra_detalle`),
   KEY `id_producto` (`id_producto`),
   KEY `id_compra` (`id_compra`),
   CONSTRAINT `fk_cd_compra` FOREIGN KEY (`id_compra`) REFERENCES `compra` (`id_compra`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_cd_producto` FOREIGN KEY (`id_producto`) REFERENCES `productos` (`id_producto`) ON UPDATE CASCADE,
-  CONSTRAINT `chk_compra_detalle` CHECK (`cantidad` > 0 and `precio_compra` >= 0 and `subtotal` >= 0)
+  CONSTRAINT `chk_compra_detalle` CHECK (`cantidad` > 0 and `precio_compra` >= 0)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -144,7 +145,7 @@ CREATE TABLE `compra_detalle` (
 
 LOCK TABLES `compra_detalle` WRITE;
 /*!40000 ALTER TABLE `compra_detalle` DISABLE KEYS */;
-INSERT INTO `compra_detalle` VALUES (1,1,1,10.0000,35.00,350.00,1),(2,1,15,15.0000,6.00,90.00,1),(3,1,12,10.0000,4.00,40.00,1),(4,2,12,20.0000,2.50,50.00,1),(5,2,13,100.0000,0.80,80.00,1),(6,2,16,10.0000,12.00,120.00,1);
+INSERT INTO `compra_detalle` VALUES (1,1,1,10.0000,35.00,350.00,'2026-10-29 22:10:29',1),(2,1,15,15.0000,6.00,90.00,'2026-10-29 22:10:29',1),(3,1,12,10.0000,4.00,40.00,'2026-10-29 22:10:29',1),(4,2,12,20.0000,2.50,50.00,'2026-10-29 22:10:29',1),(5,2,13,100.0000,0.80,80.00,'2026-10-29 22:10:29',1),(6,2,16,10.0000,12.00,120.00,'2026-10-29 22:10:29',1);
 /*!40000 ALTER TABLE `compra_detalle` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -224,6 +225,7 @@ DROP TABLE IF EXISTS `estado_venta`;
 CREATE TABLE `estado_venta` (
   `id_estado_venta` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(50) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_estado_venta`),
   UNIQUE KEY `nombre` (`nombre`)
@@ -236,7 +238,7 @@ CREATE TABLE `estado_venta` (
 
 LOCK TABLES `estado_venta` WRITE;
 /*!40000 ALTER TABLE `estado_venta` DISABLE KEYS */;
-INSERT INTO `estado_venta` VALUES (1,'presupuesto',1),(2,'aprobado',1),(3,'rechazado',1),(4,'anulado',1);
+INSERT INTO `estado_venta` VALUES (1,'presupuesto','2026-10-29 22:10:29',1),(2,'aprobado','2026-10-29 22:10:29',1),(3,'rechazado','2026-10-29 22:10:29',1),(4,'anulado','2026-10-29 22:10:29',1);
 /*!40000 ALTER TABLE `estado_venta` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -286,6 +288,7 @@ CREATE TABLE `mezcla_producto` (
   `id_producto_base` int(11) NOT NULL COMMENT 'Pintura base o fraccion utilizada en la formula',
   `fraccion` varchar(15) NOT NULL DEFAULT '1/4' COMMENT 'Medida usada: 1/2, 1/4, ..., 1/128',
   `cantidad_galon` decimal(14,7) NOT NULL COMMENT 'Equivalente decimal descontado del stock base',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_mezcla_producto`),
   KEY `fk_mezcla_prod_mezclado` (`id_producto_mezclado`),
@@ -302,7 +305,7 @@ CREATE TABLE `mezcla_producto` (
 
 LOCK TABLES `mezcla_producto` WRITE;
 /*!40000 ALTER TABLE `mezcla_producto` DISABLE KEYS */;
-INSERT INTO `mezcla_producto` VALUES (1,17,1,'1/8',0.1250000,1),(2,17,2,'1/8',0.1250000,1);
+INSERT INTO `mezcla_producto` VALUES (1,17,1,'1/8',0.1250000,'2026-10-29 22:10:29',1),(2,17,2,'1/8',0.1250000,'2026-10-29 22:10:29',1);
 /*!40000 ALTER TABLE `mezcla_producto` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -318,6 +321,7 @@ CREATE TABLE `modulos` (
   `codigo` varchar(50) NOT NULL,
   `nombre` varchar(50) NOT NULL,
   `descripcion` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_modulo`),
   UNIQUE KEY `uk_modulo_codigo` (`codigo`)
@@ -330,7 +334,7 @@ CREATE TABLE `modulos` (
 
 LOCK TABLES `modulos` WRITE;
 /*!40000 ALTER TABLE `modulos` DISABLE KEYS */;
-INSERT INTO `modulos` VALUES (1,'dashboard','Dashboard','Panel principal y estadisticas',1),(2,'cliente','Clientes','Gestion de clientes y contactos',1),(3,'proveedor','Proveedores','Gestion de proveedores y rubros',1),(4,'inventario','Inventario','Catalogo de productos y stock',1),(5,'presupuesto','Presupuestos','Cotizaciones y presupuestos',1),(6,'notaEntrega','Notas de Venta','Ventas y entregas a clientes',1),(7,'cuentaCobrar','Cuentas por Cobrar','Cobranzas y pagos de clientes',1),(8,'cuentaPagar','Cuentas por Pagar','Pagos a proveedores',1),(9,'banco','Bancos','Catalogo de entidades bancarias',1),(10,'tipoPago','Tipos de Pago','Formas y metodos de pago',1),(11,'reporte','Reportes','Reportes y exportaciones PDF/Excel',1),(12,'usuario','Usuarios y Roles','Administracion de usuarios, roles y permisos',1),(13,'tasaCambio','Tasa de Cambio','Gestion de la tasa de cambio USD/Bs',1),(14,'notaEntregaCompra','Notas de Entrega (Compras)','Recepcion de insumos de proveedores',1);
+INSERT INTO `modulos` VALUES (1,'dashboard','Dashboard','Panel principal y estadisticas','2026-10-29 22:10:29',1),(2,'cliente','Clientes','Gestion de clientes y contactos','2026-10-29 22:10:29',1),(3,'proveedor','Proveedores','Gestion de proveedores y rubros','2026-10-29 22:10:29',1),(4,'inventario','Inventario','Catalogo de productos y stock','2026-10-29 22:10:29',1),(5,'presupuesto','Presupuestos','Cotizaciones y presupuestos','2026-10-29 22:10:29',1),(6,'notaEntrega','Notas de Venta','Ventas y entregas a clientes','2026-10-29 22:10:29',1),(7,'cuentaCobrar','Cuentas por Cobrar','Cobranzas y pagos de clientes','2026-10-29 22:10:29',1),(8,'cuentaPagar','Cuentas por Pagar','Pagos a proveedores','2026-10-29 22:10:29',1),(9,'banco','Bancos','Catalogo de entidades bancarias','2026-10-29 22:10:29',1),(10,'tipoPago','Tipos de Pago','Formas y metodos de pago','2026-10-29 22:10:29',1),(11,'reporte','Reportes','Reportes y exportaciones PDF/Excel','2026-10-29 22:10:29',1),(12,'usuario','Usuarios y Roles','Administracion de usuarios, roles y permisos','2026-10-29 22:10:29',1),(13,'tasaCambio','Tasa de Cambio','Gestion de la tasa de cambio USD/Bs','2026-10-29 22:10:29',1),(14,'notaEntregaCompra','Notas de Entrega (Compras)','Recepcion de insumos de proveedores','2026-10-29 22:10:29',1);
 /*!40000 ALTER TABLE `modulos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -350,6 +354,7 @@ CREATE TABLE `pagos_realizados` (
   `tasa_bcv` decimal(12,4) DEFAULT NULL COMMENT 'Tasa Bs/$ vigente el dia del pago, fija',
   `fecha` datetime NOT NULL,
   `referencia` varchar(100) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_pago_realizado`),
   KEY `id_cuenta_pagar` (`id_cuenta_pagar`),
@@ -369,7 +374,7 @@ CREATE TABLE `pagos_realizados` (
 
 LOCK TABLES `pagos_realizados` WRITE;
 /*!40000 ALTER TABLE `pagos_realizados` DISABLE KEYS */;
-INSERT INTO `pagos_realizados` VALUES (1,1,2,2,480.00,65.5000,'2026-10-14 10:35:00','TRANSF-774411',1),(2,2,1,NULL,100.00,65.5000,'2026-10-16 14:15:00','Efectivo',1);
+INSERT INTO `pagos_realizados` VALUES (1,1,2,2,480.00,65.5000,'2026-10-14 10:35:00','TRANSF-774411','2026-10-29 22:10:29',1),(2,2,1,NULL,100.00,65.5000,'2026-10-16 14:15:00','Efectivo','2026-10-29 22:10:29',1);
 /*!40000 ALTER TABLE `pagos_realizados` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -389,6 +394,7 @@ CREATE TABLE `pagos_recibidos` (
   `tasa_bcv` decimal(12,4) DEFAULT NULL COMMENT 'Tasa Bs/$ vigente el dia del pago, fija',
   `fecha` datetime NOT NULL,
   `referencia` varchar(100) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_pago_recibido`),
   KEY `id_cuenta_cobrar` (`id_cuenta_cobrar`),
@@ -408,7 +414,7 @@ CREATE TABLE `pagos_recibidos` (
 
 LOCK TABLES `pagos_recibidos` WRITE;
 /*!40000 ALTER TABLE `pagos_recibidos` DISABLE KEYS */;
-INSERT INTO `pagos_recibidos` VALUES (1,1,3,1,37.50,65.5000,'2026-10-15 11:25:00','PAGOMOVIL-998822',1),(2,2,1,NULL,50.00,65.5000,'2026-10-16 16:10:00','Abono Inicial',1);
+INSERT INTO `pagos_recibidos` VALUES (1,1,3,1,37.50,65.5000,'2026-10-15 11:25:00','PAGOMOVIL-998822','2026-10-29 22:10:29',1),(2,2,1,NULL,50.00,65.5000,'2026-10-16 16:10:00','Abono Inicial','2026-10-29 22:10:29',1);
 /*!40000 ALTER TABLE `pagos_recibidos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -423,6 +429,7 @@ CREATE TABLE `producto_proveedor` (
   `id_producto_proveedor` int(11) NOT NULL AUTO_INCREMENT,
   `id_producto` int(11) NOT NULL,
   `id_proveedor` int(11) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_producto_proveedor`),
   UNIQUE KEY `insumo_proveedor_unique` (`id_producto`,`id_proveedor`),
@@ -438,7 +445,7 @@ CREATE TABLE `producto_proveedor` (
 
 LOCK TABLES `producto_proveedor` WRITE;
 /*!40000 ALTER TABLE `producto_proveedor` DISABLE KEYS */;
-INSERT INTO `producto_proveedor` VALUES (1,1,1,1),(2,2,1,1),(3,3,1,1),(4,4,1,1),(5,5,1,1),(6,6,1,1),(7,7,1,1),(8,8,1,1),(9,9,1,1),(10,10,1,1),(11,11,1,1),(12,12,2,1),(13,13,2,1),(14,14,2,1),(15,15,3,1),(16,16,2,1);
+INSERT INTO `producto_proveedor` VALUES (1,1,1,'2026-10-29 22:10:29',1),(2,2,1,'2026-10-29 22:10:29',1),(3,3,1,'2026-10-29 22:10:29',1),(4,4,1,'2026-10-29 22:10:29',1),(5,5,1,'2026-10-29 22:10:29',1),(6,6,1,'2026-10-29 22:10:29',1),(7,7,1,'2026-10-29 22:10:29',1),(8,8,1,'2026-10-29 22:10:29',1),(9,9,1,'2026-10-29 22:10:29',1),(10,10,1,'2026-10-29 22:10:29',1),(11,11,1,'2026-10-29 22:10:29',1),(12,12,2,'2026-10-29 22:10:29',1),(13,13,2,'2026-10-29 22:10:29',1),(14,14,2,'2026-10-29 22:10:29',1),(15,15,3,'2026-10-29 22:10:29',1),(16,16,2,'2026-10-29 22:10:29',1);
 /*!40000 ALTER TABLE `producto_proveedor` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -526,6 +533,7 @@ CREATE TABLE `rol_modulo` (
   `id_rol_modulo` int(11) NOT NULL AUTO_INCREMENT,
   `id_rol` int(11) NOT NULL,
   `id_modulo` int(11) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_rol_modulo`),
   UNIQUE KEY `uk_rol_modulo` (`id_rol`,`id_modulo`),
@@ -541,7 +549,7 @@ CREATE TABLE `rol_modulo` (
 
 LOCK TABLES `rol_modulo` WRITE;
 /*!40000 ALTER TABLE `rol_modulo` DISABLE KEYS */;
-INSERT INTO `rol_modulo` VALUES (1,1,1,1),(2,1,2,1),(3,1,3,1),(4,1,4,1),(5,1,5,1),(6,1,6,1),(7,1,7,1),(8,1,8,1),(9,1,9,1),(10,1,10,1),(11,1,11,1),(12,1,12,1),(13,1,13,1),(14,1,14,1),(15,2,1,1),(16,2,2,1),(17,2,4,1),(18,2,5,1),(19,2,6,1),(20,2,7,1),(21,2,11,1);
+INSERT INTO `rol_modulo` VALUES (1,1,1,'2026-10-29 22:10:29',1),(2,1,2,'2026-10-29 22:10:29',1),(3,1,3,'2026-10-29 22:10:29',1),(4,1,4,'2026-10-29 22:10:29',1),(5,1,5,'2026-10-29 22:10:29',1),(6,1,6,'2026-10-29 22:10:29',1),(7,1,7,'2026-10-29 22:10:29',1),(8,1,8,'2026-10-29 22:10:29',1),(9,1,9,'2026-10-29 22:10:29',1),(10,1,10,'2026-10-29 22:10:29',1),(11,1,11,'2026-10-29 22:10:29',1),(12,1,12,'2026-10-29 22:10:29',1),(13,1,13,'2026-10-29 22:10:29',1),(14,1,14,'2026-10-29 22:10:29',1),(15,2,1,'2026-10-29 22:10:29',1),(16,2,2,'2026-10-29 22:10:29',1),(17,2,4,'2026-10-29 22:10:29',1),(18,2,5,'2026-10-29 22:10:29',1),(19,2,6,'2026-10-29 22:10:29',1),(20,2,7,'2026-10-29 22:10:29',1),(21,2,11,'2026-10-29 22:10:29',1);
 /*!40000 ALTER TABLE `rol_modulo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -582,6 +590,7 @@ DROP TABLE IF EXISTS `rubro`;
 CREATE TABLE `rubro` (
   `id_rubro` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(100) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_rubro`),
   UNIQUE KEY `nombre` (`nombre`)
@@ -594,7 +603,7 @@ CREATE TABLE `rubro` (
 
 LOCK TABLES `rubro` WRITE;
 /*!40000 ALTER TABLE `rubro` DISABLE KEYS */;
-INSERT INTO `rubro` VALUES (1,'Tintes y Pigmentos',1),(2,'Quimicos y Solventes',1),(3,'Materiales y Herramientas',1);
+INSERT INTO `rubro` VALUES (1,'Tintes y Pigmentos','2026-10-29 22:10:29',1),(2,'Quimicos y Solventes','2026-10-29 22:10:29',1),(3,'Materiales y Herramientas','2026-10-29 22:10:29',1);
 /*!40000 ALTER TABLE `rubro` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -609,6 +618,7 @@ CREATE TABLE `rubro_proveedor` (
   `id_rubro_proveedor` int(11) NOT NULL AUTO_INCREMENT,
   `id_proveedor` int(11) NOT NULL,
   `id_rubro` int(11) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_rubro_proveedor`),
   UNIQUE KEY `proveedor_rubro_unique` (`id_proveedor`,`id_rubro`),
@@ -625,7 +635,7 @@ CREATE TABLE `rubro_proveedor` (
 
 LOCK TABLES `rubro_proveedor` WRITE;
 /*!40000 ALTER TABLE `rubro_proveedor` DISABLE KEYS */;
-INSERT INTO `rubro_proveedor` VALUES (1,1,1,1),(2,1,2,1),(3,2,3,1),(4,3,2,1);
+INSERT INTO `rubro_proveedor` VALUES (1,1,1,'2026-10-29 22:10:29',1),(2,1,2,'2026-10-29 22:10:29',1),(3,2,3,'2026-10-29 22:10:29',1),(4,3,2,'2026-10-29 22:10:29',1);
 /*!40000 ALTER TABLE `rubro_proveedor` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -669,6 +679,7 @@ CREATE TABLE `telefono_cliente` (
   `id_cliente` int(11) NOT NULL,
   `id_telefono_cliente` int(11) NOT NULL AUTO_INCREMENT,
   `telefono` varchar(20) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_cliente`,`id_telefono_cliente`),
   UNIQUE KEY `uk_id_telefono_cliente` (`id_telefono_cliente`),
@@ -682,7 +693,7 @@ CREATE TABLE `telefono_cliente` (
 
 LOCK TABLES `telefono_cliente` WRITE;
 /*!40000 ALTER TABLE `telefono_cliente` DISABLE KEYS */;
-INSERT INTO `telefono_cliente` VALUES (1,1,'0414-5551234',1),(1,2,'0251-2334455',1),(2,3,'0424-5123456',1),(3,4,'0251-2691122',1),(4,5,'04125544956',1);
+INSERT INTO `telefono_cliente` VALUES (1,1,'0414-5551234','2026-10-29 22:10:29',1),(1,2,'0251-2334455','2026-10-29 22:10:29',1),(2,3,'0424-5123456','2026-10-29 22:10:29',1),(3,4,'0251-2691122','2026-10-29 22:10:29',1),(4,5,'04125544956','2026-10-29 22:10:29',1);
 /*!40000 ALTER TABLE `telefono_cliente` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -697,6 +708,7 @@ CREATE TABLE `telefono_proveedor` (
   `id_proveedor` int(11) NOT NULL,
   `id_telefono_proveedor` int(11) NOT NULL AUTO_INCREMENT,
   `telefono` varchar(20) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_proveedor`,`id_telefono_proveedor`),
   UNIQUE KEY `uk_id_telefono_proveedor` (`id_telefono_proveedor`),
@@ -710,7 +722,7 @@ CREATE TABLE `telefono_proveedor` (
 
 LOCK TABLES `telefono_proveedor` WRITE;
 /*!40000 ALTER TABLE `telefono_proveedor` DISABLE KEYS */;
-INSERT INTO `telefono_proveedor` VALUES (1,1,'0241-8765432',1),(2,2,'0251-2319988',1),(3,3,'0251-2684455',1);
+INSERT INTO `telefono_proveedor` VALUES (1,1,'0241-8765432','2026-10-29 22:10:29',1),(2,2,'0251-2319988','2026-10-29 22:10:29',1),(3,3,'0251-2684455','2026-10-29 22:10:29',1);
 /*!40000 ALTER TABLE `telefono_proveedor` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -724,6 +736,7 @@ DROP TABLE IF EXISTS `tipo_pago`;
 CREATE TABLE `tipo_pago` (
   `id_tipo_pago` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(80) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_tipo_pago`),
   UNIQUE KEY `nombre` (`nombre`)
@@ -736,7 +749,7 @@ CREATE TABLE `tipo_pago` (
 
 LOCK TABLES `tipo_pago` WRITE;
 /*!40000 ALTER TABLE `tipo_pago` DISABLE KEYS */;
-INSERT INTO `tipo_pago` VALUES (1,'Efectivo',1),(2,'Transferencia',1),(3,'Pago Movil',1),(4,'Tarjeta Debito',1);
+INSERT INTO `tipo_pago` VALUES (1,'Efectivo','2026-10-29 22:10:29',1),(2,'Transferencia','2026-10-29 22:10:29',1),(3,'Pago Movil','2026-10-29 22:10:29',1),(4,'Tarjeta Debito','2026-10-29 22:10:29',1);
 /*!40000 ALTER TABLE `tipo_pago` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -751,6 +764,7 @@ CREATE TABLE `tipo_producto` (
   `id_tipo_producto` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(50) NOT NULL,
   `descripcion` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id_tipo_producto`),
   UNIQUE KEY `nombre` (`nombre`)
@@ -763,7 +777,7 @@ CREATE TABLE `tipo_producto` (
 
 LOCK TABLES `tipo_producto` WRITE;
 /*!40000 ALTER TABLE `tipo_producto` DISABLE KEYS */;
-INSERT INTO `tipo_producto` VALUES (1,'Base','Insumo / tinte primario o quimico base para mezclas de colorimetria',1),(2,'Simple','Producto de venta directa terminada (tirros, lijas, brochas, pulituras, etc.)',1),(3,'Preparado','Pintura preparada creada mediante mezcla de varios productos base',1);
+INSERT INTO `tipo_producto` VALUES (1,'Base','Insumo / tinte primario o quimico base para mezclas de colorimetria','2026-10-29 22:10:29',1),(2,'Simple','Producto de venta directa terminada (tirros, lijas, brochas, pulituras, etc.)','2026-10-29 22:10:29',1),(3,'Preparado','Pintura preparada creada mediante mezcla de varios productos base','2026-10-29 22:10:29',1);
 /*!40000 ALTER TABLE `tipo_producto` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -814,13 +828,14 @@ CREATE TABLE `venta_detalle` (
   `descripcion` varchar(200) NOT NULL DEFAULT '',
   `cantidad` decimal(12,4) NOT NULL,
   `precio_unitario` decimal(10,2) NOT NULL,
-  `subtotal` decimal(10,2) NOT NULL,
+  `subtotal` decimal(10,2) GENERATED ALWAYS AS (round(`cantidad` * `precio_unitario`,2)) STORED,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id_venta_detalle`),
   KEY `id_venta` (`id_venta`),
   KEY `id_producto` (`id_producto`),
   CONSTRAINT `fk_vdetalle_producto` FOREIGN KEY (`id_producto`) REFERENCES `productos` (`id_producto`) ON UPDATE CASCADE,
   CONSTRAINT `fk_vdetalle_venta` FOREIGN KEY (`id_venta`) REFERENCES `ventas` (`id_venta`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `chk_venta_detalle` CHECK (`cantidad` > 0 and `precio_unitario` >= 0 and `subtotal` >= 0)
+  CONSTRAINT `chk_venta_detalle` CHECK (`cantidad` > 0 and `precio_unitario` >= 0)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -830,7 +845,7 @@ CREATE TABLE `venta_detalle` (
 
 LOCK TABLES `venta_detalle` WRITE;
 /*!40000 ALTER TABLE `venta_detalle` DISABLE KEYS */;
-INSERT INTO `venta_detalle` VALUES (1,1,17,'Gris Grafito Perlado Met 1/4',1.0000,28.00,28.00),(2,1,13,'Lija al Agua Grano 1500 Automotriz',5.0000,1.20,6.00),(3,1,17,'Gris Grafito Perlado Met 1/4',1.0000,28.00,28.00),(4,2,6,'Tinte Concentrado Blanco Puro 1/2',1.0000,26.00,26.00),(5,2,12,'Tirro de Enmascarar 3M 3/4 pulgada',2.0000,3.50,7.00),(6,2,14,'Brocha de Cerdas Finas 2 pulgadas',1.0000,4.50,4.50),(7,3,1,'Tinte Concentrado Blanco Puro (Galon)',2.0000,48.00,96.00),(8,3,15,'Solvente Thinner Acrilico 1L',5.0000,8.50,42.50),(9,3,13,'Lija al Agua Grano 1500 Automotriz',10.0000,1.20,12.00);
+INSERT INTO `venta_detalle` VALUES (1,1,17,'Gris Grafito Perlado Met 1/4',1.0000,28.00,28.00,'2026-10-29 22:10:29'),(2,1,13,'Lija al Agua Grano 1500 Automotriz',5.0000,1.20,6.00,'2026-10-29 22:10:29'),(3,1,17,'Gris Grafito Perlado Met 1/4',1.0000,28.00,28.00,'2026-10-29 22:10:29'),(4,2,6,'Tinte Concentrado Blanco Puro 1/2',1.0000,26.00,26.00,'2026-10-29 22:10:29'),(5,2,12,'Tirro de Enmascarar 3M 3/4 pulgada',2.0000,3.50,7.00,'2026-10-29 22:10:29'),(6,2,14,'Brocha de Cerdas Finas 2 pulgadas',1.0000,4.50,4.50,'2026-10-29 22:10:29'),(7,3,1,'Tinte Concentrado Blanco Puro (Galon)',2.0000,48.00,96.00,'2026-10-29 22:10:29'),(8,3,15,'Solvente Thinner Acrilico 1L',5.0000,8.50,42.50,'2026-10-29 22:10:29'),(9,3,13,'Lija al Agua Grano 1500 Automotriz',10.0000,1.20,12.00,'2026-10-29 22:10:29');
 /*!40000 ALTER TABLE `venta_detalle` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -881,4 +896,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-10-29 21:56:18
+-- Dump completed on 2026-10-29 22:12:36

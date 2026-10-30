@@ -288,8 +288,8 @@ class NotaEntregaCompraModel extends ModeloBase
             $idNotaEntrega = (int)$this->conexion->lastInsertId();
 
             // 3. Insertar detalle en compra_detalle y SUMAR stock a cada producto inmediatamente
-            $sqlDetalle = "INSERT INTO compra_detalle (id_compra, id_producto, cantidad, precio_compra, subtotal, estado)
-                           VALUES (:id_compra, :id_producto, :cantidad, :precio_compra, :subtotal, 1)";
+            $sqlDetalle = "INSERT INTO compra_detalle (id_compra, id_producto, cantidad, precio_compra, estado)
+                           VALUES (:id_compra, :id_producto, :cantidad, :precio_compra, 1)";
             $stmtDetalle = $this->conexion->prepare($sqlDetalle);
 
             $sqlStock = "UPDATE productos 
@@ -301,14 +301,12 @@ class NotaEntregaCompraModel extends ModeloBase
                 $idProducto = intval($item['id_producto']);
                 $cant = intval($item['cantidad']);
                 $precio = floatval($item['precio_compra']);
-                $subtotal = round($cant * $precio, 2);
 
                 // Insertar ítem
                 $stmtDetalle->bindParam(':id_compra', $idNotaEntrega, PDO::PARAM_INT);
                 $stmtDetalle->bindParam(':id_producto', $idProducto, PDO::PARAM_INT);
                 $stmtDetalle->bindParam(':cantidad', $cant, PDO::PARAM_INT);
                 $stmtDetalle->bindParam(':precio_compra', $precio);
-                $stmtDetalle->bindParam(':subtotal', $subtotal);
                 $stmtDetalle->execute();
 
                 // Sumar stock

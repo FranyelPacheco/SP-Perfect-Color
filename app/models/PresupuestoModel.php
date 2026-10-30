@@ -74,7 +74,7 @@ class PresupuestoModel extends ModeloBase
             $cantidadRaw = $item['cantidad'] ?? 0;
             $cantidad = intval($cantidadRaw);
             $precioUnitario = floatval($item['precio_unitario'] ?? 0);
-            $subtotal = $cantidad * $precioUnitario;
+            $subtotal = round($cantidad * $precioUnitario, 2);
 
             if ($cantidad < 1 || floatval($cantidadRaw) != $cantidad || $precioUnitario <= 0) {
                 return ['valido' => false, 'mensaje' => 'La cantidad debe ser un número entero mayor o igual a 1 y el precio debe ser válido.'];
@@ -163,7 +163,7 @@ class PresupuestoModel extends ModeloBase
                 $descripcion = !empty($item['descripcion']) ? $item['descripcion'] : ($insumoInfo['nombre'] ?? 'Producto');
                 if (isset($insumoInfo['precio_venta']) && (float)$insumoInfo['precio_venta'] > 0) {
                     $precioUnitario = (float)$insumoInfo['precio_venta'];
-                    $subtotal = $cantidad * $precioUnitario;
+                    $subtotal = round($cantidad * $precioUnitario, 2);
                 }
 
                 $total += $subtotal;
@@ -414,8 +414,8 @@ class PresupuestoModel extends ModeloBase
                                VALUES (:id_mezclado, :id_base, :fraccion, :cantidad_galon)";
             $stmtMezcla = $this->conexion->prepare($consultaMezcla);
 
-            $consultaDetalle = "INSERT INTO venta_detalle (id_venta, id_producto, descripcion, cantidad, precio_unitario, subtotal) 
-                                VALUES (:id_venta, :id_producto, :descripcion, :cantidad, :precio_unitario, :subtotal)";
+            $consultaDetalle = "INSERT INTO venta_detalle (id_venta, id_producto, descripcion, cantidad, precio_unitario) 
+                                VALUES (:id_venta, :id_producto, :descripcion, :cantidad, :precio_unitario)";
             $stmtDetalle = $this->conexion->prepare($consultaDetalle);
 
             $mixSeq = 1;
@@ -453,7 +453,6 @@ class PresupuestoModel extends ModeloBase
                     $stmtDetalle->bindValue(':descripcion', $descripcion, PDO::PARAM_STR);
                     $stmtDetalle->bindValue(':cantidad', $item['cantidad']);
                     $stmtDetalle->bindValue(':precio_unitario', $item['precio_unitario']);
-                    $stmtDetalle->bindValue(':subtotal', $item['subtotal']);
                     $stmtDetalle->execute();
                 }
             }
