@@ -120,8 +120,8 @@ class TasaCambioModel extends ModeloBase
         }
         $tasa = round($tasa, 2);
 
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
-            return ['valido' => false, 'mensaje' => 'El formato de fecha es inválido (debe ser AAAA-MM-DD)'];
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha) || !checkdate((int)substr($fecha, 5, 2), (int)substr($fecha, 8, 2), (int)substr($fecha, 0, 4))) {
+            return ['valido' => false, 'mensaje' => 'La fecha no es válida. Seleccione una fecha del calendario.'];
         }
 
         if ($this->fechaExiste($fecha, $idActual)) {
@@ -157,6 +157,10 @@ class TasaCambioModel extends ModeloBase
     {
         if ($id < 1) {
             return ['exito' => false, 'mensaje' => 'No se encontró el registro. Actualice la página e intente de nuevo.'];
+        }
+
+        if (!$this->buscarPorId($id)) {
+            return ['exito' => false, 'mensaje' => 'No se encontró la tasa. Actualice la página e intente de nuevo.'];
         }
 
         $tasaRaw = trim($datos['tasa'] ?? '');

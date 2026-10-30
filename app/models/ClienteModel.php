@@ -224,6 +224,10 @@ class ClienteModel extends ModeloBase
             return ['exito' => false, 'mensaje' => 'No se encontró el registro. Actualice la página e intente de nuevo.'];
         }
 
+        if (!$this->buscarPorId($id)) {
+            return ['exito' => false, 'mensaje' => 'No se encontró el cliente. Actualice la página e intente de nuevo.'];
+        }
+
         if ($this->eliminarCliente($id)) {
             return ['exito' => true, 'mensaje' => 'Cliente eliminado exitosamente'];
         }
