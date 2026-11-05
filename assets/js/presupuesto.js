@@ -1,10 +1,7 @@
 // Archivo: presupuesto.js
 // Manejo de la vista de presupuestos
 
-document.addEventListener('DOMContentLoaded', function() {
-    var busquedaPresupuestos = document.getElementById('busquedaPresupuestos');
-    var filtroEstado = document.getElementById('filtroEstadoPresupuesto');
-
+$(function() {
     cargarPresupuestos();
 
     function cargarPresupuestos() {
@@ -91,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
         table.clear();
 
         if (Array.isArray(presupuestos)) {
-            presupuestos.forEach(function(presupuesto) {
+            $.each(presupuestos, function(i, presupuesto) {
                 table.row.add(presupuesto);
             });
         }
@@ -118,10 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         if (!isNaN(id)) {
             confirmarConModal('Eliminar', '¿Está seguro de eliminar este presupuesto?', function() {
-                var fd = new FormData();
-                fd.append('id', id);
-                fetch('/SP%20Perfect%20Color/presupuesto/eliminar', { method: 'POST', body: fd })
-                .then(function(r) { return r.json(); })
+                api.post('presupuesto/eliminar', { id: id })
                 .then(function(res) {
                     if (res.estado === 'exito') {
                         mostrarNotificacion(res.mensaje, 'exito');
@@ -137,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    vincularBusqueda(busquedaPresupuestos, '#tablaPresupuestos');
+    vincularBusqueda('#busquedaPresupuestos', '#tablaPresupuestos');
 
     $(document).on('click', '.btn-filtro-presupuesto', function(e) {
         e.preventDefault();
@@ -150,34 +144,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    if (filtroEstado) {
-        filtroEstado.addEventListener('change', function() {
-            if ($.fn.DataTable.isDataTable('#tablaPresupuestos')) {
-                var table = $('#tablaPresupuestos').DataTable();
-                if (this.value === '') {
-                    table.column(5).search('').draw();
-                } else {
-                    table.column(5).search(this.value).draw();
-                }
-            }
-        });
-    }
-
     function cambiarEstado(id, estado) {
         var mensaje = estado === 'aprobado'
             ? '¿Está seguro de aprobar este presupuesto?'
             : '¿Está seguro de rechazar este presupuesto?';
 
         confirmarConModal('Confirmar', mensaje, function() {
-            var formData = new FormData();
-            formData.append('id', id);
-            formData.append('estado', estado);
-
-            fetch('/SP%20Perfect%20Color/presupuesto/cambiarEstado', {
-                method: 'POST',
-                body: formData
-            })
-            .then(function(respuesta) { return respuesta.json(); })
+            api.post('presupuesto/cambiarEstado', { id: id, estado: estado })
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
                     mostrarNotificacion(resultado.mensaje, 'exito');

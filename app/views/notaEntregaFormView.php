@@ -180,179 +180,95 @@ $totalNotaFormBs = $totalNotaFormUsd * $tasaHoyNotaForm;
 <script>
 var totalVentaBase = <?php echo (float)$presupuesto['total']; ?>;
 
-function toggleDecision() {
-    var dec = document.getElementById('decisionNota').value;
-    var seccionPago = document.getElementById('seccionClienteYPago');
-    var seccionItems = document.getElementById('seccionItemsDespacho');
-    var alertaRechazo = document.getElementById('alertaRechazo');
-    var alertaAprobacion = document.getElementById('alertaAprobacion');
-    var btnSubmit = document.getElementById('btnSubmitNota');
-    var clienteSelect = document.getElementById('clienteNota');
+var FORMATO_BS = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
 
-    if (dec === 'rechazar') {
-        if (seccionPago) seccionPago.style.display = 'none';
-        if (seccionItems) seccionItems.style.display = 'none';
-        if (alertaRechazo) alertaRechazo.classList.remove('d-none');
-        if (alertaAprobacion) alertaAprobacion.classList.add('d-none');
-        if (clienteSelect) clienteSelect.required = false;
-        if (btnSubmit) {
-            btnSubmit.className = 'btn btn-danger btn-lg';
-            btnSubmit.innerHTML = '<i class="bi bi-x-circle me-1"></i>Rechazar';
-        }
-    } else {
-        if (seccionPago) seccionPago.style.display = 'block';
-        if (seccionItems) seccionItems.style.display = 'block';
-        if (alertaRechazo) alertaRechazo.classList.add('d-none');
-        if (alertaAprobacion) alertaAprobacion.classList.remove('d-none');
-        if (clienteSelect) clienteSelect.required = true;
-        if (btnSubmit) {
-            btnSubmit.className = 'btn btn-success btn-lg';
-            btnSubmit.innerHTML = '<i class="bi bi-check-lg me-1"></i>Aprobar';
-        }
-        toggleCondicionPago();
-    }
+// Muestra u oculta contenedores y marca como requeridos los campos indicados
+function mostrarGrupo(selectoresContenedor, visible) {
+    $(selectoresContenedor).css('display', visible ? 'block' : 'none');
+}
+
+function toggleDecision() {
+    var rechazar = $('#decisionNota').val() === 'rechazar';
+
+    mostrarGrupo('#seccionClienteYPago, #seccionItemsDespacho', !rechazar);
+    $('#alertaRechazo').toggleClass('d-none', !rechazar);
+    $('#alertaAprobacion').toggleClass('d-none', rechazar);
+    $('#clienteNota').prop('required', !rechazar);
+    $('#btnSubmitNota')
+        .attr('class', rechazar ? 'btn btn-danger btn-lg' : 'btn btn-success btn-lg')
+        .html(rechazar ? '<i class="bi bi-x-circle me-1"></i>Rechazar' : '<i class="bi bi-check-lg me-1"></i>Aprobar');
+
+    if (!rechazar) toggleCondicionPago();
 }
 
 function toggleCondicionPago() {
-    var sel = document.getElementById('condicionPago');
-    var contV = document.getElementById('contenedorVencimiento');
-    var inpV = document.getElementById('fechaVencimiento');
-    var contT = document.getElementById('contenedorTipoPago');
-    var contB = document.getElementById('contenedorBanco');
-    var contR = document.getElementById('contenedorReferencia');
-    var tipoPagoSel = document.getElementById('tipoPago');
-    var contIni = document.getElementById('contenedorMontoInicial');
-    var contSaldo = document.getElementById('contenedorSaldoRestante');
-    
-    if (!sel) return;
-    if (sel.value === 'credito') {
-        if (contV) { contV.style.display = 'block'; }
-        if (contIni) { contIni.style.display = 'block'; }
-        if (contSaldo) { contSaldo.style.display = 'block'; }
-        if (contT) { contT.style.display = 'none'; }
-        if (contB) { contB.style.display = 'none'; }
-        if (contR) { contR.style.display = 'none'; }
-        if (tipoPagoSel) tipoPagoSel.required = false;
-        if (inpV) {
-            inpV.required = true;
-            if (!inpV.value) {
-                var fecha = new Date();
-                fecha.setDate(fecha.getDate() + 10);
-                inpV.value = fecha.toISOString().split('T')[0];
-            }
+    var $sel = $('#condicionPago');
+    if (!$sel.length) return;
+    var $inpV = $('#fechaVencimiento');
+
+    if ($sel.val() === 'credito') {
+        mostrarGrupo('#contenedorVencimiento, #contenedorMontoInicial, #contenedorSaldoRestante', true);
+        mostrarGrupo('#contenedorTipoPago, #contenedorBanco, #contenedorReferencia', false);
+        $('#tipoPago').prop('required', false);
+        $inpV.prop('required', true);
+        if (!$inpV.val()) {
+            var fecha = new Date();
+            fecha.setDate(fecha.getDate() + 10);
+            $inpV.val(fecha.toISOString().split('T')[0]);
         }
         actualizarCamposInicial();
     } else {
-        if (contT) { contT.style.display = 'block'; }
-        if (contV) { contV.style.display = 'none'; }
-        if (contIni) { contIni.style.display = 'none'; }
-        if (contSaldo) { contSaldo.style.display = 'none'; }
-        var contTIni = document.getElementById('contenedorTipoPagoInicial');
-        var contBIni = document.getElementById('contenedorBancoInicial');
-        var contRIni = document.getElementById('contenedorReferenciaInicial');
-        if (contTIni) contTIni.style.display = 'none';
-        if (contBIni) contBIni.style.display = 'none';
-        if (contRIni) contRIni.style.display = 'none';
-        if (inpV) { inpV.required = false; }
-        if (tipoPagoSel) tipoPagoSel.required = true;
+        mostrarGrupo('#contenedorTipoPago', true);
+        mostrarGrupo('#contenedorVencimiento, #contenedorMontoInicial, #contenedorSaldoRestante, #contenedorTipoPagoInicial, #contenedorBancoInicial, #contenedorReferenciaInicial', false);
+        $inpV.prop('required', false);
+        $('#tipoPago').prop('required', true);
         toggleBancoRefContado();
     }
 }
 
 function toggleBancoRefContado() {
-    var tipoPagoSelect = document.getElementById('tipoPago');
-    var contB = document.getElementById('contenedorBanco');
-    var contR = document.getElementById('contenedorReferencia');
-    var bancoSelect = document.getElementById('bancoPago');
-    var refInput = document.getElementById('referenciaPago');
-    if (!tipoPagoSelect) return;
-    var val = parseInt(tipoPagoSelect.value || 0);
+    var $tipoPago = $('#tipoPago');
+    if (!$tipoPago.length) return;
+    var val = parseInt($tipoPago.val() || 0);
     // 1 = Efectivo
-    if (val === 1 || val === 0) {
-        if (contB) contB.style.display = 'none';
-        if (contR) contR.style.display = 'none';
-        if (bancoSelect) bancoSelect.required = false;
-        if (refInput) refInput.required = false;
-    } else {
-        if (contB) contB.style.display = 'block';
-        if (contR) contR.style.display = 'block';
-        if (bancoSelect) bancoSelect.required = true;
-        if (refInput) refInput.required = true;
-    }
+    var requiere = !(val === 1 || val === 0);
+    mostrarGrupo('#contenedorBanco, #contenedorReferencia', requiere);
+    $('#bancoPago, #referenciaPago').prop('required', requiere);
 }
 
 function actualizarCamposInicial() {
     var tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
-    var montoIni = parseFloat(document.getElementById('montoInicial')?.value || 0) || 0;
-    var contTIni = document.getElementById('contenedorTipoPagoInicial');
-    var selTIni = document.getElementById('tipoPagoInicial');
-    var textoSaldo = document.getElementById('textoSaldoRestante');
-    var textoSaldoBs = document.getElementById('textoSaldoRestanteBs');
-    var montoIniBs = document.getElementById('montoInicialBsTexto');
-    
+    var montoIni = parseFloat($('#montoInicial').val() || 0) || 0;
     var saldoRestante = Math.max(0, totalVentaBase - montoIni);
-    if (textoSaldo) {
-        textoSaldo.textContent = '$ ' + saldoRestante.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-    if (textoSaldoBs && tasa > 0) {
-        var bsRest = saldoRestante * tasa;
-        textoSaldoBs.textContent = 'Equiv: Bs. ' + bsRest.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-    if (montoIniBs && tasa > 0) {
-        var bsIni = montoIni * tasa;
-        montoIniBs.textContent = 'Bs. ' + bsIni.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    $('#textoSaldoRestante').text('$ ' + saldoRestante.toLocaleString('es-VE', FORMATO_BS));
+    if (tasa > 0) {
+        $('#textoSaldoRestanteBs').text('Equiv: Bs. ' + (saldoRestante * tasa).toLocaleString('es-VE', FORMATO_BS));
+        $('#montoInicialBsTexto').text('Bs. ' + (montoIni * tasa).toLocaleString('es-VE', FORMATO_BS));
     }
 
+    mostrarGrupo('#contenedorTipoPagoInicial', montoIni > 0);
+    $('#tipoPagoInicial').prop('required', montoIni > 0);
     if (montoIni > 0) {
-        if (contTIni) contTIni.style.display = 'block';
-        if (selTIni) selTIni.required = true;
         toggleBancoRefInicial();
     } else {
-        if (contTIni) contTIni.style.display = 'none';
-        if (selTIni) selTIni.required = false;
-        var contBIni = document.getElementById('contenedorBancoInicial');
-        var contRIni = document.getElementById('contenedorReferenciaInicial');
-        if (contBIni) contBIni.style.display = 'none';
-        if (contRIni) contRIni.style.display = 'none';
+        mostrarGrupo('#contenedorBancoInicial, #contenedorReferenciaInicial', false);
     }
 }
 
 function toggleBancoRefInicial() {
-    var selTIni = document.getElementById('tipoPagoInicial');
-    var contBIni = document.getElementById('contenedorBancoInicial');
-    var contRIni = document.getElementById('contenedorReferenciaInicial');
-    var bancoIni = document.getElementById('bancoPagoInicial');
-    var refIni = document.getElementById('referenciaPagoInicial');
-    if (!selTIni) return;
-    var val = parseInt(selTIni.value || 0);
-    if (val === 1 || val === 0) {
-        if (contBIni) contBIni.style.display = 'none';
-        if (contRIni) contRIni.style.display = 'none';
-        if (bancoIni) bancoIni.required = false;
-        if (refIni) refIni.required = false;
-    } else {
-        if (contBIni) contBIni.style.display = 'block';
-        if (contRIni) contRIni.style.display = 'block';
-        if (bancoIni) bancoIni.required = true;
-        if (refIni) refIni.required = true;
-    }
+    var $selTIni = $('#tipoPagoInicial');
+    if (!$selTIni.length) return;
+    var val = parseInt($selTIni.val() || 0);
+    var requiere = !(val === 1 || val === 0);
+    mostrarGrupo('#contenedorBancoInicial, #contenedorReferenciaInicial', requiere);
+    $('#bancoPagoInicial, #referenciaPagoInicial').prop('required', requiere);
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    var tipoPagoSelect = document.getElementById('tipoPago');
-    var montoInicialInput = document.getElementById('montoInicial');
-    var tipoPagoInicialSelect = document.getElementById('tipoPagoInicial');
-
-    if (tipoPagoSelect) {
-        tipoPagoSelect.addEventListener('change', toggleBancoRefContado);
-    }
-    if (montoInicialInput) {
-        montoInicialInput.addEventListener('input', actualizarCamposInicial);
-    }
-    if (tipoPagoInicialSelect) {
-        tipoPagoInicialSelect.addEventListener('change', toggleBancoRefInicial);
-    }
-
+$(function() {
+    $('#tipoPago').on('change', toggleBancoRefContado);
+    $('#montoInicial').on('input', actualizarCamposInicial);
+    $('#tipoPagoInicial').on('change', toggleBancoRefInicial);
     toggleDecision();
 });
 

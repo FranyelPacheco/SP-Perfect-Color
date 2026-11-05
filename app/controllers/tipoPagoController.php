@@ -66,17 +66,6 @@ if ($metodo === 'index') {
     $resultado = $tipoPagoModel->modificar($id, $_POST);
     responder($resultado);
 
-// FUNCIÓN: eliminar
-// OBJETIVO: Elimina (soft-delete) un tipo de pago por ID delegando al modelo
-} elseif ($metodo === 'eliminar') {
-    verificarRolAdmin();
-
-    soloPost();
-
-    $id = intval($_POST['id'] ?? 0);
-    $resultado = $tipoPagoModel->darDeBaja($id);
-    responder($resultado);
-
 // FUNCIÓN: toggleActivo
 // OBJETIVO: Alterna el estado activo/inactivo de un tipo de pago
 } elseif ($metodo === 'toggleActivo') {

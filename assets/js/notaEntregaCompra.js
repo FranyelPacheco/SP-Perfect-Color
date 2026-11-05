@@ -1,19 +1,19 @@
 // Archivo: notaEntregaCompra.js
 // Manejo de Notas de Entrega de Compra a Proveedores (Recepción de Insumos, aumento de stock y CxP)
 
-document.addEventListener('DOMContentLoaded', function() {
-    var tablaElement = document.getElementById('tablaNotasCompra');
-    var busquedaInput = document.getElementById('busquedaNotasCompra');
+$(function() {
+    const FORMATO_MONEDA = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+    const fmt = function(n) { return n.toLocaleString('es-VE', FORMATO_MONEDA); };
 
     // === GESTIÓN DE LISTADO (DATATABLES) ===
-    if (tablaElement) {
+    if ($('#tablaNotasCompra').length) {
         cargarNotasCompra();
 
-        vincularBusqueda(busquedaInput, '#tablaNotasCompra');
+        vincularBusqueda('#busquedaNotasCompra', '#tablaNotasCompra');
 
         $(document).on('click', '.btn-anular-nota-compra', function(e) {
             e.preventDefault();
-            var id = $(this).data('id');
+            const id = $(this).attr('data-id');
             if (!id) return;
 
             confirmarConModal('Anular Recepción de Compra', '¿Está seguro de anular esta nota de entrega? Se revertirá el incremento de stock de los insumos asociados.', function() {
@@ -23,14 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function ejecutarAnulacion(id) {
-        var fd = new FormData();
-        fd.append('id', id);
-
-        fetch('/SP%20Perfect%20Color/notaEntregaCompra/anular', {
-            method: 'POST',
-            body: fd
-        })
-        .then(function(r) { return r.json(); })
+        api.post('notaEntregaCompra/anular', { id: id })
         .then(function(res) {
             if (res.estado === 'exito') {
                 mostrarNotificacion(res.mensaje, 'exito');
@@ -73,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         data: 'fecha',
                         render: function(data) {
                             if (!data) return '-';
-                            var d = new Date(data.replace(' ', 'T'));
+                            const d = new Date(data.replace(' ', 'T'));
                             if (isNaN(d.getTime())) return data;
                             return d.toLocaleDateString('es-VE') + ' ' + d.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' });
                         }
@@ -93,12 +86,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     {
                         data: 'total',
                         render: function(data, type, row) {
-                            var num = parseFloat(data || 0);
-                            var tasa = parseFloat(row.tasa_bcv || window.TASA_CAMBIO_HOY || 0);
-                            var html = '<strong>$ ' + num.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</strong>';
+                            const num = parseFloat(data || 0);
+                            const tasa = parseFloat(row.tasa_bcv || window.TASA_CAMBIO_HOY || 0);
+                            let html = '<strong>$ ' + fmt(num) + '</strong>';
                             if (tasa > 0) {
-                                var bs = num * tasa;
-                                html += '<div class="text-muted small">Bs. ' + bs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</div>';
+                                html += '<div class="text-muted small">Bs. ' + fmt(num * tasa) + '</div>';
                             }
                             return html;
                         }
@@ -106,9 +98,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     {
                         data: null,
                         render: function(data, type, row) {
-                            var esCredito = row.id_cuenta_pagar && (parseFloat(row.saldo_pendiente) > 0 || row.condicion_compra === 'credito');
-                            return esCredito 
-                                ? '<span class="badge bg-warning text-dark">Crédito</span>' 
+                            const esCredito = row.id_cuenta_pagar && (parseFloat(row.saldo_pendiente) > 0 || row.condicion_compra === 'credito');
+                            return esCredito
+                                ? '<span class="badge bg-warning text-dark">Crédito</span>'
                                 : '<span class="badge bg-success">Contado</span>';
                         }
                     },
@@ -140,522 +132,431 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        var table = $('#tablaNotasCompra').DataTable();
+        const table = $('#tablaNotasCompra').DataTable();
         table.clear();
-        notas.forEach(function(n) {
+        $.each(notas, function(i, n) {
             table.row.add(n);
         });
         table.draw();
     }
 
     // === GESTIÓN DE FORMULARIO DE REGISTRO ===
-    var formNotaCompra = document.getElementById('formNotaCompra');
-    if (formNotaCompra) {
-        var condicionSelect = document.getElementById('condicionPago');
-        var campoVencimiento = document.getElementById('campoVencimiento');
-        var camposContado = document.getElementById('camposContado');
-        var selectProducto = document.getElementById('selectProducto');
-        var cantidadInput = document.getElementById('cantidadItem');
-        var precioInput = document.getElementById('precioItem');
-        var btnAgregar = document.getElementById('btnAgregarItem');
-        var cuerpoDetalle = document.getElementById('cuerpoDetalleCompra');
-        var totalDisplay = document.getElementById('totalCompraDisplay');
-        var totalBsDisplay = document.getElementById('totalCompraBsDisplay');
-        var alertaError = document.getElementById('alertaErrorCompra');
+    const $formNotaCompra = $('#formNotaCompra');
+    if (!$formNotaCompra.length) return;
 
-        var inputBuscarProd = document.getElementById('inputBuscarProductoCompra');
-        var btnLimpiarProd = document.getElementById('btnLimpiarProductoCompra');
-        var listaSugerenciasProd = document.getElementById('listaSugerenciasProductoCompra');
-        var contenedorBancoCompra = document.getElementById('contenedorBancoCompra');
-        var contenedorReferenciaCompra = document.getElementById('contenedorReferenciaCompra');
-        var idTipoPagoSelect = document.getElementById('idTipoPago');
+    const $condicionSelect = $('#condicionPago');
+    const $campoVencimiento = $('#campoVencimiento');
+    const $camposContado = $('#camposContado');
+    const $selectProducto = $('#selectProducto');
+    const $cantidadInput = $('#cantidadItem');
+    const $precioInput = $('#precioItem');
+    const $cuerpoDetalle = $('#cuerpoDetalleCompra');
+    const $totalDisplay = $('#totalCompraDisplay');
+    const $totalBsDisplay = $('#totalCompraBsDisplay');
+    const $alertaError = $('#alertaErrorCompra');
 
-        // Campos de Abono Inicial (Crédito)
-        var montoInicialInput = document.getElementById('montoInicialCompra');
-        var montoInicialBsDisplay = document.getElementById('montoInicialCompraBsDisplay');
-        var saldoPendienteDisplay = document.getElementById('saldoPendienteCompraDisplay');
-        var saldoPendienteBsDisplay = document.getElementById('saldoPendienteCompraBsDisplay');
-        var contenedorMetodoInicial = document.getElementById('contenedorMetodoInicialCompra');
-        var idTipoPagoInicialSelect = document.getElementById('idTipoPagoInicialCompra');
-        var contenedorBancoInicial = document.getElementById('contenedorBancoInicialCompra');
-        var contenedorRefInicial = document.getElementById('contenedorRefInicialCompra');
+    const $inputBuscarProd = $('#inputBuscarProductoCompra');
+    const $btnLimpiarProd = $('#btnLimpiarProductoCompra');
+    const $listaSugerenciasProd = $('#listaSugerenciasProductoCompra');
+    const $idTipoPagoSelect = $('#idTipoPago');
 
-        var itemsCompra = [];
-        var totalActualCompra = 0.00;
-        var catalogoInsumos = Array.isArray(window.insumosCompraCatalogo) ? window.insumosCompraCatalogo : [];
+    // Campos de Abono Inicial (Crédito)
+    const $montoInicialInput = $('#montoInicialCompra');
+    const $idTipoPagoInicialSelect = $('#idTipoPagoInicialCompra');
 
-        // Bloquear decimales/puntos en cantidadItem y rapidoStockMinimo
-        [cantidadInput, document.getElementById('rapidoStockMinimo')].forEach(function(inp) {
-            if (!inp) return;
-            inp.addEventListener('keydown', function(e) {
-                if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === '+') {
-                    e.preventDefault();
-                }
-            });
-            inp.addEventListener('input', function() {
-                var limpio = this.value.replace(/[^0-9]/g, '');
-                if (this.value !== limpio) {
-                    this.value = limpio;
-                }
-            });
-        });
+    const itemsCompra = [];
+    let totalActualCompra = 0.00;
+    const catalogoInsumos = Array.isArray(window.insumosCompraCatalogo) ? window.insumosCompraCatalogo : [];
 
-        // Toggle banco y referencia según método de pago Contado (solo si no es efectivo)
-        function toggleBancoRefCompra() {
-            if (!idTipoPagoSelect) return;
-            var val = parseInt(idTipoPagoSelect.value || 0);
-            if (val === 1 || val === 0) {
-                if (contenedorBancoCompra) contenedorBancoCompra.style.display = 'none';
-                if (contenedorReferenciaCompra) contenedorReferenciaCompra.style.display = 'none';
+    // Bloquear decimales/puntos en cantidadItem y rapidoStockMinimo
+    $cantidadInput.add($('#rapidoStockMinimo')).on('keydown', function(e) {
+        if (['.', ',', 'e', 'E', '-', '+'].includes(e.key)) {
+            e.preventDefault();
+        }
+    }).on('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+
+    // Muestra banco y referencia salvo que el método sea efectivo (1) o no esté elegido (0)
+    function toggleBancoRef($tipoPago, selectores) {
+        if (!$tipoPago.length) return;
+        const val = parseInt($tipoPago.val() || 0);
+        $(selectores).css('display', (val === 1 || val === 0) ? 'none' : 'block');
+    }
+
+    // Toggle banco y referencia según método de pago Contado (solo si no es efectivo)
+    function toggleBancoRefCompra() {
+        toggleBancoRef($idTipoPagoSelect, '#contenedorBancoCompra, #contenedorReferenciaCompra');
+    }
+    $idTipoPagoSelect.on('change', toggleBancoRefCompra);
+    toggleBancoRefCompra();
+
+    // Toggle banco y referencia para Abono Inicial en Crédito
+    function toggleBancoRefInicialCompra() {
+        toggleBancoRef($idTipoPagoInicialSelect, '#contenedorBancoInicialCompra, #contenedorRefInicialCompra');
+    }
+    $idTipoPagoInicialSelect.on('change', toggleBancoRefInicialCompra);
+    toggleBancoRefInicialCompra();
+
+    function actualizarCalculoAbonoInicial() {
+        const tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
+        let abono = parseFloat($montoInicialInput.val()) || 0;
+        if (abono < 0) abono = 0;
+        if (totalActualCompra > 0 && abono > totalActualCompra) {
+            abono = totalActualCompra;
+            $montoInicialInput.val(abono.toFixed(2));
+        }
+        const saldo = Math.max(0, totalActualCompra - abono);
+
+        $('#saldoPendienteCompraDisplay').text('$ ' + fmt(saldo));
+        $('#montoInicialCompraBsDisplay').text('Equiv: Bs. ' + fmt(abono * tasa));
+        $('#saldoPendienteCompraBsDisplay').text('(Bs. ' + fmt(saldo * tasa) + ')');
+
+        const $contenedorMetodoInicial = $('#contenedorMetodoInicialCompra');
+        if ($contenedorMetodoInicial.length) {
+            if (abono > 0) {
+                $contenedorMetodoInicial.css('display', 'block');
+                toggleBancoRefInicialCompra();
             } else {
-                if (contenedorBancoCompra) contenedorBancoCompra.style.display = 'block';
-                if (contenedorReferenciaCompra) contenedorReferenciaCompra.style.display = 'block';
+                $contenedorMetodoInicial.css('display', 'none');
             }
         }
-        if (idTipoPagoSelect) {
-            idTipoPagoSelect.addEventListener('change', toggleBancoRefCompra);
-            toggleBancoRefCompra();
-        }
+    }
 
-        // Toggle banco y referencia para Abono Inicial en Crédito
-        function toggleBancoRefInicialCompra() {
-            if (!idTipoPagoInicialSelect) return;
-            var val = parseInt(idTipoPagoInicialSelect.value || 0);
-            if (val === 1 || val === 0) {
-                if (contenedorBancoInicial) contenedorBancoInicial.style.display = 'none';
-                if (contenedorRefInicial) contenedorRefInicial.style.display = 'none';
+    $montoInicialInput.on('keydown', function(e) {
+        if (['e', 'E', '+', '-'].includes(e.key)) {
+            e.preventDefault();
+        }
+    });
+    $montoInicialInput.on('input', function() {
+        let val = this.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+        const puntos = val.split('.');
+        if (puntos.length > 2) {
+            val = puntos[0] + '.' + puntos.slice(1).join('');
+        }
+        const partes = val.split('.');
+        if (partes[0].length > 7) {
+            partes[0] = partes[0].substring(0, 7);
+        }
+        if (partes.length > 1 && partes[1].length > 2) {
+            partes[1] = partes[1].substring(0, 2);
+        }
+        this.value = partes.length > 1 ? partes[0] + '.' + partes[1] : partes[0];
+        actualizarCalculoAbonoInicial();
+    });
+
+    const $contadorObsCompra = $('#contadorObservacionesCompra');
+    $('#observaciones').on('input', function() {
+        this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.\,\-\:\;\#\/]/g, '').substring(0, 250);
+        const palabras = this.value.trim().split(/\s+/).filter(Boolean);
+        if (palabras.length > 50) {
+            this.value = palabras.slice(0, 50).join(' ');
+        }
+        const countP = this.value.trim().split(/\s+/).filter(Boolean).length;
+        $contadorObsCompra.text(this.value.length + ' / 250 caracteres (' + countP + ' / 50 palabras)');
+    });
+
+    // Búsqueda integrada de productos con diseño limpio .buscador-dropdown-item
+    if ($inputBuscarProd.length && $selectProducto.length && $listaSugerenciasProd.length) {
+        const renderizarSugerenciasCompra = function(filtro) {
+            $listaSugerenciasProd.empty();
+            const q = (filtro || '').toLowerCase().trim();
+            const filtrados = catalogoInsumos.filter(function(ins) {
+                if (!q) return true;
+                return (escapeHtml(ins.codigo || '') + ' ' + escapeHtml(ins.nombre || '')).toLowerCase().includes(q);
+            });
+
+            if (filtrados.length === 0) {
+                $listaSugerenciasProd.html('<div class="p-3 text-muted small text-center"><i class="bi bi-search me-1"></i>No se encontraron productos</div>');
             } else {
-                if (contenedorBancoInicial) contenedorBancoInicial.style.display = 'block';
-                if (contenedorRefInicial) contenedorRefInicial.style.display = 'block';
-            }
-        }
-        if (idTipoPagoInicialSelect) {
-            idTipoPagoInicialSelect.addEventListener('change', toggleBancoRefInicialCompra);
-            toggleBancoRefInicialCompra();
-        }
-
-        function actualizarCalculoAbonoInicial() {
-            var tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
-            var abono = parseFloat(montoInicialInput ? montoInicialInput.value : 0) || 0;
-            if (abono < 0) abono = 0;
-            if (totalActualCompra > 0 && abono > totalActualCompra) {
-                abono = totalActualCompra;
-                if (montoInicialInput) montoInicialInput.value = abono.toFixed(2);
-            }
-            var saldo = Math.max(0, totalActualCompra - abono);
-
-            if (saldoPendienteDisplay) {
-                saldoPendienteDisplay.textContent = '$ ' + saldo.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            }
-            if (montoInicialBsDisplay) {
-                var bsAbono = abono * tasa;
-                montoInicialBsDisplay.textContent = 'Equiv: Bs. ' + bsAbono.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            }
-            if (saldoPendienteBsDisplay) {
-                var bsSaldo = saldo * tasa;
-                saldoPendienteBsDisplay.textContent = '(Bs. ' + bsSaldo.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ')';
-            }
-            if (contenedorMetodoInicial) {
-                if (abono > 0) {
-                    contenedorMetodoInicial.style.display = 'block';
-                    toggleBancoRefInicialCompra();
-                } else {
-                    contenedorMetodoInicial.style.display = 'none';
-                }
-            }
-        }
-        if (montoInicialInput) {
-            montoInicialInput.addEventListener('keydown', function(e) {
-                if (['e', 'E', '+', '-'].includes(e.key)) {
-                    e.preventDefault();
-                }
-            });
-            montoInicialInput.addEventListener('input', function() {
-                var val = this.value.replace(/,/g, '.');
-                val = val.replace(/[^0-9.]/g, '');
-                var puntos = val.split('.');
-                if (puntos.length > 2) {
-                    val = puntos[0] + '.' + puntos.slice(1).join('');
-                }
-                var partes = val.split('.');
-                if (partes[0].length > 7) {
-                    partes[0] = partes[0].substring(0, 7);
-                }
-                if (partes.length > 1 && partes[1].length > 2) {
-                    partes[1] = partes[1].substring(0, 2);
-                }
-                this.value = partes.length > 1 ? partes[0] + '.' + partes[1] : partes[0];
-                actualizarCalculoAbonoInicial();
-            });
-        }
-
-        var observacionesCompra = document.getElementById('observaciones');
-        var contadorObsCompra = document.getElementById('contadorObservacionesCompra');
-        if (observacionesCompra) {
-            observacionesCompra.addEventListener('input', function() {
-                this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.\,\-\:\;\#\/]/g, '');
-                if (this.value.length > 250) {
-                    this.value = this.value.substring(0, 250);
-                }
-                var palabras = this.value.trim().split(/\s+/).filter(Boolean);
-                if (palabras.length > 50) {
-                    this.value = palabras.slice(0, 50).join(' ');
-                }
-                if (contadorObsCompra) {
-                    var countP = this.value.trim().split(/\s+/).filter(Boolean).length;
-                    contadorObsCompra.textContent = this.value.length + ' / 250 caracteres (' + countP + ' / 50 palabras)';
-                }
-            });
-        }
-
-        // Búsqueda integrada de productos con diseño limpio .buscador-dropdown-item
-        if (inputBuscarProd && selectProducto && listaSugerenciasProd) {
-            function renderizarSugerenciasCompra(filtro) {
-                listaSugerenciasProd.innerHTML = '';
-                var q = (filtro || '').toLowerCase().trim();
-                var filtrados = catalogoInsumos.filter(function(ins) {
-                    if (!q) return true;
-                    var txt = (escapeHtml(ins.codigo || '') + ' ' + escapeHtml(ins.nombre || '')).toLowerCase();
-                    return txt.includes(q);
-                });
-
-                if (filtrados.length === 0) {
-                    listaSugerenciasProd.innerHTML = '<div class="p-3 text-muted small text-center"><i class="bi bi-search me-1"></i>No se encontraron productos</div>';
-                } else {
-                    filtrados.forEach(function(ins) {
-                        var stock = Math.floor(parseFloat(ins.stock_actual || 0));
-                        var pVenta = parseFloat(ins.precio_venta || 0);
-                        var pCompra = parseFloat(ins.precio_compra || 0);
-                        var item = document.createElement('div');
-                        item.className = 'buscador-dropdown-item';
-                        item.innerHTML =
+                $.each(filtrados, function(i, ins) {
+                    const stock = Math.floor(parseFloat(ins.stock_actual || 0));
+                    const pVenta = parseFloat(ins.precio_venta || 0);
+                    const pCompra = parseFloat(ins.precio_compra || 0);
+                    $('<div class="buscador-dropdown-item"></div>')
+                        .html(
                             '<div class="item-titulo">' + escapeHtml(ins.nombre || '') + '</div>' +
                             '<div class="item-meta">' +
                                 '<span class="badge-codigo">' + escapeHtml(ins.codigo || '') + '</span>' +
                                 '<span class="badge-stock ' + (stock <= 0 ? 'sin-stock' : '') + '">Stock actual: ' + stock + '</span>' +
                                 '<span class="badge-precio">P. Venta: $ ' + pVenta.toFixed(2) + '</span>' +
-                            '</div>';
-                        item.addEventListener('click', function(ev) {
+                            '</div>')
+                        .on('click', function(ev) {
                             ev.preventDefault();
-                            inputBuscarProd.value = ins.codigo + ' - ' + ins.nombre;
-                            selectProducto.value = ins.id_producto;
-                            selectProducto.setAttribute('data-nombre', ins.nombre);
-                            selectProducto.setAttribute('data-codigo', ins.codigo);
-                            selectProducto.setAttribute('data-precio', pCompra > 0 ? pCompra.toFixed(2) : '');
-                            
-                            precioInput.value = pCompra > 0 ? pCompra.toFixed(2) : '';
-                            if (btnLimpiarProd) btnLimpiarProd.classList.remove('d-none');
-                            listaSugerenciasProd.classList.remove('show');
-                            cantidadInput.focus();
-                        });
-                        listaSugerenciasProd.appendChild(item);
-                    });
-                }
-                listaSugerenciasProd.classList.add('show');
-            }
-
-            inputBuscarProd.addEventListener('focus', function() {
-                renderizarSugerenciasCompra(this.value);
-            });
-
-            inputBuscarProd.addEventListener('input', function() {
-                if (!this.value.trim()) {
-                    selectProducto.value = '';
-                    if (btnLimpiarProd) btnLimpiarProd.classList.add('d-none');
-                }
-                renderizarSugerenciasCompra(this.value);
-            });
-
-            if (btnLimpiarProd) {
-                btnLimpiarProd.addEventListener('click', function() {
-                    inputBuscarProd.value = '';
-                    selectProducto.value = '';
-                    precioInput.value = '';
-                    btnLimpiarProd.classList.add('d-none');
-                    listaSugerenciasProd.classList.remove('show');
-                    inputBuscarProd.focus();
+                            $inputBuscarProd.val(ins.codigo + ' - ' + ins.nombre);
+                            $selectProducto.val(ins.id_producto).attr({
+                                'data-nombre': ins.nombre,
+                                'data-codigo': ins.codigo,
+                                'data-precio': pCompra > 0 ? pCompra.toFixed(2) : ''
+                            });
+                            $precioInput.val(pCompra > 0 ? pCompra.toFixed(2) : '');
+                            $btnLimpiarProd.removeClass('d-none');
+                            $listaSugerenciasProd.removeClass('show');
+                            $cantidadInput.trigger('focus');
+                        })
+                        .appendTo($listaSugerenciasProd);
                 });
             }
+            $listaSugerenciasProd.addClass('show');
+        };
 
-            document.addEventListener('click', function(e) {
-                if (!inputBuscarProd.closest('.position-relative').contains(e.target)) {
-                    listaSugerenciasProd.classList.remove('show');
-                }
-            });
-        }
-
-        // Cambio de condición Contado / Crédito
-        condicionSelect.addEventListener('change', function() {
-            if (this.value === 'credito') {
-                campoVencimiento.classList.remove('d-none');
-                camposContado.classList.add('d-none');
-                actualizarCalculoAbonoInicial();
-            } else {
-                campoVencimiento.classList.add('d-none');
-                camposContado.classList.remove('d-none');
-                toggleBancoRefCompra();
-            }
+        $inputBuscarProd.on('focus', function() {
+            renderizarSugerenciasCompra(this.value);
         });
 
-        // Botón añadir producto
-        btnAgregar.addEventListener('click', function() {
-            ocultarError();
-            var idProd = parseInt(selectProducto.value, 10);
-            var cant = parseInt(cantidadInput.value, 10);
-            var precio = parseFloat(precioInput.value);
-
-            if (!idProd || isNaN(idProd)) {
-                mostrarError('Seleccione un producto de la lista.');
-                inputBuscarProd.focus();
-                return;
+        $inputBuscarProd.on('input', function() {
+            if (!this.value.trim()) {
+                $selectProducto.val('');
+                $btnLimpiarProd.addClass('d-none');
             }
-            if (isNaN(cant) || cant < 1) {
-                mostrarError('Ingrese una cantidad entera válida (mínimo 1).');
-                cantidadInput.focus();
-                return;
-            }
-            if (isNaN(precio) || precio < 0) {
-                mostrarError('Ingrese un costo unitario válido.');
-                precioInput.focus();
-                return;
-            }
-
-            var nombreProd = selectProducto.getAttribute('data-nombre') || inputBuscarProd.value;
-            var codigoProd = selectProducto.getAttribute('data-codigo') || '';
-
-            // Verificar si ya existe en la lista
-            var existente = itemsCompra.find(function(it) { return it.id_producto === idProd; });
-            if (existente) {
-                existente.cantidad += cant;
-                existente.precio_compra = precio;
-                existente.subtotal = Math.round(existente.cantidad * existente.precio_compra * 100) / 100;
-            } else {
-                itemsCompra.push({
-                    id_producto: idProd,
-                    codigo: codigoProd,
-                    nombre: nombreProd,
-                    cantidad: cant,
-                    precio_compra: precio,
-                    subtotal: Math.round(cant * precio * 100) / 100
-                });
-            }
-
-            // Limpiar campos de ítem
-            selectProducto.value = '';
-            inputBuscarProd.value = '';
-            if (btnLimpiarProd) btnLimpiarProd.classList.add('d-none');
-            cantidadInput.value = '';
-            precioInput.value = '';
-
-            renderizarTablaDetalle();
+            renderizarSugerenciasCompra(this.value);
         });
 
-        // Gestión del modal de nuevo insumo rápido
-        var formRapidoInsumo = document.getElementById('formularioRapidoInsumo');
-        var rapidoTipo = document.getElementById('rapidoTipo');
-        var rapidoUnidad = document.getElementById('rapidoUnidad');
-        if (rapidoTipo && rapidoUnidad) {
-            rapidoTipo.addEventListener('change', function() {
-                rapidoUnidad.innerHTML = this.value === '1'
-                    ? '<option value="Galon">Galón</option>'
-                    : '<option value="Unidad">Unidad</option><option value="KG">KG</option>';
-            });
-        }
-        if (formRapidoInsumo) {
-            formRapidoInsumo.addEventListener('submit', function(e) {
-                e.preventDefault();
-                var alertaRapida = document.getElementById('alertaErrorRapidoInsumo');
-                if (alertaRapida) alertaRapida.classList.add('d-none');
+        $btnLimpiarProd.on('click', function() {
+            $inputBuscarProd.val('');
+            $selectProducto.val('');
+            $precioInput.val('');
+            $btnLimpiarProd.addClass('d-none');
+            $listaSugerenciasProd.removeClass('show');
+            $inputBuscarProd.trigger('focus');
+        });
 
-                var fd = new FormData(formRapidoInsumo);
-                var btnGuardar = document.getElementById('btnGuardarRapidoInsumo');
-                btnGuardar.disabled = true;
-                btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando...';
-
-                fetch('/SP%20Perfect%20Color/inventario/guardar', {
-                    method: 'POST',
-                    body: fd
-                })
-                .then(function(r) { return r.json(); })
-                .then(function(res) {
-                    btnGuardar.disabled = false;
-                    btnGuardar.innerHTML = '<i class="bi bi-check-lg me-1"></i>Crear e Insertar en Compra';
-
-                    if (res.estado === 'exito') {
-                        var prodNuevo = res.datos || {};
-                        var costoEst = parseFloat(fd.get('precio_compra') || 0);
-                        catalogoInsumos.push({
-                            id_producto: prodNuevo.id_producto,
-                            codigo: prodNuevo.codigo,
-                            nombre: prodNuevo.nombre,
-                            stock_actual: 0,
-                            precio_compra: costoEst
-                        });
-
-                        selectProducto.value = prodNuevo.id_producto;
-                        selectProducto.setAttribute('data-codigo', prodNuevo.codigo);
-                        selectProducto.setAttribute('data-nombre', prodNuevo.nombre);
-                        selectProducto.setAttribute('data-precio', costoEst.toFixed(2));
-                        if (inputBuscarProd) {
-                            inputBuscarProd.value = prodNuevo.codigo + ' - ' + prodNuevo.nombre;
-                        }
-                        if (btnLimpiarProd) btnLimpiarProd.classList.remove('d-none');
-                        precioInput.value = costoEst > 0 ? costoEst.toFixed(2) : '';
-                        cantidadInput.value = 1;
-
-                        // Cerrar modal
-                        var modalEl = document.getElementById('modalRapidoInsumo');
-                        var modalInstance = bootstrap.Modal.getInstance(modalEl);
-                        if (modalInstance) modalInstance.hide();
-                        formRapidoInsumo.reset();
-
-                        mostrarNotificacion('Insumo registrado e insertado en la orden', 'exito');
-                    } else {
-                        if (alertaRapida) {
-                            alertaRapida.textContent = res.mensaje || 'Error al crear insumo.';
-                            alertaRapida.classList.remove('d-none');
-                        }
-                    }
-                })
-                .catch(function(err) {
-                    btnGuardar.disabled = false;
-                    btnGuardar.innerHTML = '<i class="bi bi-check-lg me-1"></i>Crear e Insertar en Compra';
-                    if (alertaRapida) {
-                        alertaRapida.textContent = 'No se pudo conectar con el servidor. Intente de nuevo.';
-                        alertaRapida.classList.remove('d-none');
-                    }
-                });
-            });
-        }
-
-        // Renderizar tabla de detalle
-        function renderizarTablaDetalle() {
-            var tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
-            cuerpoDetalle.innerHTML = '';
-            if (itemsCompra.length === 0) {
-                cuerpoDetalle.innerHTML = '<tr id="filaVacia"><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-inbox fs-3 d-block mb-1"></i>Añada los insumos recibidos del proveedor usando el formulario superior.</td></tr>';
-                totalActualCompra = 0.00;
-                totalDisplay.textContent = '$ 0,00';
-                if (totalBsDisplay) totalBsDisplay.textContent = 'Bs. 0,00';
-                actualizarCalculoAbonoInicial();
-                return;
+        $(document).on('click', function(e) {
+            if (!$.contains($inputBuscarProd.closest('.position-relative')[0], e.target)) {
+                $listaSugerenciasProd.removeClass('show');
             }
+        });
+    }
 
-            var total = 0;
-            itemsCompra.forEach(function(item, idx) {
-                total += item.subtotal;
-                var tr = document.createElement('tr');
-                tr.innerHTML = '<td><span class="badge bg-secondary font-monospace me-2">' + escapeHtml(item.codigo) + '</span><strong>' + escapeHtml(item.nombre) + '</strong></td>' +
-                    '<td class="text-center fw-bold text-primary">+' + Math.floor(item.cantidad) + '</td>' +
-                    '<td class="text-end">$ ' + item.precio_compra.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
-                    '<td class="text-end fw-bold">$ ' + item.subtotal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
-                    '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-quitar-item" data-index="' + idx + '"><i class="bi bi-trash"></i></button></td>';
-                cuerpoDetalle.appendChild(tr);
-            });
-
-            totalActualCompra = Math.round(total * 100) / 100;
-            totalDisplay.textContent = '$ ' + totalActualCompra.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            if (totalBsDisplay) {
-                var bsTotal = totalActualCompra * tasa;
-                totalBsDisplay.textContent = 'Bs. ' + bsTotal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            }
+    // Cambio de condición Contado / Crédito
+    $condicionSelect.on('change', function() {
+        if (this.value === 'credito') {
+            $campoVencimiento.removeClass('d-none');
+            $camposContado.addClass('d-none');
             actualizarCalculoAbonoInicial();
+        } else {
+            $campoVencimiento.addClass('d-none');
+            $camposContado.removeClass('d-none');
+            toggleBancoRefCompra();
+        }
+    });
 
-            // Enlazar botones quitar
-            var btnsQuitar = cuerpoDetalle.querySelectorAll('.btn-quitar-item');
-            btnsQuitar.forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    var idx = parseInt(this.getAttribute('data-index'));
-                    itemsCompra.splice(idx, 1);
-                    renderizarTablaDetalle();
-                });
+    // Botón añadir producto
+    $('#btnAgregarItem').on('click', function() {
+        ocultarError();
+        const idProd = parseInt($selectProducto.val(), 10);
+        const cant = parseInt($cantidadInput.val(), 10);
+        const precio = parseFloat($precioInput.val());
+
+        if (!idProd || isNaN(idProd)) {
+            mostrarError('Seleccione un producto de la lista.');
+            $inputBuscarProd.trigger('focus');
+            return;
+        }
+        if (isNaN(cant) || cant < 1) {
+            mostrarError('Ingrese una cantidad entera válida (mínimo 1).');
+            $cantidadInput.trigger('focus');
+            return;
+        }
+        if (isNaN(precio) || precio < 0) {
+            mostrarError('Ingrese un costo unitario válido.');
+            $precioInput.trigger('focus');
+            return;
+        }
+
+        const nombreProd = $selectProducto.attr('data-nombre') || $inputBuscarProd.val();
+        const codigoProd = $selectProducto.attr('data-codigo') || '';
+
+        // Verificar si ya existe en la lista
+        const existente = itemsCompra.find(function(it) { return it.id_producto === idProd; });
+        if (existente) {
+            existente.cantidad += cant;
+            existente.precio_compra = precio;
+            existente.subtotal = Math.round(existente.cantidad * existente.precio_compra * 100) / 100;
+        } else {
+            itemsCompra.push({
+                id_producto: idProd,
+                codigo: codigoProd,
+                nombre: nombreProd,
+                cantidad: cant,
+                precio_compra: precio,
+                subtotal: Math.round(cant * precio * 100) / 100
             });
         }
 
-        // Enviar formulario
-        formNotaCompra.addEventListener('submit', function(e) {
-            e.preventDefault();
-            ocultarError();
+        // Limpiar campos de ítem
+        $selectProducto.val('');
+        $inputBuscarProd.val('');
+        $btnLimpiarProd.addClass('d-none');
+        $cantidadInput.val('');
+        $precioInput.val('');
 
-            if (itemsCompra.length === 0) {
-                mostrarError('Debe agregar al menos un producto a la nota de entrega.');
+        renderizarTablaDetalle();
+    });
+
+    // Gestión del modal de nuevo insumo rápido
+    const $formRapidoInsumo = $('#formularioRapidoInsumo');
+    const $rapidoUnidad = $('#rapidoUnidad');
+    $('#rapidoTipo').on('change', function() {
+        $rapidoUnidad.html(this.value === '1'
+            ? '<option value="Galon">Galón</option>'
+            : '<option value="Unidad">Unidad</option><option value="KG">KG</option>');
+    });
+
+    const HTML_BOTON_RAPIDO = '<i class="bi bi-check-lg me-1"></i>Crear e Insertar en Compra';
+    $formRapidoInsumo.on('submit', function(e) {
+        e.preventDefault();
+        const $alertaRapida = $('#alertaErrorRapidoInsumo').addClass('d-none');
+
+        const fd = new FormData($formRapidoInsumo[0]);
+        const $btnGuardar = $('#btnGuardarRapidoInsumo');
+        $btnGuardar.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Guardando...');
+
+        api.post('inventario/guardar', fd)
+        .then(function(res) {
+            $btnGuardar.prop('disabled', false).html(HTML_BOTON_RAPIDO);
+
+            if (res.estado === 'exito') {
+                const prodNuevo = res.datos || {};
+                const costoEst = parseFloat(fd.get('precio_compra') || 0);
+                catalogoInsumos.push({
+                    id_producto: prodNuevo.id_producto,
+                    codigo: prodNuevo.codigo,
+                    nombre: prodNuevo.nombre,
+                    stock_actual: 0,
+                    precio_compra: costoEst
+                });
+
+                $selectProducto.val(prodNuevo.id_producto).attr({
+                    'data-codigo': prodNuevo.codigo,
+                    'data-nombre': prodNuevo.nombre,
+                    'data-precio': costoEst.toFixed(2)
+                });
+                $inputBuscarProd.val(prodNuevo.codigo + ' - ' + prodNuevo.nombre);
+                $btnLimpiarProd.removeClass('d-none');
+                $precioInput.val(costoEst > 0 ? costoEst.toFixed(2) : '');
+                $cantidadInput.val(1);
+
+                // Cerrar modal
+                const modalInstance = bootstrap.Modal.getInstance($('#modalRapidoInsumo')[0]);
+                if (modalInstance) modalInstance.hide();
+                $formRapidoInsumo[0].reset();
+
+                mostrarNotificacion('Insumo registrado e insertado en la orden', 'exito');
+            } else {
+                $alertaRapida.text(res.mensaje || 'Error al crear insumo.').removeClass('d-none');
+            }
+        })
+        .catch(function() {
+            $btnGuardar.prop('disabled', false).html(HTML_BOTON_RAPIDO);
+            $alertaRapida.text('No se pudo conectar con el servidor. Intente de nuevo.').removeClass('d-none');
+        });
+    });
+
+    // Renderizar tabla de detalle
+    function renderizarTablaDetalle() {
+        const tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
+        $cuerpoDetalle.empty();
+        if (itemsCompra.length === 0) {
+            $cuerpoDetalle.html('<tr id="filaVacia"><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-inbox fs-3 d-block mb-1"></i>Añada los insumos recibidos del proveedor usando el formulario superior.</td></tr>');
+            totalActualCompra = 0.00;
+            $totalDisplay.text('$ 0,00');
+            $totalBsDisplay.text('Bs. 0,00');
+            actualizarCalculoAbonoInicial();
+            return;
+        }
+
+        let total = 0;
+        $.each(itemsCompra, function(idx, item) {
+            total += item.subtotal;
+            $('<tr></tr>').html(
+                '<td><span class="badge bg-secondary font-monospace me-2">' + escapeHtml(item.codigo) + '</span><strong>' + escapeHtml(item.nombre) + '</strong></td>' +
+                '<td class="text-center fw-bold text-primary">+' + Math.floor(item.cantidad) + '</td>' +
+                '<td class="text-end">$ ' + fmt(item.precio_compra) + '</td>' +
+                '<td class="text-end fw-bold">$ ' + fmt(item.subtotal) + '</td>' +
+                '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-quitar-item" data-index="' + idx + '"><i class="bi bi-trash"></i></button></td>'
+            ).appendTo($cuerpoDetalle);
+        });
+
+        totalActualCompra = Math.round(total * 100) / 100;
+        $totalDisplay.text('$ ' + fmt(totalActualCompra));
+        $totalBsDisplay.text('Bs. ' + fmt(totalActualCompra * tasa));
+        actualizarCalculoAbonoInicial();
+    }
+
+    // Quitar ítem (delegado: las filas se regeneran en cada render)
+    $cuerpoDetalle.on('click', '.btn-quitar-item', function() {
+        itemsCompra.splice(parseInt($(this).attr('data-index')), 1);
+        renderizarTablaDetalle();
+    });
+
+    // Enviar formulario
+    $formNotaCompra.on('submit', function(e) {
+        e.preventDefault();
+        ocultarError();
+
+        if (itemsCompra.length === 0) {
+            mostrarError('Debe agregar al menos un producto a la nota de entrega.');
+            return;
+        }
+
+        if (!$('#idProveedor').val()) {
+            mostrarError('Seleccione un proveedor.');
+            return;
+        }
+
+        // Validar abono inicial si es crédito
+        if ($condicionSelect.val() === 'credito' && $montoInicialInput.length) {
+            const abonoVal = parseFloat($montoInicialInput.val() || 0);
+            if (abonoVal > totalActualCompra) {
+                mostrarError('El abono inicial no puede ser mayor al total de la compra.');
                 return;
             }
-
-            var idProv = document.getElementById('idProveedor').value;
-            if (!idProv) {
-                mostrarError('Seleccione un proveedor.');
-                return;
-            }
-
-            // Validar abono inicial si es crédito
-            if (condicionSelect.value === 'credito' && montoInicialInput) {
-                var abonoVal = parseFloat(montoInicialInput.value || 0);
-                if (abonoVal > totalActualCompra) {
-                    mostrarError('El abono inicial no puede ser mayor al total de la compra.');
-                    return;
-                }
-                if (abonoVal > 0 && idTipoPagoInicialSelect) {
-                    var tpIni = parseInt(idTipoPagoInicialSelect.value || 1);
-                    if (tpIni !== 1) {
-                        var bcoIni = document.getElementById('idBancoInicialCompra');
-                        var refIni = document.getElementById('referenciaInicialCompra');
-                        if (!bcoIni || !bcoIni.value) {
-                            mostrarError('Seleccione el banco para el abono inicial.');
-                            return;
-                        }
-                        if (!refIni || !/^\d{5}$/.test(refIni.value.trim())) {
-                            mostrarError('La referencia debe tener los últimos 5 dígitos del comprobante.');
-                            return;
-                        }
+            if (abonoVal > 0 && $idTipoPagoInicialSelect.length) {
+                if (parseInt($idTipoPagoInicialSelect.val() || 1) !== 1) {
+                    if (!$('#idBancoInicialCompra').val()) {
+                        mostrarError('Seleccione el banco para el abono inicial.');
+                        return;
+                    }
+                    if (!/^\d{5}$/.test(($('#referenciaInicialCompra').val() || '').trim())) {
+                        mostrarError('La referencia debe tener los últimos 5 dígitos del comprobante.');
+                        return;
                     }
                 }
             }
+        }
 
-            var fd = new FormData(formNotaCompra);
-            fd.append('items', JSON.stringify(itemsCompra));
+        const fd = new FormData($formNotaCompra[0]);
+        fd.append('items', JSON.stringify(itemsCompra));
 
-            var btnSubmit = document.getElementById('btnGuardarNotaCompra');
-            btnSubmit.disabled = true;
-            btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Registrando y Sumando Stock...';
+        const $btnSubmit = $('#btnGuardarNotaCompra');
+        const HTML_BOTON_REGISTRAR = '<i class="bi bi-check-circle-fill me-2"></i>Registrar Recepción y Sumar Stock';
+        $btnSubmit.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Registrando y Sumando Stock...');
 
-            fetch('/SP%20Perfect%20Color/notaEntregaCompra/guardar', {
-                method: 'POST',
-                body: fd
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(res) {
-                if (res.estado === 'exito') {
-                    mostrarNotificacion(res.mensaje, 'exito');
-                    setTimeout(function() {
-                        window.location.href = '/SP%20Perfect%20Color/notaEntregaCompra/ver?id=' + res.datos.id_compra;
-                    }, 800);
-                } else {
-                    btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Registrar Recepción y Sumar Stock';
-                    mostrarError(res.mensaje || 'Error al guardar la nota de entrega.');
-                }
-            })
-            .catch(function(err) {
-                btnSubmit.disabled = false;
-                btnSubmit.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Registrar Recepción y Sumar Stock';
-                mostrarError('No se pudo conectar con el servidor. Intente de nuevo.');
-                console.error(err);
-            });
+        api.post('notaEntregaCompra/guardar', fd)
+        .then(function(res) {
+            if (res.estado === 'exito') {
+                mostrarNotificacion(res.mensaje, 'exito');
+                setTimeout(function() {
+                    window.location.href = '/SP%20Perfect%20Color/notaEntregaCompra/ver?id=' + res.datos.id_compra;
+                }, 800);
+            } else {
+                $btnSubmit.prop('disabled', false).html(HTML_BOTON_REGISTRAR);
+                mostrarError(res.mensaje || 'Error al guardar la nota de entrega.');
+            }
+        })
+        .catch(function(err) {
+            $btnSubmit.prop('disabled', false).html(HTML_BOTON_REGISTRAR);
+            mostrarError('No se pudo conectar con el servidor. Intente de nuevo.');
+            console.error(err);
         });
+    });
 
-        function mostrarError(msg) {
-            if (alertaError) {
-                alertaError.textContent = msg;
-                alertaError.classList.remove('d-none');
-            }
-        }
+    function mostrarError(msg) {
+        $alertaError.text(msg).removeClass('d-none');
+    }
 
-        function ocultarError() {
-            if (alertaError) {
-                alertaError.classList.add('d-none');
-                alertaError.textContent = '';
-            }
-        }
+    function ocultarError() {
+        $alertaError.addClass('d-none').text('');
     }
 });

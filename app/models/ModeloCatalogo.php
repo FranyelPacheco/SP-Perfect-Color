@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use PDO;
 
 // OBJETIVO: Lógica común de los catálogos simples (nombre único + borrado lógico): Banco y TipoPago
 abstract class ModeloCatalogo extends ModeloBase

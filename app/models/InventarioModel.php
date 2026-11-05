@@ -6,6 +6,9 @@ namespace App\Models;
 use App\Traits\EnvaseTrait;
 use PDO;
 
+// MODELO: InventarioModel
+// OBJETIVO: Catálogo de productos (tintes base y artículos simples): stock, proveedores, alertas de stock mínimo, mermas y mezclas de taller
+// NOTA: El stock de los tintes base se controla por envases fraccionados en EnvaseTrait
 class InventarioModel extends ModeloBase
 {
     use EnvaseTrait;
@@ -22,7 +25,6 @@ class InventarioModel extends ModeloBase
         8 => ['1/128 Galón', 1],
     ];
 
-    private int $id_producto;
     private int $id_tipo_producto;
     private string $codigo;
     private string $nombre;
@@ -32,13 +34,11 @@ class InventarioModel extends ModeloBase
     private float $stock_minimo;
     private float $precio_venta;
     private float $precio_compra;
-    private int $activo;
     private int $id;
     private ?int $idExcluir;
     private int $productoId;
     private int $proveedorId;
     private int $idProveedor;
-    private string $termino;
 
     // FUNCIÓN: contarTodos
     // OBJETIVO: Retorna el total de productos activos en el sistema
@@ -458,42 +458,6 @@ class InventarioModel extends ModeloBase
     public function buscarInactivoPorCodigo(string $codigo): int|false
     {
         return $this->buscarInactivoPor('productos', 'id_producto', 'codigo', $codigo);
-    }
-
-    // FUNCIÓN: buscarInsumos
-    // OBJETIVO: Busca productos por nombre, código o nombre de rubro usando LIKE
-    public function buscarInsumos(string $termino): array
-    {
-        $this->termino = '%' . $termino . '%';
-        return $this->_ejecutarSearch();
-    }
-
-    // FUNCIÓN: _ejecutarSearch
-    // OBJETIVO: Ejecuta la búsqueda con tres condiciones OR (nombre, código, rubro)
-    private function _ejecutarSearch(): array
-    {
-        $consulta = "SELECT p.*, p.estado as activo, tp.nombre as tipo_producto_nombre,
-                            p.id_producto as id_insumo,
-                            GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubro_nombre,
-                            GROUP_CONCAT(DISTINCT pr.nombre_empresa SEPARATOR ', ') as proveedores_nombre,
-                            GROUP_CONCAT(DISTINCT pr.id_proveedor SEPARATOR ',') as proveedores_id
-                     FROM productos p
-                     INNER JOIN tipo_producto tp ON p.id_tipo_producto = tp.id_tipo_producto
-                     LEFT JOIN producto_proveedor pp ON pp.id_producto = p.id_producto
-                     LEFT JOIN proveedores pr ON pr.id_proveedor = pp.id_proveedor
-                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = pr.id_proveedor
-                     LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
-                     WHERE p.estado = 1 AND (p.nombre LIKE :termino1
-                        OR p.codigo LIKE :termino2
-                        OR r.nombre LIKE :termino3)
-                     GROUP BY p.id_producto
-                     ORDER BY p.nombre ASC";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':termino1', $this->termino, PDO::PARAM_STR);
-        $stmt->bindParam(':termino2', $this->termino, PDO::PARAM_STR);
-        $stmt->bindParam(':termino3', $this->termino, PDO::PARAM_STR);
-        $stmt->execute();
-        return $stmt->fetchAll();
     }
 
     // FUNCIÓN: listarProveedoresActivos

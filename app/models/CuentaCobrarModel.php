@@ -7,6 +7,9 @@ use App\Traits\PagoCuentaTrait;
 use App\Traits\TasaBcvTrait;
 use PDO, PDOException;
 
+// MODELO: CuentaCobrarModel
+// OBJETIVO: Cuentas por cobrar de las ventas a crédito: listado, detalle, abonos e ingresos por día
+// NOTA: Registro de pagos y baja lógica en PagoCuentaTrait
 class CuentaCobrarModel extends ModeloBase
 {
     use TasaBcvTrait;
@@ -18,14 +21,7 @@ class CuentaCobrarModel extends ModeloBase
     protected function etiquetaCuenta(): string { return 'por cobrar'; }
 
     private int $id;
-    private int $idCliente;
-    private int $idNotaEntrega;
-    private float $montoTotal;
-    private float $saldoPendiente;
-    private string $fechaVencimiento;
-    private string $estado;
     private int $dias;
-    private string $termino;
 
     // FUNCIÓN: listarTodas
     // OBJETIVO: Obtiene todas las cuentas por cobrar activas con datos del cliente y nota
@@ -63,17 +59,6 @@ class CuentaCobrarModel extends ModeloBase
     {
         $this->dias = $dias;
         return $this->_ejecutarPagosPorDia();
-    }
-
-    // FUNCIÓN: buscarCuentas
-    // OBJETIVO: Busca cuentas por cobrar por nombre o cédula del cliente
-    public function buscarCuentas(string $termino): array
-    {
-        $this->termino = $termino;
-        if ($this->termino === '') {
-            throw new PDOException('Término de búsqueda no válido');
-        }
-        return $this->_ejecutarSearch();
     }
 
     // FUNCIÓN: _ejecutarSelectAll
@@ -155,32 +140,4 @@ class CuentaCobrarModel extends ModeloBase
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // FUNCIÓN: _ejecutarSearch
-    // OBJETIVO: Busca cuentas por cobrar filtrando por nombre o cédula del cliente
-    private function _ejecutarSearch(): array
-    {
-        $terminoLike = '%' . $this->termino . '%';
-        $consulta = "SELECT cc.*, cc.estado as activo, cc.situacion as estado,
-                        c.id_cliente,
-                        CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
-                        c.cedula as cliente_cedula,
-                        (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
-                        v.id_venta as id_nota_entrega,
-                        v.id_venta as id_nota_venta,
-                        v.id_venta,
-                        v.fecha as nota_fecha
-                FROM cuentas_cobrar cc 
-                INNER JOIN ventas v ON cc.id_venta = v.id_venta
-                INNER JOIN clientes c ON v.id_cliente = c.id_cliente
-                WHERE cc.estado = 1 AND (c.nombres LIKE :termino1 
-                    OR c.apellidos LIKE :termino2 
-                    OR c.cedula LIKE :termino3) 
-                ORDER BY cc.situacion ASC, cc.fecha_vencimiento ASC";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':termino1', $terminoLike, PDO::PARAM_STR);
-        $stmt->bindParam(':termino2', $terminoLike, PDO::PARAM_STR);
-        $stmt->bindParam(':termino3', $terminoLike, PDO::PARAM_STR);
-        $stmt->execute();
-        return $stmt->fetchAll();
-    }
 }

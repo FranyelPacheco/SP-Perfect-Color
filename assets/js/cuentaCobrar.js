@@ -2,18 +2,13 @@
 // Manejo de la vista de cuentas por cobrar
 
 
-document.addEventListener('DOMContentLoaded', function() {
-    var busquedaCuentas = document.getElementById('busquedaCuentas');
-
+$(function() {
     cargarCuentas();
 
     alHacerClick('.btn-eliminar-cxc', function(e) {
         var id = $(this).attr('data-id') || $(this).data('id');
         confirmarConModal('Eliminar', '¿Está seguro de eliminar esta cuenta por cobrar?', function() {
-            var fd = new FormData();
-            fd.append('id', id);
-            fetch('/SP%20Perfect%20Color/cuentaCobrar/eliminar', { method: 'POST', body: fd })
-            .then(function(r) { return r.json(); })
+            api.post('cuentaCobrar/eliminar', { id: id })
             .then(function(res) {
                 if (res.estado === 'exito') { mostrarNotificacion(res.mensaje, 'exito'); cargarCuentas(); }
                 else { mostrarNotificacion(res.mensaje, 'error'); }
@@ -22,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    vincularBusqueda(busquedaCuentas, '#tablaCuentas');
+    vincularBusqueda('#busquedaCuentas', '#tablaCuentas');
 
     function cargarCuentas() {
         api.get('cuentaCobrar/listarAjax')

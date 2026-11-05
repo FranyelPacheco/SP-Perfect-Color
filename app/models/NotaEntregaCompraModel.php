@@ -11,14 +11,6 @@ use PDO, PDOException;
 class NotaEntregaCompraModel extends ModeloBase
 {
     use TasaBcvTrait;
-    private ?int $id = null;
-    private ?int $idProveedor = null;
-    private ?string $fecha = null;
-    private float $total = 0.00;
-    private ?string $observaciones = null;
-    private string $condicionPago = 'contado';
-    private ?string $fechaVencimiento = null;
-    private array $items = [];
 
     // FUNCIÓN: listarTodas
     // OBJETIVO: Lista todas las notas de entrega de compras con datos del proveedor y situación de pago

@@ -1,98 +1,74 @@
 // Archivo: tasaCambio.js
 // Manejo de la interfaz y operaciones de tasa de cambio (sin opción de eliminación)
 
-document.addEventListener('DOMContentLoaded', function() {
-    var busquedaTasas = document.getElementById('busquedaTasas');
-    var formTasa = document.getElementById('formularioTasaCambio');
-    var modalElement = document.getElementById('modalTasaCambio');
-    var modalInstancia = modalElement ? new bootstrap.Modal(modalElement) : null;
-    var modalTitulo = document.getElementById('modalTasaTitulo');
-    var textoBotonGuardar = document.getElementById('textoBotonGuardar');
-    var inputId = document.getElementById('idTasaCambio');
-    var inputFecha = document.getElementById('fechaTasa');
-    var feedbackFechaTasa = document.getElementById('feedbackFechaTasa');
-    var inputTasa = document.getElementById('valorTasa');
-    if (inputTasa) {
-        inputTasa.addEventListener('keydown', function(e) {
-            if (['e', 'E', '+', '-'].includes(e.key)) {
-                e.preventDefault();
-            }
-        });
-        inputTasa.addEventListener('input', function() {
-            // Reemplazar comas por puntos
-            var val = this.value.replace(/,/g, '.');
-            // Permitir solo números y un único punto decimal
-            val = val.replace(/[^0-9.]/g, '');
-            var puntos = val.split('.');
-            if (puntos.length > 2) {
-                val = puntos[0] + '.' + puntos.slice(1).join('');
-            }
-            // Limitar a máximo 6 dígitos enteros y máximo 2 decimales
-            var partes = val.split('.');
-            if (partes[0].length > 6) {
-                partes[0] = partes[0].substring(0, 6);
-            }
-            if (partes.length > 1 && partes[1].length > 2) {
-                partes[1] = partes[1].substring(0, 2);
-            }
-            this.value = partes.length > 1 ? partes[0] + '.' + partes[1] : partes[0];
-        });
-    }
+$(function() {
+    const $formTasa = $('#formularioTasaCambio');
+    const $modal = $('#modalTasaCambio');
+    const modalInstancia = $modal.length ? new bootstrap.Modal($modal[0]) : null;
+    const $modalTitulo = $('#modalTasaTitulo');
+    const $textoBotonGuardar = $('#textoBotonGuardar');
+    const $inputId = $('#idTasaCambio');
+    const $inputFecha = $('#fechaTasa');
+    const $feedbackFechaTasa = $('#feedbackFechaTasa');
+    const $inputTasa = $('#valorTasa');
+    const $mensajeError = $('#mensajeErrorTasa');
+    const $btnGuardarTasa = $('#btnGuardarTasa');
+    let temporizadorFecha;
 
-    var mensajeError = document.getElementById('mensajeErrorTasa');
-    var btnNuevaTasa = document.getElementById('btnNuevaTasa');
-    var btnGuardarTasa = document.getElementById('btnGuardarTasa');
-    var temporizadorFecha;
+    $inputTasa.on('keydown', function(e) {
+        if (['e', 'E', '+', '-'].includes(e.key)) {
+            e.preventDefault();
+        }
+    });
+    $inputTasa.on('input', function() {
+        // Comas a puntos, solo números y un único punto decimal
+        let val = this.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+        const puntos = val.split('.');
+        if (puntos.length > 2) {
+            val = puntos[0] + '.' + puntos.slice(1).join('');
+        }
+        // Máximo 6 dígitos enteros y 2 decimales
+        const partes = val.split('.');
+        if (partes[0].length > 6) {
+            partes[0] = partes[0].substring(0, 6);
+        }
+        if (partes.length > 1 && partes[1].length > 2) {
+            partes[1] = partes[1].substring(0, 2);
+        }
+        this.value = partes.length > 1 ? partes[0] + '.' + partes[1] : partes[0];
+    });
 
     cargarTasas();
 
     function limpiarEstadoFecha() {
-        if (inputFecha) {
-            inputFecha.classList.remove('is-invalid', 'is-valid');
-        }
-        if (feedbackFechaTasa) {
-            feedbackFechaTasa.classList.add('d-none');
-            feedbackFechaTasa.classList.remove('d-block');
-        }
-        if (btnGuardarTasa) {
-            btnGuardarTasa.disabled = false;
-        }
+        $inputFecha.removeClass('is-invalid is-valid');
+        $feedbackFechaTasa.addClass('d-none').removeClass('d-block');
+        $btnGuardarTasa.prop('disabled', false);
     }
 
     function verificarFechaEnTiempoReal() {
         clearTimeout(temporizadorFecha);
-        if (!inputFecha) return;
-        var fecha = inputFecha.value.trim();
+        const fecha = ($inputFecha.val() || '').trim();
         if (!fecha) {
             limpiarEstadoFecha();
             return;
         }
-        var idActual = inputId ? inputId.value.trim() : '';
+        const idActual = ($inputId.val() || '').trim();
 
         temporizadorFecha = setTimeout(function() {
-            fetch('/SP%20Perfect%20Color/tasaCambio/verificarFechaAjax?fecha=' + encodeURIComponent(fecha) + '&id=' + encodeURIComponent(idActual))
-                .then(function(r) { return r.json(); })
+            api.get('tasaCambio/verificarFechaAjax', { fecha: fecha, id: idActual })
                 .then(function(res) {
-                    if (res.estado === 'exito' && res.datos) {
-                        if (res.datos.existe) {
-                            inputFecha.classList.add('is-invalid');
-                            inputFecha.classList.remove('is-valid');
-                            if (feedbackFechaTasa) {
-                                var fTxt = res.datos.fecha_formateada || fecha;
-                                feedbackFechaTasa.textContent = 'Ya existe una tasa registrada para la fecha ' + fTxt;
-                                feedbackFechaTasa.classList.remove('d-none');
-                                feedbackFechaTasa.classList.add('d-block');
-                            }
-                            if (btnGuardarTasa) btnGuardarTasa.disabled = true;
-                        } else {
-                            inputFecha.classList.remove('is-invalid');
-                            inputFecha.classList.add('is-valid');
-                            if (feedbackFechaTasa) {
-                                feedbackFechaTasa.classList.add('d-none');
-                                feedbackFechaTasa.classList.remove('d-block');
-                            }
-                            if (btnGuardarTasa) btnGuardarTasa.disabled = false;
-                        }
+                    if (res.estado !== 'exito' || !res.datos) return;
+                    if (res.datos.existe) {
+                        $inputFecha.addClass('is-invalid').removeClass('is-valid');
+                        $feedbackFechaTasa
+                            .text('Ya existe una tasa registrada para la fecha ' + (res.datos.fecha_formateada || fecha))
+                            .removeClass('d-none').addClass('d-block');
+                        $btnGuardarTasa.prop('disabled', true);
+                    } else {
+                        $inputFecha.removeClass('is-invalid').addClass('is-valid');
+                        $feedbackFechaTasa.addClass('d-none').removeClass('d-block');
+                        $btnGuardarTasa.prop('disabled', false);
                     }
                 })
                 .catch(function(err) {
@@ -101,39 +77,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 200);
     }
 
-    if (inputFecha) {
-        inputFecha.addEventListener('change', verificarFechaEnTiempoReal);
-        inputFecha.addEventListener('input', verificarFechaEnTiempoReal);
-    }
+    $inputFecha.on('change input', verificarFechaEnTiempoReal);
 
-    if (btnNuevaTasa) {
-        btnNuevaTasa.addEventListener('click', function() {
-            limpiarFormulario();
-            verificarFechaEnTiempoReal();
-        });
-    }
+    $('#btnNuevaTasa').on('click', function() {
+        limpiarFormulario();
+        verificarFechaEnTiempoReal();
+    });
 
-    if (formTasa) {
-        formTasa.addEventListener('submit', function(e) {
-            e.preventDefault();
-            guardarTasa();
-        });
+    $formTasa.on('submit', function(e) {
+        e.preventDefault();
+        guardarTasa();
+    });
+
+    function limpiarMensaje() {
+        $mensajeError.text('').addClass('d-none');
     }
 
     function limpiarFormulario() {
-        if (formTasa) formTasa.reset();
-        if (inputId) inputId.value = '';
+        if ($formTasa.length) $formTasa[0].reset();
+        $inputId.val('');
         limpiarEstadoFecha();
-        if (inputFecha) {
-            var hoy = new Date().toISOString().split('T')[0];
-            inputFecha.value = hoy;
-        }
-        if (modalTitulo) modalTitulo.textContent = 'Registrar Tasa de Cambio';
-        if (textoBotonGuardar) textoBotonGuardar.textContent = 'Guardar Tasa';
-        if (mensajeError) {
-            mensajeError.textContent = '';
-            mensajeError.classList.add('d-none');
-        }
+        $inputFecha.val(new Date().toISOString().split('T')[0]);
+        $modalTitulo.text('Registrar Tasa de Cambio');
+        $textoBotonGuardar.text('Guardar Tasa');
+        limpiarMensaje();
     }
 
     function cargarTasas() {
@@ -161,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         data: 'fecha',
                         render: function(data) {
                             if (!data) return '-';
-                            var partes = data.split('-');
+                            const partes = data.split('-');
                             if (partes.length === 3) {
                                 return partes[2] + '/' + partes[1] + '/' + partes[0];
                             }
@@ -172,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         data: 'tasa',
                         render: function(data) {
                             if (data == null) return '-';
-                            var num = parseFloat(data);
+                            const num = parseFloat(data);
                             return '<strong>Bs. ' + num.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</strong>';
                         }
                     },
@@ -180,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         data: 'created_at',
                         render: function(data) {
                             if (!data) return '-';
-                            var d = new Date(data.replace(' ', 'T'));
+                            const d = new Date(data.replace(' ', 'T'));
                             if (isNaN(d.getTime())) return data;
                             return d.toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' });
                         }
@@ -211,9 +178,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        var table = $('#tablaTasas').DataTable();
+        const table = $('#tablaTasas').DataTable();
         table.clear();
-        tasas.forEach(function(t) {
+        $.each(tasas, function(i, t) {
             table.row.add(t);
         });
         table.draw();
@@ -222,29 +189,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // Evento de edición (cargar datos en modal)
     $(document).on('click', '.btn-editar-tasa', function(e) {
         e.preventDefault();
-        var id = $(this).attr('data-id') || $(this).data('id');
+        const id = $(this).attr('data-id');
         if (!id) return;
 
         limpiarEstadoFecha();
-        if (mensajeError) {
-            mensajeError.textContent = '';
-            mensajeError.classList.add('d-none');
-        }
+        limpiarMensaje();
 
-        fetch('/SP%20Perfect%20Color/tasaCambio/obtener?id=' + encodeURIComponent(id))
-            .then(function(r) { return r.json(); })
+        api.get('tasaCambio/obtener', { id: id })
             .then(function(res) {
                 if (res.estado === 'exito' && res.datos) {
-                    var t = res.datos;
-                    if (inputId) inputId.value = t.id_tasa_cambio;
-                    if (inputFecha) inputFecha.value = t.fecha;
-                    if (inputTasa) inputTasa.value = parseFloat(t.tasa);
-                    if (modalTitulo) modalTitulo.textContent = 'Editar Tasa de Cambio (' + t.fecha + ')';
-                    if (textoBotonGuardar) textoBotonGuardar.textContent = 'Actualizar Tasa';
-
-                    if (modalInstancia) {
-                        modalInstancia.show();
-                    }
+                    const t = res.datos;
+                    $inputId.val(t.id_tasa_cambio);
+                    $inputFecha.val(t.fecha);
+                    $inputTasa.val(parseFloat(t.tasa));
+                    $modalTitulo.text('Editar Tasa de Cambio (' + t.fecha + ')');
+                    $textoBotonGuardar.text('Actualizar Tasa');
+                    if (modalInstancia) modalInstancia.show();
                 } else {
                     mostrarNotificacion(res.mensaje || 'Error al obtener la tasa', 'error');
                 }
@@ -257,21 +217,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Guardar / Actualizar
     function guardarTasa() {
-        var id = inputId ? inputId.value.trim() : '';
-        var fecha = inputFecha ? inputFecha.value.trim() : '';
-        var tasa = inputTasa ? inputTasa.value.trim() : '';
+        const id = ($inputId.val() || '').trim();
+        const fecha = ($inputFecha.val() || '').trim();
+        const tasa = ($inputTasa.val() || '').trim();
 
-        if (mensajeError) {
-            mensajeError.textContent = '';
-            mensajeError.classList.add('d-none');
-        }
+        limpiarMensaje();
 
         if (!fecha) {
             mostrarErrorEnModal('Debe ingresar la fecha de vigencia.');
             return;
         }
 
-        var tasaNum = parseFloat(tasa.replace(',', '.'));
+        const tasaNum = parseFloat(tasa.replace(',', '.'));
         if (isNaN(tasaNum) || tasaNum <= 0) {
             mostrarErrorEnModal('El valor de la tasa debe ser un número mayor a 0 (ej. 45.50).');
             return;
@@ -282,34 +239,22 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        var fd = new FormData();
-        fd.append('fecha', fecha);
-        fd.append('tasa', tasaNum.toFixed(2));
-
-        var url = '/SP%20Perfect%20Color/tasaCambio/guardar';
-        var esEdicion = (id && parseInt(id) > 0);
-        if (esEdicion) {
-            url = '/SP%20Perfect%20Color/tasaCambio/actualizar';
-            fd.append('id_tasa_cambio', id);
-        }
+        const datos = { fecha: fecha, tasa: tasaNum.toFixed(2) };
+        const esEdicion = (id && parseInt(id) > 0);
+        if (esEdicion) datos.id_tasa_cambio = id;
 
         function ejecutarEnvio() {
-            if (btnGuardarTasa) btnGuardarTasa.disabled = true;
+            $btnGuardarTasa.prop('disabled', true);
 
-            fetch(url, {
-                method: 'POST',
-                body: fd
-            })
-            .then(function(r) { return r.json(); })
+            api.post(esEdicion ? 'tasaCambio/actualizar' : 'tasaCambio/guardar', datos)
             .then(function(res) {
-                if (btnGuardarTasa) btnGuardarTasa.disabled = false;
+                $btnGuardarTasa.prop('disabled', false);
                 if (res.estado === 'exito') {
                     if (modalInstancia) modalInstancia.hide();
                     mostrarNotificacion(res.mensaje, 'exito');
                     cargarTasas();
                     // Si la fecha editada o creada es hoy, recargar la página tras 1s para actualizar las tarjetas de resumen
-                    var hoy = new Date().toISOString().split('T')[0];
-                    if (fecha === hoy) {
+                    if (fecha === new Date().toISOString().split('T')[0]) {
                         setTimeout(function() {
                             window.location.reload();
                         }, 1200);
@@ -319,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(function(err) {
-                if (btnGuardarTasa) btnGuardarTasa.disabled = false;
+                $btnGuardarTasa.prop('disabled', false);
                 console.error('[TasaCambio] Error al guardar:', err);
                 mostrarErrorEnModal('No se pudo conectar con el servidor. Intente de nuevo.');
             });
@@ -333,12 +278,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function mostrarErrorEnModal(texto) {
-        if (mensajeError) {
-            mensajeError.textContent = texto;
-            mensajeError.classList.remove('d-none');
-        }
+        $mensajeError.text(texto).removeClass('d-none');
     }
 
     // Buscador manual de la tabla
-    vincularBusqueda(busquedaTasas, '#tablaTasas');
+    vincularBusqueda('#busquedaTasas', '#tablaTasas');
 });

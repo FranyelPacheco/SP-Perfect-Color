@@ -35,13 +35,6 @@ if (window.jQuery && $.fn.dataTable) {
             recalculando = false;
         });
     });
-
-    // Al plegar el sidebar cambia el ancho útil sin evento resize
-    $(document).on('click', '#sidebarToggle', function () {
-        setTimeout(function () {
-            $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust().responsive.recalc();
-        }, 350);
-    });
 }
 
 const BASE_URL = '/SP%20Perfect%20Color/';
@@ -58,17 +51,37 @@ function debounce(fn, ms = 300) {
     };
 }
 
+// Token CSRF en toda petición $.ajax no-GET al mismo origen
+$.ajaxPrefilter(function (opciones, originales, xhr) {
+    const token = $('meta[name="csrf-token"]').attr('content');
+    const tipo = (opciones.type || 'GET').toUpperCase();
+    if (token && !opciones.crossDomain && tipo !== 'GET' && tipo !== 'HEAD') xhr.setRequestHeader('X-CSRF-Token', token);
+});
+
+// Petición JSON: resuelve también con el cuerpo JSON de respuestas 4xx/5xx y expone abort()
+function peticionJson(opciones) {
+    const xhr = $.ajax($.extend({ dataType: 'json' }, opciones));
+    const promesa = new Promise(function (ok, fallo) {
+        xhr.done(ok).fail(function (x, estado) {
+            if (x.responseJSON) return ok(x.responseJSON);
+            const error = new Error(estado);
+            error.name = estado === 'abort' ? 'AbortError' : 'Error';
+            fallo(error);
+        });
+    });
+    promesa.abort = function () { xhr.abort(); };
+    return promesa;
+}
+
 // Peticiones JSON a la app: api.get('cliente/obtener', {id: 1}), api.post('cliente/guardar', formDataOObjeto)
 const api = {
-    async get(ruta, params = {}, opciones = {}) {
-        const query = new URLSearchParams(params).toString();
-        const resp = await fetch(BASE_URL + ruta + (query ? '?' + query : ''), opciones);
-        return resp.json();
+    get(ruta, params = {}, opciones = {}) {
+        return peticionJson($.extend({ url: BASE_URL + ruta, data: params }, opciones));
     },
-    async post(ruta, datos = {}) {
-        const body = datos instanceof FormData ? datos : new URLSearchParams(datos);
-        const resp = await fetch(BASE_URL + ruta, { method: 'POST', body });
-        return resp.json();
+    post(ruta, datos = {}) {
+        const config = { url: BASE_URL + ruta, type: 'POST', data: datos };
+        if (datos instanceof FormData) { config.processData = false; config.contentType = false; }
+        return peticionJson(config);
     }
 };
 
@@ -82,30 +95,25 @@ const TOAST_TIPOS = {
 function mostrarNotificacion(mensaje, tipo, descripcion) {
     const t = TOAST_TIPOS[tipo] ? tipo : 'info';
     const duracion = t === 'error' ? 5500 : 3500;
-    let contenedor = document.getElementById('toastContenedor');
-    if (!contenedor) {
-        contenedor = document.createElement('div');
-        contenedor.id = 'toastContenedor';
-        contenedor.className = 'toast-contenedor';
-        document.body.appendChild(contenedor);
+    let $contenedor = $('#toastContenedor');
+    if (!$contenedor.length) {
+        $contenedor = $('<div id="toastContenedor" class="toast-contenedor"></div>').appendTo('body');
     }
 
-    const raiz = document.createElement('div');
-    raiz.className = 'swipe-toast';
-    raiz.dataset.tipo = t;
-    raiz.innerHTML = '<div class="swipe-toast__gate"><div class="swipe-toast__lift">' +
+    const $raiz = $('<div class="swipe-toast"></div>').attr('data-tipo', t).html('<div class="swipe-toast__gate"><div class="swipe-toast__lift">' +
         '<div class="swipe-toast__card" role="' + (t === 'error' ? 'alert' : 'status') + '" tabindex="0">' +
         '<i class="bi ' + TOAST_TIPOS[t].icono + ' swipe-toast__icon" aria-hidden="true"></i>' +
         '<span class="swipe-toast__body"><span class="swipe-toast__title"></span><span class="swipe-toast__desc"></span></span>' +
         '<button type="button" class="swipe-toast__close" aria-label="Cerrar"><i class="bi bi-x-lg"></i></button>' +
-        '<i class="swipe-toast__fuse" aria-hidden="true"></i></div></div></div>';
-    raiz.querySelector('.swipe-toast__title').textContent = mensaje;
-    const desc = raiz.querySelector('.swipe-toast__desc');
-    if (descripcion) desc.textContent = descripcion; else desc.remove();
-    contenedor.appendChild(raiz);
+        '<i class="swipe-toast__fuse" aria-hidden="true"></i></div></div></div>');
+    $raiz.find('.swipe-toast__title').text(mensaje);
+    const $desc = $raiz.find('.swipe-toast__desc');
+    if (descripcion) $desc.text(descripcion); else $desc.remove();
+    $contenedor.append($raiz);
 
-    const tarjeta = raiz.querySelector('.swipe-toast__card');
-    const mecha = raiz.querySelector('.swipe-toast__fuse');
+    const $tarjeta = $raiz.find('.swipe-toast__card');
+    const tarjeta = $tarjeta[0];
+    const mecha = $raiz.find('.swipe-toast__fuse')[0];
     const reducir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let cerrado = false;
     let arrastre = null;
@@ -115,43 +123,45 @@ function mostrarNotificacion(mensaje, tipo, descripcion) {
     const sincronizar = () => { if (pausado || arrastre) anim.pause(); else if (!cerrado) anim.play(); };
 
     const quitar = () => {
-        raiz.dataset.phase = 'gone';
-        setTimeout(() => raiz.remove(), 220);
+        $raiz.attr('data-phase', 'gone');
+        setTimeout(() => $raiz.remove(), 220);
     };
     const cerrar = (deslizado) => {
         if (cerrado) return;
         cerrado = true;
         anim.pause();
         if (deslizado) { quitar(); return; }
-        raiz.dataset.phase = 'closing';
+        $raiz.attr('data-phase', 'closing');
         setTimeout(quitar, 280);
     };
     anim.onfinish = () => cerrar(false);
 
-    tarjeta.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') { pausado = true; sincronizar(); } });
-    tarjeta.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') { pausado = false; sincronizar(); } });
-    tarjeta.addEventListener('focus', () => { pausado = true; sincronizar(); });
-    tarjeta.addEventListener('blur', () => { pausado = false; sincronizar(); });
-    tarjeta.addEventListener('keydown', e => { if (e.key === 'Escape') cerrar(false); });
-    raiz.querySelector('.swipe-toast__close').addEventListener('click', () => cerrar(false));
+    $tarjeta.on('pointerenter', e => { if (e.originalEvent.pointerType === 'mouse') { pausado = true; sincronizar(); } });
+    $tarjeta.on('pointerleave', e => { if (e.originalEvent.pointerType === 'mouse') { pausado = false; sincronizar(); } });
+    $tarjeta.on('focus', () => { pausado = true; sincronizar(); });
+    $tarjeta.on('blur', () => { pausado = false; sincronizar(); });
+    $tarjeta.on('keydown', e => { if (e.key === 'Escape') cerrar(false); });
+    $raiz.find('.swipe-toast__close').on('click', () => cerrar(false));
 
-    tarjeta.addEventListener('pointerdown', e => {
-        if (e.button !== 0 || cerrado || e.target.closest('button')) return;
-        tarjeta.setPointerCapture(e.pointerId);
-        arrastre = { id: e.pointerId, y0: e.clientY, dy: 0, hist: [[performance.now(), 0]] };
-        tarjeta.style.transition = 'none';
+    $tarjeta.on('pointerdown', e => {
+        const ev = e.originalEvent;
+        if (ev.button !== 0 || cerrado || $(ev.target).closest('button').length) return;
+        tarjeta.setPointerCapture(ev.pointerId);
+        arrastre = { id: ev.pointerId, y0: ev.clientY, dy: 0, hist: [[performance.now(), 0]] };
+        $tarjeta.css('transition', 'none');
         sincronizar();
     });
-    tarjeta.addEventListener('pointermove', e => {
-        if (!arrastre || arrastre.id !== e.pointerId) return;
-        const raw = e.clientY - arrastre.y0;
+    $tarjeta.on('pointermove', e => {
+        const ev = e.originalEvent;
+        if (!arrastre || arrastre.id !== ev.pointerId) return;
+        const raw = ev.clientY - arrastre.y0;
         arrastre.dy = raw >= 0 ? raw : -(24 * Math.abs(raw)) / (24 + 0.55 * Math.abs(raw)) * 0.55;
-        tarjeta.style.transform = 'translateY(' + arrastre.dy + 'px)';
+        $tarjeta.css('transform', 'translateY(' + arrastre.dy + 'px)');
         arrastre.hist.push([performance.now(), arrastre.dy]);
         if (arrastre.hist.length > 4) arrastre.hist.shift();
     });
     const soltar = e => {
-        if (!arrastre || arrastre.id !== e.pointerId) return;
+        if (!arrastre || arrastre.id !== e.originalEvent.pointerId) return;
         const { dy, hist } = arrastre;
         arrastre = null;
         const [t0, y0] = hist[0];
@@ -160,25 +170,28 @@ function mostrarNotificacion(mensaje, tipo, descripcion) {
         if (dy > 0 && (v > 0.11 || (dy >= 40 && v >= 0))) {
             cerrado = true;
             anim.pause();
-            tarjeta.style.transition = 'transform 0.25s cubic-bezier(0.23,1,0.32,1), opacity 0.2s ease';
-            tarjeta.style.transform = 'translateY(' + (dy + tarjeta.offsetHeight) + 'px)';
-            tarjeta.style.opacity = '0';
+            $tarjeta.css({
+                transition: 'transform 0.25s cubic-bezier(0.23,1,0.32,1), opacity 0.2s ease',
+                transform: 'translateY(' + (dy + tarjeta.offsetHeight) + 'px)',
+                opacity: '0'
+            });
             setTimeout(quitar, 200);
             return;
         }
-        tarjeta.style.transition = reducir ? 'transform 0.2s ease' : 'transform 0.5s cubic-bezier(0.34,1.4,0.64,1)';
-        tarjeta.style.transform = 'translateY(0)';
+        $tarjeta.css({
+            transition: reducir ? 'transform 0.2s ease' : 'transform 0.5s cubic-bezier(0.34,1.4,0.64,1)',
+            transform: 'translateY(0)'
+        });
         sincronizar();
     };
-    tarjeta.addEventListener('pointerup', soltar);
-    tarjeta.addEventListener('pointercancel', soltar);
+    $tarjeta.on('pointerup pointercancel', soltar);
 
-    requestAnimationFrame(() => requestAnimationFrame(() => { raiz.dataset.mounted = 'true'; }));
+    requestAnimationFrame(() => requestAnimationFrame(() => { $raiz.attr('data-mounted', 'true'); }));
 }
 
 // Enlaza un input de búsqueda con el filtro global de una DataTable
 function vincularBusqueda(input, selectorTabla) {
-    input?.addEventListener('keyup', function () {
+    $(input).on('keyup', function () {
         if ($.fn.DataTable.isDataTable(selectorTabla)) {
             $(selectorTabla).DataTable().search(this.value).draw();
         }
@@ -196,9 +209,10 @@ function alHacerClick(selector, fn) {
 
 // Restringe un input a letras y espacios (teclado, pegado y autocompletado)
 function restringirSoloLetras(input) {
-    if (!input) return;
+    const $input = $(input);
+    if (!$input.length) return;
 
-    input.addEventListener('keydown', function(e) {
+    $input.on('keydown', function(e) {
         if (['Backspace', 'Tab', 'Enter', 'Escape', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key) || e.ctrlKey || e.metaKey || e.altKey) {
             return;
         }
@@ -207,15 +221,16 @@ function restringirSoloLetras(input) {
         }
     });
 
-    input.addEventListener('beforeinput', function(e) {
-        if (e.data && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/.test(e.data)) {
+    $input.on('beforeinput', function(e) {
+        const dato = e.originalEvent.data;
+        if (dato && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/.test(dato)) {
             e.preventDefault();
         }
     });
 
-    input.addEventListener('input', function() {
-        var cursorPos = this.selectionStart;
-        var limpio = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+    $input.on('input', function() {
+        const cursorPos = this.selectionStart;
+        const limpio = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
         if (this.value !== limpio) {
             this.value = limpio;
             if (cursorPos !== null) {
@@ -224,12 +239,11 @@ function restringirSoloLetras(input) {
         }
     });
 
-    input.addEventListener('paste', function(e) {
-        var textoPegado = (e.clipboardData || window.clipboardData).getData('text');
+    $input.on('paste', function(e) {
+        const textoPegado = (e.originalEvent.clipboardData || window.clipboardData).getData('text');
         if (textoPegado && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(textoPegado)) {
             e.preventDefault();
-            var limpio = textoPegado.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
-            document.execCommand('insertText', false, limpio);
+            document.execCommand('insertText', false, textoPegado.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, ''));
         }
     });
 }
@@ -237,21 +251,21 @@ function restringirSoloLetras(input) {
 // Validación en vivo de campos únicos contra validacion/unico.
 // Marca is-invalid/is-valid, muestra el mensaje en feedback y deshabilita el botón si el formulario tiene errores.
 function validarUnico({ input, feedback, entidad, campo, getValor, getId, minLen = 1, formato, msgFormato, boton }) {
-    let controlador;
+    const $input = $(input);
+    let peticion;
     const marcar = (estado, mensaje = '') => {
-        input.classList.toggle('is-invalid', estado === 'invalid');
-        input.classList.toggle('is-valid', estado === 'valid');
-        if (feedback) feedback.textContent = mensaje;
-        if (boton) boton.disabled = !!boton.closest('form, .modal-content')?.querySelector('.is-invalid');
+        $input.toggleClass('is-invalid', estado === 'invalid').toggleClass('is-valid', estado === 'valid');
+        if (feedback) $(feedback).text(mensaje);
+        if (boton) $(boton).prop('disabled', $(boton).closest('form, .modal-content').find('.is-invalid').length > 0);
     };
     const verificar = debounce(async () => {
-        const valor = (getValor ? getValor() : input.value).trim();
+        const valor = (getValor ? getValor() : $input.val()).trim();
         if (valor.length < minLen) return marcar(null);
         if (formato && !formato.test(valor)) return marcar('invalid', msgFormato || 'Formato inválido');
-        controlador?.abort();
-        controlador = new AbortController();
+        peticion?.abort();
         try {
-            const r = await api.get('validacion/unico', { entidad, campo, valor, id: getId ? (getId() ?? '') : '' }, { signal: controlador.signal });
+            peticion = api.get('validacion/unico', { entidad, campo, valor, id: getId ? (getId() ?? '') : '' });
+            const r = await peticion;
             const d = r.datos || {};
             if (d.existe) marcar('invalid', d.mensaje);
             else if (d.inactivo_id) marcar('valid', 'Existe deshabilitado: al guardar se reactivará');
@@ -260,32 +274,26 @@ function validarUnico({ input, feedback, entidad, campo, getValor, getId, minLen
             if (e.name !== 'AbortError') marcar(null);
         }
     });
-    input.addEventListener('input', verificar);
-    input.addEventListener('blur', verificar);
+    $input.on('input blur', verificar);
     return { limpiar: () => marcar(null), revalidar: verificar };
 }
 
 function confirmarConModal(titulo, mensaje, callback, claseBoton) {
     claseBoton = claseBoton || 'btn-danger';
-    var modal = document.getElementById('modalConfirmacion');
-    if (!modal) return;
-    document.getElementById('modalConfirmacionTitulo').textContent = titulo;
-    document.getElementById('modalConfirmacionCuerpo').innerHTML = mensaje;
-    var btn = document.getElementById('modalConfirmacionBtn');
-    btn.className = 'btn ' + claseBoton;
-    var nuevoBtn = btn.cloneNode(true);
-    btn.parentNode.replaceChild(nuevoBtn, btn);
-    nuevoBtn.addEventListener('click', function() {
-        bootstrap.Modal.getInstance(modal).hide();
+    const $modal = $('#modalConfirmacion');
+    if (!$modal.length) return;
+    $('#modalConfirmacionTitulo').text(titulo);
+    $('#modalConfirmacionCuerpo').html(mensaje);
+    const $btn = $('#modalConfirmacionBtn').attr('class', 'btn ' + claseBoton);
+    const $nuevoBtn = $btn.clone();
+    $btn.replaceWith($nuevoBtn);
+    $nuevoBtn.on('click', function() {
+        bootstrap.Modal.getInstance($modal[0]).hide();
         if (typeof callback === 'function') {
             callback();
         }
     });
-    bootstrap.Modal.getOrCreateInstance(modal).show();
-}
-
-function confirmarAccion(mensaje, funcionCallback) {
-    confirmarConModal('Confirmar', mensaje || '¿Está seguro de realizar esta acción?', funcionCallback);
+    bootstrap.Modal.getOrCreateInstance($modal[0]).show();
 }
 
 // Formatea un numero como moneda (formato venezolano)
@@ -299,32 +307,32 @@ function formatearMoneda(cantidad) {
 
 // Animacion de contador para los valores del dashboard con temporizacion real y desaceleracion suave (ease-out)
 function animarContador(elemento, valorFinal, duracion) {
-    if (!elemento) return;
-    var esMoneda = elemento.getAttribute('data-moneda') === '1';
+    const $el = $(elemento);
+    if (!$el.length) return;
+    const esMoneda = $el.attr('data-moneda') === '1';
 
     if (!duracion || duracion <= 0 || valorFinal <= 0) {
-        elemento.textContent = esMoneda ? '$ ' + formatearMoneda(valorFinal) : Math.round(valorFinal);
+        $el.text(esMoneda ? '$ ' + formatearMoneda(valorFinal) : Math.round(valorFinal));
         return;
     }
 
-    var inicioTiempo = null;
-    var ultimoEntero = -1;
+    let inicioTiempo = null;
+    let ultimoEntero = -1;
 
     function frame(ahora) {
         if (!inicioTiempo) inicioTiempo = ahora;
-        var transcurrido = ahora - inicioTiempo;
-        var progreso = Math.min(transcurrido / duracion, 1);
+        const progreso = Math.min((ahora - inicioTiempo) / duracion, 1);
         // Desaceleracion cubica (ease-out-cubic): arranca con energia y frena suavemente
-        var factor = 1 - Math.pow(1 - progreso, 3);
-        var actual = valorFinal * factor;
+        const factor = 1 - Math.pow(1 - progreso, 3);
+        const actual = valorFinal * factor;
 
         if (esMoneda) {
-            elemento.textContent = '$ ' + formatearMoneda(actual);
+            $el.text('$ ' + formatearMoneda(actual));
         } else {
-            var entero = Math.floor(actual);
+            let entero = Math.floor(actual);
             if (progreso === 1) entero = Math.round(valorFinal);
             if (entero !== ultimoEntero) {
-                elemento.textContent = entero;
+                $el.text(entero);
                 ultimoEntero = entero;
             }
         }
@@ -332,7 +340,7 @@ function animarContador(elemento, valorFinal, duracion) {
         if (progreso < 1) {
             requestAnimationFrame(frame);
         } else {
-            elemento.textContent = esMoneda ? '$ ' + formatearMoneda(valorFinal) : Math.round(valorFinal);
+            $el.text(esMoneda ? '$ ' + formatearMoneda(valorFinal) : Math.round(valorFinal));
         }
     }
 
@@ -340,10 +348,10 @@ function animarContador(elemento, valorFinal, duracion) {
 }
 
 // Inicializar contadores al cargar la pagina
-document.addEventListener('DOMContentLoaded', function() {
-    var valores = document.querySelectorAll('.stat-value[data-valor]');
-    valores.forEach(function(el, i) {
-        var valorFinal = parseFloat(el.getAttribute('data-valor')) || 0;
+$(function() {
+    $('.stat-value[data-valor]').each(function(i) {
+        const el = this;
+        const valorFinal = parseFloat($(el).attr('data-valor')) || 0;
         // Arranca junto con la entrada escalonada de cada tarjeta
         setTimeout(function() { animarContador(el, valorFinal, 1200); }, 150 + i * 50);
     });

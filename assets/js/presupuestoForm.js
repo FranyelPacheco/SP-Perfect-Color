@@ -1,30 +1,34 @@
 // Archivo: presupuestoForm.js
 // Manejo del formulario de creacion de presupuestos con UX/UI interactiva y formulación de mezclas
 
-document.addEventListener('DOMContentLoaded', function() {
+$(function() {
     // Referencias a elementos del DOM
-    var clientePresupuesto = document.getElementById('clientePresupuesto');
-    var busquedaInsumo = document.getElementById('busquedaInsumoPresupuesto');
-    var btnLimpiarBusqueda = document.getElementById('btnLimpiarBusqueda');
-    var listaInsumosDisponibles = document.getElementById('listaInsumosDisponibles');
-    var cuerpoTablaItems = document.getElementById('cuerpoTablaItems');
-    var totalPresupuesto = document.getElementById('totalPresupuesto');
-    var formularioPresupuesto = document.getElementById('formularioPresupuesto');
-    var mensajeError = document.getElementById('mensajeErrorPresupuesto');
-    var filaVacia = document.getElementById('filaVacia');
-    var contadorInsumos = document.getElementById('contadorInsumos');
-    var badgeCantidadItems = document.getElementById('badgeCantidadItems');
-    var resumenConteoItems = document.getElementById('resumenConteoItems');
-    var btnGuardarPresupuesto = document.getElementById('btnGuardarPresupuesto');
+    const $clientePresupuesto = $('#clientePresupuesto');
+    const $busquedaInsumo = $('#busquedaInsumoPresupuesto');
+    const $listaInsumosDisponibles = $('#listaInsumosDisponibles');
+    const $cuerpoTablaItems = $('#cuerpoTablaItems');
+    const $totalPresupuesto = $('#totalPresupuesto');
+    const $formularioPresupuesto = $('#formularioPresupuesto');
+    const $mensajeError = $('#mensajeErrorPresupuesto');
+    const $filaVacia = $('#filaVacia');
+    const $contadorInsumos = $('#contadorInsumos');
+    const $badgeCantidadItems = $('#badgeCantidadItems');
+    const $resumenConteoItems = $('#resumenConteoItems');
+    const $btnGuardarPresupuesto = $('#btnGuardarPresupuesto');
+
+    const HTML_BOTON_AGREGAR = '<button type="button" class="btn btn-sm btn-outline-primary btn-catalogo-add btn-agregar"><i class="bi bi-plus-lg me-1"></i>Agregar</button>';
+    const HTML_BOTON_AGREGADO = '<button type="button" class="btn btn-sm btn-secondary btn-catalogo-add disabled" disabled><i class="bi bi-check2 me-1"></i>Agregado</button>';
+    const HTML_BOTON_GUARDAR = '<i class="bi bi-check-lg me-1"></i>Guardar';
 
     // Array para almacenar los items del presupuesto y catalogo
-    var itemsPresupuesto = [];
-    var insumosDisponibles = [];
-    var clientesDisponibles = [];
-    var tipoFiltroActual = 'todos';
+    const itemsPresupuesto = [];
+    let insumosDisponibles = [];
+    let clientesDisponibles = [];
+    let tipoFiltroActual = 'todos';
+    let fraccionFiltroActual = 'todos';
 
     // Verificar que los elementos esenciales existen
-    if (!clientePresupuesto || !formularioPresupuesto) {
+    if (!$clientePresupuesto.length || !$formularioPresupuesto.length) {
         console.error('Error: No se encontraron los elementos del formulario');
         return;
     }
@@ -34,87 +38,61 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarInsumos();
 
     // Evento para buscar insumos mientras se escribe
-    var temporizadorBusqueda;
-    if (busquedaInsumo) {
-        busquedaInsumo.addEventListener('input', function() {
-            clearTimeout(temporizadorBusqueda);
-            temporizadorBusqueda = setTimeout(function() {
-                aplicarFiltros();
-            }, 150);
-        });
-    }
+    let temporizadorBusqueda;
+    $busquedaInsumo.on('input', function() {
+        clearTimeout(temporizadorBusqueda);
+        temporizadorBusqueda = setTimeout(aplicarFiltros, 150);
+    });
 
     // Boton para limpiar busqueda
-    if (btnLimpiarBusqueda) {
-        btnLimpiarBusqueda.addEventListener('click', function() {
-            if (busquedaInsumo) {
-                busquedaInsumo.value = '';
-                aplicarFiltros();
-                busquedaInsumo.focus();
-            }
-        });
-    }
+    $('#btnLimpiarBusqueda').on('click', function() {
+        $busquedaInsumo.val('');
+        aplicarFiltros();
+        $busquedaInsumo.trigger('focus');
+    });
 
     // Botones de filtro por tipo (Solo Bases y Simples)
-    var fraccionFiltroActual = 'todos';
-    var contenedorFiltrosFraccion = document.getElementById('filtrosFraccionBase');
-    var botonesFiltro = document.querySelectorAll('.btn-filtro-tipo');
-    botonesFiltro.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            botonesFiltro.forEach(function(b) {
-                b.classList.remove('btn-primary', 'active');
-                b.classList.add('btn-outline-secondary');
-            });
-            this.classList.remove('btn-outline-secondary');
-            this.classList.add('btn-primary', 'active');
-            tipoFiltroActual = this.dataset.tipo;
+    const $contenedorFiltrosFraccion = $('#filtrosFraccionBase');
+    const $botonesFiltro = $('.btn-filtro-tipo');
+    const $botonesFraccion = $('.btn-filtro-fraccion');
 
-            if (tipoFiltroActual === '2') {
-                if (contenedorFiltrosFraccion) contenedorFiltrosFraccion.classList.add('d-none');
-                fraccionFiltroActual = 'todos';
-                resetBotonesFraccion();
-            } else {
-                if (contenedorFiltrosFraccion) contenedorFiltrosFraccion.classList.remove('d-none');
-            }
+    $botonesFiltro.on('click', function() {
+        $botonesFiltro.removeClass('btn-primary active').addClass('btn-outline-secondary');
+        $(this).removeClass('btn-outline-secondary').addClass('btn-primary active');
+        tipoFiltroActual = $(this).attr('data-tipo');
 
-            aplicarFiltros();
-        });
+        if (tipoFiltroActual === '2') {
+            $contenedorFiltrosFraccion.addClass('d-none');
+            fraccionFiltroActual = 'todos';
+            resetBotonesFraccion();
+        } else {
+            $contenedorFiltrosFraccion.removeClass('d-none');
+        }
+
+        aplicarFiltros();
     });
 
     function resetBotonesFraccion() {
-        var btns = document.querySelectorAll('.btn-filtro-fraccion');
-        btns.forEach(function(b) {
-            b.classList.remove('btn-primary', 'btn-outline-primary', 'active');
-            b.classList.add('btn-outline-secondary');
-            if (b.dataset.fraccion === 'todos') {
-                b.classList.remove('btn-outline-secondary');
-                b.classList.add('btn-outline-primary', 'active');
-            }
-        });
+        $botonesFraccion.removeClass('btn-primary btn-outline-primary active').addClass('btn-outline-secondary');
+        $botonesFraccion.filter('[data-fraccion="todos"]').removeClass('btn-outline-secondary').addClass('btn-outline-primary active');
     }
 
-    var botonesFraccion = document.querySelectorAll('.btn-filtro-fraccion');
-    botonesFraccion.forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            botonesFraccion.forEach(function(b) {
-                b.classList.remove('btn-primary', 'btn-outline-primary', 'active');
-                b.classList.add('btn-outline-secondary');
-            });
-            this.classList.remove('btn-outline-secondary');
-            this.classList.add('btn-outline-primary', 'active');
-            fraccionFiltroActual = this.dataset.fraccion;
-            aplicarFiltros();
-        });
+    $botonesFraccion.on('click', function() {
+        $botonesFraccion.removeClass('btn-primary btn-outline-primary active').addClass('btn-outline-secondary');
+        $(this).removeClass('btn-outline-secondary').addClass('btn-outline-primary active');
+        fraccionFiltroActual = $(this).attr('data-fraccion');
+        aplicarFiltros();
     });
 
     // Evento para enviar el formulario de presupuesto
-    formularioPresupuesto.addEventListener('submit', function(evento) {
+    $formularioPresupuesto.on('submit', function(evento) {
         evento.preventDefault();
         guardarPresupuesto();
     });
 
     // Cargar clientes desde el servidor
     function cargarClientes() {
+        const avisoError = '<option value="">No se pudieron cargar los clientes. Recargue la página</option>';
         api.get('presupuesto/obtenerClientesAjax')
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
@@ -122,21 +100,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     llenarSelectClientes();
                 } else {
                     console.error('Error del servidor:', resultado.mensaje);
-                    if (clientePresupuesto) {
-                        clientePresupuesto.innerHTML = '<option value="">No se pudieron cargar los clientes. Recargue la página</option>';
-                    }
+                    $clientePresupuesto.html(avisoError);
                 }
             })
             .catch(function(error) {
                 console.error('No se pudieron cargar los clientes. Recargue la página:', error);
-                if (clientePresupuesto) {
-                    clientePresupuesto.innerHTML = '<option value="">No se pudieron cargar los clientes. Recargue la página</option>';
-                }
+                $clientePresupuesto.html(avisoError);
             });
     }
 
     // Cargar insumos desde el servidor
     function cargarInsumos() {
+        const avisoError = '<div class="text-center text-danger py-4">No se pudo cargar el catálogo de productos. Recargue la página</div>';
         api.get('presupuesto/obtenerInsumosAjax')
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
@@ -147,63 +122,53 @@ document.addEventListener('DOMContentLoaded', function() {
                     aplicarFiltros();
                 } else {
                     console.error('Error del servidor:', resultado.mensaje);
-                    if (listaInsumosDisponibles) {
-                        listaInsumosDisponibles.innerHTML = '<div class="text-center text-danger py-4">No se pudo cargar el catálogo de productos. Recargue la página</div>';
-                    }
+                    $listaInsumosDisponibles.html(avisoError);
                 }
             })
             .catch(function(error) {
                 console.error('No se pudo cargar el catálogo de productos. Recargue la página:', error);
-                if (listaInsumosDisponibles) {
-                    listaInsumosDisponibles.innerHTML = '<div class="text-center text-danger py-4">No se pudo cargar el catálogo de productos. Recargue la página</div>';
-                }
+                $listaInsumosDisponibles.html(avisoError);
             });
     }
 
     // Llena el select de clientes
     function llenarSelectClientes() {
-        if (!clientePresupuesto) return;
-
-        clientePresupuesto.innerHTML = '<option value="">Seleccione un cliente...</option>';
+        $clientePresupuesto.html('<option value="">Seleccione un cliente...</option>');
         if (clientesDisponibles.length === 0) {
-            clientePresupuesto.innerHTML += '<option value="" disabled>No hay clientes. Registre uno en el módulo Clientes.</option>';
+            $clientePresupuesto.append('<option value="" disabled>No hay clientes. Registre uno en el módulo Clientes.</option>');
             return;
         }
 
-        clientesDisponibles.forEach(function(cliente) {
-            var opcion = document.createElement('option');
-            opcion.value = cliente.id_cliente;
-            opcion.textContent = cliente.cedula + ' - ' + cliente.nombres + ' ' + cliente.apellidos;
-            clientePresupuesto.appendChild(opcion);
+        $.each(clientesDisponibles, function(i, cliente) {
+            $clientePresupuesto.append($('<option></option>').val(cliente.id_cliente).text(cliente.cedula + ' - ' + cliente.nombres + ' ' + cliente.apellidos));
         });
     }
 
     // Aplica busqueda y filtro por tipo simultaneamente
     function aplicarFiltros() {
-        var texto = busquedaInsumo ? busquedaInsumo.value.trim().toLowerCase() : '';
+        const texto = ($busquedaInsumo.val() || '').trim().toLowerCase();
 
-        var filtrados = insumosDisponibles.filter(function(insumo) {
+        const filtrados = insumosDisponibles.filter(function(insumo) {
             // Filtro por texto
-            var coincideTexto = !texto ||
+            const coincideTexto = !texto ||
                 (insumo.nombre && insumo.nombre.toLowerCase().indexOf(texto) !== -1) ||
                 (insumo.codigo && insumo.codigo.toLowerCase().indexOf(texto) !== -1) ||
                 (insumo.rubro_nombre && insumo.rubro_nombre.toLowerCase().indexOf(texto) !== -1);
 
             // Filtro por tipo
-            var coincideTipo = true;
+            let coincideTipo = true;
             if (tipoFiltroActual !== 'todos') {
-                var tipoId = parseInt(insumo.id_tipo_producto);
-                coincideTipo = (tipoId === parseInt(tipoFiltroActual));
+                coincideTipo = (parseInt(insumo.id_tipo_producto) === parseInt(tipoFiltroActual));
             }
 
             // Filtro por fraccion / presentacion (funciona en Todos y en Bases)
-            var coincideFraccion = true;
+            let coincideFraccion = true;
             if (fraccionFiltroActual !== 'todos') {
-                var frac = (insumo.fraccion || '').trim();
-                var nom = (insumo.nombre || '').toLowerCase();
-                var um = (insumo.unidad_medida || '').toLowerCase();
+                const frac = (insumo.fraccion || '').trim();
+                const nom = (insumo.nombre || '').toLowerCase();
+                const um = (insumo.unidad_medida || '').toLowerCase();
                 if (fraccionFiltroActual === '1') {
-                    var esGalon = (parseInt(insumo.id_tipo_producto) === 1) || nom.indexOf('galon') !== -1 || nom.indexOf('galón') !== -1 || um === 'galon' || um === 'galón';
+                    const esGalon = (parseInt(insumo.id_tipo_producto) === 1) || nom.indexOf('galon') !== -1 || nom.indexOf('galón') !== -1 || um === 'galon' || um === 'galón';
                     coincideFraccion = esGalon && (frac === '1') && (nom.indexOf('1/') === -1);
                 } else {
                     coincideFraccion = (frac === fraccionFiltroActual);
@@ -216,113 +181,107 @@ document.addEventListener('DOMContentLoaded', function() {
         mostrarInsumosDisponibles(filtrados);
     }
 
+    function estaAgregado(idInsumo) {
+        return itemsPresupuesto.some(function(item) {
+            return !item.es_mezcla && item.id_insumo === idInsumo;
+        });
+    }
+
     // Muestra la lista de insumos en el catalogo
     function mostrarInsumosDisponibles(insumos) {
-        if (!listaInsumosDisponibles) return;
-
-        if (contadorInsumos) {
-            contadorInsumos.textContent = insumos.length + ' disponible' + (insumos.length === 1 ? '' : 's');
-        }
-
-        listaInsumosDisponibles.innerHTML = '';
+        $contadorInsumos.text(insumos.length + ' disponible' + (insumos.length === 1 ? '' : 's'));
+        $listaInsumosDisponibles.empty();
 
         if (insumos.length === 0) {
-            listaInsumosDisponibles.innerHTML =
+            $listaInsumosDisponibles.html(
                 '<div class="text-center text-muted py-5">' +
                     '<i class="bi bi-search fs-2 d-block mb-2 text-secondary opacity-50"></i>' +
                     '<span class="fw-semibold">No se encontraron productos</span>' +
                     '<div class="small text-muted mt-1">Pruebe con otro término o cambie el filtro de tipo</div>' +
-                '</div>';
+                '</div>');
             return;
         }
 
-        insumos.forEach(function(insumo) {
-            var yaAgregado = itemsPresupuesto.some(function(item) {
-                return !item.es_mezcla && item.id_insumo === insumo.id_insumo;
-            });
+        $.each(insumos, function(i, insumo) {
+            const yaAgregado = estaAgregado(insumo.id_insumo);
 
             // Badge de tipo con maximo contraste
-            var tipoId = parseInt(insumo.id_tipo_producto);
-            var tipoNom = tipoId === 1 ? 'Base' : 'Simple';
-            var badgeTipoClass = tipoId === 1 ? 'badge-tipo-base' : 'badge-tipo-simple';
-            var iconTipo = tipoId === 1 ? 'bi-droplet-half' : 'bi-box-seam';
+            const tipoId = parseInt(insumo.id_tipo_producto);
+            const tipoNom = tipoId === 1 ? 'Base' : 'Simple';
+            const badgeTipoClass = tipoId === 1 ? 'badge-tipo-base' : 'badge-tipo-simple';
+            const iconTipo = tipoId === 1 ? 'bi-droplet-half' : 'bi-box-seam';
 
             // Indicador de stock físico y comprometido
-            var stockVal = Math.floor(parseFloat(insumo.stock_actual) || 0);
-            var stockMin = Math.floor(parseFloat(insumo.stock_minimo) || 0);
-            var stockComp = Math.floor(parseFloat(insumo.stock_comprometido) || 0);
-            var stockLibre = Math.max(0, stockVal - stockComp);
-            var sinStockFisico = stockVal <= 0;
+            const stockVal = Math.floor(parseFloat(insumo.stock_actual) || 0);
+            const stockMin = Math.floor(parseFloat(insumo.stock_minimo) || 0);
+            const stockComp = Math.floor(parseFloat(insumo.stock_comprometido) || 0);
+            const stockLibre = Math.max(0, stockVal - stockComp);
+            const sinStockFisico = stockVal <= 0;
 
-            var stockCls = (stockVal <= stockMin || stockLibre <= 0) ? 'catalogo-stock-alerta' : 'catalogo-stock-ok';
-            var stockIcon = (stockVal <= stockMin || stockLibre <= 0) ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill';
-            var stockTexto = (stockVal <= stockMin ? 'Stock bajo: ' : 'Stock: ') + stockVal;
+            const alerta = (stockVal <= stockMin || stockLibre <= 0);
+            const stockCls = alerta ? 'catalogo-stock-alerta' : 'catalogo-stock-ok';
+            const stockIcon = alerta ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill';
+            const stockTexto = (stockVal <= stockMin ? 'Stock bajo: ' : 'Stock: ') + stockVal;
 
-            var badgeComprometidoHtml = '';
+            let badgeComprometidoHtml = '';
             if (stockComp > 0) {
-                var agotadoPorCompromiso = stockLibre <= 0;
+                const agotadoPorCompromiso = stockLibre <= 0;
                 badgeComprometidoHtml =
                     '<span class="badge ' + (agotadoPorCompromiso ? 'bg-danger text-white' : 'bg-warning text-dark') + ' border" style="font-size: 0.7rem;" title="Unidades en presupuestos pendientes de aprobar">' +
                         '<i class="bi bi-clock-history me-1"></i>Comprometido: ' + stockComp + (agotadoPorCompromiso ? ' (Todo reservado)' : '') +
                     '</span>';
             }
 
-            var div = document.createElement('div');
-            div.className = 'catalogo-card-item' + (yaAgregado ? ' item-agregado' : '');
-            div.id = 'catalogo-item-' + insumo.id_insumo;
-
-            var botonHtml = '';
+            let botonHtml;
             if (yaAgregado) {
-                botonHtml = '<button type="button" class="btn btn-sm btn-secondary btn-catalogo-add disabled" disabled><i class="bi bi-check2 me-1"></i>Agregado</button>';
+                botonHtml = HTML_BOTON_AGREGADO;
             } else if (sinStockFisico) {
                 botonHtml = '<button type="button" class="btn btn-sm btn-outline-danger btn-catalogo-add disabled" disabled><i class="bi bi-slash-circle me-1"></i>Agotado</button>';
             } else {
-                botonHtml = '<button type="button" class="btn btn-sm btn-outline-primary btn-catalogo-add btn-agregar"><i class="bi bi-plus-lg me-1"></i>Agregar</button>';
+                botonHtml = HTML_BOTON_AGREGAR;
             }
 
-            div.innerHTML =
-                '<div class="catalogo-info">' +
-                    '<div class="d-flex align-items-center gap-1 mb-1">' +
-                        '<span class="catalogo-codigo">' + escapeHtml(insumo.codigo) + '</span>' +
-                        '<span class="' + badgeTipoClass + '"><i class="bi ' + iconTipo + ' me-1"></i>' + tipoNom + '</span>' +
+            $('<div></div>')
+                .addClass('catalogo-card-item' + (yaAgregado ? ' item-agregado' : ''))
+                .attr({ id: 'catalogo-item-' + insumo.id_insumo, 'data-id': insumo.id_insumo })
+                .html(
+                    '<div class="catalogo-info">' +
+                        '<div class="d-flex align-items-center gap-1 mb-1">' +
+                            '<span class="catalogo-codigo">' + escapeHtml(insumo.codigo) + '</span>' +
+                            '<span class="' + badgeTipoClass + '"><i class="bi ' + iconTipo + ' me-1"></i>' + tipoNom + '</span>' +
+                        '</div>' +
+                        '<div class="catalogo-nombre" title="' + escapeHtml(insumo.nombre) + '">' + escapeHtml(insumo.nombre) + '</div>' +
+                        '<div class="catalogo-meta flex-wrap">' +
+                            '<span class="catalogo-stock-pill ' + stockCls + '"><i class="bi ' + stockIcon + '"></i>' + stockTexto + '</span>' +
+                            badgeComprometidoHtml +
+                            (insumo.rubro_nombre ? '<span class="text-muted small"><i class="bi bi-tag me-1"></i>' + escapeHtml(insumo.rubro_nombre) + '</span>' : '') +
+                        '</div>' +
                     '</div>' +
-                    '<div class="catalogo-nombre" title="' + escapeHtml(insumo.nombre) + '">' + escapeHtml(insumo.nombre) + '</div>' +
-                    '<div class="catalogo-meta flex-wrap">' +
-                        '<span class="catalogo-stock-pill ' + stockCls + '"><i class="bi ' + stockIcon + '"></i>' + stockTexto + '</span>' +
-                        badgeComprometidoHtml +
-                        (insumo.rubro_nombre ? '<span class="text-muted small"><i class="bi bi-tag me-1"></i>' + escapeHtml(insumo.rubro_nombre) + '</span>' : '') +
-                    '</div>' +
-                '</div>' +
-                '<div class="catalogo-precio-box">' +
-                    '<span class="catalogo-precio-val">$ ' + formatearMoneda(insumo.precio_venta) + '</span>' +
-                    botonHtml +
-                '</div>';
-
-            var btnAdd = div.querySelector('.btn-agregar');
-            if (btnAdd) {
-                btnAdd.addEventListener('click', function() {
-                    agregarItem(insumo);
-                });
-            }
-
-            listaInsumosDisponibles.appendChild(div);
+                    '<div class="catalogo-precio-box">' +
+                        '<span class="catalogo-precio-val">$ ' + formatearMoneda(insumo.precio_venta) + '</span>' +
+                        botonHtml +
+                    '</div>')
+                .appendTo($listaInsumosDisponibles);
         });
     }
 
+    // Botón "Agregar" del catálogo (delegado: las tarjetas se redibujan al filtrar)
+    $listaInsumosDisponibles.on('click', '.btn-agregar', function() {
+        const id = String($(this).closest('.catalogo-card-item').attr('data-id'));
+        const insumo = insumosDisponibles.find(function(i) { return String(i.id_insumo) === id; });
+        if (insumo) agregarItem(insumo);
+    });
+
     // Agrega un insumo del catalogo a la tabla de items
     function agregarItem(insumo) {
-        var existe = itemsPresupuesto.some(function(item) {
-            return !item.es_mezcla && item.id_insumo === insumo.id_insumo;
-        });
-
-        if (existe) {
+        if (estaAgregado(insumo.id_insumo)) {
             mostrarNotificacion('Este insumo ya fue agregado', 'error');
             return;
         }
 
-        var stockFisico = Math.floor(parseFloat(insumo.stock_actual) || 0);
-        var stockComprometido = Math.floor(parseFloat(insumo.stock_comprometido) || 0);
-        var stockLibre = Math.max(0, stockFisico - stockComprometido);
+        const stockFisico = Math.floor(parseFloat(insumo.stock_actual) || 0);
+        const stockComprometido = Math.floor(parseFloat(insumo.stock_comprometido) || 0);
+        const stockLibre = Math.max(0, stockFisico - stockComprometido);
 
         if (stockFisico <= 0) {
             mostrarNotificacion('No hay stock físico disponible de "' + insumo.nombre + '".', 'error');
@@ -337,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
             );
         }
 
-        var nuevoItem = {
+        itemsPresupuesto.push({
             es_mezcla: false,
             id_insumo: insumo.id_insumo,
             insumo_codigo: insumo.codigo,
@@ -349,50 +308,43 @@ document.addEventListener('DOMContentLoaded', function() {
             cantidad: 1,
             precio_unitario: parseFloat(insumo.precio_venta) || 0,
             subtotal: parseFloat(insumo.precio_venta) || 0
-        };
-
-        itemsPresupuesto.push(nuevoItem);
+        });
         actualizarTablaItems();
 
         // Actualizar visualmente la tarjeta del catalogo
-        var card = document.getElementById('catalogo-item-' + insumo.id_insumo);
-        if (card) {
-            card.classList.add('item-agregado');
-            var btnBox = card.querySelector('.catalogo-precio-box');
-            if (btnBox) {
-                var btn = btnBox.querySelector('.btn-catalogo-add');
-                if (btn) {
-                    btn.className = 'btn btn-sm btn-secondary btn-catalogo-add disabled';
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Agregado';
-                }
-            }
+        const $card = $('#catalogo-item-' + insumo.id_insumo);
+        $card.addClass('item-agregado');
+        $card.find('.catalogo-precio-box .btn-catalogo-add').replaceWith(HTML_BOTON_AGREGADO);
+    }
+
+    // Texto "Equiv: Bs." bajo el total si hay tasa del día
+    function pintarTotal(total) {
+        const tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
+        if (tasa > 0) {
+            $totalPresupuesto.html('$ ' + formatearMoneda(total) + '<div class="text-white-50 fw-normal mt-1" style="font-size: 0.85rem;">Equiv: Bs. ' + formatearMoneda(total * tasa) + '</div>');
+        } else {
+            $totalPresupuesto.text('$ ' + formatearMoneda(total));
         }
     }
 
     // Actualiza la tabla de items y recalcula totales
     function actualizarTablaItems() {
-        if (!cuerpoTablaItems || !totalPresupuesto) return;
+        if (!$cuerpoTablaItems.length || !$totalPresupuesto.length) return;
 
-        // Ocultar fila vacia si hay items
-        if (filaVacia) {
-            filaVacia.style.display = itemsPresupuesto.length > 0 ? 'none' : '';
-        }
+        // Ocultar fila vacia si hay items y limpiar filas anteriores
+        $filaVacia.css('display', itemsPresupuesto.length > 0 ? 'none' : '');
+        $cuerpoTablaItems.children('tr').not('#filaVacia').remove();
 
-        // Limpiar filas anteriores excepto filaVacia
-        var filas = cuerpoTablaItems.querySelectorAll('tr:not(#filaVacia)');
-        filas.forEach(function(fila) { fila.remove(); });
-
-        var total = 0;
-        var cantidadTotalItems = itemsPresupuesto.length;
+        let total = 0;
+        const cantidadTotalItems = itemsPresupuesto.length;
 
         // Renderizar cada item
-        itemsPresupuesto.forEach(function(item, indice) {
-            var fila = document.createElement('tr');
+        $.each(itemsPresupuesto, function(indice, item) {
+            const $fila = $('<tr></tr>');
 
             if (item.es_mezcla) {
                 // Renglón de Pintura Preparada (Mezcla de Colorimetría)
-                fila.innerHTML =
+                $fila.html(
                     '<td>' +
                         '<div class="fw-bold text-dark text-truncate" style="max-width: 250px;" title="' + escapeHtml(item.insumo_nombre) + '">' +
                             '<i class="bi bi-palette-fill text-success me-1"></i>' + escapeHtml(item.insumo_nombre) +
@@ -420,18 +372,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<button type="button" class="btn btn-sm btn-light text-danger btn-quitar-item" data-indice="' + indice + '" title="Quitar mezcla">' +
                             '<i class="bi bi-trash-fill"></i>' +
                         '</button>' +
-                    '</td>';
+                    '</td>');
             } else {
                 // Renglón de Producto Directo (Simple o Base pura)
-                var tipoId = parseInt(item.id_tipo_producto);
-                var tipoNom = tipoId === 1 ? 'Base' : 'Simple';
-                var badgeCls = tipoId === 1 ? 'badge-tipo-base' : 'badge-tipo-simple';
-                var maxStock = item.stock_actual || 1;
-                var stockComp = item.stock_comprometido || 0;
-                var stockLibre = Math.max(0, maxStock - stockComp);
-                var superaComprometido = (stockComp > 0 && item.cantidad > stockLibre);
+                const tipoId = parseInt(item.id_tipo_producto);
+                const tipoNom = tipoId === 1 ? 'Base' : 'Simple';
+                const badgeCls = tipoId === 1 ? 'badge-tipo-base' : 'badge-tipo-simple';
+                const maxStock = item.stock_actual || 1;
+                const stockComp = item.stock_comprometido || 0;
+                const stockLibre = Math.max(0, maxStock - stockComp);
+                const superaComprometido = (stockComp > 0 && item.cantidad > stockLibre);
 
-                fila.innerHTML =
+                $fila.html(
                     '<td>' +
                         '<div class="fw-semibold text-dark text-truncate" style="max-width: 250px;" title="' + escapeHtml(item.insumo_nombre) + '">' + escapeHtml(item.insumo_nombre) + '</div>' +
                         '<div class="d-flex align-items-center flex-wrap gap-1 mt-1">' +
@@ -457,113 +409,79 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<button type="button" class="btn btn-sm btn-light text-danger btn-quitar-item" data-indice="' + indice + '" title="Quitar item">' +
                             '<i class="bi bi-trash-fill"></i>' +
                         '</button>' +
-                    '</td>';
+                    '</td>');
             }
 
-            // Evento para cambiar cantidad (solo enteros y respetando límite de stock)
-            var inputCant = fila.querySelector('.item-presupuesto-cantidad');
-            inputCant.addEventListener('keydown', function(e) {
-                if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === '+') {
-                    e.preventDefault();
-                }
-            });
-            inputCant.addEventListener('input', function() {
-                this.value = this.value.replace(/[^0-9]/g, '');
-                var idx = parseInt(this.dataset.indice);
-                var val = parseInt(this.value, 10);
-                var it = itemsPresupuesto[idx];
-                if (!it) return;
-
-                if (!isNaN(val) && val >= 1) {
-                    if (!it.es_mezcla && it.stock_actual && val > it.stock_actual) {
-                        val = it.stock_actual;
-                        this.value = val;
-                        mostrarNotificacion('No puede superar el límite de stock disponible (' + it.stock_actual + ' unidades).', 'error');
-                    }
-
-                    if (!it.es_mezcla && it.stock_comprometido > 0) {
-                        var libre = Math.max(0, it.stock_actual - it.stock_comprometido);
-                        var divAviso = fila.querySelector('.aviso-comprometido-item');
-                        if (val > libre) {
-                            if (divAviso) divAviso.classList.remove('d-none');
-                            mostrarNotificacion(
-                                '¡Atención! "' + it.insumo_nombre + '" tiene ' + it.stock_comprometido +
-                                ' unidad(es) comprometida(s) en otros presupuestos pendientes (Libres: ' + libre + ').',
-                                'error'
-                            );
-                        } else {
-                            if (divAviso) divAviso.classList.add('d-none');
-                        }
-                    }
-
-                    it.cantidad = val;
-                    it.subtotal = val * it.precio_unitario;
-                    fila.querySelector('.item-presupuesto-subtotal').textContent = '$ ' + formatearMoneda(it.subtotal);
-                    recalcularTotalGlobal();
-                }
-            });
-
-            // Evento para quitar item
-            fila.querySelector('.btn-quitar-item').addEventListener('click', function() {
-                var idx = parseInt(this.dataset.indice);
-                var itemEliminado = itemsPresupuesto[idx];
-                itemsPresupuesto.splice(idx, 1);
-                actualizarTablaItems();
-
-                // Restaurar boton en catalogo si era un producto simple
-                if (itemEliminado && !itemEliminado.es_mezcla) {
-                    var card = document.getElementById('catalogo-item-' + itemEliminado.id_insumo);
-                    if (card) {
-                        card.classList.remove('item-agregado');
-                        var btnBox = card.querySelector('.catalogo-precio-box');
-                        if (btnBox) {
-                            var btnOld = btnBox.querySelector('.btn-catalogo-add');
-                            if (btnOld) btnOld.remove();
-                            var nuevoBtn = document.createElement('button');
-                            nuevoBtn.type = 'button';
-                            nuevoBtn.className = 'btn btn-sm btn-outline-primary btn-catalogo-add btn-agregar';
-                            nuevoBtn.innerHTML = '<i class="bi bi-plus-lg me-1"></i>Agregar';
-                            nuevoBtn.addEventListener('click', function() {
-                                var insumoOrig = insumosDisponibles.find(function(i) { return i.id_insumo === itemEliminado.id_insumo; });
-                                if (insumoOrig) agregarItem(insumoOrig);
-                            });
-                            btnBox.appendChild(nuevoBtn);
-                        }
-                    }
-                }
-            });
-
-            cuerpoTablaItems.insertBefore(fila, filaVacia);
+            $fila.insertBefore($filaVacia);
             total += item.subtotal;
         });
 
         // Actualizar badges y totales
-        if (badgeCantidadItems) {
-            badgeCantidadItems.textContent = cantidadTotalItems + ' item' + (cantidadTotalItems === 1 ? '' : 's');
-        }
-        if (resumenConteoItems) {
-            resumenConteoItems.textContent = cantidadTotalItems + ' item' + (cantidadTotalItems === 1 ? '' : 's') + ' en el presupuesto';
-        }
-        var tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
-        if (tasa > 0) {
-            totalPresupuesto.innerHTML = '$ ' + formatearMoneda(total) + '<div class="text-white-50 fw-normal mt-1" style="font-size: 0.85rem;">Equiv: Bs. ' + formatearMoneda(total * tasa) + '</div>';
-        } else {
-            totalPresupuesto.textContent = '$ ' + formatearMoneda(total);
-        }
+        const textoItems = cantidadTotalItems + ' item' + (cantidadTotalItems === 1 ? '' : 's');
+        $badgeCantidadItems.text(textoItems);
+        $resumenConteoItems.text(textoItems + ' en el presupuesto');
+        pintarTotal(total);
     }
+
+    // Cantidad: solo enteros y respetando el límite de stock (delegado sobre la tabla)
+    $cuerpoTablaItems.on('keydown', '.item-presupuesto-cantidad', function(e) {
+        if (['.', ',', 'e', 'E', '-', '+'].includes(e.key)) {
+            e.preventDefault();
+        }
+    });
+
+    $cuerpoTablaItems.on('input', '.item-presupuesto-cantidad', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        const it = itemsPresupuesto[parseInt($(this).attr('data-indice'))];
+        let val = parseInt(this.value, 10);
+        if (!it) return;
+
+        if (!isNaN(val) && val >= 1) {
+            if (!it.es_mezcla && it.stock_actual && val > it.stock_actual) {
+                val = it.stock_actual;
+                this.value = val;
+                mostrarNotificacion('No puede superar el límite de stock disponible (' + it.stock_actual + ' unidades).', 'error');
+            }
+
+            if (!it.es_mezcla && it.stock_comprometido > 0) {
+                const libre = Math.max(0, it.stock_actual - it.stock_comprometido);
+                const $aviso = $(this).closest('tr').find('.aviso-comprometido-item');
+                $aviso.toggleClass('d-none', val <= libre);
+                if (val > libre) {
+                    mostrarNotificacion(
+                        '¡Atención! "' + it.insumo_nombre + '" tiene ' + it.stock_comprometido +
+                        ' unidad(es) comprometida(s) en otros presupuestos pendientes (Libres: ' + libre + ').',
+                        'error'
+                    );
+                }
+            }
+
+            it.cantidad = val;
+            it.subtotal = val * it.precio_unitario;
+            $(this).closest('tr').find('.item-presupuesto-subtotal').text('$ ' + formatearMoneda(it.subtotal));
+            recalcularTotalGlobal();
+        }
+    });
+
+    // Quitar item de la tabla
+    $cuerpoTablaItems.on('click', '.btn-quitar-item', function() {
+        const idx = parseInt($(this).attr('data-indice'));
+        const itemEliminado = itemsPresupuesto[idx];
+        itemsPresupuesto.splice(idx, 1);
+        actualizarTablaItems();
+
+        // Restaurar boton en catalogo si era un producto simple
+        if (itemEliminado && !itemEliminado.es_mezcla) {
+            const $card = $('#catalogo-item-' + itemEliminado.id_insumo);
+            $card.removeClass('item-agregado');
+            $card.find('.catalogo-precio-box .btn-catalogo-add').remove();
+            $card.find('.catalogo-precio-box').append(HTML_BOTON_AGREGAR);
+        }
+    });
 
     // Recalcula solo el total global sumando todos los subtotales
     function recalcularTotalGlobal() {
-        var total = 0;
-        itemsPresupuesto.forEach(function(item) {
-            total += item.subtotal;
-        });
-        var tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
-        if (tasa > 0) {
-            totalPresupuesto.innerHTML = '$ ' + formatearMoneda(total) + '<div class="text-white-50 fw-normal mt-1" style="font-size: 0.85rem;">Equiv: Bs. ' + formatearMoneda(total * tasa) + '</div>';
-        } else {
-            totalPresupuesto.textContent = '$ ' + formatearMoneda(total);
-        }
+        pintarTotal(itemsPresupuesto.reduce(function(acc, item) { return acc + item.subtotal; }, 0));
     }
 
     // ==========================================
@@ -571,9 +489,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==========================================
 
     function guardarPresupuesto() {
-        if (!clientePresupuesto.value) {
+        if (!$clientePresupuesto.val()) {
             mostrarError('Debe seleccionar un cliente');
-            clientePresupuesto.focus();
+            $clientePresupuesto.trigger('focus');
             return;
         }
 
@@ -583,16 +501,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Deshabilitar boton para prevenir doble envio
-        if (btnGuardarPresupuesto) {
-            btnGuardarPresupuesto.disabled = true;
-            btnGuardarPresupuesto.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
-        }
+        $btnGuardarPresupuesto.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Guardando...');
 
-        var formData = new FormData();
-        formData.append('id_cliente', clientePresupuesto.value);
-        formData.append('observaciones', document.getElementById('observacionesPresupuesto').value);
+        const restaurarBoton = function() {
+            $btnGuardarPresupuesto.prop('disabled', false).html(HTML_BOTON_GUARDAR);
+        };
 
-        var itemsSimplificados = itemsPresupuesto.map(function(item) {
+        const formData = new FormData();
+        formData.append('id_cliente', $clientePresupuesto.val());
+        formData.append('observaciones', $('#observacionesPresupuesto').val());
+
+        const itemsSimplificados = itemsPresupuesto.map(function(item) {
             return {
                 id_insumo: item.id_insumo,
                 descripcion: item.insumo_nombre,
@@ -602,11 +521,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         formData.append('items', JSON.stringify(itemsSimplificados));
 
-        fetch('/SP%20Perfect%20Color/presupuesto/guardar', {
-            method: 'POST',
-            body: formData
-        })
-        .then(function(respuesta) { return respuesta.json(); })
+        api.post('presupuesto/guardar', formData)
         .then(function(resultado) {
             if (resultado.estado === 'exito') {
                 mostrarNotificacion('Presupuesto #' + resultado.datos.id_presupuesto + ' creado exitosamente. Total: $ ' + formatearMoneda(resultado.datos.total), 'exito');
@@ -615,31 +530,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 1200);
             } else {
                 mostrarError(resultado.mensaje);
-                if (btnGuardarPresupuesto) {
-                    btnGuardarPresupuesto.disabled = false;
-                    btnGuardarPresupuesto.innerHTML = '<i class="bi bi-check-lg me-1"></i>Guardar';
-                }
+                restaurarBoton();
             }
         })
         .catch(function(error) {
             console.error('Error al guardar presupuesto:', error);
             mostrarError('No se pudo guardar el presupuesto. Revise su conexión e intente de nuevo.');
-            if (btnGuardarPresupuesto) {
-                btnGuardarPresupuesto.disabled = false;
-                btnGuardarPresupuesto.innerHTML = '<i class="bi bi-check-lg me-1"></i>Guardar';
-            }
+            restaurarBoton();
         });
     }
 
     // Muestra un mensaje de error en el formulario
     function mostrarError(mensaje) {
-        if (!mensajeError) {
+        if (!$mensajeError.length) {
             mostrarNotificacion(mensaje, 'error');
             return;
         }
-        mensajeError.setAttribute('role', 'alert');
-        mensajeError.textContent = mensaje;
-        mensajeError.classList.remove('d-none');
-        mensajeError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        $mensajeError.attr('role', 'alert').text(mensaje).removeClass('d-none');
+        $mensajeError[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 });

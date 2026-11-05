@@ -5,6 +5,9 @@ namespace App\Models;
 
 use PDO;
 
+// MODELO: RolModel
+// OBJETIVO: Gestión de roles y de los módulos que cada uno puede usar (rol_modulo); habilitar, deshabilitar y baja lógica
+// NOTA: El rol Administrador (id 1) no se puede eliminar ni deshabilitar
 class RolModel extends ModeloBase
 {
     private int $id_rol;
@@ -344,7 +347,7 @@ class RolModel extends ModeloBase
         $stmtCheck->execute();
         $conteo = $stmtCheck->fetch();
         if (($conteo['total'] ?? 0) > 0) {
-            throw new \PDOException('No se puede eliminar este rol porque tiene ' . $conteo['total'] . ' usuario(s) activo(s) asignado(s). Reasigne los usuarios a otro rol primero.');
+            return false;
         }
 
         $consulta = "UPDATE roles SET estado = 0 WHERE id_rol = :id";

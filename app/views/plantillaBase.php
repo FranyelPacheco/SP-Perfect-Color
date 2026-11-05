@@ -131,6 +131,7 @@ try {
     </script>
     <meta name="csrf-token" content="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
     <script src="/SP%20Perfect%20Color/assets/js/csrf.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <div class="d-flex" style="height:100vh;height:100dvh;">
@@ -224,7 +225,6 @@ try {
     </div>
     
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
@@ -234,75 +234,70 @@ try {
     <script src="/SP%20Perfect%20Color/assets/js/utilidades.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/utilidades.js'); ?>"></script>
     <script src="/SP%20Perfect%20Color/assets/js/ui.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/ui.js'); ?>"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        $(function() {
             // Sidebar: se expande con el cursor o el foco y se pliega al salir
-            var panel = document.getElementById('sidebarPanel');
-            if (panel) {
+            var $panel = $('#sidebarPanel');
+            if ($panel.length) {
                 var guardar = function() {
                     try {
                         var subs = [];
-                        panel.querySelectorAll('.dropdown-hover').forEach(function(li, i) { if (li.classList.contains('open')) subs.push(i); });
-                        var nav = panel.querySelector('.sidebar-nav');
-                        sessionStorage.setItem('sbEstado', JSON.stringify({ open: panel.dataset.open === 'true', subs: subs, scroll: nav ? nav.scrollTop : 0 }));
+                        $panel.find('.dropdown-hover').each(function(i) { if ($(this).hasClass('open')) subs.push(i); });
+                        var nav = $panel.find('.sidebar-nav')[0];
+                        sessionStorage.setItem('sbEstado', JSON.stringify({ open: $panel.attr('data-open') === 'true', subs: subs, scroll: nav ? nav.scrollTop : 0 }));
                     } catch (e) {}
                 };
                 window.guardarEstadoSidebar = guardar;
-                var abrir = function() { panel.dataset.open = 'true'; guardar(); };
+                var abrir = function() { $panel.attr('data-open', 'true'); guardar(); };
                 var navegando = false;
-                var cerrar = function() { if (navegando) return; panel.dataset.open = 'false'; guardar(); };
+                var cerrar = function() { if (navegando) return; $panel.attr('data-open', 'false'); guardar(); };
                 // Al salir de la página el navegador dispara focusout/mouseleave: no deben contar como "cerrar"
-                panel.addEventListener('click', function(e) { if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.target.closest('a[href]:not([href="#"]):not([target])')) { navegando = true; guardar(); setTimeout(function() { navegando = false; }, 3000); } });
-                window.addEventListener('beforeunload', function() { navegando = true; });
-                window.addEventListener('pageshow', function() { navegando = false; });
-                requestAnimationFrame(function() { requestAnimationFrame(function() { panel.parentElement.classList.remove('sin-transicion'); }); });
-                window.addEventListener('pagehide', guardar);
-                panel.addEventListener('mouseenter', abrir);
-                panel.addEventListener('mouseleave', cerrar);
-                panel.addEventListener('focusin', abrir);
-                panel.addEventListener('focusout', function(e) {
-                    if (!panel.contains(e.relatedTarget)) cerrar();
+                $panel.on('click', function(e) {
+                    if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey && $(e.target).closest('a[href]:not([href="#"]):not([target])').length) {
+                        navegando = true; guardar(); setTimeout(function() { navegando = false; }, 3000);
+                    }
+                });
+                $(window).on('beforeunload', function() { navegando = true; });
+                $(window).on('pageshow', function() { navegando = false; });
+                requestAnimationFrame(function() { requestAnimationFrame(function() { $panel.parent().removeClass('sin-transicion'); }); });
+                $(window).on('pagehide', guardar);
+                $panel.on('mouseenter focusin', abrir);
+                $panel.on('mouseleave', cerrar);
+                $panel.on('focusout', function(e) {
+                    if (!$.contains($panel[0], e.relatedTarget)) cerrar();
                 });
             }
-            document.querySelectorAll('.dropdown-hover').forEach(function(item) {
-                if (item.querySelector('.dropdown-submenu a.active') || item.classList.contains('open')) {
-                    item.classList.add('open');
-                    item.querySelector(':scope > .nav-link').setAttribute('aria-expanded', 'true');
+            $('.dropdown-hover').each(function() {
+                var $item = $(this);
+                if ($item.find('.dropdown-submenu a.active').length || $item.hasClass('open')) {
+                    $item.addClass('open').children('.nav-link').attr('aria-expanded', 'true');
                 }
             });
 
             // Submenús desplegables (clic o teclado); aria-expanded y Escape para cerrar
-            function cerrarSubmenus(excepto) {
-                document.querySelectorAll('.dropdown-hover.open').forEach(function(el) {
-                    if (el !== excepto) {
-                        el.classList.remove('open');
-                        el.querySelector(':scope > .nav-link').setAttribute('aria-expanded', 'false');
-                    }
-                });
+            function cerrarSubmenus($excepto) {
+                $('.dropdown-hover.open').not($excepto).removeClass('open').children('.nav-link').attr('aria-expanded', 'false');
             }
-            document.querySelectorAll('.dropdown-hover > .nav-link').forEach(function(link) {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    var abierto = this.parentElement.classList.toggle('open');
-                    this.setAttribute('aria-expanded', abierto ? 'true' : 'false');
-                    if (window.guardarEstadoSidebar) window.guardarEstadoSidebar();
-                });
+            $('.dropdown-hover > .nav-link').on('click', function(e) {
+                e.preventDefault();
+                var abierto = $(this).parent().toggleClass('open').hasClass('open');
+                $(this).attr('aria-expanded', abierto ? 'true' : 'false');
+                if (window.guardarEstadoSidebar) window.guardarEstadoSidebar();
             });
-            document.addEventListener('click', function(e) {
-                if (e.target.closest('.sidebar-panel')) return;
-                var padre = e.target.closest('.dropdown-hover');
-                cerrarSubmenus(padre);
+            $(document).on('click', function(e) {
+                if ($(e.target).closest('.sidebar-panel').length) return;
+                cerrarSubmenus($(e.target).closest('.dropdown-hover'));
             });
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') cerrarSubmenus(null);
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape') cerrarSubmenus($());
             });
 
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            tooltipTriggerList.map(function(el) { return new bootstrap.Tooltip(el); });
-            $(document).on('draw.dt', function() {
-                [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]')).forEach(function(el) {
-                    if (!bootstrap.Tooltip.getInstance(el)) { new bootstrap.Tooltip(el); }
+            var iniciarTooltips = function() {
+                $('[data-bs-toggle="tooltip"]').each(function() {
+                    if (!bootstrap.Tooltip.getInstance(this)) new bootstrap.Tooltip(this);
                 });
-            });
+            };
+            iniciarTooltips();
+            $(document).on('draw.dt', iniciarTooltips);
         });
     </script>
 

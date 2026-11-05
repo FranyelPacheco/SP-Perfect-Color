@@ -34,23 +34,6 @@ if ($metodo === 'index') {
         'clientes' => $clientes
     ]);
 
-// FUNCIÓN: buscarAjax
-// OBJETIVO: Busca clientes por término de búsqueda (cédula, nombre, apellido) y devuelve JSON
-} elseif ($metodo === 'buscarAjax') {
-    verificarPermiso('cliente');
-
-    $termino = trim($_GET['termino'] ?? '');
-
-    if (empty($termino)) {
-        $clientes = $clienteModel->listarTodos();
-    } else {
-        $clientes = $clienteModel->buscarClientes($termino);
-    }
-
-    respuestaJson('exito', 'Busqueda completada', [
-        'clientes' => $clientes
-    ]);
-
 // FUNCIÓN: verificarCedulaAjax
 // OBJETIVO: Verifica en tiempo real si una cédula ya está registrada
 } elseif ($metodo === 'verificarCedulaAjax') {
@@ -58,15 +41,6 @@ if ($metodo === 'index') {
     $cedula = trim($_GET['cedula'] ?? '');
     $id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : null;
     $existe = !empty($cedula) && $clienteModel->cedulaExiste($cedula, $id);
-    respuestaJson('exito', 'Verificacion realizada', ['existe' => $existe]);
-
-// FUNCIÓN: verificarTelefonoAjax
-// OBJETIVO: Verifica en tiempo real si un teléfono ya está registrado en clientes
-} elseif ($metodo === 'verificarTelefonoAjax') {
-    verificarPermiso('cliente');
-    $telefono = trim($_GET['telefono'] ?? '');
-    $id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : null;
-    $existe = !empty($telefono) && $clienteModel->telefonoExiste($telefono, $id);
     respuestaJson('exito', 'Verificacion realizada', ['existe' => $existe]);
 
 // FUNCIÓN: verificarCorreoAjax

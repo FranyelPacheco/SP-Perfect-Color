@@ -9,6 +9,8 @@ use App\Traits\RespuestaModeloTrait;
 use App\Traits\ValidacionTrait;
 use PDO;
 
+// MODELO: ModeloBase (abstracta)
+// OBJETIVO: Conexión PDO y utilidades comunes (validación, formato de respuesta y reactivación de registros) para todos los modelos
 abstract class ModeloBase
 {
     use ValidacionTrait;

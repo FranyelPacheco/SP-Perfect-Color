@@ -1,23 +1,21 @@
 // Archivo: notaEntregaForm.js
 // Manejo del formulario de creacion de nota de entrega desde presupuesto
 
-console.log('[notaEntregaForm] Archivo JS cargado por el navegador');
+$(function() {
+    const $clienteNota = $('#clienteNota');
+    const $cuerpoTablaItems = $('#cuerpoTablaItems');
+    const $totalNota = $('#totalNota');
+    const $mensajeError = $('#mensajeErrorNota');
+    const $filaVacia = $('#filaVacia');
+    const $fechaVencimiento = $('#fechaVencimiento');
+    const $montoInicial = $('#montoInicial');
+    const $tipoPagoInicial = $('#tipoPagoInicial');
+    const $textoSaldoRestante = $('#textoSaldoRestante');
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('[notaEntregaForm] DOMContentLoaded - script iniciado');
-    var clienteNota = document.getElementById('clienteNota');
-    var cuerpoTablaItems = document.getElementById('cuerpoTablaItems');
-    var totalNota = document.getElementById('totalNota');
-    var formularioNotaEntrega = document.getElementById('formularioNotaEntrega');
-    var mensajeError = document.getElementById('mensajeErrorNota');
-    var filaVacia = document.getElementById('filaVacia');
+    const FORMATO_BS = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
 
-    var contenedorVencimiento = document.getElementById('contenedorVencimiento');
-    var fechaVencimientoInput = document.getElementById('fechaVencimiento');
-    var condicionPagoSelect = document.getElementById('condicionPago');
-
-    var itemsNota = [];
-    var clientesDisponibles = [];
+    const itemsNota = [];
+    let clientesDisponibles = [];
 
     // Cargar datos iniciales
     cargarClientes();
@@ -26,8 +24,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Pre-cargar items desde presupuesto si existe detalle
     if (typeof presupuestoDetalle !== 'undefined' && presupuestoDetalle.length > 0) {
-        presupuestoDetalle.forEach(function(item) {
-            var nuevoItem = {
+        $.each(presupuestoDetalle, function(i, item) {
+            itemsNota.push({
                 id_presupuesto_detalle: item.id_presupuesto_detalle,
                 insumo_codigo: item.insumo_codigo,
                 insumo_nombre: item.insumo_nombre,
@@ -35,19 +33,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 cantidad: parseFloat(item.cantidad),
                 precio_unitario: parseFloat(item.precio_unitario),
                 subtotal: parseFloat(item.subtotal)
-            };
-            itemsNota.push(nuevoItem);
+            });
         });
         actualizarTablaItems();
     }
 
     // Evento para enviar el formulario
-    if (formularioNotaEntrega) {
-        formularioNotaEntrega.addEventListener('submit', function(evento) {
-            evento.preventDefault();
-            guardarNotaEntrega();
-        });
-    }
+    $('#formularioNotaEntrega').on('submit', function(evento) {
+        evento.preventDefault();
+        guardarNotaEntrega();
+    });
 
     // Cargar clientes
     function cargarClientes() {
@@ -63,19 +58,21 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
+    // Opciones <option> a partir de una lista de {id, nombre}
+    function opcionesHtml(vacio, lista, campoId) {
+        let opts = '<option value="">' + vacio + '</option>';
+        $.each(lista, function(i, e) {
+            opts += '<option value="' + e[campoId] + '">' + escapeHtml(e.nombre) + '</option>';
+        });
+        return opts;
+    }
+
     // Cargar tipos de pago
     function cargarTiposPago() {
         api.get('notaEntrega/obtenerTiposPagoAjax')
             .then(function(res) {
                 if (res.estado === 'exito') {
-                    var sel = document.getElementById('tipoPago');
-                    var selIni = document.getElementById('tipoPagoInicial');
-                    var opts = '<option value="">Seleccione...</option>';
-                    res.datos.tipos_pago.forEach(function(tp) {
-                        opts += '<option value="' + tp.id_tipo_pago + '">' + escapeHtml(tp.nombre) + '</option>';
-                    });
-                    if (sel) sel.innerHTML = opts;
-                    if (selIni) selIni.innerHTML = opts;
+                    $('#tipoPago, #tipoPagoInicial').html(opcionesHtml('Seleccione...', res.datos.tipos_pago, 'id_tipo_pago'));
                 }
             });
     }
@@ -85,137 +82,90 @@ document.addEventListener('DOMContentLoaded', function() {
         api.get('notaEntrega/obtenerBancosAjax')
             .then(function(res) {
                 if (res.estado === 'exito') {
-                    var sel = document.getElementById('bancoPago');
-                    var selIni = document.getElementById('bancoPagoInicial');
-                    var opts = '<option value="">Seleccione un banco...</option>';
-                    res.datos.bancos.forEach(function(b) {
-                        opts += '<option value="' + b.id_banco + '">' + escapeHtml(b.nombre) + '</option>';
-                    });
-                    if (sel) sel.innerHTML = opts;
-                    if (selIni) selIni.innerHTML = opts;
+                    $('#bancoPago, #bancoPagoInicial').html(opcionesHtml('Seleccione un banco...', res.datos.bancos, 'id_banco'));
                 }
             });
     }
 
     function llenarSelectClientes() {
-        if (!clienteNota) return;
-        clienteNota.innerHTML = '<option value="">Seleccione un cliente...</option>';
-        
-        clientesDisponibles.forEach(function(cliente) {
-            var opcion = document.createElement('option');
-            opcion.value = cliente.id_cliente;
-            opcion.textContent = cliente.cedula + ' - ' + cliente.nombres + ' ' + cliente.apellidos;
-            clienteNota.appendChild(opcion);
+        if (!$clienteNota.length) return;
+        $clienteNota.html('<option value="">Seleccione un cliente...</option>');
+
+        $.each(clientesDisponibles, function(i, cliente) {
+            $clienteNota.append($('<option></option>').val(cliente.id_cliente).text(cliente.cedula + ' - ' + cliente.nombres + ' ' + cliente.apellidos));
         });
 
         if (typeof presupuestoClienteId !== 'undefined' && presupuestoClienteId > 0) {
-            clienteNota.value = presupuestoClienteId;
-            clienteNota.disabled = true;
+            $clienteNota.val(presupuestoClienteId).prop('disabled', true);
         }
     }
 
     function actualizarTablaItems() {
-        if (!cuerpoTablaItems || !totalNota) return;
+        if (!$cuerpoTablaItems.length || !$totalNota.length) return;
 
-        if (filaVacia) {
-            filaVacia.style.display = itemsNota.length > 0 ? 'none' : '';
-        }
+        $filaVacia.css('display', itemsNota.length > 0 ? 'none' : '');
+        $cuerpoTablaItems.children('tr').not('#filaVacia').remove();
 
-        var filas = cuerpoTablaItems.querySelectorAll('tr:not(#filaVacia)');
-        filas.forEach(function(fila) { fila.remove(); });
+        let total = 0;
 
-        var total = 0;
-
-        itemsNota.forEach(function(item) {
-            var fila = document.createElement('tr');
-            
-            fila.innerHTML = 
+        $.each(itemsNota, function(i, item) {
+            $('<tr></tr>').html(
                 '<td><span class="badge bg-light text-secondary border font-monospace">' + escapeHtml(item.insumo_codigo) + '</span></td>' +
                 '<td class="fw-semibold">' + escapeHtml(item.insumo_nombre) + '</td>' +
                 '<td class="text-secondary">' + Math.floor(item.stock_actual) + '</td>' +
                 '<td><span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 fs-6">' + Math.floor(item.cantidad) + '</span></td>' +
                 '<td>$ ' + formatearMoneda(item.precio_unitario) + '</td>' +
-                '<td class="fw-bold text-dark">$ ' + formatearMoneda(item.subtotal) + '</td>';
-
-            cuerpoTablaItems.insertBefore(fila, filaVacia);
+                '<td class="fw-bold text-dark">$ ' + formatearMoneda(item.subtotal) + '</td>'
+            ).insertBefore($filaVacia);
             total += item.subtotal;
         });
 
-        var tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
+        const tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
         if (tasa > 0) {
-            var bsTotal = total * tasa;
-            totalNota.innerHTML = '<div>$ ' + formatearMoneda(total) + '</div><div class="text-muted small fw-normal">Bs. ' + bsTotal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</div>';
+            $totalNota.html('<div>$ ' + formatearMoneda(total) + '</div><div class="text-muted small fw-normal">Bs. ' + (total * tasa).toLocaleString('es-VE', FORMATO_BS) + '</div>');
         } else {
-            totalNota.textContent = '$ ' + formatearMoneda(total);
+            $totalNota.text('$ ' + formatearMoneda(total));
         }
         actualizarCalculoInicial(total);
     }
 
-    var montoInicialInput = document.getElementById('montoInicial');
-    var tipoPagoInicialSelect = document.getElementById('tipoPagoInicial');
-    var textoSaldoRestante = document.getElementById('textoSaldoRestante');
-
     function actualizarCalculoInicial(totalTotal) {
-        if (!montoInicialInput || !textoSaldoRestante) return;
-        var total = (typeof totalTotal === 'number') ? totalTotal : (itemsNota.reduce(function(acc, i) { return acc + i.subtotal; }, 0));
-        var ini = parseFloat(montoInicialInput.value) || 0;
-        var restante = Math.max(0, total - ini);
-        textoSaldoRestante.textContent = '$ ' + formatearMoneda(restante);
-        var tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
-        var textoSaldoBs = document.getElementById('textoSaldoRestanteBs');
-        var montoIniBs = document.getElementById('montoInicialBsTexto');
-        if (textoSaldoBs && tasa > 0) {
-            textoSaldoBs.textContent = 'Equiv: Bs. ' + (restante * tasa).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-        if (montoIniBs && tasa > 0) {
-            montoIniBs.textContent = 'Bs. ' + (ini * tasa).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (!$montoInicial.length || !$textoSaldoRestante.length) return;
+        const total = (typeof totalTotal === 'number') ? totalTotal : itemsNota.reduce(function(acc, i) { return acc + i.subtotal; }, 0);
+        const ini = parseFloat($montoInicial.val()) || 0;
+        const restante = Math.max(0, total - ini);
+        $textoSaldoRestante.text('$ ' + formatearMoneda(restante));
+        const tasa = parseFloat(window.TASA_CAMBIO_HOY || 0);
+        if (tasa > 0) {
+            $('#textoSaldoRestanteBs').text('Equiv: Bs. ' + (restante * tasa).toLocaleString('es-VE', FORMATO_BS));
+            $('#montoInicialBsTexto').text('Bs. ' + (ini * tasa).toLocaleString('es-VE', FORMATO_BS));
         }
     }
 
-    if (montoInicialInput) {
-        montoInicialInput.addEventListener('input', function() {
-            var ini = parseFloat(this.value) || 0;
-            var contT = document.getElementById('contenedorTipoPagoInicial');
-            var contB = document.getElementById('contenedorBancoInicial');
-            var contR = document.getElementById('contenedorReferenciaInicial');
-            if (ini > 0) {
-                if (contT) contT.style.display = 'block';
-                verificarTipoPagoInicial();
-            } else {
-                if (contT) contT.style.display = 'none';
-                if (contB) contB.style.display = 'none';
-                if (contR) contR.style.display = 'none';
-            }
-            actualizarCalculoInicial();
-        });
-    }
+    $montoInicial.on('input', function() {
+        const ini = parseFloat(this.value) || 0;
+        if (ini > 0) {
+            $('#contenedorTipoPagoInicial').css('display', 'block');
+            verificarTipoPagoInicial();
+        } else {
+            $('#contenedorTipoPagoInicial, #contenedorBancoInicial, #contenedorReferenciaInicial').css('display', 'none');
+        }
+        actualizarCalculoInicial();
+    });
 
     function verificarTipoPagoInicial() {
-        if (!tipoPagoInicialSelect) return;
-        var val = parseInt(tipoPagoInicialSelect.value);
-        var contB = document.getElementById('contenedorBancoInicial');
-        var contR = document.getElementById('contenedorReferenciaInicial');
-        if (val === 2 || val === 3 || val === 4) {
-            if (contB) contB.style.display = 'block';
-            if (contR) contR.style.display = 'block';
-        } else {
-            if (contB) contB.style.display = 'none';
-            if (contR) contR.style.display = 'none';
-        }
+        const val = parseInt($tipoPagoInicial.val());
+        $('#contenedorBancoInicial, #contenedorReferenciaInicial').css('display', (val === 2 || val === 3 || val === 4) ? 'block' : 'none');
     }
 
-    if (tipoPagoInicialSelect) {
-        tipoPagoInicialSelect.addEventListener('change', verificarTipoPagoInicial);
-    }
+    $tipoPagoInicial.on('change', verificarTipoPagoInicial);
 
     function guardarNotaEntrega(confirmado) {
         try {
-            var presupuestoInput = document.getElementById('presupuestoId');
-            var decisionSelect = document.getElementById('decisionNota');
-            var decision = decisionSelect ? decisionSelect.value : 'aprobar';
+            const decision = $('#decisionNota').val() || 'aprobar';
 
-            var formData = new FormData();
-            formData.append('id_presupuesto', presupuestoInput ? presupuestoInput.value : '');
+            const formData = new FormData();
+            formData.append('id_presupuesto', $('#presupuestoId').val() || '');
             formData.append('decision', decision);
 
             if (decision === 'rechazar') {
@@ -224,11 +174,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
             } else {
-                if (!clienteNota) {
+                if (!$clienteNota.length) {
                     mostrarError('No se pudo leer el cliente. Recargue la página.');
                     return;
                 }
-                if (!clienteNota.value) {
+                if (!$clienteNota.val()) {
                     mostrarError('Debe seleccionar un cliente');
                     return;
                 }
@@ -238,75 +188,72 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                formData.append('id_cliente', clienteNota.value);
-                var condPago = condicionPagoSelect ? condicionPagoSelect.value : 'contado';
+                formData.append('id_cliente', $clienteNota.val());
+                const condPago = $('#condicionPago').val() || 'contado';
                 formData.append('condicion_pago', condPago);
 
                 if (condPago === 'contado') {
-                    var tipoPagoInput = document.getElementById('tipoPago');
-                    if (!tipoPagoInput || !tipoPagoInput.value) {
+                    const tipoPago = $('#tipoPago').val();
+                    if (!tipoPago) {
                         mostrarError('Debe seleccionar el tipo de pago para aprobar la entrega al contado');
                         return;
                     }
-                    formData.append('id_tipo_pago', tipoPagoInput.value);
+                    formData.append('id_tipo_pago', tipoPago);
 
-                    var tipoPagoVal = parseInt(tipoPagoInput.value);
-                    if (tipoPagoVal !== 1) { // Si no es efectivo
-                        var bancoInput = document.getElementById('bancoPago');
-                        if (!bancoInput || !bancoInput.value) {
+                    if (parseInt(tipoPago) !== 1) { // Si no es efectivo
+                        const banco = $('#bancoPago').val();
+                        if (!banco) {
                             mostrarError('Debe seleccionar un banco para el pago al contado');
                             return;
                         }
-                        var referenciaInput = document.getElementById('referenciaPago');
-                        if (!referenciaInput || !/^\d{5}$/.test(referenciaInput.value.trim())) {
+                        const referencia = ($('#referenciaPago').val() || '').trim();
+                        if (!/^\d{5}$/.test(referencia)) {
                             mostrarError('La referencia debe tener los últimos 5 dígitos del comprobante');
                             return;
                         }
-                        formData.append('id_banco', bancoInput.value);
-                        formData.append('referencia', referenciaInput.value.trim());
+                        formData.append('id_banco', banco);
+                        formData.append('referencia', referencia);
                     } else {
                         formData.append('referencia', 'Efectivo');
                     }
                 } else {
                     // Crédito
-                    if (!fechaVencimientoInput || !fechaVencimientoInput.value) {
+                    if (!$fechaVencimiento.val()) {
                         mostrarError('Debe seleccionar una fecha de vencimiento para la venta a crédito');
                         return;
                     }
-                    formData.append('fecha_vencimiento', fechaVencimientoInput.value);
+                    formData.append('fecha_vencimiento', $fechaVencimiento.val());
 
-                    var montoInicialInput = document.getElementById('montoInicial');
-                    var iniVal = parseFloat(montoInicialInput ? montoInicialInput.value : 0) || 0;
+                    const iniVal = parseFloat($montoInicial.val()) || 0;
                     if (iniVal > 0) {
-                        var tipoPagoInicialSelect = document.getElementById('tipoPagoInicial');
-                        if (!tipoPagoInicialSelect || !tipoPagoInicialSelect.value) {
+                        const tipoIni = $tipoPagoInicial.val();
+                        if (!tipoIni) {
                             mostrarError('Debe seleccionar el método de pago para el abono inicial');
                             return;
                         }
                         formData.append('monto_inicial', iniVal);
-                        formData.append('id_tipo_pago_inicial', tipoPagoInicialSelect.value);
+                        formData.append('id_tipo_pago_inicial', tipoIni);
 
-                        var tipoIniVal = parseInt(tipoPagoInicialSelect.value);
-                        if (tipoIniVal !== 1) { // Si no es efectivo
-                            var bancoIni = document.getElementById('bancoPagoInicial');
-                            if (!bancoIni || !bancoIni.value) {
+                        if (parseInt(tipoIni) !== 1) { // Si no es efectivo
+                            const bancoIni = $('#bancoPagoInicial').val();
+                            if (!bancoIni) {
                                 mostrarError('Debe seleccionar el banco receptor para el abono inicial');
                                 return;
                             }
-                            var refIni = document.getElementById('referenciaPagoInicial');
-                            if (!refIni || !/^\d{5}$/.test(refIni.value.trim())) {
+                            const refIni = ($('#referenciaPagoInicial').val() || '').trim();
+                            if (!/^\d{5}$/.test(refIni)) {
                                 mostrarError('La referencia debe tener los últimos 5 dígitos del comprobante');
                                 return;
                             }
-                            formData.append('id_banco_inicial', bancoIni.value);
-                            formData.append('referencia_inicial', refIni.value.trim());
+                            formData.append('id_banco_inicial', bancoIni);
+                            formData.append('referencia_inicial', refIni);
                         } else {
                             formData.append('referencia_inicial', 'Efectivo');
                         }
                     }
                 }
-                
-                var itemsSimplificados = itemsNota.map(function(item) {
+
+                const itemsSimplificados = itemsNota.map(function(item) {
                     return {
                         id_presupuesto_detalle: item.id_presupuesto_detalle,
                         cantidad: item.cantidad,
@@ -316,13 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('items', JSON.stringify(itemsSimplificados));
             }
 
-            fetch('/SP%20Perfect%20Color/notaEntrega/guardar', {
-                method: 'POST',
-                body: formData
-            })
-            .then(function(respuesta) {
-                return respuesta.json();
-            })
+            api.post('notaEntrega/guardar', formData)
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
                     mostrarNotificacion('Nota de entrega #' + resultado.datos.id_nota_entrega + ' creada exitosamente', 'exito');
@@ -334,7 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(function(error) {
-                console.error('Error en el fetch:', error);
+                console.error('Error en la petición:', error);
                 mostrarError('No se pudo conectar con el servidor. Intente de nuevo.');
             });
         } catch (error) {
@@ -344,11 +285,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function mostrarError(mensaje) {
-        if (!mensajeError) { mostrarNotificacion(mensaje, 'error'); return; }
-        mensajeError.setAttribute('role', 'alert');
-        mensajeError.textContent = mensaje;
-        mensajeError.classList.remove('d-none');
-        mensajeError.style.display = 'block';
-        mensajeError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (!$mensajeError.length) { mostrarNotificacion(mensaje, 'error'); return; }
+        $mensajeError.attr('role', 'alert').text(mensaje).removeClass('d-none').css('display', 'block');
+        $mensajeError[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 });

@@ -1,66 +1,54 @@
 // Archivo: inventario.js
 // Manejo de la vista de gestion de inventario
 
-document.addEventListener('DOMContentLoaded', function() {
+$(function() {
     // Referencias a elementos del DOM
-    const busquedaInsumos = document.getElementById('busquedaInsumos');
-    const btnNuevoInsumo = document.getElementById('btnNuevoInsumo');
-    const modalInsumo = document.getElementById('modalInsumo');
-    const btnCerrarModal = document.getElementById('btnCerrarModalInsumo');
-    const btnCancelar = document.getElementById('btnCancelarInsumo');
-    const formularioInsumo = document.getElementById('formularioInsumo');
-    const tituloModal = document.getElementById('tituloModalInsumo');
-    const insumoId = document.getElementById('insumoId');
-    const codigoInsumo = document.getElementById('codigoInsumo');
-    const nombreInsumo = document.getElementById('nombreInsumo');
-    const tipoProductoInsumo = document.getElementById('tipoProductoInsumo');
-    const rubroInsumo = document.getElementById('rubroInsumo');
-    const unidadMedidaInsumo = document.getElementById('unidadMedidaInsumo');
-    const stockActualInsumo = document.getElementById('stockActualInsumo');
-    const stockMinimoInsumo = document.getElementById('stockMinimoInsumo');
-    const precioVentaInsumo = document.getElementById('precioVentaInsumo');
-    const precioCompraInsumo = document.getElementById('precioCompraInsumo');
-    const proveedorInsumo = document.getElementById('proveedorInsumo');
-    const mensajeError = document.getElementById('mensajeErrorInsumo');
-    const alertasStockBajo = document.getElementById('alertasStockBajo');
-    const contenidoAlertas = document.getElementById('contenidoAlertas');
-    const feedbackCodigoInsumo = document.getElementById('feedbackCodigoInsumo');
-    const btnGuardarInsumo = document.getElementById('btnGuardarInsumo');
+    const $modalInsumo = $('#modalInsumo');
+    const $formularioInsumo = $('#formularioInsumo');
+    const $tituloModal = $('#tituloModalInsumo');
+    const $insumoId = $('#insumoId');
+    const $codigoInsumo = $('#codigoInsumo');
+    const $nombreInsumo = $('#nombreInsumo');
+    const $tipoProductoInsumo = $('#tipoProductoInsumo');
+    const $rubroInsumo = $('#rubroInsumo');
+    const $unidadMedidaInsumo = $('#unidadMedidaInsumo');
+    const $stockActualInsumo = $('#stockActualInsumo');
+    const $stockMinimoInsumo = $('#stockMinimoInsumo');
+    const $precioVentaInsumo = $('#precioVentaInsumo');
+    const $proveedorInsumo = $('#proveedorInsumo');
+    const $mensajeError = $('#mensajeErrorInsumo');
+    const $alertasStockBajo = $('#alertasStockBajo');
+    const $contenidoAlertas = $('#contenidoAlertas');
+    const $feedbackCodigoInsumo = $('#feedbackCodigoInsumo');
+    const $btnGuardarInsumo = $('#btnGuardarInsumo');
 
     let timerCodigo = null;
 
     function verificarCodigoEnTiempoReal() {
-        if (!codigoInsumo) return;
-        const cod = codigoInsumo.value.trim().toUpperCase();
-        const id = insumoId.value || '';
+        const cod = $codigoInsumo.val().trim().toUpperCase();
+        const id = $insumoId.val() || '';
 
         clearTimeout(timerCodigo);
 
         if (!cod) {
-            codigoInsumo.classList.remove('is-invalid', 'is-valid');
-            if (feedbackCodigoInsumo) feedbackCodigoInsumo.classList.add('d-none');
-            if (btnGuardarInsumo) btnGuardarInsumo.disabled = false;
+            $codigoInsumo.removeClass('is-invalid is-valid');
+            $feedbackCodigoInsumo.addClass('d-none');
+            $btnGuardarInsumo.prop('disabled', false);
             return;
         }
 
         timerCodigo = setTimeout(async function() {
             try {
-                const resp = await fetch('/SP%20Perfect%20Color/inventario/verificarCodigoAjax?codigo=' + encodeURIComponent(cod) + '&id=' + encodeURIComponent(id));
-                const res = await resp.json();
+                const res = await api.get('inventario/verificarCodigoAjax', { codigo: cod, id: id });
                 if (res.estado === 'exito') {
                     if (res.datos.existe) {
-                        codigoInsumo.classList.add('is-invalid');
-                        codigoInsumo.classList.remove('is-valid');
-                        if (feedbackCodigoInsumo) {
-                            feedbackCodigoInsumo.textContent = 'El insumo con código ' + cod + ' ya existe en el sistema';
-                            feedbackCodigoInsumo.classList.remove('d-none');
-                        }
-                        if (btnGuardarInsumo) btnGuardarInsumo.disabled = true;
+                        $codigoInsumo.addClass('is-invalid').removeClass('is-valid');
+                        $feedbackCodigoInsumo.text('El insumo con código ' + cod + ' ya existe en el sistema').removeClass('d-none');
+                        $btnGuardarInsumo.prop('disabled', true);
                     } else {
-                        codigoInsumo.classList.remove('is-invalid');
-                        codigoInsumo.classList.add('is-valid');
-                        if (feedbackCodigoInsumo) feedbackCodigoInsumo.classList.add('d-none');
-                        if (btnGuardarInsumo) btnGuardarInsumo.disabled = false;
+                        $codigoInsumo.removeClass('is-invalid').addClass('is-valid');
+                        $feedbackCodigoInsumo.addClass('d-none');
+                        $btnGuardarInsumo.prop('disabled', false);
                     }
                 }
             } catch (e) {
@@ -69,9 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 300);
     }
 
-    if (codigoInsumo) {
-        codigoInsumo.addEventListener('input', verificarCodigoEnTiempoReal);
-    }
+    $codigoInsumo.on('input', verificarCodigoEnTiempoReal);
 
     let proveedoresGlobal = [];
     let rubrosGlobal = [];
@@ -85,28 +71,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function factor128(fraccion) {
-        var m = String(fraccion || '1').match(/^(\d+)\/(\d+)$/);
+        const m = String(fraccion || '1').match(/^(\d+)\/(\d+)$/);
         return m ? Math.round(parseInt(m[1]) * 128 / parseInt(m[2])) : 128;
     }
 
     // Presentación a mostrar: fracción de galón (bases y preparados) o la unidad de medida (simples)
     function presentacionDe(p) {
-        var tipo = parseInt(p.id_tipo_producto);
-        var unidad = String(p.unidad_medida || '');
-        var texto = null;
+        const tipo = parseInt(p.id_tipo_producto);
+        const unidad = String(p.unidad_medida || '');
+        let texto = null;
         if (tipo === 1) texto = String(p.fraccion || '1');
         else if (tipo === 3) texto = (unidad.match(/\d+\/\d+/) || [])[0] || (/gal/i.test(unidad) ? '1' : null);
         if (texto === null) return { fraccion: null, etiqueta: unidad || '-' };
-        var partes = texto.split('/');
-        var valor = partes.length === 2 ? parseInt(partes[0]) / parseInt(partes[1]) : 1;
+        const partes = texto.split('/');
+        const valor = partes.length === 2 ? parseInt(partes[0]) / parseInt(partes[1]) : 1;
         return { fraccion: valor, etiqueta: (valor === 1 ? '1' : texto) + ' Galón' };
     }
 
     function formatearGalones(galones) {
-        var total = Math.round((parseFloat(galones) || 0) * 128);
-        var texto = Math.floor(total / 128) + ' gal';
-        var resto = total % 128;
-        [64, 32, 16, 8, 4, 2, 1].forEach(function (f) {
+        const total = Math.round((parseFloat(galones) || 0) * 128);
+        let texto = Math.floor(total / 128) + ' gal';
+        let resto = total % 128;
+        $.each([64, 32, 16, 8, 4, 2, 1], function (i, f) {
             if (resto >= f) {
                 texto += ' + 1/' + (128 / f);
                 resto -= f;
@@ -115,111 +101,69 @@ document.addEventListener('DOMContentLoaded', function() {
         return texto;
     }
 
-    const esAdmin = document.getElementById('btnPrepararMezcla') !== null || document.getElementById('btnNuevoInsumo') !== null;
+    const esAdmin = $('#btnPrepararMezcla').length > 0;
 
-    // Ajusta la unidad de medida según el tipo de producto
-    function ajustarUnidadSegunTipo(unidadPrevia) {
-        if (!tipoProductoInsumo || !unidadMedidaInsumo) return;
-        const tipoVal = String(tipoProductoInsumo.value);
-        if (tipoVal === '1') {
-            // Base solo puede ser galón
-            unidadMedidaInsumo.innerHTML = '<option value="Galon">Galón</option>';
-            unidadMedidaInsumo.value = 'Galon';
-        } else {
-            // Simple: Unidad o KG
-            unidadMedidaInsumo.innerHTML = '<option value="Unidad">Unidad</option><option value="KG">KG</option>';
-            if (unidadPrevia && (unidadPrevia === 'Unidad' || unidadPrevia === 'KG')) {
-                unidadMedidaInsumo.value = unidadPrevia;
-            } else {
-                unidadMedidaInsumo.value = 'Unidad';
-            }
+    // Agrega una opción a un select si todavía no existe
+    function asegurarOpcion($select, valor, texto) {
+        if (!$select.find('option').filter(function () { return this.value === String(valor); }).length) {
+            $select.append(new Option(texto, valor));
         }
     }
 
-    if (tipoProductoInsumo) {
-        tipoProductoInsumo.addEventListener('change', function() {
-            ajustarUnidadSegunTipo();
+    // Solo enteros (sin punto, coma, signo ni notación científica)
+    function soloEnteros($input, teclasBloqueadas) {
+        $input.on('keydown', function(e) {
+            if (teclasBloqueadas.includes(e.key)) e.preventDefault();
+        });
+        $input.on('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
         });
     }
 
-    // Restringir inputs de stock a solo números enteros
-    [stockActualInsumo, stockMinimoInsumo].forEach(function(input) {
-        if (!input) return;
-        input.addEventListener('keydown', function(e) {
-            if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-') {
-                e.preventDefault();
-            }
-        });
-        input.addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '');
-        });
+    // Ajusta la unidad de medida según el tipo de producto
+    function ajustarUnidadSegunTipo(unidadPrevia) {
+        if (!$tipoProductoInsumo.length || !$unidadMedidaInsumo.length) return;
+        if (String($tipoProductoInsumo.val()) === '1') {
+            // Base solo puede ser galón
+            $unidadMedidaInsumo.html('<option value="Galon">Galón</option>').val('Galon');
+        } else {
+            // Simple: Unidad o KG
+            $unidadMedidaInsumo.html('<option value="Unidad">Unidad</option><option value="KG">KG</option>');
+            $unidadMedidaInsumo.val(unidadPrevia === 'Unidad' || unidadPrevia === 'KG' ? unidadPrevia : 'Unidad');
+        }
+    }
+
+    $tipoProductoInsumo.on('change', function() {
+        ajustarUnidadSegunTipo();
     });
+
+    // Restringir inputs de stock a solo números enteros
+    soloEnteros($stockActualInsumo.add($stockMinimoInsumo), ['.', ',', 'e', 'E', '-']);
 
     // Cargar lista de insumos al iniciar
     cargarInsumos();
 
-    // Evento para abrir modal de nuevo insumo
-    if (btnNuevoInsumo) {
-        btnNuevoInsumo.addEventListener('click', function() {
-            tituloModal.textContent = 'Nuevo Insumo';
-            insumoId.value = '';
-            codigoInsumo.value = '';
-            codigoInsumo.disabled = false;
-            codigoInsumo.classList.remove('is-invalid', 'is-valid');
-            if (feedbackCodigoInsumo) feedbackCodigoInsumo.classList.add('d-none');
-            if (btnGuardarInsumo) btnGuardarInsumo.disabled = false;
-            nombreInsumo.value = '';
-            if (tipoProductoInsumo) { tipoProductoInsumo.value = '2'; tipoProductoInsumo.disabled = false; }
-            if (unidadMedidaInsumo) unidadMedidaInsumo.disabled = false;
-            var grupoAlertaNuevo = document.getElementById('grupoAlertaActivaInsumo');
-            if (grupoAlertaNuevo) grupoAlertaNuevo.classList.add('d-none');
-            rubroInsumo.value = '';
-            rubroInsumo.disabled = false;
-            if (rubrosGlobal.length) llenarSelectRubros(rubrosGlobal);
-            ajustarUnidadSegunTipo();
-            stockActualInsumo.value = '0';
-            stockMinimoInsumo.value = '5';
-            precioVentaInsumo.value = '0';
-            precioCompraInsumo.value = '0';
-            proveedorInsumo.value = '';
-            mensajeError.classList.add('d-none');
-            bootstrap.Modal.getOrCreateInstance(modalInsumo).show();
-        });
-    }
-
     // Eventos para cerrar modal
-    if (btnCerrarModal) {
-        btnCerrarModal.addEventListener('click', function() {
-            bootstrap.Modal.getInstance(modalInsumo).hide();
-        });
-    }
-    if (btnCancelar) {
-        btnCancelar.addEventListener('click', function() {
-            bootstrap.Modal.getInstance(modalInsumo).hide();
-        });
-    }
+    $('#btnCerrarModalInsumo, #btnCancelarInsumo').on('click', function() {
+        bootstrap.Modal.getInstance($modalInsumo[0]).hide();
+    });
 
     // Evento para enviar formulario
-    if (formularioInsumo) {
-        formularioInsumo.addEventListener('submit', async function(evento) {
-            evento.preventDefault();
-            await guardarInsumo();
-        });
-    }
+    $formularioInsumo.on('submit', async function(evento) {
+        evento.preventDefault();
+        await guardarInsumo();
+    });
 
     // Limpiar formulario cuando el modal se cierra
-    if (modalInsumo) {
-        modalInsumo.addEventListener('hidden.bs.modal', function () {
-            formularioInsumo.reset();
-            mensajeError.classList.add('d-none');
-        });
-    }
+    $modalInsumo.on('hidden.bs.modal', function () {
+        $formularioInsumo[0].reset();
+        $mensajeError.addClass('d-none');
+    });
 
     // Funcion para cargar la lista de insumos
     async function cargarInsumos() {
         try {
-            const respuesta = await fetch('/SP%20Perfect%20Color/inventario/listarAjax');
-            const resultado = await respuesta.json();
+            const resultado = await api.get('inventario/listarAjax');
 
             if (resultado.estado === 'exito') {
                 insumosGlobal = resultado.datos.insumos || [];
@@ -247,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Muestra los insumos en la tabla usando API DataTables con columns explicitas
     function mostrarInsumos(insumos) {
         if (!$.fn.DataTable.isDataTable('#tablaInsumos')) {
-            var columnsDef = [
+            const columnsDef = [
                 { data: 'codigo', render: $.fn.dataTable.render.text() },
                 {
                     data: 'nombre',
@@ -260,10 +204,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: null,
                     render: function(data, type, row) {
                         if (!row) return '';
-                        var tipoId = parseInt(row.id_tipo_producto);
-                        var tipoNom = row.tipo_producto_nombre || (tipoId === 1 ? 'Base' : (tipoId === 3 ? 'Preparado' : 'Simple'));
-                        var badgeClass = 'badge-tipo-simple';
-                        var iconClass = 'bi-box-seam';
+                        const tipoId = parseInt(row.id_tipo_producto);
+                        const tipoNom = row.tipo_producto_nombre || (tipoId === 1 ? 'Base' : (tipoId === 3 ? 'Preparado' : 'Simple'));
+                        let badgeClass = 'badge-tipo-simple';
+                        let iconClass = 'bi-box-seam';
                         if (tipoId === 1 || tipoNom.toLowerCase() === 'base') {
                             badgeClass = 'badge-tipo-base';
                             iconClass = 'bi-droplet-half';
@@ -278,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: null,
                     render: function(data, type, row) {
                         if (!row) return '';
-                        var pres = presentacionDe(row);
+                        const pres = presentacionDe(row);
                         if (type !== 'display') return pres.etiqueta;
                         if (pres.fraccion === null) {
                             return '';
@@ -295,11 +239,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: null,
                     render: function(data, type, row) {
                         if (!row) return '';
-                        var stockVal = Math.floor(parseFloat(row.stock_actual) || 0);
-                        var stockMin = Math.floor(parseFloat(row.stock_minimo) || 0);
-                        var alertaActiva = parseInt(row.alerta_activa) !== 0 && !(parseInt(row.id_tipo_producto) === 3 && stockMin <= 0);
-                        var stockStyle = alertaActiva && stockVal <= stockMin ? 'stock-bajo' : 'stock-normal';
-                        var totalFamilia = (esBase(row) && !row.id_producto_padre && row.volumen_familia_128 != null)
+                        const stockVal = Math.floor(parseFloat(row.stock_actual) || 0);
+                        const stockMin = Math.floor(parseFloat(row.stock_minimo) || 0);
+                        const alertaActiva = parseInt(row.alerta_activa) !== 0 && !(parseInt(row.id_tipo_producto) === 3 && stockMin <= 0);
+                        const stockStyle = alertaActiva && stockVal <= stockMin ? 'stock-bajo' : 'stock-normal';
+                        const totalFamilia = (esBase(row) && !row.id_producto_padre && row.volumen_familia_128 != null)
                             ? '<div class="small text-muted">Total: ' + formatearGalones(row.volumen_familia_128 / 128) + '</div>' : '';
                         return '<span class="' + stockStyle + '">' + stockVal + '</span>' + totalFamilia;
                     }
@@ -321,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     searchable: false,
                     render: function(data, type, row) {
                         if (!row) return '';
-                        var nom = escapeHtml(row.nombre);
+                        const nom = escapeHtml(row.nombre);
                         return '<div class="d-flex gap-2">' +
                             '<button class="btn btn-sm btn-warning btn-editar-insumo" data-id="' + row.id_insumo + '" title="Editar" aria-label="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
                             '<button class="btn btn-sm btn-danger btn-eliminar-insumo" data-id="' + row.id_insumo + '" data-nombre="' + nom + '" title="Eliminar" aria-label="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>' +
@@ -337,11 +281,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        var table = $('#tablaInsumos').DataTable();
+        const table = $('#tablaInsumos').DataTable();
         table.clear();
 
         if (Array.isArray(insumos)) {
-            insumos.forEach(function(insumo) {
+            $.each(insumos, function(i, insumo) {
                 table.row.add(insumo);
             });
         }
@@ -350,8 +294,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Delegacion de eventos robusta para botones de accion
-    alHacerClick('.btn-editar-insumo', function(e) {
-        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+    alHacerClick('.btn-editar-insumo', function() {
+        const id = parseInt($(this).attr('data-id'));
         if (!isNaN(id)) {
             abrirModalEditar(id);
         } else {
@@ -359,9 +303,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    alHacerClick('.btn-eliminar-insumo', function(e) {
-        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
-        var nombre = $(this).attr('data-nombre') || 'este insumo';
+    alHacerClick('.btn-eliminar-insumo', function() {
+        const id = parseInt($(this).attr('data-id'));
+        const nombre = $(this).attr('data-nombre') || 'este insumo';
         if (!isNaN(id)) {
             eliminarInsumo(id, nombre);
         }
@@ -369,15 +313,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Silencia la alerta de stock mínimo de una presentación hija
     function silenciarAlerta(id) {
-        var fd = new FormData();
-        fd.append('id', id);
-        fd.append('activa', 0);
-        fetch('/SP%20Perfect%20Color/inventario/silenciarAlerta', { method: 'POST', body: fd })
-            .then(function(r) { return r.json(); })
+        api.post('inventario/silenciarAlerta', { id: id, activa: 0 })
             .then(function(res) {
                 mostrarNotificacion(res.mensaje, res.estado === 'exito' ? 'exito' : 'error');
                 if (res.estado === 'exito') {
-                    if (alertasStockBajo) alertasStockBajo.classList.add('d-none');
+                    $alertasStockBajo.addClass('d-none');
                     cargarInsumos();
                 }
             })
@@ -386,51 +326,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Muestra las alertas de stock bajo
     function mostrarAlertas(alertas) {
-        if (!alertasStockBajo || !contenidoAlertas) return;
-        alertasStockBajo.classList.remove('d-none');
-        contenidoAlertas.innerHTML = '';
+        if (!$alertasStockBajo.length || !$contenidoAlertas.length) return;
+        $alertasStockBajo.removeClass('d-none');
+        $contenidoAlertas.empty();
 
-        alertas.forEach(function(alerta) {
-            const div = document.createElement('div');
-            div.className = 'alerta-item';
+        $.each(alertas, function(i, alerta) {
             const stockEnt = Math.floor(parseFloat(alerta.stock_actual) || 0);
             const minEnt = Math.floor(parseFloat(alerta.stock_minimo) || 0);
-            var texto = document.createElement('span');
-            texto.textContent = alerta.codigo + ' - ' + alerta.nombre + ' (Stock: ' + stockEnt + ', Mínimo: ' + minEnt + ')';
-            div.appendChild(texto);
+            const $div = $('<div class="alerta-item"></div>')
+                .append($('<span></span>').text(alerta.codigo + ' - ' + alerta.nombre + ' (Stock: ' + stockEnt + ', Mínimo: ' + minEnt + ')'));
             if (alerta.id_producto_padre && esAdmin) {
-                var btnSilenciar = document.createElement('button');
-                btnSilenciar.type = 'button';
-                btnSilenciar.className = 'btn btn-sm btn-outline-secondary ms-2 py-0';
-                btnSilenciar.innerHTML = '<i class="bi bi-bell-slash me-1"></i>Silenciar';
-                btnSilenciar.addEventListener('click', function() { silenciarAlerta(alerta.id_producto); });
-                div.appendChild(btnSilenciar);
+                $('<button type="button" class="btn btn-sm btn-outline-secondary ms-2 py-0"><i class="bi bi-bell-slash me-1"></i>Silenciar</button>')
+                    .on('click', function() { silenciarAlerta(alerta.id_producto); })
+                    .appendTo($div);
             }
-            contenidoAlertas.appendChild(div);
+            $contenidoAlertas.append($div);
         });
     }
 
     // Llena el select de proveedores
     function llenarSelectProveedores() {
-        if (!proveedorInsumo) return;
-
-        proveedorInsumo.innerHTML = '<option value="">Seleccione un proveedor...</option>';
-        proveedoresGlobal.forEach(function(proveedor) {
-            const opcion = document.createElement('option');
-            opcion.value = proveedor.id_proveedor;
-            opcion.textContent = proveedor.rif + ' - ' + proveedor.nombre_empresa;
-            proveedorInsumo.appendChild(opcion);
+        $proveedorInsumo.html('<option value="">Seleccione un proveedor...</option>');
+        $.each(proveedoresGlobal, function(i, proveedor) {
+            $proveedorInsumo.append($('<option></option>').val(proveedor.id_proveedor).text(proveedor.rif + ' - ' + proveedor.nombre_empresa));
         });
     }
 
     function llenarSelectRubros(rubros) {
-        if (!rubroInsumo) return;
-        rubroInsumo.innerHTML = '<option value="">Seleccione un rubro</option>';
-        rubros.forEach(function(rubro) {
-            var op = document.createElement('option');
-            op.value = rubro.id_rubro;
-            op.textContent = rubro.nombre;
-            rubroInsumo.appendChild(op);
+        $rubroInsumo.html('<option value="">Seleccione un rubro</option>');
+        $.each(rubros, function(i, rubro) {
+            $rubroInsumo.append($('<option></option>').val(rubro.id_rubro).text(rubro.nombre));
         });
     }
 
@@ -438,12 +363,11 @@ document.addEventListener('DOMContentLoaded', function() {
     async function cargarRubrosPorProveedor(proveedorId) {
         if (!proveedorId) {
             llenarSelectRubros(rubrosGlobal);
-            rubroInsumo.disabled = false;
+            $rubroInsumo.prop('disabled', false);
             return [];
         }
         try {
-            const respuesta = await fetch('/SP%20Perfect%20Color/inventario/obtenerRubrosPorProveedorAjax?id_proveedor=' + proveedorId);
-            const resultado = await respuesta.json();
+            const resultado = await api.get('inventario/obtenerRubrosPorProveedorAjax', { id_proveedor: proveedorId });
             if (resultado.estado === 'exito') {
                 llenarSelectRubros(resultado.datos.rubros);
                 return resultado.datos.rubros;
@@ -454,78 +378,56 @@ document.addEventListener('DOMContentLoaded', function() {
         return [];
     }
 
-    if (proveedorInsumo) {
-        proveedorInsumo.addEventListener('change', async function() {
-            const rubros = await cargarRubrosPorProveedor(this.value);
-            if (this.value && rubros.length === 1) {
-                rubroInsumo.value = rubros[0].id_rubro;
-                rubroInsumo.disabled = true;
-            } else {
-                rubroInsumo.value = '';
-                rubroInsumo.disabled = false;
-            }
-        });
-    }
+    $proveedorInsumo.on('change', async function() {
+        const valor = $(this).val();
+        const rubros = await cargarRubrosPorProveedor(valor);
+        if (valor && rubros.length === 1) {
+            $rubroInsumo.val(rubros[0].id_rubro).prop('disabled', true);
+        } else {
+            $rubroInsumo.val('').prop('disabled', false);
+        }
+    });
 
     // Abre el modal en modo edicion
     async function abrirModalEditar(id) {
         try {
-            const respuesta = await fetch('/SP%20Perfect%20Color/inventario/obtener?id=' + id);
-            const resultado = await respuesta.json();
+            const resultado = await api.get('inventario/obtener', { id: id });
 
             if (resultado.estado === 'exito') {
                 const insumo = resultado.datos;
 
-                tituloModal.textContent = 'Editar Producto';
-                insumoId.value = insumo.id_insumo;
-                codigoInsumo.value = insumo.codigo;
-                codigoInsumo.disabled = true;
-                codigoInsumo.classList.remove('is-invalid', 'is-valid');
-                if (feedbackCodigoInsumo) feedbackCodigoInsumo.classList.add('d-none');
-                if (btnGuardarInsumo) btnGuardarInsumo.disabled = false;
-                nombreInsumo.value = insumo.nombre;
-                if (tipoProductoInsumo) tipoProductoInsumo.value = insumo.id_tipo_producto || '2';
+                $tituloModal.text('Editar Producto');
+                $insumoId.val(insumo.id_insumo);
+                $codigoInsumo.val(insumo.codigo).prop('disabled', true).removeClass('is-invalid is-valid');
+                $feedbackCodigoInsumo.addClass('d-none');
+                $btnGuardarInsumo.prop('disabled', false);
+                $nombreInsumo.val(insumo.nombre);
+                $tipoProductoInsumo.val(insumo.id_tipo_producto || '2');
                 ajustarUnidadSegunTipo(insumo.unidad_medida);
-                if (tipoProductoInsumo) {
-                    if (!Array.from(tipoProductoInsumo.options).some(function (o) { return o.value === String(insumo.id_tipo_producto); })) {
-                        tipoProductoInsumo.add(new Option(insumo.tipo_producto_nombre || 'Preparado', insumo.id_tipo_producto));
-                    }
-                    tipoProductoInsumo.value = insumo.id_tipo_producto;
-                    tipoProductoInsumo.disabled = true;
+                if ($tipoProductoInsumo.length) {
+                    asegurarOpcion($tipoProductoInsumo, insumo.id_tipo_producto, insumo.tipo_producto_nombre || 'Preparado');
+                    $tipoProductoInsumo.val(insumo.id_tipo_producto).prop('disabled', true);
                 }
-                if (unidadMedidaInsumo) {
-                    if (insumo.unidad_medida && !Array.from(unidadMedidaInsumo.options).some(function (o) { return o.value === insumo.unidad_medida; })) {
-                        unidadMedidaInsumo.add(new Option(insumo.unidad_medida, insumo.unidad_medida));
-                    }
-                    unidadMedidaInsumo.value = insumo.unidad_medida || unidadMedidaInsumo.value;
-                    unidadMedidaInsumo.disabled = true;
+                if ($unidadMedidaInsumo.length) {
+                    if (insumo.unidad_medida) asegurarOpcion($unidadMedidaInsumo, insumo.unidad_medida, insumo.unidad_medida);
+                    $unidadMedidaInsumo.val(insumo.unidad_medida || $unidadMedidaInsumo.val()).prop('disabled', true);
                 }
-                var grupoAlerta = document.getElementById('grupoAlertaActivaInsumo');
-                var chkAlerta = document.getElementById('alertaActivaInsumo');
-                if (grupoAlerta && chkAlerta) {
-                    grupoAlerta.classList.toggle('d-none', !insumo.id_producto_padre);
-                    chkAlerta.checked = parseInt(insumo.alerta_activa) !== 0;
+                const $grupoAlerta = $('#grupoAlertaActivaInsumo');
+                const $chkAlerta = $('#alertaActivaInsumo');
+                if ($grupoAlerta.length && $chkAlerta.length) {
+                    $grupoAlerta.toggleClass('d-none', !insumo.id_producto_padre);
+                    $chkAlerta.prop('checked', parseInt(insumo.alerta_activa) !== 0);
                 }
-                if (stockActualInsumo) {
-                    stockActualInsumo.value = Math.round(parseFloat(insumo.stock_actual) || 0);
-                    stockActualInsumo.readOnly = true;
-                }
-                if (stockMinimoInsumo) stockMinimoInsumo.value = Math.round(parseFloat(insumo.stock_minimo) || 0);
-                if (precioVentaInsumo) precioVentaInsumo.value = insumo.precio_venta;
-                if (precioCompraInsumo) precioCompraInsumo.value = insumo.precio_compra || 0;
-                if (proveedorInsumo) {
-                    proveedorInsumo.value = insumo.proveedores_id || '';
-                    proveedorInsumo.disabled = true;
-                }
+                $stockActualInsumo.val(Math.round(parseFloat(insumo.stock_actual) || 0)).prop('readOnly', true);
+                $stockMinimoInsumo.val(Math.round(parseFloat(insumo.stock_minimo) || 0));
+                $precioVentaInsumo.val(insumo.precio_venta);
+                $proveedorInsumo.val(insumo.proveedores_id || '').prop('disabled', true);
                 // Cargar rubros segun el proveedor del insumo
-                const rubrosEdit = await cargarRubrosPorProveedor(insumo.proveedores_id || '');
-                if (rubroInsumo) {
-                    rubroInsumo.value = insumo.id_rubro || '';
-                    rubroInsumo.disabled = true;
-                }
-                mensajeError.classList.add('d-none');
+                await cargarRubrosPorProveedor(insumo.proveedores_id || '');
+                $rubroInsumo.val(insumo.id_rubro || '').prop('disabled', true);
+                $mensajeError.addClass('d-none');
 
-                bootstrap.Modal.getOrCreateInstance(modalInsumo).show();
+                bootstrap.Modal.getOrCreateInstance($modalInsumo[0]).show();
             } else {
                 mostrarNotificacion(resultado.mensaje, 'error');
             }
@@ -537,27 +439,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Guarda o actualiza un insumo
     async function guardarInsumo() {
-        const id = insumoId.value;
+        const id = $insumoId.val();
         const esEdicion = id !== '';
 
-        if (!codigoInsumo.value.trim()) {
+        if (!$codigoInsumo.val().trim()) {
             mostrarError('El código es obligatorio');
             return;
         }
 
-        if (!nombreInsumo.value.trim()) {
+        if (!$nombreInsumo.val().trim()) {
             mostrarError('El nombre del insumo es obligatorio');
             return;
         }
 
-        const precioVenta = parseFloat(precioVentaInsumo.value);
+        const precioVenta = parseFloat($precioVentaInsumo.val());
         if (isNaN(precioVenta) || precioVenta <= 0) {
             mostrarError('El precio de venta debe ser un número positivo');
             return;
         }
 
-        const stockActual = parseInt(stockActualInsumo.value, 10);
-        const stockMinimo = parseInt(stockMinimoInsumo.value, 10);
+        const stockActual = parseInt($stockActualInsumo.val(), 10);
+        const stockMinimo = parseInt($stockMinimoInsumo.val(), 10);
         if (isNaN(stockActual) || stockActual < 0) {
             mostrarError('El stock actual debe ser un número entero no negativo');
             return;
@@ -567,24 +469,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const url = esEdicion ? '/SP%20Perfect%20Color/inventario/actualizar' : '/SP%20Perfect%20Color/inventario/guardar';
-        const formData = new FormData(formularioInsumo);
+        const formData = new FormData($formularioInsumo[0]);
 
         if (esEdicion) {
             formData.set('id', id);
-            formData.set('codigo', codigoInsumo.value);
+            formData.set('codigo', $codigoInsumo.val());
         }
 
         try {
-            const respuesta = await fetch(url, {
-                method: 'POST',
-                body: formData
-            });
-
-            const resultado = await respuesta.json();
+            const resultado = await api.post(esEdicion ? 'inventario/actualizar' : 'inventario/guardar', formData);
 
             if (resultado.estado === 'exito') {
-                bootstrap.Modal.getInstance(modalInsumo).hide();
+                bootstrap.Modal.getInstance($modalInsumo[0]).hide();
                 cargarInsumos();
                 mostrarNotificacion(resultado.mensaje, 'exito');
             } else {
@@ -597,12 +493,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Elimina un insumo
-    async function eliminarInsumo(id, nombre) {
+    function eliminarInsumo(id, nombre) {
         confirmarConModal('Eliminar', '¿Está seguro de eliminar el insumo ' + escapeHtml(nombre) + '?', function() {
-            const formData = new FormData();
-            formData.append('id', id);
-            fetch('/SP%20Perfect%20Color/inventario/eliminar', { method: 'POST', body: formData })
-                .then(function(r) { return r.json(); })
+            api.post('inventario/eliminar', { id: id })
                 .then(function(resultado) {
                     if (resultado.estado === 'exito') {
                         cargarInsumos();
@@ -619,44 +512,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Enlazar busqueda manual a DataTables
-    vincularBusqueda(busquedaInsumos, '#tablaInsumos');
+    vincularBusqueda('#busquedaInsumos', '#tablaInsumos');
 
     // Muestra un mensaje de error en el modal
     function mostrarError(mensaje) {
-        mensajeError.textContent = mensaje;
-        mensajeError.classList.remove('d-none');
+        $mensajeError.text(mensaje).removeClass('d-none');
     }
 
     // =========================================================================
     // SECCIÓN: PREPARAR MEZCLA / COLOR PERSONALIZADO (TALLER)
     // =========================================================================
-    const btnPrepararMezcla = document.getElementById('btnPrepararMezcla');
-    const modalPrepararMezcla = document.getElementById('modalPrepararMezcla');
-    const formMezcla = document.getElementById('formularioMezcla');
-    const cuerpoBasesMezcla = document.getElementById('cuerpoBasesMezcla');
-    const btnAgregarFilaBase = document.getElementById('btnAgregarFilaBase');
-    const contadorBasesMezcla = document.getElementById('contadorBasesMezcla');
-    const totalGalonesMezcla = document.getElementById('totalGalonesMezcla');
-    const mezclaNombre = document.getElementById('mezclaNombre');
-    const mezclaPresentacion = document.getElementById('mezclaPresentacion');
-    const mezclaCantidad = document.getElementById('mezclaCantidad');
-    const mezclaPrecioVenta = document.getElementById('mezclaPrecioVenta');
-    const mezclaSubtotalEstimado = document.getElementById('mezclaSubtotalEstimado');
-    const mensajeErrorMezcla = document.getElementById('mensajeErrorMezcla');
+    const $btnPrepararMezcla = $('#btnPrepararMezcla');
+    const $modalPrepararMezcla = $('#modalPrepararMezcla');
+    const $formMezcla = $('#formularioMezcla');
+    const $cuerpoBasesMezcla = $('#cuerpoBasesMezcla');
+    const $btnAgregarFilaBase = $('#btnAgregarFilaBase');
+    const $contadorBasesMezcla = $('#contadorBasesMezcla');
+    const $mezclaNombre = $('#mezclaNombre');
+    const $mezclaPresentacion = $('#mezclaPresentacion');
+    const $mezclaCantidad = $('#mezclaCantidad');
+    const $mezclaPrecioVenta = $('#mezclaPrecioVenta');
+    const $mezclaSubtotalEstimado = $('#mezclaSubtotalEstimado');
+    const $mensajeErrorMezcla = $('#mensajeErrorMezcla');
 
-    if (mezclaNombre) {
-        mezclaNombre.addEventListener('input', function() {
-            this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\-\/\#\.]/g, '');
-            if (this.value.length > 40) {
-                this.value = this.value.substring(0, 40);
-            }
-        });
-    }
+    $mezclaNombre.on('input', function() {
+        this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\-\/\#\.]/g, '').substring(0, 40);
+    });
 
     async function cargarBasesParaMezcla() {
         try {
-            const resp = await fetch('/SP%20Perfect%20Color/inventario/listarBasesAjax');
-            const res = await resp.json();
+            const res = await api.get('inventario/listarBasesAjax');
             if (res.estado === 'exito') {
                 basesGlobal = res.datos.bases || [];
             }
@@ -665,36 +550,38 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    if (btnPrepararMezcla) {
-        btnPrepararMezcla.addEventListener('click', async function() {
-            if (formMezcla) formMezcla.reset();
-            if (mensajeErrorMezcla) mensajeErrorMezcla.classList.add('d-none');
-            if (cuerpoBasesMezcla) cuerpoBasesMezcla.innerHTML = '';
-            await cargarBasesParaMezcla();
-            agregarFilaBaseMezcla();
-            recalcularTotalesMezcla();
-            if (modalPrepararMezcla) {
-                bootstrap.Modal.getOrCreateInstance(modalPrepararMezcla).show();
+    $btnPrepararMezcla.on('click', async function() {
+        if ($formMezcla.length) $formMezcla[0].reset();
+        $mensajeErrorMezcla.addClass('d-none');
+        $cuerpoBasesMezcla.empty();
+        await cargarBasesParaMezcla();
+        agregarFilaBaseMezcla();
+        recalcularTotalesMezcla();
+        if ($modalPrepararMezcla.length) {
+            bootstrap.Modal.getOrCreateInstance($modalPrepararMezcla[0]).show();
+        }
+    });
+
+    $btnAgregarFilaBase.on('click', agregarFilaBaseMezcla);
+
+    // Cierra las listas de sugerencias al hacer clic fuera de su fila
+    $(document).on('click', function(e) {
+        $cuerpoBasesMezcla.find('tr').each(function() {
+            if (!$.contains(this, e.target)) {
+                $(this).find('.lista-sugerencias-base').removeClass('show');
+                $(this).find('td.celda-buscador-activa').removeClass('celda-buscador-activa');
             }
         });
-    }
-
-    if (btnAgregarFilaBase) {
-        btnAgregarFilaBase.addEventListener('click', function() {
-            agregarFilaBaseMezcla();
-        });
-    }
+    });
 
     function agregarFilaBaseMezcla() {
-        if (!cuerpoBasesMezcla) return;
-        const totalFilas = cuerpoBasesMezcla.querySelectorAll('tr').length;
-        if (totalFilas >= 6) {
+        if (!$cuerpoBasesMezcla.length) return;
+        if ($cuerpoBasesMezcla.children('tr').length >= 6) {
             mostrarNotificacion('El límite máximo es de 6 tintes base por mezcla.', 'error');
             return;
         }
 
-        const fila = document.createElement('tr');
-        fila.innerHTML =
+        const $fila = $('<tr></tr>').html(
             '<td class="position-relative">' +
                 '<div class="input-group input-group-sm">' +
                     '<span class="input-group-text bg-light text-muted px-2"><i class="bi bi-search"></i></span>' +
@@ -721,351 +608,308 @@ document.addEventListener('DOMContentLoaded', function() {
             '</td>' +
             '<td class="text-center">' +
                 '<button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-base-fila" title="Quitar"><i class="bi bi-x-lg"></i></button>' +
-            '</td>';
+            '</td>');
 
-        const inputBuscar = fila.querySelector('.input-buscar-base');
-        const inputHidden = fila.querySelector('.select-base-tinte');
-        const btnLimpiar = fila.querySelector('.btn-limpiar-base');
-        const listaSug = fila.querySelector('.lista-sugerencias-base');
-        const selFrac = fila.querySelector('.select-fraccion-tinte');
-        const labelConsumo = fila.querySelector('.consumo-galon-text');
-        const btnElim = fila.querySelector('.btn-eliminar-base-fila');
-
-        const tdBuscador = fila.querySelector('td.position-relative');
+        const $inputBuscar = $fila.find('.input-buscar-base');
+        const $inputHidden = $fila.find('.select-base-tinte');
+        const $btnLimpiar = $fila.find('.btn-limpiar-base');
+        const $listaSug = $fila.find('.lista-sugerencias-base');
+        const $selFrac = $fila.find('.select-fraccion-tinte');
+        const $labelConsumo = $fila.find('.consumo-galon-text');
+        const $tdBuscador = $fila.find('td.position-relative');
 
         function renderizarSugerencias(filtro) {
-            if (cuerpoBasesMezcla) {
-                cuerpoBasesMezcla.querySelectorAll('.lista-sugerencias-base.show').forEach(function(el) {
-                    if (el !== listaSug) el.classList.remove('show');
-                });
-                cuerpoBasesMezcla.querySelectorAll('td.celda-buscador-activa').forEach(function(td) {
-                    if (td !== tdBuscador) td.classList.remove('celda-buscador-activa');
-                });
-            }
-            if (tdBuscador) tdBuscador.classList.add('celda-buscador-activa');
+            $cuerpoBasesMezcla.find('.lista-sugerencias-base.show').not($listaSug).removeClass('show');
+            $cuerpoBasesMezcla.find('td.celda-buscador-activa').not($tdBuscador).removeClass('celda-buscador-activa');
+            $tdBuscador.addClass('celda-buscador-activa');
 
-            listaSug.innerHTML = '';
+            $listaSug.empty();
             const q = (filtro || '').toLowerCase().trim();
             const filtradas = basesGlobal.filter(function(b) {
                 if (!q) return true;
-                const texto = ((b.codigo || '') + ' ' + (b.nombre || '')).toLowerCase();
-                return texto.includes(q);
+                return ((b.codigo || '') + ' ' + (b.nombre || '')).toLowerCase().includes(q);
             });
 
             if (filtradas.length === 0) {
-                listaSug.innerHTML = '<div class="p-3 text-muted small text-center">No se encontraron tintes base</div>';
+                $listaSug.html('<div class="p-3 text-muted small text-center">No se encontraron tintes base</div>');
             } else {
-                filtradas.forEach(function(b) {
+                $.each(filtradas, function(i, b) {
                     const volumen = parseInt(b.volumen_familia_128) || 0;
-                    const stock = volumen;
-                    const min = 0;
-                    const item = document.createElement('a');
-                    item.className = 'buscador-dropdown-item';
-                    item.href = '#';
-                    item.innerHTML =
-                        '<span class="item-titulo">' + escapeHtml(b.nombre) + '</span>' +
-                        '<div class="item-meta">' +
-                            '<span class="badge-codigo">' + escapeHtml(b.codigo) + '</span>' +
-                            '<span class="badge-stock ' + (stock <= min ? 'bajo' : '') + '">Disponible: ' + formatearGalones(volumen / 128) + '</span>' +
-                        '</div>';
-                    item.addEventListener('click', function(ev) {
-                        ev.preventDefault();
-                        inputBuscar.value = b.codigo + ' - ' + b.nombre;
-                        inputHidden.value = b.id_producto;
-                        inputHidden.dataset.precio = b.precio_venta || 0;
-                        inputHidden.dataset.nombre = b.nombre;
-                        btnLimpiar.classList.remove('d-none');
-                        listaSug.classList.remove('show');
-                        if (tdBuscador) tdBuscador.classList.remove('celda-buscador-activa');
-                        recalcularTotalesMezcla();
-                    });
-                    listaSug.appendChild(item);
+                    $('<a class="buscador-dropdown-item" href="#"></a>')
+                        .html(
+                            '<span class="item-titulo">' + escapeHtml(b.nombre) + '</span>' +
+                            '<div class="item-meta">' +
+                                '<span class="badge-codigo">' + escapeHtml(b.codigo) + '</span>' +
+                                '<span class="badge-stock ' + (volumen <= 0 ? 'bajo' : '') + '">Disponible: ' + formatearGalones(volumen / 128) + '</span>' +
+                            '</div>')
+                        .on('click', function(ev) {
+                            ev.preventDefault();
+                            $inputBuscar.val(b.codigo + ' - ' + b.nombre);
+                            $inputHidden.val(b.id_producto).attr({ 'data-precio': b.precio_venta || 0, 'data-nombre': b.nombre });
+                            $btnLimpiar.removeClass('d-none');
+                            $listaSug.removeClass('show');
+                            $tdBuscador.removeClass('celda-buscador-activa');
+                            recalcularTotalesMezcla();
+                        })
+                        .appendTo($listaSug);
                 });
             }
-            listaSug.classList.add('show');
+            $listaSug.addClass('show');
         }
 
-        inputBuscar.addEventListener('focus', function() {
+        $inputBuscar.on('focus', function() {
             renderizarSugerencias(this.value);
         });
 
-        inputBuscar.addEventListener('input', function() {
+        $inputBuscar.on('input', function() {
             if (!this.value.trim()) {
-                inputHidden.value = '';
-                inputHidden.dataset.precio = 0;
-                btnLimpiar.classList.add('d-none');
+                $inputHidden.val('').attr('data-precio', 0);
+                $btnLimpiar.addClass('d-none');
                 recalcularTotalesMezcla();
             }
             renderizarSugerencias(this.value);
         });
 
-        btnLimpiar.addEventListener('click', function() {
-            inputBuscar.value = '';
-            inputHidden.value = '';
-            inputHidden.dataset.precio = 0;
-            btnLimpiar.classList.add('d-none');
-            listaSug.classList.remove('show');
-            if (tdBuscador) tdBuscador.classList.remove('celda-buscador-activa');
+        $btnLimpiar.on('click', function() {
+            $inputBuscar.val('');
+            $inputHidden.val('').attr('data-precio', 0);
+            $btnLimpiar.addClass('d-none');
+            $listaSug.removeClass('show');
+            $tdBuscador.removeClass('celda-buscador-activa');
             recalcularTotalesMezcla();
-            inputBuscar.focus();
+            $inputBuscar.trigger('focus');
         });
 
-        document.addEventListener('click', function(e) {
-            if (!fila.contains(e.target)) {
-                listaSug.classList.remove('show');
-                if (tdBuscador) tdBuscador.classList.remove('celda-buscador-activa');
-            }
-        });
-
-        selFrac.addEventListener('change', function() {
-            const gal = parseFloat(this.selectedOptions[0]?.dataset?.galon || 0);
-            labelConsumo.textContent = gal.toFixed(4) + ' gal';
+        $selFrac.on('change', function() {
+            $labelConsumo.text(galonesDe($selFrac).toFixed(4) + ' gal');
             recalcularTotalesMezcla();
         });
 
-        btnElim.addEventListener('click', function() {
-            fila.remove();
+        $fila.find('.btn-eliminar-base-fila').on('click', function() {
+            $fila.remove();
             actualizarContadorBasesMezcla();
             recalcularTotalesMezcla();
         });
 
-        cuerpoBasesMezcla.appendChild(fila);
+        $cuerpoBasesMezcla.append($fila);
         actualizarContadorBasesMezcla();
         recalcularTotalesMezcla();
     }
 
+    // Galones de la opción seleccionada en un select de fracción/presentación
+    function galonesDe($select, porDefecto) {
+        const v = $select.find('option:selected').attr('data-galon');
+        return v === undefined ? (porDefecto || 0) : parseFloat(v);
+    }
+
+    function capacidadObjetivoMezcla() {
+        const f = $mezclaPresentacion.find('option:selected').attr('data-factor');
+        return parseFloat(f === undefined ? 1.0 : f);
+    }
+
     function actualizarContadorBasesMezcla() {
-        if (!cuerpoBasesMezcla || !contadorBasesMezcla) return;
-        const count = cuerpoBasesMezcla.querySelectorAll('tr').length;
-        contadorBasesMezcla.textContent = count + '/6 bases';
-        if (btnAgregarFilaBase) btnAgregarFilaBase.disabled = count >= 6;
+        if (!$cuerpoBasesMezcla.length || !$contadorBasesMezcla.length) return;
+        const count = $cuerpoBasesMezcla.children('tr').length;
+        $contadorBasesMezcla.text(count + '/6 bases');
+        $btnAgregarFilaBase.prop('disabled', count >= 6);
     }
 
     function recalcularTotalesMezcla() {
-        if (!cuerpoBasesMezcla) return;
+        if (!$cuerpoBasesMezcla.length) return;
         let totalGal = 0;
-        let costoBases = 0;
-        cuerpoBasesMezcla.querySelectorAll('tr').forEach(function(r) {
-            const selBase = r.querySelector('.select-base-tinte');
-            const selFrac = r.querySelector('.select-fraccion-tinte');
-            if (selBase && selBase.value) {
-                const precio = parseFloat(selBase.dataset?.precio || selBase.selectedOptions?.[0]?.dataset?.precio || 0);
-                const gal = parseFloat(selFrac?.selectedOptions[0]?.dataset?.galon || 0);
-                totalGal += gal;
-                costoBases += (gal * precio);
+        $cuerpoBasesMezcla.children('tr').each(function() {
+            if ($(this).find('.select-base-tinte').val()) {
+                totalGal += galonesDe($(this).find('.select-fraccion-tinte'));
             }
         });
 
-        const capacidadObjetivo = parseFloat(mezclaPresentacion?.selectedOptions[0]?.dataset?.factor || 1.0);
-        const cant = parseInt(mezclaCantidad?.value || 1) || 1;
+        const capacidadObjetivo = capacidadObjetivoMezcla();
+        const cant = parseInt($mezclaCantidad.val() || 1) || 1;
         const volumenTotalTaller = totalGal * cant;
 
-        const indicadorBalance = document.getElementById('indicadorBalanceFormula');
-        if (indicadorBalance) {
-            if (totalGal === 0) {
-                indicadorBalance.innerHTML = '<span class="text-muted small">Volumen: 0.0000 / ' + capacidadObjetivo.toFixed(4) + ' gal</span>';
-            } else if (Math.abs(totalGal - capacidadObjetivo) < 0.0001) {
-                indicadorBalance.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Fórmula exacta: ' + totalGal.toFixed(4) + ' / ' + capacidadObjetivo.toFixed(4) + ' gal (' + cant + ' envases = ' + volumenTotalTaller.toFixed(4) + ' gal)</span>';
-            } else if (totalGal < capacidadObjetivo) {
-                const falta = (capacidadObjetivo - totalGal).toFixed(4);
-                indicadorBalance.innerHTML = '<span class="text-warning fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>Faltan ' + falta + ' gal para completar ' + capacidadObjetivo.toFixed(4) + ' gal</span>';
-            } else {
-                const sobra = (totalGal - capacidadObjetivo).toFixed(4);
-                indicadorBalance.innerHTML = '<span class="text-danger fw-semibold"><i class="bi bi-x-circle-fill me-1"></i>Exceso de fórmula: excede por ' + sobra + ' gal</span>';
-            }
+        const $indicadorBalance = $('#indicadorBalanceFormula');
+        if (totalGal === 0) {
+            $indicadorBalance.html('<span class="text-muted small">Volumen: 0.0000 / ' + capacidadObjetivo.toFixed(4) + ' gal</span>');
+        } else if (Math.abs(totalGal - capacidadObjetivo) < 0.0001) {
+            $indicadorBalance.html('<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Fórmula exacta: ' + totalGal.toFixed(4) + ' / ' + capacidadObjetivo.toFixed(4) + ' gal (' + cant + ' envases = ' + volumenTotalTaller.toFixed(4) + ' gal)</span>');
+        } else if (totalGal < capacidadObjetivo) {
+            $indicadorBalance.html('<span class="text-warning fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>Faltan ' + (capacidadObjetivo - totalGal).toFixed(4) + ' gal para completar ' + capacidadObjetivo.toFixed(4) + ' gal</span>');
+        } else {
+            $indicadorBalance.html('<span class="text-danger fw-semibold"><i class="bi bi-x-circle-fill me-1"></i>Exceso de fórmula: excede por ' + (totalGal - capacidadObjetivo).toFixed(4) + ' gal</span>');
         }
 
-        const precio = parseFloat(mezclaPrecioVenta?.value || 0) || 0;
-        if (mezclaSubtotalEstimado) {
-            mezclaSubtotalEstimado.textContent = '$ ' + formatearMoneda(cant * precio);
-        }
+        const precio = parseFloat($mezclaPrecioVenta.val() || 0) || 0;
+        $mezclaSubtotalEstimado.text('$ ' + formatearMoneda(cant * precio));
     }
 
-    if (mezclaPresentacion) mezclaPresentacion.addEventListener('change', recalcularTotalesMezcla);
-    if (mezclaCantidad) mezclaCantidad.addEventListener('input', recalcularTotalesMezcla);
-    if (mezclaPrecioVenta) mezclaPrecioVenta.addEventListener('input', recalcularTotalesMezcla);
+    $mezclaPresentacion.on('change', recalcularTotalesMezcla);
+    $mezclaCantidad.add($mezclaPrecioVenta).on('input', recalcularTotalesMezcla);
 
-    if (formMezcla) {
-        formMezcla.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            mensajeErrorMezcla.classList.add('d-none');
+    function errorMezcla(texto) {
+        $mensajeErrorMezcla.text(texto).removeClass('d-none');
+    }
 
-            const nombre = mezclaNombre.value.trim();
-            if (!nombre) {
-                mensajeErrorMezcla.textContent = 'El nombre o identificación del color es obligatorio.';
-                mensajeErrorMezcla.classList.remove('d-none');
+    $formMezcla.on('submit', async function(e) {
+        e.preventDefault();
+        $mensajeErrorMezcla.addClass('d-none');
+
+        const nombre = $mezclaNombre.val().trim();
+        if (!nombre) {
+            errorMezcla('El nombre o identificación del color es obligatorio.');
+            return;
+        }
+        if (nombre.length > 40) {
+            errorMezcla('El nombre de la mezcla no puede superar los 40 caracteres.');
+            return;
+        }
+        const presentacion = $mezclaPresentacion.val();
+        const capacidadObjetivo = capacidadObjetivoMezcla();
+        const cantidad = parseInt($mezclaCantidad.val()) || 1;
+        const precioVenta = parseFloat($mezclaPrecioVenta.val()) || 0;
+
+        const $filas = $cuerpoBasesMezcla.children('tr');
+        if ($filas.length === 0) {
+            errorMezcla('Debe agregar al menos una base para la formulación.');
+            return;
+        }
+
+        let sumaFormula = 0;
+        const basesData = [];
+        let errorBases = false;
+        $filas.each(function() {
+            const idBase = parseInt($(this).find('.select-base-tinte').val() || 0);
+            if (!idBase) {
+                errorBases = true;
                 return;
             }
-            if (nombre.length > 40) {
-                mensajeErrorMezcla.textContent = 'El nombre de la mezcla no puede superar los 40 caracteres.';
-                mensajeErrorMezcla.classList.remove('d-none');
-                return;
-            }
-            const presentacion = mezclaPresentacion.value;
-            const capacidadObjetivo = parseFloat(mezclaPresentacion?.selectedOptions[0]?.dataset?.factor || 1.0);
-            const cantidad = parseInt(mezclaCantidad.value) || 1;
-            const precioVenta = parseFloat(mezclaPrecioVenta.value) || 0;
-
-            const filas = cuerpoBasesMezcla.querySelectorAll('tr');
-            if (filas.length === 0) {
-                mensajeErrorMezcla.textContent = 'Debe agregar al menos una base para la formulación.';
-                mensajeErrorMezcla.classList.remove('d-none');
-                return;
-            }
-
-            let sumaFormula = 0;
-            const basesData = [];
-            let errorBases = false;
-            filas.forEach(function(r) {
-                const selBase = r.querySelector('.select-base-tinte');
-                const selFrac = r.querySelector('.select-fraccion-tinte');
-                const idBase = parseInt(selBase?.value || 0);
-                if (!idBase) {
-                    errorBases = true;
-                    return;
-                }
-                const fraccion = selFrac?.value || '1/4';
-                const cantGal = parseFloat(selFrac?.selectedOptions[0]?.dataset?.galon || 0.25);
-                sumaFormula += cantGal;
-                basesData.push({
-                    id_producto_base: idBase,
-                    fraccion: fraccion,
-                    cantidad_galon: cantGal
-                });
+            const $selFrac = $(this).find('.select-fraccion-tinte');
+            const cantGal = galonesDe($selFrac, 0.25);
+            sumaFormula += cantGal;
+            basesData.push({
+                id_producto_base: idBase,
+                fraccion: $selFrac.val() || '1/4',
+                cantidad_galon: cantGal
             });
-
-            if (errorBases || basesData.length === 0) {
-                mensajeErrorMezcla.textContent = 'Por favor seleccione todos los tintes base agregados.';
-                mensajeErrorMezcla.classList.remove('d-none');
-                return;
-            }
-
-            // Validación estricta de balance de volumen: debe dar la cantidad exacta
-            if (Math.abs(sumaFormula - capacidadObjetivo) >= 0.0001) {
-                if (sumaFormula < capacidadObjetivo) {
-                    const falta = (capacidadObjetivo - sumaFormula).toFixed(4);
-                    mensajeErrorMezcla.textContent = 'La mezcla debe dar la cantidad exacta de la presentación (' + capacidadObjetivo.toFixed(4) + ' gal). Le faltan ' + falta + ' galones.';
-                } else {
-                    const sobra = (sumaFormula - capacidadObjetivo).toFixed(4);
-                    mensajeErrorMezcla.textContent = 'La mezcla excede la capacidad de la presentación (' + capacidadObjetivo.toFixed(4) + ' gal). Le sobran ' + sobra + ' galones.';
-                }
-                mensajeErrorMezcla.classList.remove('d-none');
-                return;
-            }
-
-            const fd = new FormData();
-            fd.append('nombre', nombre);
-            fd.append('presentacion', presentacion);
-            fd.append('cantidad', cantidad);
-            fd.append('precio_venta', precioVenta);
-            fd.append('bases', JSON.stringify(basesData));
-
-            try {
-                const resp = await fetch('/SP%20Perfect%20Color/inventario/guardarMezcla', {
-                    method: 'POST',
-                    body: fd
-                });
-                const res = await resp.json();
-                if (res.estado === 'exito') {
-                    bootstrap.Modal.getInstance(modalPrepararMezcla).hide();
-                    mostrarNotificacion(res.mensaje, 'exito');
-                    cargarInsumos();
-                } else {
-                    mensajeErrorMezcla.textContent = res.mensaje;
-                    mensajeErrorMezcla.classList.remove('d-none');
-                }
-            } catch (err) {
-                console.error(err);
-                mensajeErrorMezcla.textContent = 'No se pudo registrar la mezcla. Revise su conexión e intente de nuevo.';
-                mensajeErrorMezcla.classList.remove('d-none');
-            }
         });
-    }
+
+        if (errorBases || basesData.length === 0) {
+            errorMezcla('Por favor seleccione todos los tintes base agregados.');
+            return;
+        }
+
+        // Validación estricta de balance de volumen: debe dar la cantidad exacta
+        if (Math.abs(sumaFormula - capacidadObjetivo) >= 0.0001) {
+            if (sumaFormula < capacidadObjetivo) {
+                errorMezcla('La mezcla debe dar la cantidad exacta de la presentación (' + capacidadObjetivo.toFixed(4) + ' gal). Le faltan ' + (capacidadObjetivo - sumaFormula).toFixed(4) + ' galones.');
+            } else {
+                errorMezcla('La mezcla excede la capacidad de la presentación (' + capacidadObjetivo.toFixed(4) + ' gal). Le sobran ' + (sumaFormula - capacidadObjetivo).toFixed(4) + ' galones.');
+            }
+            return;
+        }
+
+        try {
+            const res = await api.post('inventario/guardarMezcla', {
+                nombre: nombre,
+                presentacion: presentacion,
+                cantidad: cantidad,
+                precio_venta: precioVenta,
+                bases: JSON.stringify(basesData)
+            });
+            if (res.estado === 'exito') {
+                bootstrap.Modal.getInstance($modalPrepararMezcla[0]).hide();
+                mostrarNotificacion(res.mensaje, 'exito');
+                cargarInsumos();
+            } else {
+                errorMezcla(res.mensaje);
+            }
+        } catch (err) {
+            console.error(err);
+            errorMezcla('No se pudo registrar la mezcla. Revise su conexión e intente de nuevo.');
+        }
+    });
 
     // =========================================================================
     // SECCIÓN: AJUSTE POR MERMA / DAÑO
     // =========================================================================
-    const btnAjusteMerma = document.getElementById('btnAjusteMerma');
-    const modalAjusteMerma = document.getElementById('modalAjusteMerma');
-    const formAjusteMerma = document.getElementById('formularioAjusteMerma');
-    const ajusteProducto = document.getElementById('ajusteProducto');
-    const inputBuscarAjusteProducto = document.getElementById('inputBuscarAjusteProducto');
-    const btnLimpiarAjusteProducto = document.getElementById('btnLimpiarAjusteProducto');
-    const listaSugerenciasAjusteProducto = document.getElementById('listaSugerenciasAjusteProducto');
-    const ajusteStockDisponible = document.getElementById('ajusteStockDisponible');
-    const ajusteCantidad = document.getElementById('ajusteCantidad');
-    const ajusteMotivo = document.getElementById('ajusteMotivo');
-    const ajusteObservacion = document.getElementById('ajusteObservacion');
-    const mensajeErrorAjuste = document.getElementById('mensajeErrorAjuste');
-    const grupoAjustePresentacion = document.getElementById('grupoAjustePresentacion');
-    const ajustePresentacion = document.getElementById('ajustePresentacion');
-    const ajusteEquivalencia = document.getElementById('ajusteEquivalencia');
-    const textoEquivalenciaBase = ajusteEquivalencia ? ajusteEquivalencia.textContent : '';
+    const $btnAjusteMerma = $('#btnAjusteMerma');
+    const $modalAjusteMerma = $('#modalAjusteMerma');
+    const $formAjusteMerma = $('#formularioAjusteMerma');
+    const $ajusteProducto = $('#ajusteProducto');
+    const $inputBuscarAjusteProducto = $('#inputBuscarAjusteProducto');
+    const $btnLimpiarAjusteProducto = $('#btnLimpiarAjusteProducto');
+    const $listaSugerenciasAjusteProducto = $('#listaSugerenciasAjusteProducto');
+    const $ajusteStockDisponible = $('#ajusteStockDisponible');
+    const $ajusteCantidad = $('#ajusteCantidad');
+    const $ajusteMotivo = $('#ajusteMotivo');
+    const $ajusteObservacion = $('#ajusteObservacion');
+    const $mensajeErrorAjuste = $('#mensajeErrorAjuste');
+    const $grupoAjustePresentacion = $('#grupoAjustePresentacion');
+    const $ajustePresentacion = $('#ajustePresentacion');
+    const $ajusteEquivalencia = $('#ajusteEquivalencia');
+    const textoEquivalenciaBase = $ajusteEquivalencia.text();
+
+    function errorAjuste(texto) {
+        $mensajeErrorAjuste.text(texto).removeClass('d-none');
+    }
+
+    // Deja el selector de producto de la merma sin selección
+    function limpiarSeleccionAjuste() {
+        $ajusteProducto.val('').attr('data-stock', '0');
+        $ajusteStockDisponible.text('-');
+        configurarAjustePresentacion(false);
+    }
 
     // Para tintes base la merma se indica por presentación perdida; el resto sigue en unidades enteras
     function actualizarEquivalenciaAjuste() {
-        if (!ajusteEquivalencia || !ajusteProducto) return;
-        var esTinte = ajusteProducto.dataset.galones === '1';
-        var volumen = parseInt(ajusteProducto.dataset.volumen) || 0;
-        var optTope = esTinte && ajustePresentacion ? ajustePresentacion.selectedOptions[0] : null;
-        var maximo = esTinte
-            ? Math.floor(volumen / (optTope ? parseInt(optTope.dataset.factor) : 128))
-            : Math.floor(parseFloat(ajusteProducto.dataset.stock) || 0);
-        if (ajusteCantidad) {
-            ajusteCantidad.max = maximo;
-            if (parseInt(ajusteCantidad.value) > maximo) ajusteCantidad.value = maximo > 0 ? maximo : '';
-        }
-        var prefijoTope = ajusteProducto.value
+        if (!$ajusteEquivalencia.length || !$ajusteProducto.length) return;
+        const esTinte = $ajusteProducto.attr('data-galones') === '1';
+        const volumen = parseInt($ajusteProducto.attr('data-volumen')) || 0;
+        const factorSel = esTinte ? $ajustePresentacion.find('option:selected').attr('data-factor') : undefined;
+        const maximo = esTinte
+            ? Math.floor(volumen / (factorSel !== undefined ? parseInt(factorSel) : 128))
+            : Math.floor(parseFloat($ajusteProducto.attr('data-stock')) || 0);
+        $ajusteCantidad.attr('max', maximo);
+        if (parseInt($ajusteCantidad.val()) > maximo) $ajusteCantidad.val(maximo > 0 ? maximo : '');
+        const prefijoTope = $ajusteProducto.val()
             ? 'Máximo permitido: ' + maximo + (esTinte ? ' (total disponible: ' + formatearGalones(volumen / 128) + '). ' : '. ')
             : '';
         if (!esTinte) {
-            ajusteEquivalencia.textContent = prefijoTope + textoEquivalenciaBase;
+            $ajusteEquivalencia.text(prefijoTope + textoEquivalenciaBase);
             return;
         }
-        var opt = ajustePresentacion.selectedOptions[0];
-        var cant = parseInt(ajusteCantidad.value) || 0;
-        var eq = cant * (opt ? parseInt(opt.dataset.factor) : 0);
+        const cant = parseInt($ajusteCantidad.val()) || 0;
+        const eq = cant * (factorSel !== undefined ? parseInt(factorSel) : 0);
         if (cant < 1) {
-            ajusteEquivalencia.textContent = prefijoTope + 'Indique cuántas unidades de esa presentación se perdieron.';
+            $ajusteEquivalencia.text(prefijoTope + 'Indique cuántas unidades de esa presentación se perdieron.');
             return;
         }
-        ajusteEquivalencia.textContent = prefijoTope + 'Se perderán ' + formatearGalones(eq / 128) + ' en total. Si no hay envases de ese tamaño se abre uno mayor y el sobrante queda en stock.';
+        $ajusteEquivalencia.text(prefijoTope + 'Se perderán ' + formatearGalones(eq / 128) + ' en total. Si no hay envases de ese tamaño se abre uno mayor y el sobrante queda en stock.');
     }
 
     function configurarAjustePresentacion(esTinte, producto) {
-        if (!ajusteProducto || !grupoAjustePresentacion) return;
-        ajusteProducto.dataset.galones = esTinte ? '1' : '0';
-        grupoAjustePresentacion.classList.toggle('d-none', !esTinte);
+        if (!$ajusteProducto.length || !$grupoAjustePresentacion.length) return;
+        $ajusteProducto.attr('data-galones', esTinte ? '1' : '0');
+        $grupoAjustePresentacion.toggleClass('d-none', !esTinte);
         if (esTinte) {
-            var tamanoProducto = factor128(producto ? producto.fraccion : '1');
-            ajustePresentacion.innerHTML = presentacionesGlobal.map(function (pr) {
+            const tamanoProducto = factor128(producto ? producto.fraccion : '1');
+            $ajustePresentacion.html(presentacionesGlobal.map(function (pr) {
                 return '<option value="' + pr.id_presentacion + '" data-factor="' + pr.factor_128 + '"' +
                     (parseInt(pr.factor_128) === tamanoProducto ? ' selected' : '') + '>' + escapeHtml(pr.etiqueta) + '</option>';
-            }).join('');
-            ajusteCantidad.removeAttribute('max');
+            }).join(''));
+            $ajusteCantidad.removeAttr('max');
         }
         actualizarEquivalenciaAjuste();
     }
 
-    if (ajustePresentacion) ajustePresentacion.addEventListener('change', actualizarEquivalenciaAjuste);
-    if (ajusteCantidad) ajusteCantidad.addEventListener('input', actualizarEquivalenciaAjuste);
+    $ajustePresentacion.on('change', actualizarEquivalenciaAjuste);
+    $ajusteCantidad.on('input', actualizarEquivalenciaAjuste);
 
     // Bloquear puntos, comas y decimales en ajusteCantidad y mezclaCantidad
-    [ajusteCantidad, document.getElementById('mezclaCantidad')].forEach(function(inp) {
-        if (!inp) return;
-        inp.addEventListener('keydown', function(e) {
-            if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E' || e.key === '-' || e.key === '+') {
-                e.preventDefault();
-            }
-        });
-        inp.addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '');
-        });
-    });
+    soloEnteros($ajusteCantidad.add($mezclaCantidad), ['.', ',', 'e', 'E', '-', '+']);
 
     function renderizarSugerenciasAjuste(filtro) {
-        if (!listaSugerenciasAjusteProducto) return;
-        listaSugerenciasAjusteProducto.innerHTML = '';
+        if (!$listaSugerenciasAjusteProducto.length) return;
+        $listaSugerenciasAjusteProducto.empty();
         const q = (filtro || '').toLowerCase().trim();
 
         const productosConStock = insumosGlobal.filter(function(p) {
@@ -1073,210 +917,164 @@ document.addEventListener('DOMContentLoaded', function() {
             const stock = esBase(p) ? (parseInt(p.volumen_familia_128) || 0) : Math.floor(parseFloat(p.stock_actual) || 0);
             if (stock <= 0) return false;
             if (!q) return true;
-            const texto = ((p.codigo || '') + ' ' + (p.nombre || '')).toLowerCase();
-            return texto.includes(q);
+            return ((p.codigo || '') + ' ' + (p.nombre || '')).toLowerCase().includes(q);
         });
 
         if (productosConStock.length === 0) {
-            listaSugerenciasAjusteProducto.innerHTML = '<div class="p-3 text-muted small text-center">No se encontraron productos con stock disponible</div>';
+            $listaSugerenciasAjusteProducto.html('<div class="p-3 text-muted small text-center">No se encontraron productos con stock disponible</div>');
         } else {
-            productosConStock.forEach(function(p) {
+            $.each(productosConStock, function(i, p) {
                 const enGalones = esBase(p);
                 const stock = Math.floor(parseFloat(p.stock_actual) || 0);
                 const min = Math.floor(parseFloat(p.stock_minimo) || 0);
                 const unidad = p.unidad_medida || '';
                 const stockTexto = enGalones ? stock + ' envase(s) · familia: ' + formatearGalones((parseInt(p.volumen_familia_128) || 0) / 128) : stock + ' ' + unidad;
-                const item = document.createElement('a');
-                item.className = 'buscador-dropdown-item';
-                item.href = '#';
-                item.innerHTML =
-                    '<span class="item-titulo">' + escapeHtml(p.nombre) + '</span>' +
-                    '<div class="item-meta">' +
-                        '<span class="badge-codigo">' + escapeHtml(p.codigo) + '</span>' +
-                        '<span class="badge-stock ' + (stock <= min ? 'bajo' : '') + '">Stock: ' + stockTexto + '</span>' +
-                    '</div>';
-                item.addEventListener('click', function(ev) {
-                    ev.preventDefault();
-                    if (inputBuscarAjusteProducto) inputBuscarAjusteProducto.value = p.codigo + ' - ' + p.nombre;
-                    if (ajusteProducto) {
-                        ajusteProducto.value = p.id_producto;
-                        ajusteProducto.dataset.stock = stock;
-                        ajusteProducto.dataset.volumen = parseInt(p.volumen_familia_128) || 0;
-                        ajusteProducto.dataset.unidad = unidad;
-                    }
-                    if (ajusteStockDisponible) ajusteStockDisponible.textContent = stockTexto;
-                    if (ajusteCantidad && !enGalones) ajusteCantidad.max = stock;
-                    configurarAjustePresentacion(enGalones, p);
-                    if (btnLimpiarAjusteProducto) btnLimpiarAjusteProducto.classList.remove('d-none');
-                    listaSugerenciasAjusteProducto.classList.remove('show');
-                    if (ajusteCantidad) ajusteCantidad.focus();
-                });
-                listaSugerenciasAjusteProducto.appendChild(item);
+                $('<a class="buscador-dropdown-item" href="#"></a>')
+                    .html(
+                        '<span class="item-titulo">' + escapeHtml(p.nombre) + '</span>' +
+                        '<div class="item-meta">' +
+                            '<span class="badge-codigo">' + escapeHtml(p.codigo) + '</span>' +
+                            '<span class="badge-stock ' + (stock <= min ? 'bajo' : '') + '">Stock: ' + stockTexto + '</span>' +
+                        '</div>')
+                    .on('click', function(ev) {
+                        ev.preventDefault();
+                        $inputBuscarAjusteProducto.val(p.codigo + ' - ' + p.nombre);
+                        $ajusteProducto.val(p.id_producto).attr({
+                            'data-stock': stock,
+                            'data-volumen': parseInt(p.volumen_familia_128) || 0,
+                            'data-unidad': unidad
+                        });
+                        $ajusteStockDisponible.text(stockTexto);
+                        if (!enGalones) $ajusteCantidad.attr('max', stock);
+                        configurarAjustePresentacion(enGalones, p);
+                        $btnLimpiarAjusteProducto.removeClass('d-none');
+                        $listaSugerenciasAjusteProducto.removeClass('show');
+                        $ajusteCantidad.trigger('focus');
+                    })
+                    .appendTo($listaSugerenciasAjusteProducto);
             });
         }
-        listaSugerenciasAjusteProducto.classList.add('show');
+        $listaSugerenciasAjusteProducto.addClass('show');
     }
 
-    if (inputBuscarAjusteProducto) {
-        inputBuscarAjusteProducto.addEventListener('focus', function() {
-            renderizarSugerenciasAjuste(this.value);
-        });
-        inputBuscarAjusteProducto.addEventListener('input', function() {
-            if (!this.value.trim()) {
-                if (ajusteProducto) {
-                    ajusteProducto.value = '';
-                    ajusteProducto.dataset.stock = '0';
-                }
-                if (ajusteStockDisponible) ajusteStockDisponible.textContent = '-'; configurarAjustePresentacion(false);
-                if (btnLimpiarAjusteProducto) btnLimpiarAjusteProducto.classList.add('d-none');
-            }
-            renderizarSugerenciasAjuste(this.value);
-        });
-    }
+    $inputBuscarAjusteProducto.on('focus', function() {
+        renderizarSugerenciasAjuste(this.value);
+    });
+    $inputBuscarAjusteProducto.on('input', function() {
+        if (!this.value.trim()) {
+            limpiarSeleccionAjuste();
+            $btnLimpiarAjusteProducto.addClass('d-none');
+        }
+        renderizarSugerenciasAjuste(this.value);
+    });
 
-    if (btnLimpiarAjusteProducto) {
-        btnLimpiarAjusteProducto.addEventListener('click', function() {
-            if (inputBuscarAjusteProducto) inputBuscarAjusteProducto.value = '';
-            if (ajusteProducto) {
-                ajusteProducto.value = '';
-                ajusteProducto.dataset.stock = '0';
-            }
-            if (ajusteStockDisponible) ajusteStockDisponible.textContent = '-'; configurarAjustePresentacion(false);
-            btnLimpiarAjusteProducto.classList.add('d-none');
-            if (listaSugerenciasAjusteProducto) listaSugerenciasAjusteProducto.classList.remove('show');
-            if (inputBuscarAjusteProducto) inputBuscarAjusteProducto.focus();
-        });
-    }
+    $btnLimpiarAjusteProducto.on('click', function() {
+        $inputBuscarAjusteProducto.val('');
+        limpiarSeleccionAjuste();
+        $btnLimpiarAjusteProducto.addClass('d-none');
+        $listaSugerenciasAjusteProducto.removeClass('show');
+        $inputBuscarAjusteProducto.trigger('focus');
+    });
 
-    document.addEventListener('click', function(e) {
-        const cont = document.getElementById('contenedorBuscadorAjuste');
-        if (cont && listaSugerenciasAjusteProducto && !cont.contains(e.target)) {
-            listaSugerenciasAjusteProducto.classList.remove('show');
+    $(document).on('click', function(e) {
+        const $cont = $('#contenedorBuscadorAjuste');
+        if ($cont.length && !$cont[0].contains(e.target)) {
+            $listaSugerenciasAjusteProducto.removeClass('show');
         }
     });
 
-    const contadorAjuste = document.getElementById('contadorAjusteObservacion');
-    if (ajusteObservacion) {
-        ajusteObservacion.addEventListener('input', function() {
-            // Permitir solo texto alfanumérico, espacios y puntuación estándar
-            this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.\,\-\:\;]/g, '');
-            if (this.value.length > 200) {
-                this.value = this.value.substring(0, 200);
-            }
-            const palabras = this.value.trim().split(/\s+/).filter(Boolean);
-            if (palabras.length > 40) {
-                this.value = palabras.slice(0, 40).join(' ');
-            }
-            if (contadorAjuste) {
-                const countPalabras = this.value.trim().split(/\s+/).filter(Boolean).length;
-                contadorAjuste.textContent = this.value.length + ' / 200 caracteres (' + countPalabras + ' / 40 palabras)';
-            }
-        });
-    }
+    const $contadorAjuste = $('#contadorAjusteObservacion');
+    $ajusteObservacion.on('input', function() {
+        // Permitir solo texto alfanumérico, espacios y puntuación estándar
+        this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.\,\-\:\;]/g, '').substring(0, 200);
+        const palabras = this.value.trim().split(/\s+/).filter(Boolean);
+        if (palabras.length > 40) {
+            this.value = palabras.slice(0, 40).join(' ');
+        }
+        const countPalabras = this.value.trim().split(/\s+/).filter(Boolean).length;
+        $contadorAjuste.text(this.value.length + ' / 200 caracteres (' + countPalabras + ' / 40 palabras)');
+    });
 
-    if (btnAjusteMerma) {
-        btnAjusteMerma.addEventListener('click', function() {
-            if (formAjusteMerma) formAjusteMerma.reset();
-            if (mensajeErrorAjuste) mensajeErrorAjuste.classList.add('d-none');
-            if (ajusteStockDisponible) ajusteStockDisponible.textContent = '-'; configurarAjustePresentacion(false);
-            if (inputBuscarAjusteProducto) inputBuscarAjusteProducto.value = '';
-            if (ajusteProducto) {
-                ajusteProducto.value = '';
-                ajusteProducto.dataset.stock = '0';
-            }
-            if (btnLimpiarAjusteProducto) btnLimpiarAjusteProducto.classList.add('d-none');
-            if (listaSugerenciasAjusteProducto) listaSugerenciasAjusteProducto.classList.remove('show');
-            if (contadorAjuste) contadorAjuste.textContent = '0 / 200 caracteres (máx. 40 palabras)';
+    $btnAjusteMerma.on('click', function() {
+        if ($formAjusteMerma.length) $formAjusteMerma[0].reset();
+        $mensajeErrorAjuste.addClass('d-none');
+        $inputBuscarAjusteProducto.val('');
+        limpiarSeleccionAjuste();
+        $btnLimpiarAjusteProducto.addClass('d-none');
+        $listaSugerenciasAjusteProducto.removeClass('show');
+        $contadorAjuste.text('0 / 200 caracteres (máx. 40 palabras)');
 
-            if (modalAjusteMerma) {
-                bootstrap.Modal.getOrCreateInstance(modalAjusteMerma).show();
-            }
-        });
-    }
+        if ($modalAjusteMerma.length) {
+            bootstrap.Modal.getOrCreateInstance($modalAjusteMerma[0]).show();
+        }
+    });
 
-    if (formAjusteMerma) {
-        formAjusteMerma.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            mensajeErrorAjuste.classList.add('d-none');
+    $formAjusteMerma.on('submit', async function(e) {
+        e.preventDefault();
+        $mensajeErrorAjuste.addClass('d-none');
 
-            const idProd = parseInt(ajusteProducto ? ajusteProducto.value : 0) || 0;
-            const cantRaw = ajusteCantidad.value.trim();
-            const cant = Number(cantRaw);
-            const motivoSel = ajusteMotivo.value;
-            const obs = ajusteObservacion.value.trim();
+        const idProd = parseInt($ajusteProducto.val()) || 0;
+        const cantRaw = $ajusteCantidad.val().trim();
+        const cant = Number(cantRaw);
+        const obs = $ajusteObservacion.val().trim();
 
-            const palabrasObs = obs.split(/\s+/).filter(Boolean).length;
-            if (obs.length > 200 || palabrasObs > 40) {
-                mensajeErrorAjuste.textContent = 'La observación no puede superar los 200 caracteres ni 40 palabras.';
-                mensajeErrorAjuste.classList.remove('d-none');
+        const palabrasObs = obs.split(/\s+/).filter(Boolean).length;
+        if (obs.length > 200 || palabrasObs > 40) {
+            errorAjuste('La observación no puede superar los 200 caracteres ni 40 palabras.');
+            return;
+        }
+
+        const motivoFinal = $ajusteMotivo.val() + (obs ? ': ' + obs : '');
+
+        if (!idProd) {
+            errorAjuste('Seleccione un producto afectado de la lista.');
+            return;
+        }
+
+        const enGalones = $ajusteProducto.attr('data-galones') === '1';
+        const stockActual = Math.floor(parseFloat($ajusteProducto.attr('data-stock')) || 0);
+        const volumenFamilia = parseInt($ajusteProducto.attr('data-volumen')) || 0;
+
+        if (!cantRaw || !Number.isInteger(cant) || cant < 1) {
+            errorAjuste('La cantidad a descontar debe ser un número entero mayor o igual a 1.');
+            return;
+        }
+
+        if (enGalones) {
+            const factor = $ajustePresentacion.find('option:selected').attr('data-factor');
+            const eq = cant * (factor !== undefined ? parseInt(factor) : 0);
+            if (factor === undefined || eq > volumenFamilia) {
+                errorAjuste(factor !== undefined
+                    ? 'Lo perdido (' + formatearGalones(eq / 128) + ') excede el stock disponible (' + formatearGalones(volumenFamilia / 128) + ').'
+                    : 'Seleccione la presentación que se perdió.');
                 return;
             }
+        } else if (cant > stockActual) {
+            errorAjuste('La cantidad (' + cant + ') excede el stock disponible (' + stockActual + ').');
+            return;
+        }
 
-            const motivoFinal = motivoSel + (obs ? ': ' + obs : '');
+        const datos = { id_producto: idProd, cantidad: cant, motivo: motivoFinal };
+        if (enGalones) datos.id_presentacion = $ajustePresentacion.val();
 
-            if (!idProd) {
-                mensajeErrorAjuste.textContent = 'Seleccione un producto afectado de la lista.';
-                mensajeErrorAjuste.classList.remove('d-none');
-                return;
+        try {
+            const res = await api.post('inventario/ajustarMerma', datos);
+            if (res.estado === 'exito') {
+                bootstrap.Modal.getInstance($modalAjusteMerma[0]).hide();
+                mostrarNotificacion(res.mensaje, 'exito');
+                cargarInsumos();
+            } else {
+                errorAjuste(res.mensaje);
             }
-
-            const enGalones = ajusteProducto && ajusteProducto.dataset.galones === '1';
-            const stockActual = Math.floor(parseFloat(ajusteProducto ? ajusteProducto.dataset.stock : 0) || 0);
-            const volumenFamilia = parseInt(ajusteProducto ? ajusteProducto.dataset.volumen : 0) || 0;
-
-            if (!cantRaw || !Number.isInteger(cant) || cant < 1) {
-                mensajeErrorAjuste.textContent = 'La cantidad a descontar debe ser un número entero mayor o igual a 1.';
-                mensajeErrorAjuste.classList.remove('d-none');
-                return;
-            }
-
-            if (enGalones) {
-                const opt = ajustePresentacion.selectedOptions[0];
-                const eq = cant * (opt ? parseInt(opt.dataset.factor) : 0);
-                if (!opt || eq > volumenFamilia) {
-                    mensajeErrorAjuste.textContent = opt
-                        ? 'Lo perdido (' + formatearGalones(eq / 128) + ') excede el stock disponible (' + formatearGalones(volumenFamilia / 128) + ').'
-                        : 'Seleccione la presentación que se perdió.';
-                    mensajeErrorAjuste.classList.remove('d-none');
-                    return;
-                }
-            } else if (cant > stockActual) {
-                mensajeErrorAjuste.textContent = 'La cantidad (' + cant + ') excede el stock disponible (' + stockActual + ').';
-                mensajeErrorAjuste.classList.remove('d-none');
-                return;
-            }
-
-            const fd = new FormData();
-            fd.append('id_producto', idProd);
-            fd.append('cantidad', cant);
-            if (enGalones) fd.append('id_presentacion', ajustePresentacion.value);
-            fd.append('motivo', motivoFinal);
-
-            try {
-                const resp = await fetch('/SP%20Perfect%20Color/inventario/ajustarMerma', {
-                    method: 'POST',
-                    body: fd
-                });
-                const res = await resp.json();
-                if (res.estado === 'exito') {
-                    bootstrap.Modal.getInstance(modalAjusteMerma).hide();
-                    mostrarNotificacion(res.mensaje, 'exito');
-                    cargarInsumos();
-                } else {
-                    mensajeErrorAjuste.textContent = res.mensaje;
-                    mensajeErrorAjuste.classList.remove('d-none');
-                }
-            } catch (err) {
-                console.error(err);
-                mensajeErrorAjuste.textContent = 'No se pudo registrar el ajuste. Revise su conexión e intente de nuevo.';
-                mensajeErrorAjuste.classList.remove('d-none');
-            }
-        });
-    }
+        } catch (err) {
+            console.error(err);
+            errorAjuste('No se pudo registrar el ajuste. Revise su conexión e intente de nuevo.');
+        }
+    });
 
     // Re-cargar datos si la pagina se restaura desde bfcache
-    window.addEventListener('pageshow', function(e) {
-        if (e.persisted) {
+    $(window).on('pageshow', function(e) {
+        if (e.originalEvent.persisted) {
             cargarInsumos();
         }
     });

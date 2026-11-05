@@ -68,26 +68,6 @@ trait EnvaseTrait
         }
     }
 
-    // FUNCIÓN: volumenFamilia128
-    // OBJETIVO: Suma el volumen total (en 128avos de galón) de todos los envases de una familia de tintes
-    public function volumenFamilia128(int $idProducto): int
-    {
-        $stmt = $this->conexion->prepare("SELECT id_producto_padre FROM productos WHERE id_producto = :id");
-        $stmt->bindValue(':id', $idProducto, PDO::PARAM_INT);
-        $stmt->execute();
-        $raiz = (int)($stmt->fetchColumn() ?: $idProducto);
-
-        $stmt = $this->conexion->prepare("SELECT fraccion, stock_actual FROM productos WHERE estado = 1 AND (id_producto = :r OR id_producto_padre = :r2)");
-        $stmt->bindValue(':r', $raiz, PDO::PARAM_INT);
-        $stmt->bindValue(':r2', $raiz, PDO::PARAM_INT);
-        $stmt->execute();
-        $total = 0;
-        foreach ($stmt->fetchAll() as $fila) {
-            $total += (int)floor((float)$fila['stock_actual']) * $this->factor128((string)$fila['fraccion']);
-        }
-        return $total;
-    }
-
     private function _ejecutarConsumoEnvase(int $idProducto, int $cantidad, ?int $tamano128, bool $aplicar): void
     {
         $stmt = $this->conexion->prepare("SELECT id_producto, id_producto_padre, fraccion FROM productos WHERE id_producto = :id");

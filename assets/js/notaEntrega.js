@@ -2,9 +2,7 @@
 // Manejo de la vista de notas de entrega
 
 
-document.addEventListener('DOMContentLoaded', function() {
-    var busquedaNotas = document.getElementById('busquedaNotas');
-
+$(function() {
     cargarNotas();
 
     function cargarNotas() {
@@ -99,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var table = $('#tablaNotas').DataTable();
         table.clear();
 
-        notas.forEach(function(nota) {
+        $.each(notas, function(i, nota) {
             table.row.add(nota);
         });
 
@@ -116,5 +114,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    vincularBusqueda(busquedaNotas, '#tablaNotas');
+    vincularBusqueda('#busquedaNotas', '#tablaNotas');
 });

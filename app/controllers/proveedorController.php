@@ -32,22 +32,6 @@ if ($metodo === 'index') {
     respuestaJson('exito', 'Proveedores obtenidos correctamente', [
         'proveedores' => $proveedores
     ]);
-// FUNCIÓN: buscarAjax
-// OBJETIVO: Busca proveedores por término de búsqueda o devuelve todos
-} elseif ($metodo === 'buscarAjax') {
-    verificarAcceso([1]);
-
-    $termino = trim($_GET['termino'] ?? '');
-
-    if (empty($termino)) {
-        $proveedores = $proveedorModel->listarTodos();
-    } else {
-        $proveedores = $proveedorModel->buscarProveedores($termino);
-    }
-
-    respuestaJson('exito', 'Busqueda completada', [
-        'proveedores' => $proveedores
-    ]);
 // FUNCIÓN: verificarRifAjax
 // OBJETIVO: Verifica en tiempo real si un RIF ya está registrado
 } elseif ($metodo === 'verificarRifAjax') {
@@ -55,15 +39,6 @@ if ($metodo === 'index') {
     $rif = strtoupper(trim($_GET['rif'] ?? ''));
     $id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : null;
     $existe = !empty($rif) && $proveedorModel->rifExiste($rif, $id);
-    respuestaJson('exito', 'Verificacion realizada', ['existe' => $existe]);
-
-// FUNCIÓN: verificarTelefonoAjax
-// OBJETIVO: Verifica en tiempo real si un teléfono ya está registrado en proveedores
-} elseif ($metodo === 'verificarTelefonoAjax') {
-    verificarAcceso([1]);
-    $telefono = trim($_GET['telefono'] ?? '');
-    $id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : null;
-    $existe = !empty($telefono) && $proveedorModel->telefonoExiste($telefono, $id);
     respuestaJson('exito', 'Verificacion realizada', ['existe' => $existe]);
 
 // FUNCIÓN: verificarCorreoAjax

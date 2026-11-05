@@ -6,6 +6,8 @@ namespace App\Models;
 use PDO;
 use InvalidArgumentException;
 
+// MODELO: ReporteModel
+// OBJETIVO: Consultas de solo lectura para los reportes de ventas, compras, operaciones combinadas y cartera por cobrar
 class ReporteModel extends ModeloBase
 {
     private ?string $desde;

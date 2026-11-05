@@ -4,7 +4,6 @@
 
 namespace App\Controllers;
 
-use PDOException;
 use App\Models\{
     PresupuestoModel,
     ClienteModel,
@@ -43,23 +42,9 @@ if ($metodo === 'index') {
         'presupuestos' => $presupuestos
     ]);
 
-// FUNCIÓN: buscarAjax
-// OBJETIVO: Busca presupuestos por cliente o estado
-} elseif ($metodo === 'buscarAjax') {
-    verificarPermiso('presupuesto');
-    
-    $termino = trim($_GET['termino'] ?? '');
-    $estado = trim($_GET['estado'] ?? '');
-    
-    $presupuestos = $presupuestoModel->buscarPresupuestos($termino, $estado);
-    
-    respuestaJson('exito', 'Busqueda completada', [
-        'presupuestos' => $presupuestos
-    ]);
-
 // FUNCIÓN: nuevo / crear
 // OBJETIVO: Renderiza el formulario para crear un nuevo presupuesto
-} elseif ($metodo === 'nuevo' || $metodo === 'crear') {
+} elseif ($metodo === 'nuevo') {
     verificarPermiso('presupuesto');
     verificarRolVendedor();
     
@@ -88,19 +73,6 @@ if ($metodo === 'index') {
     
     respuestaJson('exito', 'Clientes obtenidos correctamente', [
         'clientes' => $clientes
-    ]);
-
-// FUNCIÓN: obtenerDatosPagoAjax
-// OBJETIVO: Obtiene tipos de pago y bancos activos para ventas de contado
-} elseif ($metodo === 'obtenerDatosPagoAjax') {
-    verificarPermiso('presupuesto');
-    
-    $tiposPago = (new TipoPagoModel())->listarTodos();
-    $bancos = (new BancoModel())->listarTodos();
-    
-    respuestaJson('exito', 'Datos de pago obtenidos', [
-        'tipos_pago' => $tiposPago,
-        'bancos' => $bancos
     ]);
 
 // FUNCIÓN: guardar

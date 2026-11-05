@@ -6,13 +6,15 @@ namespace App\Models;
 use App\Traits\ImagenSeguraTrait;
 use PDO;
 
+// MODELO: UsuarioModel
+// OBJETIVO: Gestión de usuarios: autenticación, perfil con foto, cambio de clave y restablecimiento por token
+// NOTA: La foto de perfil se valida y re-codifica en ImagenSeguraTrait
 class UsuarioModel extends ModeloBase
 {
     use ImagenSeguraTrait;
 
     private const DIR_AVATARES = __DIR__ . '/../../assets/uploads/avatares';
 
-    private int $id_usuario;
     private string $nombre;
     private string $correo;
     private string $password_hash;
@@ -111,22 +113,6 @@ class UsuarioModel extends ModeloBase
                      INNER JOIN roles r ON u.id_rol = r.id_rol
                      WHERE u.estado = 1
                      ORDER BY u.nombre ASC";
-        $stmt = $this->conexion->query($consulta);
-        return $stmt->fetchAll();
-    }
-
-    // FUNCIÓN: listarRoles
-    // OBJETIVO: Retorna los roles activos disponibles para asignación a usuarios
-    public function listarRoles(): array
-    {
-        return $this->_ejecutarSelectRoles();
-    }
-
-    // FUNCIÓN: _ejecutarSelectRoles
-    // OBJETIVO: Ejecuta la consulta de roles activos ordenados por ID
-    private function _ejecutarSelectRoles(): array
-    {
-        $consulta = "SELECT *, estado as activo FROM roles WHERE estado = 1 ORDER BY id_rol ASC";
         $stmt = $this->conexion->query($consulta);
         return $stmt->fetchAll();
     }

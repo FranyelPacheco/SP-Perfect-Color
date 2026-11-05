@@ -74,19 +74,24 @@ function generarPdfNotaEntrega(array $nota, array $detalle, ?float $tasaBs = nul
         $i++;
     }
 
-    $tasaHtmlHeader = $tasaBs ? "<th style=\"text-align: right; padding: 8px; color: #ffffff; font-size: 10px;\">Subtotal (Bs.)</th>" : "";
+    $tasaHtmlHeader = $tasaBs ? "<th style=\"width: 14%; text-align: right; padding: 8px; color: #ffffff;\">Subtotal (Bs.)</th>" : "";
+    $anchos = $tasaBs ? [5, 13, 32, 9, 13, 14] : [5, 15, 40, 10, 15, 15];
+
+    $totalUsdFmt = number_format($totalUsd, 2, ',', '.');
+    $totalBsFmt = number_format($totalBs, 2, ',', '.');
+    $fechaImpresion = date('d/m/Y H:i:s');
 
     $bloqueTasa = "";
     if ($tasaBs && $tasaBs > 0) {
         $tasaFormateada = number_format($tasaBs, 4, ',', '.');
         $bloqueTasa = "
         <tr>
-            <td style=\"padding: 4px 8px; text-align: right; color: #64748b; font-size: 10px;\">Tasa Oficial Ref.:</td>
-            <td style=\"padding: 4px 8px; text-align: right; font-weight: bold; color: #0f172a; font-size: 10px;\">Bs. {$tasaFormateada} / \$</td>
+            <td style=\"padding: 6px 8px; text-align: right; color: #475569; font-size: 10px;\">Tasa Oficial Ref.:</td>
+            <td style=\"padding: 6px 8px; text-align: right; font-weight: bold; color: #0f172a; font-size: 10px;\">Bs. {$tasaFormateada} / \$</td>
         </tr>
-        <tr>
-            <td style=\"padding: 6px 8px; text-align: right; font-weight: bold; color: #1e3a8a; font-size: 12px;\">TOTAL EN BOLÍVARES:</td>
-            <td style=\"padding: 6px 8px; text-align: right; font-weight: bold; color: #1e3a8a; font-size: 13px;\">Bs. " . number_format($totalBs, 2, ',', '.') . "</td>
+        <tr style=\"background-color: #1e3a8a;\">
+            <td style=\"padding: 8px; text-align: right; font-weight: bold; color: #ffffff; font-size: 11px;\">TOTAL EN BOLÍVARES:</td>
+            <td style=\"padding: 8px; text-align: right; font-weight: bold; color: #ffffff; font-size: 12px;\">Bs. {$totalBsFmt}</td>
         </tr>";
     }
 
@@ -98,7 +103,7 @@ function generarPdfNotaEntrega(array $nota, array $detalle, ?float $tasaBs = nul
     <title>Nota de Entrega #NE-{$idNota}</title>
     <style>
         @page {
-            margin: 15mm 15mm 20mm 15mm;
+            margin: 15mm 15mm 52mm 15mm;
         }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -216,12 +221,12 @@ function generarPdfNotaEntrega(array $nota, array $detalle, ?float $tasaBs = nul
             font-size: 9px;
             color: #475569;
             line-height: 1.4;
-            margin-right: 20px;
+            margin-right: 14px;
         }
         .signatures-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 35px;
+            margin-bottom: 8px;
         }
         .signature-line {
             border-top: 1px dashed #64748b;
@@ -241,14 +246,12 @@ function generarPdfNotaEntrega(array $nota, array $detalle, ?float $tasaBs = nul
         }
         .watermark-footer {
             position: fixed;
-            bottom: 0;
+            bottom: -48mm;
             left: 0;
             right: 0;
             text-align: center;
             font-size: 8px;
             color: #94a3b8;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 5px;
         }
     </style>
 </head>
@@ -308,12 +311,12 @@ function generarPdfNotaEntrega(array $nota, array $detalle, ?float $tasaBs = nul
     <table class="items-table">
         <thead>
             <tr>
-                <th style="width: 5%; text-align: center; padding: 8px 6px; color: #ffffff;">#</th>
-                <th style="width: 15%; text-align: left; padding: 8px; color: #ffffff;">Código</th>
-                <th style="width: 40%; text-align: left; padding: 8px; color: #ffffff;">Descripción del Producto / Fórmula</th>
-                <th style="width: 10%; text-align: center; padding: 8px; color: #ffffff;">Cant.</th>
-                <th style="width: 15%; text-align: right; padding: 8px; color: #ffffff;">P. Unit ($)</th>
-                <th style="width: 15%; text-align: right; padding: 8px; color: #ffffff;">Subtotal ($)</th>
+                <th style="width: {$anchos[0]}%; text-align: center; padding: 8px 6px; color: #ffffff;">#</th>
+                <th style="width: {$anchos[1]}%; text-align: left; padding: 8px; color: #ffffff;">Código</th>
+                <th style="width: {$anchos[2]}%; text-align: left; padding: 8px; color: #ffffff;">Descripción del Producto / Fórmula</th>
+                <th style="width: {$anchos[3]}%; text-align: center; padding: 8px; color: #ffffff;">Cant.</th>
+                <th style="width: {$anchos[4]}%; text-align: right; padding: 8px; color: #ffffff;">P. Unit ($)</th>
+                <th style="width: {$anchos[5]}%; text-align: right; padding: 8px; color: #ffffff;">Subtotal ($)</th>
                 {$tasaHtmlHeader}
             </tr>
         </thead>
@@ -337,16 +340,16 @@ function generarPdfNotaEntrega(array $nota, array $detalle, ?float $tasaBs = nul
             <td style="width: 45%;">
                 <table style="width: 100%; border-collapse: collapse; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px;">
                     <tr>
-                        <td style="padding: 6px 8px; text-align: right; color: #475569; font-size: 10px;">Subtotal Items:</td>
-                        <td style="padding: 6px 8px; text-align: right; font-weight: bold; font-size: 10px;">\$ " . number_format($totalUsd, 2, ',', '.') . "</td>
+                        <td style="width: 60%; padding: 6px 8px; text-align: right; color: #475569; font-size: 10px;">Subtotal Items:</td>
+                        <td style="width: 40%; padding: 6px 8px; text-align: right; font-weight: bold; font-size: 10px;">\$ {$totalUsdFmt}</td>
                     </tr>
                     <tr>
-                        <td style="padding: 4px 8px; text-align: right; color: #475569; font-size: 10px;">Descuentos / Ajustes:</td>
-                        <td style="padding: 4px 8px; text-align: right; font-size: 10px;">\$ 0,00</td>
+                        <td style="padding: 6px 8px; text-align: right; color: #475569; font-size: 10px;">Descuentos / Ajustes:</td>
+                        <td style="padding: 6px 8px; text-align: right; font-size: 10px;">\$ 0,00</td>
                     </tr>
-                    <tr style="background-color: #1e3a8a; color: #ffffff;">
-                        <td style="padding: 8px; text-align: right; font-weight: bold; font-size: 12px; color: #ffffff;">TOTAL A PAGAR (USD):</td>
-                        <td style="padding: 8px; text-align: right; font-weight: bold; font-size: 13px; color: #ffffff;">\$ " . number_format($totalUsd, 2, ',', '.') . "</td>
+                    <tr style="background-color: #1e3a8a;">
+                        <td style="padding: 8px; text-align: right; font-weight: bold; font-size: 11px; color: #ffffff;">TOTAL A PAGAR (USD):</td>
+                        <td style="padding: 8px; text-align: right; font-weight: bold; font-size: 12px; color: #ffffff;">\$ {$totalUsdFmt}</td>
                     </tr>
                     {$bloqueTasa}
                 </table>
@@ -354,7 +357,8 @@ function generarPdfNotaEntrega(array $nota, array $detalle, ?float $tasaBs = nul
         </tr>
     </table>
 
-    <!-- FIRMAS DE CONFORMIDAD -->
+    <!-- PIE DE PÁGINA -->
+    <div class="watermark-footer">
     <table class="signatures-table">
         <tr>
             <td style="width: 50%; text-align: center;">
@@ -369,10 +373,9 @@ function generarPdfNotaEntrega(array $nota, array $detalle, ?float $tasaBs = nul
             </td>
         </tr>
     </table>
-
-    <!-- PIE DE PÁGINA -->
-    <div class="watermark-footer">
-        Documento generado electrónicamente por SP Perfect Color Gestión Comercial &bull; Fecha de impresión: " . date('d/m/Y H:i:s') . " &bull; Página 1 de 1
+        <div style="margin-top: 14px; border-top: 1px solid #e2e8f0; padding-top: 6px;">
+        Documento generado electrónicamente por SP Perfect Color Gestión Comercial &bull; Fecha de impresión: {$fechaImpresion} &bull; Página 1 de 1
+        </div>
     </div>
 
 </body>

@@ -7,6 +7,8 @@ use App\Traits\EnvaseTrait;
 use App\Traits\TasaBcvTrait;
 use PDO, PDOException;
 
+// MODELO: NotaEntregaModel
+// OBJETIVO: Despacho de ventas aprobadas: descuenta stock, genera la cuenta por cobrar o el pago de contado y aporta las métricas del dashboard
 class NotaEntregaModel extends ModeloBase
 {
     use TasaBcvTrait, EnvaseTrait;
@@ -25,7 +27,6 @@ class NotaEntregaModel extends ModeloBase
     private ?int $idBancoInicial = null;
     private ?string $referenciaInicial = null;
     private array $detalle;
-    private string $termino;
     private int $notaId;
     private int $topLimite;
 
@@ -257,14 +258,6 @@ class NotaEntregaModel extends ModeloBase
         }
     }
 
-    // FUNCIÓN: buscarNotas
-    // OBJETIVO: Busca notas de venta por nombre/cédula del cliente
-    public function buscarNotas(string $termino): array
-    {
-        $this->termino = $termino;
-        return $this->_ejecutarSearch();
-    }
-
     // FUNCIÓN: _ejecutarSelectAll
     // OBJETIVO: Ejecuta la consulta que lista todas las ventas aprobadas
     private function _ejecutarSelectAll(): array
@@ -400,40 +393,6 @@ class NotaEntregaModel extends ModeloBase
             }
             throw $e;
         }
-    }
-
-    // FUNCIÓN: _ejecutarSearch
-    // OBJETIVO: Busca ventas aprobadas por nombre o cédula del cliente con LIKE
-    private function _ejecutarSearch(): array
-    {
-        $terminoLike = '%' . $this->termino . '%';
-        $consulta = "SELECT v.*,
-                            v.id_venta as id,
-                            v.id_venta as id_nota_venta,
-                            v.id_venta as id_nota_entrega,
-                            v.id_venta as id_presupuesto,
-                            v.estado as activo,
-                            c.id_cliente,
-                            CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
-                            c.cedula as cliente_cedula,
-                            'Sistema' as usuario_nombre,
-                            COALESCE(tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre
-                     FROM ventas v 
-                     INNER JOIN clientes c ON v.id_cliente = c.id_cliente
-                     LEFT JOIN cuentas_cobrar cc ON cc.id_venta = v.id_venta
-                     LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
-                     LEFT JOIN tipo_pago tp_pr ON pr.id_tipo_pago = tp_pr.id_tipo_pago
-                     WHERE v.estado = 1 AND v.id_estado_venta = 2 AND (c.nombres LIKE :termino1 
-                         OR c.apellidos LIKE :termino2 
-                         OR c.cedula LIKE :termino3) 
-                     GROUP BY v.id_venta
-                     ORDER BY v.fecha DESC, v.id_venta DESC";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':termino1', $terminoLike, PDO::PARAM_STR);
-        $stmt->bindParam(':termino2', $terminoLike, PDO::PARAM_STR);
-        $stmt->bindParam(':termino3', $terminoLike, PDO::PARAM_STR);
-        $stmt->execute();
-        return $stmt->fetchAll();
     }
 
     // FUNCIÓN: _insertarDetalleYDescontarStock

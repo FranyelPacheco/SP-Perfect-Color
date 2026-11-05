@@ -164,114 +164,69 @@ $saldoPendCxp = (float)($cuenta['saldo_pendiente'] ?? 0);
 </div>
 
 <script>
-fetch('/SP%20Perfect%20Color/cuentaPagar/obtenerDatosPagoAjax')
-    .then(function(r) { return r.json(); })
-    .then(function(res) {
-        if (res.estado === 'exito') {
-            var selTipo = document.getElementById('tipoPagoCuenta');
-            selTipo.innerHTML = '<option value="">Seleccione...</option>';
-            res.datos.tipos_pago.forEach(function(tp) {
-                var op = document.createElement('option');
-                op.value = tp.id_tipo_pago;
-                op.textContent = tp.nombre;
-                selTipo.appendChild(op);
-            });
-            var selBanco = document.getElementById('bancoPagoCuenta');
-            res.datos.bancos.forEach(function(b) {
-                var op = document.createElement('option');
-                op.value = b.id_banco;
-                op.textContent = b.nombre;
-                selBanco.appendChild(op);
-            });
-        }
+$(function() {
+    // Cargar tipos de pago y bancos
+    api.get('cuentaPagar/obtenerDatosPagoAjax').then(function(res) {
+        if (res.estado !== 'exito') return;
+        var $selTipo = $('#tipoPagoCuenta').html('<option value="">Seleccione...</option>');
+        $.each(res.datos.tipos_pago, function(i, tp) {
+            $selTipo.append($('<option></option>').val(tp.id_tipo_pago).text(tp.nombre));
+        });
+        var $selBanco = $('#bancoPagoCuenta');
+        $.each(res.datos.bancos, function(i, b) {
+            $selBanco.append($('<option></option>').val(b.id_banco).text(b.nombre));
+        });
     });
 
-var inputMontoPagoCxp = document.getElementById('montoPago');
-var spanEquivBsCxp = document.getElementById('equivalenteBsModalPago');
-if (inputMontoPagoCxp && spanEquivBsCxp) {
-    inputMontoPagoCxp.addEventListener('input', function() {
+    // Equivalente en bolívares del monto del abono
+    $('#montoPago').on('input', function() {
         var m = parseFloat(this.value || 0);
-        var t = parseFloat(window.TASA_CAMBIO_HOY || 0);
-        var bs = (m > 0 ? m : 0) * t;
-        spanEquivBsCxp.textContent = 'Equiv: Bs. ' + bs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        var bs = (m > 0 ? m : 0) * parseFloat(window.TASA_CAMBIO_HOY || 0);
+        $('#equivalenteBsModalPago').text('Equiv: Bs. ' + bs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
     });
-}
 
-document.getElementById('tipoPagoCuenta').addEventListener('change', function() {
-    var val = parseInt(this.value);
-    var contB = document.getElementById('contenedorBancoPago');
-    var contR = document.getElementById('contenedorRefPago');
-    var bancoSel = document.getElementById('bancoPagoCuenta');
-    var refInput = document.getElementById('referenciaPago');
-    // Transferencia=2, Pago Movil=3
-    if (val === 2 || val === 3) {
-        contB.style.display = 'block';
-        contR.style.display = 'block';
-        if (bancoSel) bancoSel.required = true;
-        if (refInput) refInput.required = true;
-    } else {
-        contB.style.display = 'none';
-        contR.style.display = 'none';
-        if (bancoSel) bancoSel.required = false;
-        if (refInput) refInput.required = false;
-    }
-});
+    // Mostrar/ocultar banco y referencia segun tipo de pago (Transferencia=2, Pago Movil=3)
+    $('#tipoPagoCuenta').on('change', function() {
+        var val = parseInt(this.value);
+        var requiereBanco = (val === 2 || val === 3);
+        $('#contenedorBancoPago, #contenedorRefPago').css('display', requiereBanco ? 'block' : 'none');
+        $('#bancoPagoCuenta, #referenciaPago').prop('required', requiereBanco);
+    });
 
-document.getElementById('formularioPago').addEventListener('submit', function(evento) {
-    evento.preventDefault();
-    var cuentaId = document.getElementById('cuentaId').value;
-    var monto = document.getElementById('montoPago').value;
-    var fecha = document.getElementById('fechaPago').value;
-    var tipoPagoId = document.getElementById('tipoPagoCuenta').value;
-    var bancoId = document.getElementById('bancoPagoCuenta').value;
-    var referencia = document.getElementById('referenciaPago').value;
-    var mensajeError = document.getElementById('mensajeErrorPago');
-    mensajeError.classList.add('d-none');
-    if (!monto || parseFloat(monto) <= 0) {
-        mensajeError.textContent = 'Ingrese un monto válido';
-        mensajeError.classList.remove('d-none');
-        return;
-    }
-    if (!tipoPagoId) {
-        mensajeError.textContent = 'Seleccione un tipo de pago';
-        mensajeError.classList.remove('d-none');
-        return;
-    }
-    var tipoVal = parseInt(tipoPagoId);
-    if (tipoVal === 2 || tipoVal === 3) {
-        if (!bancoId) {
-            mensajeError.textContent = 'Debe seleccionar un banco para transferencia o pago móvil';
-            mensajeError.classList.remove('d-none');
-            return;
+    $('#formularioPago').on('submit', function(evento) {
+        evento.preventDefault();
+        var $error = $('#mensajeErrorPago').addClass('d-none');
+        var mostrar = function(texto) { $error.text(texto).removeClass('d-none'); };
+        var monto = $('#montoPago').val();
+        var tipoPagoId = $('#tipoPagoCuenta').val();
+        var bancoId = $('#bancoPagoCuenta').val();
+        var referencia = $('#referenciaPago').val();
+
+        if (!monto || parseFloat(monto) <= 0) return mostrar('Ingrese un monto válido');
+        if (!tipoPagoId) return mostrar('Seleccione un tipo de pago');
+        var tipoVal = parseInt(tipoPagoId);
+        if (tipoVal === 2 || tipoVal === 3) {
+            if (!bancoId) return mostrar('Debe seleccionar un banco para transferencia o pago móvil');
+            if (!/^\d{5}$/.test(referencia.trim())) return mostrar('La referencia debe tener los últimos 5 dígitos del comprobante');
         }
-        if (!/^\d{5}$/.test(referencia.trim())) {
-            mensajeError.textContent = 'La referencia debe tener los últimos 5 dígitos del comprobante';
-            mensajeError.classList.remove('d-none');
-            return;
-        }
-    }
-    var formData = new FormData();
-    formData.append('cuenta_id', cuentaId);
-    formData.append('monto', monto);
-    formData.append('fecha', fecha);
-    formData.append('id_tipo_pago', tipoPagoId);
-    formData.append('id_banco', bancoId || '');
-    formData.append('referencia', referencia);
-    fetch('/SP%20Perfect%20Color/cuentaPagar/registrarPago', { method: 'POST', body: formData })
-    .then(function(r) { return r.json(); })
-    .then(function(resultado) {
-        if (resultado.estado === 'exito') {
-            var modal = bootstrap.Modal.getInstance(document.getElementById('modalPago'));
-            if (modal) modal.hide();
-            location.reload();
-        } else {
-            mensajeError.textContent = resultado.mensaje;
-            mensajeError.classList.remove('d-none');
-        }
-    })
-    .catch(function() {
-        mensajeError.textContent = 'Error de conexión';
-        mensajeError.classList.remove('d-none');
+
+        api.post('cuentaPagar/registrarPago', {
+            cuenta_id: $('#cuentaId').val(),
+            monto: monto,
+            fecha: $('#fechaPago').val(),
+            id_tipo_pago: tipoPagoId,
+            id_banco: bancoId || '',
+            referencia: referencia
+        })
+        .then(function(resultado) {
+            if (resultado.estado === 'exito') {
+                bootstrap.Modal.getInstance($('#modalPago')[0])?.hide();
+                location.reload();
+            } else {
+                mostrar(resultado.mensaje);
+            }
+        })
+        .catch(function() { mostrar('Error de conexión'); });
     });
 });
 </script>
