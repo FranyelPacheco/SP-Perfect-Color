@@ -66,17 +66,6 @@ if ($metodo === 'index') {
     $resultado = $bancoModel->modificar($id, $_POST);
     responder($resultado);
 
-// FUNCIÓN: eliminar
-// OBJETIVO: Elimina (soft-delete) un banco por ID delegando al modelo
-} elseif ($metodo === 'eliminar') {
-    verificarRolAdmin();
-
-    soloPost();
-
-    $id = intval($_POST['id'] ?? 0);
-    $resultado = $bancoModel->darDeBaja($id);
-    responder($resultado);
-
 // FUNCIÓN: toggleActivo
 // OBJETIVO: Alterna el estado activo/inactivo de un banco
 } elseif ($metodo === 'toggleActivo') {

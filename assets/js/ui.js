@@ -4,47 +4,41 @@
 (function () {
     const BASE = '/SP%20Perfect%20Color/';
     function mostrarSkeleton() {
-        const contenedor = document.querySelector('main > .container-fluid');
-        if (!contenedor || contenedor.querySelector(':scope > .skeleton-page')) return;
-        contenedor.classList.add('cargando');
+        const $contenedor = $('main > .container-fluid').first();
+        if (!$contenedor.length || $contenedor.children('.skeleton-page').length) return;
+        $contenedor.addClass('cargando');
         const plantilla = document.getElementById('plantillaSkeleton');
-        if (plantilla) contenedor.appendChild(plantilla.content.cloneNode(true));
+        if (plantilla) $contenedor.append(plantilla.content.cloneNode(true));
     }
 
     function quitarSkeleton() {
-        document.querySelectorAll('.skeleton-page').forEach(el => el.remove());
-        document.querySelector('main > .container-fluid')?.classList.remove('cargando');
+        $('.skeleton-page').remove();
+        $('main > .container-fluid').first().removeClass('cargando');
     }
 
-    document.addEventListener('click', function (e) {
-        const enlace = e.target.closest('a[href]');
-        if (!enlace || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || enlace.target === '_blank' || enlace.hasAttribute('download')) return;
+    $(document).on('click', function (e) {
+        const enlace = $(e.target).closest('a[href]')[0];
+        if (!enlace || e.isDefaultPrevented() || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || enlace.target === '_blank' || enlace.hasAttribute('download')) return;
         const destino = new URL(enlace.href, location.href);
         if (destino.origin !== location.origin || !destino.pathname.startsWith(BASE) || destino.pathname.includes('/salir')) return;
         if (destino.pathname === location.pathname && destino.search === location.search) return;
-        if (enlace.getAttribute('href') === '#' || enlace.matches('[data-bs-toggle]')) return;
+        if (enlace.getAttribute('href') === '#' || $(enlace).is('[data-bs-toggle]')) return;
         mostrarSkeleton();
     });
-    window.addEventListener('pageshow', quitarSkeleton);
+    $(window).on('pageshow', quitarSkeleton);
 
     // Referencias bancarias: solo los últimos 5 dígitos del comprobante
-    document.addEventListener('DOMContentLoaded', function () {
-        ['referenciaPago', 'referenciaPagoInicial', 'referenciaInicialCompra'].forEach(function (id) {
-            const campo = document.getElementById(id);
-            if (!campo) return;
-            campo.maxLength = 5;
-            campo.inputMode = 'numeric';
-            campo.autocomplete = 'off';
-            campo.pattern = '\\d{5}';
-            campo.addEventListener('input', function () {
+    $(function () {
+        $('#referenciaPago, #referenciaPagoInicial, #referenciaInicialCompra')
+            .attr({ maxlength: 5, inputmode: 'numeric', autocomplete: 'off', pattern: '\\d{5}' })
+            .on('input', function () {
                 this.value = this.value.replace(/\D/g, '').slice(0, 5);
             });
-        });
     });
 
     // Al terminar de expandir o plegar el sidebar cambia el ancho útil: reajustar las tablas
-    document.querySelector('.sidebar')?.addEventListener('transitionend', function (e) {
-        if (e.propertyName === 'width' && window.jQuery && $.fn.dataTable) {
+    $('.sidebar').first().on('transitionend', function (e) {
+        if (e.originalEvent.propertyName === 'width' && $.fn.dataTable) {
             $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust().responsive.recalc();
         }
     });
@@ -57,28 +51,29 @@
     }
 
     function quitarAviso(el) {
-        el.classList.remove('is-invalid', 'campo-vibra');
-        const anclaje = el.closest('.input-group') || el;
-        const aviso = anclaje.nextElementSibling;
-        if (aviso && aviso.classList.contains('aviso-campo')) aviso.remove();
+        const $el = $(el).removeClass('is-invalid campo-vibra');
+        const $grupo = $el.closest('.input-group');
+        const $anclaje = $grupo.length ? $grupo : $el;
+        const $aviso = $anclaje.next('.aviso-campo');
+        if ($aviso.length) $aviso.remove();
     }
 
     function marcarInvalido(el) {
-        const anclaje = el.closest('.input-group') || el;
+        const $el = $(el);
+        const $grupo = $el.closest('.input-group');
+        const $anclaje = $grupo.length ? $grupo : $el;
         quitarAviso(el);
-        el.classList.add('is-invalid');
+        $el.addClass('is-invalid');
         void el.offsetWidth;
-        el.classList.add('campo-vibra');
-        const aviso = document.createElement('div');
-        aviso.className = 'aviso-campo';
-        aviso.setAttribute('role', 'alert');
-        aviso.innerHTML = '<i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i><span></span>';
-        aviso.lastChild.textContent = textoAviso(el);
-        anclaje.insertAdjacentElement('afterend', aviso);
-        (el.closest('.input-group') || el).classList.add('campo-vibra');
-        setTimeout(() => (el.closest('.input-group') || el).classList.remove('campo-vibra'), 500);
+        $el.addClass('campo-vibra');
+        const $aviso = $('<div class="aviso-campo" role="alert"><i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i><span></span></div>');
+        $aviso.children('span').text(textoAviso(el));
+        $anclaje.after($aviso);
+        $anclaje.addClass('campo-vibra');
+        setTimeout(() => $anclaje.removeClass('campo-vibra'), 500);
     }
 
+    // 'invalid' no burbujea: se escucha en captura
     document.addEventListener('invalid', function (e) {
         e.preventDefault();
         marcarInvalido(e.target);
@@ -89,14 +84,12 @@
         }
     }, true);
 
-    ['input', 'change'].forEach(function (evento) {
-        document.addEventListener(evento, function (e) {
-            if (e.target.classList?.contains('is-invalid') && e.target.validity?.valid) quitarAviso(e.target);
-        });
+    $(document).on('input change', function (e) {
+        if ($(e.target).hasClass('is-invalid') && e.target.validity?.valid) quitarAviso(e.target);
     });
 
     // Con una búsqueda activa, las filas que coinciden quedan resaltadas
-    if (window.jQuery && $.fn.dataTable) {
+    if ($.fn.dataTable) {
         const COLUMNA_NUMERICA = /total|monto|saldo|precio|p\. venta|stock|tasa|cantidad/i;
         const COLUMNA_CENTRADA = /^(estado|activo|tipo|condici|presentaci|situaci|rol)/i;
         const COLUMNA_COMPACTA = /fecha|c[eé]dula|rif|c[oó]digo|^id$|^n°|tel[eé]fono|vencimiento|documento/i;
@@ -152,18 +145,19 @@
         let entro = false;
         let barras = [];
 
-        raiz.innerHTML = '<div class="gb-plot" tabindex="0" role="slider"><svg class="gb-svg" aria-hidden="true"></svg><div class="gb-valores" aria-hidden="true"></div>' +
+        const $raiz = $(raiz);
+        $raiz.html('<div class="gb-plot" tabindex="0" role="slider"><svg class="gb-svg" aria-hidden="true"></svg><div class="gb-valores" aria-hidden="true"></div>' +
             '<div class="gb-tip" aria-hidden="true"><div class="gb-tip-etiqueta"></div><div class="gb-tip-fila"><i class="gb-punto"></i><span class="gb-tip-nombre"></span><b class="gb-tip-valor"></b></div></div></div>' +
-            '<div class="gb-eje" aria-hidden="true"></div>';
-        const plot = raiz.querySelector('.gb-plot');
-        const svg = raiz.querySelector('.gb-svg');
-        const capaValores = raiz.querySelector('.gb-valores');
-        const tip = raiz.querySelector('.gb-tip');
-        const eje = raiz.querySelector('.gb-eje');
-        raiz.querySelector('.gb-tip-nombre').textContent = nombre;
-        plot.setAttribute('aria-label', raiz.getAttribute('aria-label') || nombre);
-        plot.setAttribute('aria-valuemin', 1);
-        plot.setAttribute('aria-valuemax', valores.length);
+            '<div class="gb-eje" aria-hidden="true"></div>');
+        const $plot = $raiz.find('.gb-plot');
+        const plot = $plot[0];
+        const $svg = $raiz.find('.gb-svg');
+        const svg = $svg[0];
+        const $capaValores = $raiz.find('.gb-valores');
+        const $tip = $raiz.find('.gb-tip');
+        const $eje = $raiz.find('.gb-eje');
+        $raiz.find('.gb-tip-nombre').text(nombre);
+        $plot.attr({ 'aria-label': $raiz.attr('aria-label') || nombre, 'aria-valuemin': 1, 'aria-valuemax': valores.length });
 
         const maximo = Math.max(0, ...valores);
         const sinDatos = maximo === 0;
@@ -172,9 +166,7 @@
             const ancho = plot.clientWidth;
             const alto = plot.clientHeight;
             if (!ancho || !alto) return;
-            svg.setAttribute('width', ancho);
-            svg.setAttribute('height', alto);
-            svg.setAttribute('viewBox', '0 0 ' + ancho + ' ' + alto);
+            $svg.attr({ width: ancho, height: alto, viewBox: '0 0 ' + ancho + ' ' + alto });
             const sala = 26;
             const banda = ancho / valores.length;
             const grosor = Math.min(banda * 0.62, 84);
@@ -189,37 +181,32 @@
             });
             html += '<line x1="0" x2="' + ancho + '" y1="' + cero + '" y2="' + cero + '" stroke="#e2e8f0" stroke-width="1"/>';
             svg.innerHTML = html;
-            svg.querySelectorAll('.gb-barra').forEach(function (b) {
-                b.style.transformBox = 'fill-box';
-                b.style.transformOrigin = '50% 100%';
-                if (!entro && !reducir) b.style.opacity = 0;
-            });
-            capaValores.innerHTML = barras.map(function (b, i) {
+            $svg.find('.gb-barra').css({ transformBox: 'fill-box', transformOrigin: '50% 100%' });
+            if (!entro && !reducir) $svg.find('.gb-barra').css('opacity', 0);
+            $capaValores.html(barras.map(function (b, i) {
                 return '<span class="gb-valor" style="left:' + r2((b.centro / ancho) * 100) + '%;top:' + r2(b.punta) + 'px">' + (b.v > 0 ? formato(b.v) : '') + '</span>';
-            }).join('');
-            if (!entro && !reducir) capaValores.style.opacity = 0;
-            eje.innerHTML = etiquetas.map(function (e, i) {
+            }).join(''));
+            if (!entro && !reducir) $capaValores.css('opacity', 0);
+            $eje.html(etiquetas.map(function (e, i) {
                 return '<span style="left:' + r2(((i * banda + banda / 2) / ancho) * 100) + '%">' + e + '</span>';
-            }).join('');
+            }).join(''));
             actualizar();
         }
 
         function actualizar() {
             const b = barras[activo];
             if (!b) return;
-            svg.querySelectorAll('.gb-barra').forEach(function (el, i) {
-                el.classList.toggle('atenuada', interactuando && i !== activo);
+            $svg.find('.gb-barra').each(function (i) {
+                $(this).toggleClass('atenuada', interactuando && i !== activo);
             });
             const ancho = plot.clientWidth;
-            const volteo = b.centro > ancho / 2;
-            tip.classList.toggle('izq', volteo);
-            tip.style.transform = 'translate3d(' + r2(b.centro) + 'px,' + r2(Math.max(24, b.punta)) + 'px,0)';
-            tip.classList.toggle('abierto', interactuando);
-            capaValores.querySelectorAll('.gb-valor').forEach(function (el, i) { el.style.visibility = interactuando && i === activo ? 'hidden' : ''; });
-            raiz.querySelector('.gb-tip-etiqueta').textContent = etiquetas[activo];
-            raiz.querySelector('.gb-tip-valor').textContent = formato(b.v);
-            plot.setAttribute('aria-valuenow', activo + 1);
-            plot.setAttribute('aria-valuetext', etiquetas[activo] + ': ' + formato(b.v));
+            $tip.toggleClass('izq', b.centro > ancho / 2)
+                .css('transform', 'translate3d(' + r2(b.centro) + 'px,' + r2(Math.max(24, b.punta)) + 'px,0)')
+                .toggleClass('abierto', interactuando);
+            $capaValores.find('.gb-valor').each(function (i) { $(this).css('visibility', interactuando && i === activo ? 'hidden' : ''); });
+            $raiz.find('.gb-tip-etiqueta').text(etiquetas[activo]);
+            $raiz.find('.gb-tip-valor').text(formato(b.v));
+            $plot.attr({ 'aria-valuenow': activo + 1, 'aria-valuetext': etiquetas[activo] + ': ' + formato(b.v) });
         }
 
         function elegir(i) {
@@ -232,25 +219,25 @@
         function entrar() {
             if (entro) return;
             entro = true;
-            capaValores.style.transition = 'opacity 0.4s ease 0.5s';
-            capaValores.style.opacity = 1;
-            svg.querySelectorAll('.gb-barra').forEach(function (b, i) {
-                b.style.opacity = 1;
+            $capaValores.css({ transition: 'opacity 0.4s ease 0.5s', opacity: 1 });
+            $svg.find('.gb-barra').each(function (i) {
+                const b = this;
+                $(b).css('opacity', 1);
                 if (reducir) return;
                 b.animate([{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }], { duration: 650, delay: i * 70, easing: EASE, fill: 'backwards' });
             });
         }
 
-        plot.addEventListener('pointermove', function (e) {
+        $plot.on('pointermove', function (e) {
             const caja = plot.getBoundingClientRect();
             interactuando = true;
             elegir(Math.floor(((e.clientX - caja.left) / caja.width) * valores.length));
             actualizar();
         });
-        plot.addEventListener('pointerleave', function () { interactuando = false; actualizar(); });
-        plot.addEventListener('focus', function () { interactuando = true; actualizar(); });
-        plot.addEventListener('blur', function () { interactuando = false; actualizar(); });
-        plot.addEventListener('keydown', function (e) {
+        $plot.on('pointerleave', function () { interactuando = false; actualizar(); });
+        $plot.on('focus', function () { interactuando = true; actualizar(); });
+        $plot.on('blur', function () { interactuando = false; actualizar(); });
+        $plot.on('keydown', function (e) {
             const pasos = { ArrowLeft: activo - 1, ArrowDown: activo - 1, ArrowRight: activo + 1, ArrowUp: activo + 1, Home: 0, End: valores.length - 1 };
             if (!(e.key in pasos)) return;
             e.preventDefault();
@@ -270,16 +257,13 @@
             entrar();
         }
         if (sinDatos) {
-            const aviso = document.createElement('p');
-            aviso.className = 'gb-vacio';
-            aviso.textContent = 'Aún no hay ingresos registrados en estos días.';
-            raiz.appendChild(aviso);
+            $raiz.append($('<p class="gb-vacio"></p>').text('Aún no hay ingresos registrados en estos días.'));
         }
     }
 
     // Ingresos diarios de los últimos 7 días (los días sin pagos cuentan 0)
     window.inicializarGraficoIngresos = function (datos) {
-        const raiz = document.getElementById('graficoIngresos');
+        const raiz = $('#graficoIngresos')[0];
         if (!raiz) return;
         const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
         const dos = (n) => String(n).padStart(2, '0');

@@ -2,7 +2,6 @@
 
 namespace App\Controllers;
 
-use PDOException;
 use App\Models\{
     NotaEntregaModel,
     PresupuestoModel,
@@ -39,23 +38,6 @@ if ($metodo === 'index') {
     $notas = $notaEntregaModel->listarTodos();
     
     respuestaJson('exito', 'Notas de entrega obtenidas correctamente', [
-        'notas' => $notas
-    ]);
-
-// FUNCIÓN: buscarAjax
-// OBJETIVO: Busca notas de entrega por término de búsqueda o devuelve todas
-} elseif ($metodo === 'buscarAjax') {
-    verificarPermiso('notaEntrega');
-    
-    $termino = trim($_GET['termino'] ?? '');
-    
-    if (empty($termino)) {
-        $notas = $notaEntregaModel->listarTodos();
-    } else {
-        $notas = $notaEntregaModel->buscarNotas($termino);
-    }
-    
-    respuestaJson('exito', 'Busqueda completada', [
         'notas' => $notas
     ]);
 

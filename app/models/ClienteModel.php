@@ -6,6 +6,9 @@ namespace App\Models;
 use App\Traits\ContactoTrait;
 use PDO;
 
+// MODELO: ClienteModel
+// OBJETIVO: Gestión de clientes con sus teléfonos y correo (cédula única; reactiva los dados de baja en vez de duplicarlos)
+// NOTA: Teléfonos y correo se resuelven en ContactoTrait
 class ClienteModel extends ModeloBase
 {
     use ContactoTrait;
@@ -22,7 +25,6 @@ class ClienteModel extends ModeloBase
     private ?string $correo;
     private ?string $direccion;
     private ?int $idExcluir;
-    private ?string $termino;
 
     // FUNCIÓN: contarTodos
     // OBJETIVO: Devuelve la cantidad de clientes activos
@@ -305,17 +307,6 @@ class ClienteModel extends ModeloBase
         return $this->buscarInactivoPor('clientes', 'id_cliente', 'cedula', $cedula);
     }
 
-    // FUNCIÓN: buscarClientes
-    // OBJETIVO: Busca clientes activos por nombre, apellido o cédula (autocompletado)
-    public function buscarClientes(string $termino): array
-    {
-        $this->termino = trim($termino);
-
-        if ($this->termino === '') return [];
-
-        return $this->_ejecutarSearch();
-    }
-
     private function _ejecutarCountAll(): int
     {
         $consulta = "SELECT COUNT(*) as total FROM clientes WHERE estado = 1";
@@ -401,25 +392,6 @@ class ClienteModel extends ModeloBase
         }
         $stmt->execute();
         return $stmt->fetch()['total'] > 0;
-    }
-
-    private function _ejecutarSearch(): array
-    {
-        $terminoLike = '%' . $this->termino . '%';
-        $consulta = "SELECT c.*, c.estado as activo, GROUP_CONCAT(tc.telefono SEPARATOR ', ') as telefonos
-                     FROM clientes c
-                     LEFT JOIN telefono_cliente tc ON tc.id_cliente = c.id_cliente
-                     WHERE c.estado = 1 AND (c.nombres LIKE :termino1
-                         OR c.apellidos LIKE :termino2
-                         OR c.cedula LIKE :termino3)
-                     GROUP BY c.id_cliente
-                     ORDER BY c.apellidos ASC, c.nombres ASC";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':termino1', $terminoLike, PDO::PARAM_STR);
-        $stmt->bindParam(':termino2', $terminoLike, PDO::PARAM_STR);
-        $stmt->bindParam(':termino3', $terminoLike, PDO::PARAM_STR);
-        $stmt->execute();
-        return $stmt->fetchAll();
     }
 
 }

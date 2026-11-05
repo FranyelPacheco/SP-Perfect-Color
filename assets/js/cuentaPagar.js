@@ -2,9 +2,7 @@
 // Manejo de la vista de cuentas por pagar
 
 
-document.addEventListener('DOMContentLoaded', function() {
-    var busquedaCuentas = document.getElementById('busquedaCuentasPagar');
-
+$(function() {
     cargarCuentas();
 
     function cargarCuentas() {
@@ -97,10 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
     alHacerClick('.btn-eliminar-cxp', function(e) {
         var id = $(this).attr('data-id') || $(this).data('id');
         confirmarConModal('Eliminar', '¿Está seguro de eliminar esta cuenta por pagar?', function() {
-            var fd = new FormData();
-            fd.append('id', id);
-            fetch('/SP%20Perfect%20Color/cuentaPagar/eliminar', { method: 'POST', body: fd })
-            .then(function(r) { return r.json(); })
+            api.post('cuentaPagar/eliminar', { id: id })
             .then(function(res) {
                 if (res.estado === 'exito') { mostrarNotificacion(res.mensaje, 'exito'); cargarCuentas(); }
                 else { mostrarNotificacion(res.mensaje, 'error'); }
@@ -110,5 +105,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Enlazar busqueda manual a DataTables
-    vincularBusqueda(busquedaCuentas, '#tablaCuentasPagar');
+    vincularBusqueda('#busquedaCuentasPagar', '#tablaCuentasPagar');
 });

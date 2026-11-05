@@ -1,118 +1,99 @@
-document.addEventListener('DOMContentLoaded', function() {
-    var formulario = document.getElementById('formularioLogin');
-    var mensajeError = document.getElementById('mensajeError');
-    var correoInput = document.getElementById('correo');
-    var claveInput = document.getElementById('clave');
-    var btnLogin = document.getElementById('btnLogin');
-    var btnText = document.getElementById('btnText');
-    var btnSpinner = document.getElementById('btnSpinner');
-    var toggleClave = document.getElementById('toggleClave');
-    var toggleIcono = document.getElementById('toggleIcono');
+// El login no carga utilidades.js: token CSRF para las peticiones $.ajax no-GET
+$.ajaxPrefilter(function (opciones, originales, xhr) {
+    const token = $('meta[name="csrf-token"]').attr('content');
+    if (token && !opciones.crossDomain && (opciones.type || 'GET').toUpperCase() !== 'GET') xhr.setRequestHeader('X-CSRF-Token', token);
+});
 
-    if (!formulario) return;
+// Envía un formulario por POST y resuelve siempre con el JSON de respuesta
+function enviarJson(url, formulario, cabeceras) {
+    return new Promise(function (ok, fallo) {
+        $.ajax({ url: url, type: 'POST', data: new FormData(formulario), processData: false, contentType: false, dataType: 'json', headers: cabeceras || {} })
+            .done(ok)
+            .fail(function (x) { x.responseJSON ? ok(x.responseJSON) : fallo(new Error('red')); });
+    });
+}
 
-    correoInput.focus();
+$(function() {
+    const $formulario = $('#formularioLogin');
+    const $mensajeError = $('#mensajeError');
+    const $correoInput = $('#correo');
+    const $claveInput = $('#clave');
+    const $btnLogin = $('#btnLogin');
+    const $btnText = $('#btnText');
+    const $btnSpinner = $('#btnSpinner');
 
-    if (toggleClave) {
-        toggleClave.addEventListener('click', function() {
-            var type = claveInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            claveInput.setAttribute('type', type);
-            toggleIcono.classList.toggle('bi-eye-slash-fill');
-            toggleIcono.classList.toggle('bi-eye-fill');
-        });
+    if (!$formulario.length) return;
+
+    $correoInput.trigger('focus');
+
+    $('#toggleClave').on('click', function() {
+        $claveInput.attr('type', $claveInput.attr('type') === 'password' ? 'text' : 'password');
+        $('#toggleIcono').toggleClass('bi-eye-slash-fill bi-eye-fill');
+    });
+
+    function mostrarErrorLogin(mensaje) {
+        $mensajeError.text(mensaje).removeClass('d-none').addClass('shake');
+        $btnLogin.prop('disabled', false);
+        $btnText.text('Iniciar Sesión');
+        $btnSpinner.addClass('d-none');
     }
 
-    formulario.addEventListener('submit', async function(evento) {
+    $formulario.on('submit', async function(evento) {
         evento.preventDefault();
 
-        mensajeError.classList.add('d-none');
-        mensajeError.textContent = '';
-        mensajeError.classList.remove('shake');
-
-        btnLogin.disabled = true;
-        btnText.textContent = 'Ingresando...';
-        btnSpinner.classList.remove('d-none');
-
-        var datosFormulario = new FormData(formulario);
+        $mensajeError.addClass('d-none').removeClass('shake').text('');
+        $btnLogin.prop('disabled', true);
+        $btnText.text('Ingresando...');
+        $btnSpinner.removeClass('d-none');
 
         try {
-            var respuesta = await fetch('/SP%20Perfect%20Color/login/iniciarSesion', {
-                method: 'POST',
-                body: datosFormulario
-            });
-
-            var resultado = await respuesta.json();
-
+            const resultado = await enviarJson('/SP%20Perfect%20Color/login/iniciarSesion', $formulario[0]);
             if (resultado.estado === 'exito') {
                 window.location.href = resultado.datos.redirect;
             } else {
-                mensajeError.textContent = resultado.mensaje;
-                mensajeError.classList.remove('d-none');
-                mensajeError.classList.add('shake');
-                btnLogin.disabled = false;
-                btnText.textContent = 'Iniciar Sesión';
-                btnSpinner.classList.add('d-none');
+                mostrarErrorLogin(resultado.mensaje);
             }
         } catch (error) {
-            mensajeError.textContent = 'No se pudo conectar con el servidor. Intente de nuevo.';
-            mensajeError.classList.remove('d-none');
-            mensajeError.classList.add('shake');
-            btnLogin.disabled = false;
-            btnText.textContent = 'Iniciar Sesión';
-            btnSpinner.classList.add('d-none');
+            mostrarErrorLogin('No se pudo conectar con el servidor. Intente de nuevo.');
         }
     });
 
     // Procesar formulario de recuperación de contraseña vía SMTP
-    var formRecuperar = document.getElementById('formRecuperarClave');
-    if (formRecuperar) {
-        formRecuperar.addEventListener('submit', async function (e) {
+    const $formRecuperar = $('#formRecuperarClave');
+    if ($formRecuperar.length) {
+        $formRecuperar.on('submit', async function (e) {
             e.preventDefault();
-            var alerta = document.getElementById('alertaRecuperar');
-            var btn = document.getElementById('btnEnviarRecuperar');
-            var spinner = btn.querySelector('.spinner-border');
-            var texto = btn.querySelector('.btn-texto');
+            const $alerta = $('#alertaRecuperar');
+            const $btn = $('#btnEnviarRecuperar');
+            const $spinner = $btn.find('.spinner-border');
 
-            alerta.classList.add('d-none');
-            alerta.textContent = '';
+            const avisar = function (tipo, mensaje) {
+                $alerta.attr('class', 'alert alert-' + tipo).text(mensaje);
+            };
 
-            var correo = document.getElementById('correoRecuperar').value.trim();
-            if (!correo) {
-                alerta.className = 'alert alert-danger';
-                alerta.textContent = 'Por favor ingrese su correo electrónico.';
-                alerta.classList.remove('d-none');
+            $alerta.addClass('d-none').text('');
+
+            if (!$('#correoRecuperar').val().trim()) {
+                avisar('danger', 'Por favor ingrese su correo electrónico.');
                 return;
             }
 
-            btn.disabled = true;
-            spinner.classList.remove('d-none');
+            $btn.prop('disabled', true);
+            $spinner.removeClass('d-none');
 
             try {
-                var fd = new FormData(formRecuperar);
-                var res = await fetch('/SP%20Perfect%20Color/login/recuperarClave', {
-                    method: 'POST',
-                    body: fd,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                var json = await res.json();
-
+                const json = await enviarJson('/SP%20Perfect%20Color/login/recuperarClave', $formRecuperar[0], { 'X-Requested-With': 'XMLHttpRequest' });
                 if (json.estado === 'exito') {
-                    alerta.className = 'alert alert-success';
-                    alerta.textContent = json.mensaje;
-                    alerta.classList.remove('d-none');
-                    formRecuperar.reset();
+                    avisar('success', json.mensaje);
+                    $formRecuperar[0].reset();
                 } else {
-                    alerta.className = 'alert alert-danger';
-                    alerta.textContent = json.mensaje || 'Error al procesar la solicitud.';
-                    alerta.classList.remove('d-none');
+                    avisar('danger', json.mensaje || 'Error al procesar la solicitud.');
                 }
             } catch (err) {
-                alerta.className = 'alert alert-danger';
-                alerta.textContent = 'No se pudo conectar con el servidor. Intente de nuevo.';
-                alerta.classList.remove('d-none');
+                avisar('danger', 'No se pudo conectar con el servidor. Intente de nuevo.');
             } finally {
-                btn.disabled = false;
-                spinner.classList.add('d-none');
+                $btn.prop('disabled', false);
+                $spinner.addClass('d-none');
             }
         });
     }

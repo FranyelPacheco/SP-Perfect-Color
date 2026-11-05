@@ -43,23 +43,6 @@ if ($metodo === 'index') {
         'presentaciones' => $inventarioModel->listarPresentaciones()
     ]);
 
-// FUNCIÓN: buscarAjax
-// OBJETIVO: Busca insumos por término de búsqueda o devuelve todos
-} elseif ($metodo === 'buscarAjax') {
-    verificarAcceso([1]);
-    
-    $termino = trim($_GET['termino'] ?? '');
-    
-    if (empty($termino)) {
-        $insumos = $inventarioModel->listarTodos();
-    } else {
-        $insumos = $inventarioModel->buscarInsumos($termino);
-    }
-    
-    respuestaJson('exito', 'Busqueda completada', [
-        'insumos' => $insumos
-    ]);
-
 // FUNCIÓN: verificarCodigoAjax
 // OBJETIVO: Verifica en tiempo real si un codigo de insumo ya está registrado
 } elseif ($metodo === 'verificarCodigoAjax') {

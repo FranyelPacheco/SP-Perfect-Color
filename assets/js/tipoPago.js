@@ -1,51 +1,44 @@
+$(function() {
+    const $modal = $('#modalTipoPago');
+    const $formulario = $('#formularioTipoPago');
+    const $tipoPagoId = $('#tipoPagoId');
+    const $nombreTipoPago = $('#nombreTipoPago');
+    const $activoTipoPago = $('#activoTipoPago');
+    const $mensajeError = $('#mensajeErrorTipoPago');
 
-document.addEventListener('DOMContentLoaded', function() {
-    var modal = document.getElementById('modalTipoPago');
-    var formulario = document.getElementById('formularioTipoPago');
-    var tipoPagoId = document.getElementById('tipoPagoId');
-    var nombreTipoPago = document.getElementById('nombreTipoPago');
-    var activoTipoPago = document.getElementById('activoTipoPago');
-    var mensajeError = document.getElementById('mensajeErrorTipoPago');
-    var tituloModal = document.getElementById('tituloModalTipoPago');
-
-    var validacionNombre = validarUnico({
-        input: nombreTipoPago,
-        feedback: document.getElementById('feedbackNombreTipoPago'),
+    const validacionNombre = validarUnico({
+        input: $nombreTipoPago,
+        feedback: $('#feedbackNombreTipoPago'),
         entidad: 'tipoPago', campo: 'nombre',
-        getId: function() { return tipoPagoId.value || null; },
-        boton: formulario.querySelector('[type="submit"]')
+        getId: function() { return $tipoPagoId.val() || null; },
+        boton: $formulario.find('[type="submit"]')
     });
-    modal.addEventListener('hidden.bs.modal', validacionNombre.limpiar);
-    modal.addEventListener('shown.bs.modal', function() { if (nombreTipoPago.value) validacionNombre.revalidar(); });
+    $modal.on('hidden.bs.modal', validacionNombre.limpiar);
+    $modal.on('shown.bs.modal', function() { if ($nombreTipoPago.val()) validacionNombre.revalidar(); });
 
-    vincularBusqueda(document.getElementById('busquedaTiposPago'), '#tablaTiposPago');
+    vincularBusqueda('#busquedaTiposPago', '#tablaTiposPago');
     cargarTiposPago();
 
-    if (formulario) {
-        formulario.addEventListener('submit', function(e) {
-            e.preventDefault();
-            guardarTipoPago();
-        });
-    }
+    $formulario.on('submit', function(e) {
+        e.preventDefault();
+        guardarTipoPago();
+    });
 
-    alHacerClick('.btn-editar-tipo-pago', function(e) {
-        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+    alHacerClick('.btn-editar-tipo-pago', function() {
+        const id = parseInt($(this).attr('data-id'));
         if (!isNaN(id)) abrirModalEditar(id);
     });
 
-    alHacerClick('.btn-toggle-tipo-pago', function(e) {
-        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
-        toggleTipoPagoEstado(id);
+    alHacerClick('.btn-toggle-tipo-pago', function() {
+        toggleTipoPagoEstado(parseInt($(this).attr('data-id')));
     });
 
-    if (modal) {
-        modal.addEventListener('hidden.bs.modal', function() {
-            formulario.reset();
-            tipoPagoId.value = '';
-            activoTipoPago.checked = true;
-            mensajeError.classList.add('d-none');
-        });
-    }
+    $modal.on('hidden.bs.modal', function() {
+        $formulario[0].reset();
+        $tipoPagoId.val('');
+        $activoTipoPago.prop('checked', true);
+        $mensajeError.addClass('d-none');
+    });
 
     function cargarTiposPago() {
         api.get('tipoPago/listarAjax')
@@ -63,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     { data: 'nombre', render: $.fn.dataTable.render.text() },
                     { data: 'activo', render: function(d) { return d == 1 ? '<span class="badge bg-success">Si</span>' : '<span class="badge bg-secondary">No</span>'; } },
                     { data: null, render: function(d, t, row) {
-                        var activo = row.activo == 1;
+                        const activo = row.activo == 1;
                         return '<button class="btn btn-sm btn-warning btn-editar-tipo-pago" data-id="' + row.id_tipo_pago + '"><i class="bi bi-pencil-square"></i></button>' +
                             (activo
                                 ? '<button class="btn btn-sm btn-danger btn-toggle-tipo-pago" data-id="' + row.id_tipo_pago + '" data-activo="1" title="Deshabilitar"><i class="bi bi-toggle-off"></i></button>'
@@ -72,40 +65,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 ]
             });
         }
-        var table = $('#tablaTiposPago').DataTable();
+        const table = $('#tablaTiposPago').DataTable();
         table.clear();
-        tipos.forEach(function(t) { table.row.add(t); });
+        $.each(tipos, function(i, t) { table.row.add(t); });
         table.draw();
     }
 
     function abrirModalEditar(id) {
-        api.get('tipoPago/obtener?id=' + id)
+        api.get('tipoPago/obtener', { id: id })
             .then(function(res) {
                 if (res.estado === 'exito') {
-                    tituloModal.textContent = 'Editar Tipo de Pago';
-                    tipoPagoId.value = res.datos.id_tipo_pago;
-                    nombreTipoPago.value = res.datos.nombre;
-                    activoTipoPago.checked = res.datos.activo == 1;
-                    mensajeError.classList.add('d-none');
-                    bootstrap.Modal.getOrCreateInstance(modal).show();
+                    $('#tituloModalTipoPago').text('Editar Tipo de Pago');
+                    $tipoPagoId.val(res.datos.id_tipo_pago);
+                    $nombreTipoPago.val(res.datos.nombre);
+                    $activoTipoPago.prop('checked', res.datos.activo == 1);
+                    $mensajeError.addClass('d-none');
+                    bootstrap.Modal.getOrCreateInstance($modal[0]).show();
                 } else { mostrarNotificacion(res.mensaje, 'error'); }
             });
     }
 
     function guardarTipoPago() {
-        var id = tipoPagoId.value;
-        var esEdicion = id !== '';
-        var url = esEdicion ? '/SP%20Perfect%20Color/tipoPago/actualizar' : '/SP%20Perfect%20Color/tipoPago/guardar';
-        var fd = new FormData(formulario);
-        if (!fd.get('nombre').trim()) { mostrarError('El nombre es obligatorio'); return; }
+        const id = $tipoPagoId.val();
+        const esEdicion = id !== '';
+        if (!$nombreTipoPago.val().trim()) { mostrarError('El nombre es obligatorio'); return; }
+        const fd = new FormData($formulario[0]);
         if (esEdicion) fd.set('id', id);
-        fd.set('activo', activoTipoPago.checked ? '1' : '0');
+        fd.set('activo', $activoTipoPago.is(':checked') ? '1' : '0');
 
-        fetch(url, { method: 'POST', body: fd })
-            .then(function(r) { return r.json(); })
+        api.post(esEdicion ? 'tipoPago/actualizar' : 'tipoPago/guardar', fd)
             .then(function(res) {
                 if (res.estado === 'exito') {
-                    bootstrap.Modal.getInstance(modal).hide();
+                    bootstrap.Modal.getInstance($modal[0]).hide();
                     cargarTiposPago();
                     mostrarNotificacion(res.mensaje, 'exito');
                 } else { mostrarError(res.mensaje); }
@@ -114,10 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function toggleTipoPagoEstado(id) {
-        var fd = new FormData();
-        fd.append('id', id);
-        fetch('/SP%20Perfect%20Color/tipoPago/toggleActivo', { method: 'POST', body: fd })
-            .then(function(r) { return r.json(); })
+        api.post('tipoPago/toggleActivo', { id: id })
             .then(function(res) {
                 if (res.estado === 'exito') { mostrarNotificacion(res.mensaje, 'exito'); cargarTiposPago(); }
                 else { mostrarNotificacion(res.mensaje, 'error'); }
@@ -125,7 +113,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function mostrarError(msg) {
-        mensajeError.textContent = msg;
-        mensajeError.classList.remove('d-none');
+        $mensajeError.text(msg).removeClass('d-none');
     }
 });

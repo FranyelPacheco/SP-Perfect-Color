@@ -4,7 +4,6 @@
 
 namespace App\Controllers;
 
-use PDOException;
 use App\Models\{
     CuentaCobrarModel,
     TipoPagoModel,
@@ -36,23 +35,6 @@ if ($metodo === 'index') {
     $cuentas = $cuentaCobrarModel->listarTodas();
     
     respuestaJson('exito', 'Cuentas obtenidas correctamente', [
-        'cuentas' => $cuentas
-    ]);
-
-// FUNCIÓN: buscarAjax
-// OBJETIVO: Busca cuentas por cobrar por término de búsqueda o devuelve todas
-} elseif ($metodo === 'buscarAjax') {
-    verificarRolAdmin();
-    
-    $termino = trim($_GET['termino'] ?? '');
-    
-    if (empty($termino)) {
-        $cuentas = $cuentaCobrarModel->listarTodas();
-    } else {
-        $cuentas = $cuentaCobrarModel->buscarCuentas($termino);
-    }
-    
-    respuestaJson('exito', 'Busqueda completada', [
         'cuentas' => $cuentas
     ]);
 

@@ -122,11 +122,7 @@ $totalBsPres = $totalUsdPres * $tasaDocPres;
 function cambiarEstado(id, estado) {
     var mensaje = estado === 'aprobado' ? '¿Está seguro de aprobar este presupuesto?' : '¿Está seguro de rechazar este presupuesto?';
     confirmarConModal('Confirmar', mensaje, function() {
-        var formData = new FormData();
-        formData.append('id', id);
-        formData.append('estado', estado);
-        fetch('/SP%20Perfect%20Color/presupuesto/cambiarEstado', { method: 'POST', body: formData })
-        .then(function(r) { return r.json(); })
+        api.post('presupuesto/cambiarEstado', { id: id, estado: estado })
         .then(function(resultado) {
             if (resultado.estado === 'exito') { location.reload(); }
             else { mostrarNotificacion(resultado.mensaje, 'error'); }

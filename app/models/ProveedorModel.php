@@ -6,6 +6,9 @@ namespace App\Models;
 use App\Traits\ContactoTrait;
 use PDO;
 
+// MODELO: ProveedorModel
+// OBJETIVO: Gestión de proveedores con sus teléfonos, correo y rubros (RIF único; reactiva los dados de baja en vez de duplicarlos)
+// NOTA: Teléfonos y correo se resuelven en ContactoTrait
 class ProveedorModel extends ModeloBase
 {
     use ContactoTrait;
@@ -22,7 +25,6 @@ class ProveedorModel extends ModeloBase
     private ?string $contacto;
     private ?string $correo;
     private ?int $idExcluir;
-    private ?string $termino;
     private ?int $proveedorId;
     private ?int $rubroId;
 
@@ -332,17 +334,6 @@ class ProveedorModel extends ModeloBase
         return $this->buscarInactivoPor('proveedores', 'id_proveedor', 'rif', $rif);
     }
 
-    // FUNCIÓN: buscarProveedores
-    // OBJETIVO: Busca proveedores activos por nombre de empresa o RIF (autocompletado)
-    public function buscarProveedores(string $termino): array
-    {
-        $this->termino = trim($termino);
-
-        if ($this->termino === '') return [];
-
-        return $this->_ejecutarSearch();
-    }
-
     // FUNCIÓN: insertarRubro
     // OBJETIVO: Asigna un rubro a un proveedor
     public function insertarRubro(int $proveedorId, int $rubroId): bool
@@ -457,28 +448,6 @@ class ProveedorModel extends ModeloBase
         }
         $stmt->execute();
         return $stmt->fetch()['total'] > 0;
-    }
-
-    private function _ejecutarSearch(): array
-    {
-        $terminoLike = '%' . $this->termino . '%';
-        $consulta = "SELECT p.*, p.estado as activo,
-                            GROUP_CONCAT(DISTINCT tp.telefono SEPARATOR ', ') as telefonos,
-                            GROUP_CONCAT(DISTINCT r.nombre SEPARATOR ', ') as rubros,
-                            GROUP_CONCAT(DISTINCT rp.id_rubro SEPARATOR ',') as rubros_id
-                     FROM proveedores p
-                     LEFT JOIN telefono_proveedor tp ON tp.id_proveedor = p.id_proveedor
-                     LEFT JOIN rubro_proveedor rp ON rp.id_proveedor = p.id_proveedor
-                     LEFT JOIN rubro r ON rp.id_rubro = r.id_rubro
-                     WHERE p.estado = 1 AND (p.nombre_empresa LIKE :termino1
-                         OR p.rif LIKE :termino2)
-                     GROUP BY p.id_proveedor
-                     ORDER BY p.nombre_empresa ASC";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':termino1', $terminoLike, PDO::PARAM_STR);
-        $stmt->bindParam(':termino2', $terminoLike, PDO::PARAM_STR);
-        $stmt->execute();
-        return $stmt->fetchAll();
     }
 
     private function _ejecutarInsertRubro(): bool

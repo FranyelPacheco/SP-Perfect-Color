@@ -81,95 +81,65 @@
         </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('.btn-toggle-pass').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    var target = document.getElementById(this.getAttribute('data-target'));
-                    var icon = this.querySelector('i');
-                    if (target) {
-                        if (target.type === 'password') {
-                            target.type = 'text';
-                            if (icon) { icon.classList.remove('bi-eye-slash-fill'); icon.classList.add('bi-eye-fill'); }
-                        } else {
-                            target.type = 'password';
-                            if (icon) { icon.classList.remove('bi-eye-fill'); icon.classList.add('bi-eye-slash-fill'); }
-                        }
-                    }
-                });
+        $.ajaxPrefilter(function (opciones, originales, xhr) {
+            var token = $('meta[name="csrf-token"]').attr('content');
+            if (token && !opciones.crossDomain && (opciones.type || 'GET').toUpperCase() !== 'GET') xhr.setRequestHeader('X-CSRF-Token', token);
+        });
+
+        $(function () {
+            $('.btn-toggle-pass').on('click', function () {
+                var $campo = $('#' + $(this).attr('data-target'));
+                if (!$campo.length) return;
+                var mostrar = $campo.attr('type') === 'password';
+                $campo.attr('type', mostrar ? 'text' : 'password');
+                $(this).find('i').toggleClass('bi-eye-fill', mostrar).toggleClass('bi-eye-slash-fill', !mostrar);
             });
 
-            var form = document.getElementById('formRestablecerClave');
-            if (form) {
-                form.addEventListener('submit', async function (e) {
-                    e.preventDefault();
-                    var alerta = document.getElementById('alertaRestablecer');
-                    var btn = document.getElementById('btnRestablecer');
-                    var spinner = btn.querySelector('.spinner-border');
-                    var texto = btn.querySelector('.btn-texto');
+            $('#formRestablecerClave').on('submit', function (e) {
+                e.preventDefault();
+                var form = this;
+                var $alerta = $('#alertaRestablecer').addClass('d-none');
+                var $btn = $('#btnRestablecer');
+                var $spinner = $btn.find('.spinner-border');
+                var avisar = function (tipo, texto) {
+                    $alerta.attr('class', 'alert alert-' + tipo).text(texto).removeClass('d-none');
+                };
+                var liberar = function () {
+                    $btn.prop('disabled', false);
+                    $spinner.addClass('d-none');
+                };
 
-                    alerta.classList.add('d-none');
+                var c1 = $('#nuevaClave').val();
+                var c2 = $('#confirmarClave').val();
 
-                    var c1 = document.getElementById('nuevaClave').value;
-                    var c2 = document.getElementById('confirmarClave').value;
+                if (!c1 || !c2) return avisar('danger', 'Por favor complete todos los campos.');
+                if (c1.length < 6) return avisar('danger', 'La nueva contraseña debe tener al menos 6 caracteres.');
+                if (c1 !== c2) return avisar('danger', 'Las contraseñas no coinciden.');
 
-                    if (!c1 || !c2) {
-                        alerta.className = 'alert alert-danger';
-                        alerta.textContent = 'Por favor complete todos los campos.';
-                        alerta.classList.remove('d-none');
-                        return;
-                    }
+                $btn.prop('disabled', true);
+                $spinner.removeClass('d-none');
 
-                    if (c1.length < 6) {
-                        alerta.className = 'alert alert-danger';
-                        alerta.textContent = 'La nueva contraseña debe tener al menos 6 caracteres.';
-                        alerta.classList.remove('d-none');
-                        return;
-                    }
-
-                    if (c1 !== c2) {
-                        alerta.className = 'alert alert-danger';
-                        alerta.textContent = 'Las contraseñas no coinciden.';
-                        alerta.classList.remove('d-none');
-                        return;
-                    }
-
-                    btn.disabled = true;
-                    spinner.classList.remove('d-none');
-
-                    try {
-                        var fd = new FormData(form);
-                        var res = await fetch('/SP%20Perfect%20Color/login/guardarNuevaClave', {
-                            method: 'POST',
-                            body: fd,
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        });
-                        var json = await res.json();
-
+                $.ajax({ url: '/SP%20Perfect%20Color/login/guardarNuevaClave', type: 'POST', data: new FormData(form), processData: false, contentType: false, dataType: 'json' })
+                    .done(function (json) {
                         if (json.estado === 'exito') {
-                            alerta.className = 'alert alert-success';
-                            alerta.textContent = json.mensaje;
-                            alerta.classList.remove('d-none');
+                            avisar('success', json.mensaje);
                             setTimeout(function () {
                                 window.location.href = json.datos && json.datos.redirect ? json.datos.redirect : '/SP%20Perfect%20Color/login';
                             }, 2000);
                         } else {
-                            alerta.className = 'alert alert-danger';
-                            alerta.textContent = json.mensaje || 'Error al restablecer la contraseña.';
-                            alerta.classList.remove('d-none');
-                            btn.disabled = false;
-                            spinner.classList.add('d-none');
+                            avisar('danger', json.mensaje || 'Error al restablecer la contraseña.');
+                            liberar();
                         }
-                    } catch (err) {
-                        alerta.className = 'alert alert-danger';
-                        alerta.textContent = 'Error de conexión con el servidor.';
-                        alerta.classList.remove('d-none');
-                        btn.disabled = false;
-                        spinner.classList.add('d-none');
-                    }
-                });
-            }
+                    })
+                    .fail(function (x) {
+                        var json = x.responseJSON;
+                        avisar('danger', (json && json.mensaje) || 'Error de conexión con el servidor.');
+                        liberar();
+                    });
+            });
         });
     </script>
 </body>

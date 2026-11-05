@@ -6,7 +6,6 @@ namespace App\Controllers;
 use App\Models\TasaCambioModel;
 use function App\Helpers\{
     respuestaJson,
-    verificarAutenticacion,
     verificarRolAdmin,
     responder
 };
@@ -75,21 +74,6 @@ if ($metodo === 'index') {
     $id = intval($_POST['id_tasa_cambio'] ?? 0);
     $resultado = $tasaCambioModel->modificar($id, $_POST);
     responder($resultado);
-
-// FUNCIÓN: obtenerHoy
-// OBJETIVO: Endpoint público/interno para consultar la tasa vigente de hoy
-} elseif ($metodo === 'obtenerHoy') {
-    verificarAutenticacion();
-    $tasaHoy = $tasaCambioModel->obtenerTasaHoy();
-    if ($tasaHoy) {
-        respuestaJson('exito', 'Tasa de hoy obtenida', $tasaHoy);
-    } else {
-        $ultima = $tasaCambioModel->obtenerUltimaTasa();
-        respuestaJson('info', 'No hay tasa registrada para hoy', [
-            'tasa_hoy' => null,
-            'ultima_tasa' => $ultima
-        ]);
-    }
 
 // FUNCIÓN: verificarFechaAjax
 // OBJETIVO: Verifica en tiempo real si ya existe una tasa registrada para la fecha dada

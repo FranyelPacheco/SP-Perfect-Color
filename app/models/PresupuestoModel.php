@@ -7,6 +7,8 @@ use App\Traits\EnvaseTrait;
 use App\Traits\TasaBcvTrait;
 use PDO, PDOException;
 
+// MODELO: PresupuestoModel
+// OBJETIVO: Gestión de presupuestos (ventas en estado Presupuesto) con su detalle y mezclas; cambio de estado y baja lógica
 class PresupuestoModel extends ModeloBase
 {
     use TasaBcvTrait, EnvaseTrait;
@@ -15,10 +17,8 @@ class PresupuestoModel extends ModeloBase
     private int $idUsuario;
     private float $total;
     private string $observaciones;
-    private string $estado;
     private int $idEstadoPresupuesto;
     private array $detalle;
-    private string $termino;
     private string $condicionPago = 'contado';
 
     // FUNCIÓN: listarTodos
@@ -349,15 +349,6 @@ class PresupuestoModel extends ModeloBase
         return $this->_ejecutarDelete();
     }
 
-    // FUNCIÓN: buscarPresupuestos
-    // OBJETIVO: Busca presupuestos por nombre/cedula del cliente y opcionalmente por estado
-    public function buscarPresupuestos(string $termino, string $estado = ''): array
-    {
-        $this->termino = $termino;
-        $this->estado = $estado;
-        return $this->_ejecutarSearch();
-    }
-
     // FUNCIÓN: _ejecutarSelectAll
     // OBJETIVO: Ejecuta la consulta que lista todas las ventas/presupuestos activos
     private function _ejecutarSelectAll(): array
@@ -514,55 +505,4 @@ class PresupuestoModel extends ModeloBase
         return $stmt->execute();
     }
 
-    // FUNCIÓN: _ejecutarSearch
-    // OBJETIVO: Busca ventas construyendo condiciones dinámicas según término y estado
-    private function _ejecutarSearch(): array
-    {
-        $condiciones = [];
-        $parametros = [];
-
-        if (!empty($this->termino)) {
-            $condiciones[] = "(c.nombres LIKE :termino1 OR c.apellidos LIKE :termino2 OR c.cedula LIKE :termino3)";
-            $terminoLike = '%' . $this->termino . '%';
-            $parametros[':termino1'] = $terminoLike;
-            $parametros[':termino2'] = $terminoLike;
-            $parametros[':termino3'] = $terminoLike;
-        }
-
-        if (!empty($this->estado)) {
-            if (is_numeric($this->estado)) {
-                $condiciones[] = "v.id_estado_venta = :estado";
-                $parametros[':estado'] = (int)$this->estado;
-            } else {
-                $condiciones[] = "ev.nombre = :estado";
-                $parametros[':estado'] = $this->estado;
-            }
-        }
-
-        $condiciones[] = "v.estado = 1";
-
-        $where = '';
-        if (!empty($condiciones)) {
-            $where = 'WHERE ' . implode(' AND ', $condiciones);
-        }
-
-        $consulta = "SELECT v.*, v.id_venta as id_presupuesto, v.estado as activo, ev.nombre as estado,
-                            CONCAT(c.nombres, ' ', c.apellidos) as cliente_nombre,
-                            c.cedula as cliente_cedula,
-                            'Sistema' as usuario_nombre
-                     FROM ventas v 
-                     INNER JOIN clientes c ON v.id_cliente = c.id_cliente
-                     INNER JOIN estado_venta ev ON v.id_estado_venta = ev.id_estado_venta
-                     {$where}
-                     ORDER BY v.fecha DESC, v.id_venta DESC";
-
-        $stmt = $this->conexion->prepare($consulta);
-
-        foreach ($parametros as $clave => $valor) {
-            $stmt->bindValue($clave, $valor, is_int($valor) ? PDO::PARAM_INT : PDO::PARAM_STR);
-        }
-
-        $stmt->execute();
-        return $stmt->fetchAll();
-    }
 }

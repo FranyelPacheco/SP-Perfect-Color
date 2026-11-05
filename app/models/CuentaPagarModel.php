@@ -7,6 +7,9 @@ use App\Traits\PagoCuentaTrait;
 use App\Traits\TasaBcvTrait;
 use PDO, PDOException;
 
+// MODELO: CuentaPagarModel
+// OBJETIVO: Cuentas por pagar a proveedores: listado, detalle, alta manual, abonos y creación desde las compras
+// NOTA: Registro de pagos y baja lógica en PagoCuentaTrait
 class CuentaPagarModel extends ModeloBase
 {
     use TasaBcvTrait;
@@ -22,8 +25,6 @@ class CuentaPagarModel extends ModeloBase
     private float $montoTotal;
     private float $saldoPendiente;
     private string $fechaVencimiento;
-    private string $estado;
-    private string $termino;
 
     // FUNCIÓN: listarTodas
     // OBJETIVO: Obtiene todas las cuentas por pagar activas con datos del proveedor
@@ -52,93 +53,6 @@ class CuentaPagarModel extends ModeloBase
             throw new PDOException('No se encontró el registro. Actualice la página e intente de nuevo.');
         }
         return $this->_ejecutarSelectPagos();
-    }
-
-    // FUNCIÓN: validarDatosManual
-    // OBJETIVO: Valida la creación manual de una cuenta por pagar
-    public function validarDatosManual(array $datos): array
-    {
-        $proveedorId = intval($datos['id_proveedor'] ?? 0);
-        $montoTotal = round(floatval($datos['monto_total'] ?? 0), 2);
-        $fechaVencimiento = trim($datos['fecha_vencimiento'] ?? '');
-
-        if ($proveedorId < 1) {
-            return ['valido' => false, 'mensaje' => 'Debe seleccionar un proveedor'];
-        }
-
-        $stmtProv = $this->conexion->prepare("SELECT id_proveedor FROM proveedores WHERE id_proveedor = :id AND estado = 1 LIMIT 1");
-        $stmtProv->bindParam(':id', $proveedorId, PDO::PARAM_INT);
-        $stmtProv->execute();
-        if (!$stmtProv->fetch()) {
-            return ['valido' => false, 'mensaje' => 'El proveedor seleccionado no existe o está inactivo'];
-        }
-
-        if ($montoTotal < 0.01) {
-            return ['valido' => false, 'mensaje' => 'El monto total debe ser mayor a cero'];
-        }
-
-        if ($fechaVencimiento === '') {
-            return ['valido' => false, 'mensaje' => 'Debe indicar una fecha de vencimiento'];
-        }
-
-        return [
-            'valido' => true,
-            'id_proveedor' => $proveedorId,
-            'monto_total' => $montoTotal,
-            'fecha_vencimiento' => $fechaVencimiento
-        ];
-    }
-
-    // FUNCIÓN: registrarCuentaManual
-    // OBJETIVO: Valida y registra una cuenta por pagar manual
-    public function registrarCuentaManual(array $datos): array
-    {
-        $val = $this->validarDatosManual($datos);
-        if (!$val['valido']) {
-            return ['exito' => false, 'mensaje' => $val['mensaje']];
-        }
-
-        try {
-            $cuentaId = $this->crearCuenta($val['id_proveedor'], $val['monto_total'], $val['fecha_vencimiento']);
-            if ($cuentaId === false) {
-                return ['exito' => false, 'mensaje' => 'La fecha de vencimiento no es válida. Seleccione una fecha del calendario.'];
-            }
-            return [
-                'exito' => true,
-                'mensaje' => 'Cuenta por pagar creada exitosamente',
-                'datos' => ['cuenta_id' => $cuentaId]
-            ];
-        } catch (\PDOException $e) {
-            error_log('Error al crear CxP manual: ' . $e->getMessage());
-            return ['exito' => false, 'mensaje' => 'No se pudo crear la cuenta por pagar. Intente de nuevo.'];
-        }
-    }
-
-    // FUNCIÓN: crearCuenta
-    // OBJETIVO: Crea una nueva cuenta por pagar con monto total y fecha de vencimiento
-    public function crearCuenta(int $idProveedor, float $montoTotal, string $fechaVencimiento): int|false
-    {
-        $this->idProveedor = $idProveedor;
-        $this->montoTotal = $montoTotal;
-        $this->saldoPendiente = $montoTotal;
-        $this->fechaVencimiento = $fechaVencimiento;
-
-        if ($this->idProveedor < 1 || $this->montoTotal <= 0) {
-            throw new PDOException('Parámetros obligatorios faltantes');
-        }
-
-        return $this->_ejecutarInsert();
-    }
-
-    // FUNCIÓN: buscarCuentas
-    // OBJETIVO: Busca cuentas por pagar por nombre de empresa o RIF del proveedor
-    public function buscarCuentas(string $termino): array
-    {
-        $this->termino = $termino;
-        if ($this->termino === '') {
-            throw new PDOException('Término de búsqueda no válido');
-        }
-        return $this->_ejecutarSearch();
     }
 
     // FUNCIÓN: _ejecutarSelectAll
@@ -237,22 +151,4 @@ class CuentaPagarModel extends ModeloBase
         return false;
     }
 
-    // FUNCIÓN: _ejecutarSearch
-    // OBJETIVO: Busca cuentas por pagar filtrando por nombre de empresa o RIF del proveedor vía compra
-    private function _ejecutarSearch(): array
-    {
-        $terminoLike = '%' . $this->termino . '%';
-        $consulta = "SELECT cp.*, cp.estado as activo, cp.situacion as estado, p.nombre_empresa as proveedor_nombre, p.rif as proveedor_rif
-                     FROM cuentas_pagar cp 
-                     INNER JOIN compra ne ON cp.id_compra = ne.id_compra
-                     INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
-                     WHERE cp.estado = 1 AND (p.nombre_empresa LIKE :termino1 
-                        OR p.rif LIKE :termino2) 
-                     ORDER BY cp.situacion ASC, cp.fecha_vencimiento ASC";
-        $stmt = $this->conexion->prepare($consulta);
-        $stmt->bindParam(':termino1', $terminoLike, PDO::PARAM_STR);
-        $stmt->bindParam(':termino2', $terminoLike, PDO::PARAM_STR);
-        $stmt->execute();
-        return $stmt->fetchAll();
-    }
 }

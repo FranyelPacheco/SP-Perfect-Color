@@ -1,195 +1,149 @@
 // Archivo: cliente.js
 // Manejo de la vista de gestion de clientes
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Referencias a elementos del DOM
-    const busquedaClientes = document.getElementById('busquedaClientes');
-    const btnNuevoCliente = document.getElementById('btnNuevoCliente');
-    const modalCliente = document.getElementById('modalCliente');
-    const btnCerrarModal = document.getElementById('btnCerrarModalCliente');
-    const btnCancelar = document.getElementById('btnCancelarCliente');
-    const formularioCliente = document.getElementById('formularioCliente');
-    const tituloModal = document.getElementById('tituloModalCliente');
-    const clienteId = document.getElementById('clienteId');
-    const tipoDocCliente = document.getElementById('tipoDocCliente');
-    const cedulaCliente = document.getElementById('cedulaCliente');
-    const cedulaCompletaCliente = document.getElementById('cedulaCompletaCliente');
-    const feedbackCedulaCliente = document.getElementById('feedbackCedulaCliente');
-    const nombresCliente = document.getElementById('nombresCliente');
-    const apellidosCliente = document.getElementById('apellidosCliente');
-    const operadoraCliente = document.getElementById('operadoraCliente');
-    const telefonoNumeroCliente = document.getElementById('telefonoNumeroCliente');
-    const telefonoCliente = document.getElementById('telefonoCliente');
+$(function() {
+    const $modalCliente = $('#modalCliente');
+    const $formularioCliente = $('#formularioCliente');
+    const $tituloModal = $('#tituloModalCliente');
+    const $clienteId = $('#clienteId');
+    const $tipoDocCliente = $('#tipoDocCliente');
+    const $cedulaCliente = $('#cedulaCliente');
+    const $cedulaCompletaCliente = $('#cedulaCompletaCliente');
+    const $feedbackCedulaCliente = $('#feedbackCedulaCliente');
+    const $nombresCliente = $('#nombresCliente');
+    const $apellidosCliente = $('#apellidosCliente');
+    const $operadoraCliente = $('#operadoraCliente');
+    const $telefonoNumeroCliente = $('#telefonoNumeroCliente');
+    const $telefonoCliente = $('#telefonoCliente');
 
     // Elementos segundo teléfono
-    const btnToggleTel2Cliente = document.getElementById('btnToggleTel2Cliente');
-    const btnQuitarTel2Cliente = document.getElementById('btnQuitarTel2Cliente');
-    const seccionTel2Cliente = document.getElementById('seccionTel2Cliente');
-    const operadoraCliente2 = document.getElementById('operadoraCliente2');
-    const telefonoNumeroCliente2 = document.getElementById('telefonoNumeroCliente2');
-    const telefonoCliente2 = document.getElementById('telefonoCliente2');
+    const $btnToggleTel2Cliente = $('#btnToggleTel2Cliente');
+    const $seccionTel2Cliente = $('#seccionTel2Cliente');
+    const $operadoraCliente2 = $('#operadoraCliente2');
+    const $telefonoNumeroCliente2 = $('#telefonoNumeroCliente2');
+    const $telefonoCliente2 = $('#telefonoCliente2');
 
-    const correoCliente = document.getElementById('correoCliente');
-    const feedbackCorreoCliente = document.getElementById('feedbackCorreoCliente');
-    const direccionCliente = document.getElementById('direccionCliente');
-    const mensajeError = document.getElementById('mensajeErrorCliente');
-    const btnGuardarCliente = document.getElementById('btnGuardarCliente');
+    const $correoCliente = $('#correoCliente');
+    const $feedbackCorreoCliente = $('#feedbackCorreoCliente');
+    const $direccionCliente = $('#direccionCliente');
+    const $mensajeError = $('#mensajeErrorCliente');
+    const $btnGuardarCliente = $('#btnGuardarCliente');
+
+    const REGEX_EMAIL = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const REGEX_SOLO_LETRAS = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
 
     // Cargar lista de clientes al iniciar
     cargarClientes();
 
     // Evento para abrir modal de nuevo cliente
-    if (btnNuevoCliente) {
-        btnNuevoCliente.addEventListener('click', function() {
-            formularioCliente.reset();
-            clienteId.value = '';
-            limpiarEstadoCedula();
-            bloquearCedula(false);
-            limpiarEstadoCorreo();
-            resetearSegundoTelefono();
-            mensajeError.classList.add('d-none');
-            tituloModal.textContent = 'Nuevo Cliente';
-            bootstrap.Modal.getOrCreateInstance(modalCliente).show();
-        });
-    }
+    $('#btnNuevoCliente').on('click', function() {
+        $formularioCliente[0].reset();
+        $clienteId.val('');
+        limpiarEstadoCedula();
+        bloquearCedula(false);
+        limpiarEstadoCorreo();
+        resetearSegundoTelefono();
+        $mensajeError.addClass('d-none');
+        $tituloModal.text('Nuevo Cliente');
+        bootstrap.Modal.getOrCreateInstance($modalCliente[0]).show();
+    });
 
     // Toggle segundo teléfono
-    if (btnToggleTel2Cliente) {
-        btnToggleTel2Cliente.addEventListener('click', function() {
-            if (seccionTel2Cliente) seccionTel2Cliente.classList.remove('d-none');
-            this.classList.add('d-none');
-        });
-    }
+    $btnToggleTel2Cliente.on('click', function() {
+        $seccionTel2Cliente.removeClass('d-none');
+        $(this).addClass('d-none');
+    });
 
-    if (btnQuitarTel2Cliente) {
-        btnQuitarTel2Cliente.addEventListener('click', function() {
-            resetearSegundoTelefono();
-        });
-    }
+    $('#btnQuitarTel2Cliente').on('click', resetearSegundoTelefono);
 
     function resetearSegundoTelefono() {
-        if (seccionTel2Cliente) seccionTel2Cliente.classList.add('d-none');
-        if (btnToggleTel2Cliente) btnToggleTel2Cliente.classList.remove('d-none');
-        if (telefonoNumeroCliente2) telefonoNumeroCliente2.value = '';
-        if (telefonoCliente2) telefonoCliente2.value = '';
+        $seccionTel2Cliente.addClass('d-none');
+        $btnToggleTel2Cliente.removeClass('d-none');
+        $telefonoNumeroCliente2.val('');
+        $telefonoCliente2.val('');
     }
 
     // Eventos para cerrar modal
-    if (btnCerrarModal) {
-        btnCerrarModal.addEventListener('click', function() {
-            bootstrap.Modal.getInstance(modalCliente).hide();
-        });
-    }
-    if (btnCancelar) {
-        btnCancelar.addEventListener('click', function() {
-            bootstrap.Modal.getInstance(modalCliente).hide();
-        });
-    }
+    $('#btnCerrarModalCliente, #btnCancelarCliente').on('click', function() {
+        bootstrap.Modal.getInstance($modalCliente[0]).hide();
+    });
 
     // Evento para enviar formulario
-    if (formularioCliente) {
-        formularioCliente.addEventListener('submit', async function(evento) {
-            evento.preventDefault();
-            await guardarCliente();
-        });
-    }
+    $formularioCliente.on('submit', async function(evento) {
+        evento.preventDefault();
+        await guardarCliente();
+    });
 
     // Limpiar formulario cuando el modal se cierra
-    if (modalCliente) {
-        modalCliente.addEventListener('hidden.bs.modal', function () {
-            formularioCliente.reset();
-            limpiarEstadoCedula();
-            limpiarEstadoCorreo();
-            resetearSegundoTelefono();
-            mensajeError.classList.add('d-none');
-        });
-    }
+    $modalCliente.on('hidden.bs.modal', function () {
+        $formularioCliente[0].reset();
+        limpiarEstadoCedula();
+        limpiarEstadoCorreo();
+        resetearSegundoTelefono();
+        $mensajeError.addClass('d-none');
+    });
 
-    function asignarOperadora(select, valor) {
-        if (!Array.from(select.options).some(function (o) { return o.value === valor; })) {
-            select.add(new Option(valor, valor));
+    function asignarOperadora($select, valor) {
+        if (!$select.find('option').filter(function () { return this.value === valor; }).length) {
+            $select.append(new Option(valor, valor));
         }
-        select.value = valor;
+        $select.val(valor);
     }
 
     function bloquearCedula(bloquear) {
-        if (cedulaCliente) {
-            cedulaCliente.disabled = bloquear;
-            if (bloquear) cedulaCliente.setAttribute('title', 'La cédula no se puede modificar');
-            else cedulaCliente.removeAttribute('title');
-        }
-        if (tipoDocCliente) tipoDocCliente.disabled = bloquear;
-    }
-
-    function limpiarEstadoCedula() {
-        if (cedulaCliente) {
-            cedulaCliente.classList.remove('is-invalid', 'is-valid');
-            cedulaCliente.removeAttribute('title');
-        }
-        if (feedbackCedulaCliente) {
-            feedbackCedulaCliente.classList.add('d-none');
-            feedbackCedulaCliente.removeAttribute('title');
-        }
-        actualizarBotonGuardarCliente();
-    }
-
-    function limpiarEstadoCorreo() {
-        if (correoCliente) {
-            correoCliente.classList.remove('is-invalid', 'is-valid');
-            correoCliente.removeAttribute('title');
-        }
-        if (feedbackCorreoCliente) {
-            feedbackCorreoCliente.classList.add('d-none');
-            feedbackCorreoCliente.removeAttribute('title');
-        }
-        actualizarBotonGuardarCliente();
+        $cedulaCliente.prop('disabled', bloquear);
+        if (bloquear) $cedulaCliente.attr('title', 'La cédula no se puede modificar');
+        else $cedulaCliente.removeAttr('title');
+        $tipoDocCliente.prop('disabled', bloquear);
     }
 
     function actualizarBotonGuardarCliente() {
-        if (!btnGuardarCliente) return;
-        var hayInvalido = (cedulaCliente && cedulaCliente.classList.contains('is-invalid')) ||
-                          (correoCliente && correoCliente.classList.contains('is-invalid'));
-        btnGuardarCliente.disabled = hayInvalido;
+        $btnGuardarCliente.prop('disabled', $cedulaCliente.hasClass('is-invalid') || $correoCliente.hasClass('is-invalid'));
+    }
+
+    // Marca un campo como inválido/válido y muestra u oculta su mensaje; estado null lo deja limpio
+    function marcarCampo($campo, $fb, estado, mensaje, conIcono) {
+        $campo.toggleClass('is-invalid', estado === 'invalid').toggleClass('is-valid', estado === 'valid');
+        if (estado === 'invalid') {
+            $campo.attr('title', mensaje);
+            if (conIcono) $fb.html('<i class="bi bi-exclamation-circle-fill me-1"></i>' + escapeHtml(mensaje));
+            else $fb.text(mensaje);
+            $fb.attr('title', mensaje).removeClass('d-none');
+        } else {
+            $campo.removeAttr('title');
+            $fb.addClass('d-none').removeAttr('title');
+        }
+        actualizarBotonGuardarCliente();
+    }
+
+    function limpiarEstadoCedula() {
+        marcarCampo($cedulaCliente, $feedbackCedulaCliente, null);
+    }
+
+    function limpiarEstadoCorreo() {
+        marcarCampo($correoCliente, $feedbackCorreoCliente, null);
     }
 
     // Verificacion en tiempo real de cedula existente
-    var temporizadorCedula;
+    let temporizadorCedula;
     function verificarCedulaEnTiempoReal() {
         clearTimeout(temporizadorCedula);
-        const num = cedulaCliente.value.trim();
-        const tipo = tipoDocCliente ? tipoDocCliente.value : 'V';
+        const num = $cedulaCliente.val().trim();
+        const tipo = $tipoDocCliente.val() || 'V';
         if (!num || num.length < 5) {
             limpiarEstadoCedula();
             return;
         }
 
         const cedulaCompleta = tipo + '-' + num;
-        const id = clienteId.value || '';
+        const id = $clienteId.val() || '';
 
         temporizadorCedula = setTimeout(async function() {
             try {
-                const resp = await fetch('/SP%20Perfect%20Color/cliente/verificarCedulaAjax?cedula=' + encodeURIComponent(cedulaCompleta) + '&id=' + encodeURIComponent(id));
-                const res = await resp.json();
+                const res = await api.get('cliente/verificarCedulaAjax', { cedula: cedulaCompleta, id: id });
                 if (res.estado === 'exito') {
-                    if (res.datos.existe) {
-                        cedulaCliente.classList.add('is-invalid');
-                        cedulaCliente.classList.remove('is-valid');
-                        cedulaCliente.setAttribute('title', 'Cliente ya registrado');
-                        if (feedbackCedulaCliente) {
-                            feedbackCedulaCliente.textContent = 'Cliente ya registrado';
-                            feedbackCedulaCliente.setAttribute('title', 'Cliente ya registrado');
-                            feedbackCedulaCliente.classList.remove('d-none');
-                        }
-                    } else {
-                        cedulaCliente.classList.remove('is-invalid');
-                        cedulaCliente.classList.add('is-valid');
-                        cedulaCliente.removeAttribute('title');
-                        if (feedbackCedulaCliente) {
-                            feedbackCedulaCliente.classList.add('d-none');
-                            feedbackCedulaCliente.removeAttribute('title');
-                        }
-                    }
-                    actualizarBotonGuardarCliente();
+                    if (res.datos.existe) marcarCampo($cedulaCliente, $feedbackCedulaCliente, 'invalid', 'Cliente ya registrado');
+                    else marcarCampo($cedulaCliente, $feedbackCedulaCliente, 'valid');
                 }
             } catch (e) {
                 console.error('Error al verificar cédula:', e);
@@ -198,56 +152,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Verificacion en tiempo real de correo existente
-    var temporizadorCorreo;
+    let temporizadorCorreo;
     function verificarCorreoEnTiempoReal() {
         clearTimeout(temporizadorCorreo);
-        if (!correoCliente) return;
-        const correo = correoCliente.value.trim();
+        const correo = $correoCliente.val().trim();
         if (!correo) {
             limpiarEstadoCorreo();
             return;
         }
 
-        const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        if (!regexEmail.test(correo)) {
-            correoCliente.classList.add('is-invalid');
-            correoCliente.classList.remove('is-valid');
-            correoCliente.setAttribute('title', 'Formato de correo inválido');
-            if (feedbackCorreoCliente) {
-                feedbackCorreoCliente.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Formato de correo inválido (ej: usuario@correo.com)';
-                feedbackCorreoCliente.setAttribute('title', 'Formato de correo inválido');
-                feedbackCorreoCliente.classList.remove('d-none');
-            }
-            actualizarBotonGuardarCliente();
+        if (!REGEX_EMAIL.test(correo)) {
+            marcarCampo($correoCliente, $feedbackCorreoCliente, 'invalid', 'Formato de correo inválido (ej: usuario@correo.com)', true);
+            $correoCliente.attr('title', 'Formato de correo inválido');
+            $feedbackCorreoCliente.attr('title', 'Formato de correo inválido');
             return;
         }
 
-        const id = clienteId.value || '';
+        const id = $clienteId.val() || '';
 
         temporizadorCorreo = setTimeout(async function() {
             try {
-                const resp = await fetch('/SP%20Perfect%20Color/cliente/verificarCorreoAjax?correo=' + encodeURIComponent(correo) + '&id=' + encodeURIComponent(id));
-                const res = await resp.json();
+                const res = await api.get('cliente/verificarCorreoAjax', { correo: correo, id: id });
                 if (res.estado === 'exito') {
-                    if (res.datos.existe) {
-                        correoCliente.classList.add('is-invalid');
-                        correoCliente.classList.remove('is-valid');
-                        correoCliente.setAttribute('title', 'Correo ya registrado');
-                        if (feedbackCorreoCliente) {
-                            feedbackCorreoCliente.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Correo ya registrado';
-                            feedbackCorreoCliente.setAttribute('title', 'Correo ya registrado');
-                            feedbackCorreoCliente.classList.remove('d-none');
-                        }
-                    } else {
-                        correoCliente.classList.remove('is-invalid');
-                        correoCliente.classList.add('is-valid');
-                        correoCliente.removeAttribute('title');
-                        if (feedbackCorreoCliente) {
-                            feedbackCorreoCliente.classList.add('d-none');
-                            feedbackCorreoCliente.removeAttribute('title');
-                        }
-                    }
-                    actualizarBotonGuardarCliente();
+                    if (res.datos.existe) marcarCampo($correoCliente, $feedbackCorreoCliente, 'invalid', 'Correo ya registrado', true);
+                    else marcarCampo($correoCliente, $feedbackCorreoCliente, 'valid');
                 }
             } catch (e) {
                 console.error('Error al verificar correo:', e);
@@ -255,43 +183,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 300);
     }
 
-    if (cedulaCliente) {
-        cedulaCliente.addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '');
-            verificarCedulaEnTiempoReal();
-        });
-    }
-    if (tipoDocCliente) {
-        tipoDocCliente.addEventListener('change', verificarCedulaEnTiempoReal);
-    }
-    if (correoCliente) {
-        correoCliente.addEventListener('input', verificarCorreoEnTiempoReal);
-        correoCliente.addEventListener('blur', verificarCorreoEnTiempoReal);
-    }
+    $cedulaCliente.on('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        verificarCedulaEnTiempoReal();
+    });
+    $tipoDocCliente.on('change', verificarCedulaEnTiempoReal);
+    $correoCliente.on('input blur', verificarCorreoEnTiempoReal);
 
     // Restringir caracteres especiales y números en nombres y apellidos (estrictamente solo letras y espacios)
-    restringirSoloLetras(nombresCliente);
-    restringirSoloLetras(apellidosCliente);
+    restringirSoloLetras($nombresCliente);
+    restringirSoloLetras($apellidosCliente);
 
-    // Permitir solo numeros en telefono principal
-    if (telefonoNumeroCliente) {
-        telefonoNumeroCliente.addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '');
-        });
-    }
-
-    // Permitir solo numeros en segundo telefono
-    if (telefonoNumeroCliente2) {
-        telefonoNumeroCliente2.addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '');
-        });
-    }
+    // Permitir solo numeros en telefono principal y secundario
+    $telefonoNumeroCliente.add($telefonoNumeroCliente2).on('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
 
     // Cargar lista de clientes via API
     async function cargarClientes() {
         try {
-            const respuesta = await fetch('/SP%20Perfect%20Color/cliente/listarAjax');
-            const resultado = await respuesta.json();
+            const resultado = await api.get('cliente/listarAjax');
             if (resultado.estado === 'exito') {
                 mostrarClientes(resultado.datos.clientes);
             }
@@ -324,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         searchable: false,
                         render: function(data, type, row) {
                             if (!row) return '';
-                            var nomCompleto = escapeHtml((row.nombres || '') + ' ' + (row.apellidos || ''));
+                            const nomCompleto = escapeHtml((row.nombres || '') + ' ' + (row.apellidos || ''));
                             return '<div class="d-flex gap-2">' +
                                 '<button class="btn btn-sm btn-warning btn-editar-cliente" data-id="' + row.id_cliente + '" title="Editar" aria-label="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>' +
                                 '<button class="btn btn-sm btn-danger btn-eliminar-cliente" data-id="' + row.id_cliente + '" data-nombre="' + nomCompleto + '" title="Eliminar" aria-label="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>' +
@@ -335,11 +246,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        var table = $('#tablaClientes').DataTable();
+        const table = $('#tablaClientes').DataTable();
         table.clear();
 
         if (Array.isArray(clientes)) {
-            clientes.forEach(function(cliente) {
+            $.each(clientes, function(i, cliente) {
                 table.row.add(cliente);
             });
         }
@@ -348,77 +259,76 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Delegacion de eventos robusta para botones de accion
-    alHacerClick('.btn-editar-cliente', function(e) {
-        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
+    alHacerClick('.btn-editar-cliente', function() {
+        const id = parseInt($(this).attr('data-id'));
         if (!isNaN(id)) {
             abrirModalEditar(id);
         }
     });
 
-    alHacerClick('.btn-eliminar-cliente', function(e) {
-        var id = parseInt($(this).attr('data-id') || $(this).data('id'));
-        var nombre = $(this).attr('data-nombre') || 'este cliente';
+    alHacerClick('.btn-eliminar-cliente', function() {
+        const id = parseInt($(this).attr('data-id'));
+        const nombre = $(this).attr('data-nombre') || 'este cliente';
         if (!isNaN(id)) {
             eliminarCliente(id, nombre);
         }
     });
 
     // Enlazar busqueda manual a DataTables
-    vincularBusqueda(busquedaClientes, '#tablaClientes');
+    vincularBusqueda('#busquedaClientes', '#tablaClientes');
 
     // Abre el modal en modo edicion
     async function abrirModalEditar(id) {
         try {
-            const respuesta = await fetch('/SP%20Perfect%20Color/cliente/obtener?id=' + id);
-            const resultado = await respuesta.json();
+            const resultado = await api.get('cliente/obtener', { id: id });
 
             if (resultado.estado === 'exito') {
                 const c = resultado.datos;
-                formularioCliente.reset();
+                $formularioCliente[0].reset();
                 limpiarEstadoCedula();
                 limpiarEstadoCorreo();
-                mensajeError.classList.add('d-none');
-                clienteId.value = c.id_cliente;
+                $mensajeError.addClass('d-none');
+                $clienteId.val(c.id_cliente);
 
                 // Parsear cedula (V-12345678)
                 const partesCedula = (c.cedula || '').split('-');
-                if (partesCedula.length === 2 && tipoDocCliente) {
-                    tipoDocCliente.value = partesCedula[0];
-                    cedulaCliente.value = partesCedula[1];
+                if (partesCedula.length === 2 && $tipoDocCliente.length) {
+                    $tipoDocCliente.val(partesCedula[0]);
+                    $cedulaCliente.val(partesCedula[1]);
                 } else {
-                    cedulaCliente.value = c.cedula || '';
+                    $cedulaCliente.val(c.cedula || '');
                 }
                 bloquearCedula(true);
 
-                nombresCliente.value = c.nombres;
-                apellidosCliente.value = c.apellidos;
+                $nombresCliente.val(c.nombres);
+                $apellidosCliente.val(c.apellidos);
 
                 // Parsear teléfonos (pueden venir separados por coma)
                 resetearSegundoTelefono();
                 const arrayTels = (c.telefonos || '').split(',').map(function(t) { return t.trim(); });
-                if (arrayTels.length > 0 && arrayTels[0]) {
+                if (arrayTels[0]) {
                     const telRaw1 = arrayTels[0].replace(/[^0-9]/g, '');
-                    if (telRaw1.length === 11 && operadoraCliente && telefonoNumeroCliente) {
-                        asignarOperadora(operadoraCliente, telRaw1.substring(0, 4));
-                        telefonoNumeroCliente.value = telRaw1.substring(4);
-                    } else if (telefonoNumeroCliente) {
-                        telefonoNumeroCliente.value = telRaw1;
+                    if (telRaw1.length === 11 && $operadoraCliente.length) {
+                        asignarOperadora($operadoraCliente, telRaw1.substring(0, 4));
+                        $telefonoNumeroCliente.val(telRaw1.substring(4));
+                    } else {
+                        $telefonoNumeroCliente.val(telRaw1);
                     }
                 }
-                if (arrayTels.length > 1 && arrayTels[1]) {
+                if (arrayTels[1]) {
                     const telRaw2 = arrayTels[1].replace(/[^0-9]/g, '');
-                    if (telRaw2.length === 11 && operadoraCliente2 && telefonoNumeroCliente2) {
-                        asignarOperadora(operadoraCliente2, telRaw2.substring(0, 4));
-                        telefonoNumeroCliente2.value = telRaw2.substring(4);
-                        if (seccionTel2Cliente) seccionTel2Cliente.classList.remove('d-none');
-                        if (btnToggleTel2Cliente) btnToggleTel2Cliente.classList.add('d-none');
+                    if (telRaw2.length === 11 && $operadoraCliente2.length) {
+                        asignarOperadora($operadoraCliente2, telRaw2.substring(0, 4));
+                        $telefonoNumeroCliente2.val(telRaw2.substring(4));
+                        $seccionTel2Cliente.removeClass('d-none');
+                        $btnToggleTel2Cliente.addClass('d-none');
                     }
                 }
 
-                correoCliente.value = c.correo || '';
-                direccionCliente.value = c.direccion || '';
-                tituloModal.textContent = 'Editar Cliente';
-                bootstrap.Modal.getOrCreateInstance(modalCliente).show();
+                $correoCliente.val(c.correo || '');
+                $direccionCliente.val(c.direccion || '');
+                $tituloModal.text('Editar Cliente');
+                bootstrap.Modal.getOrCreateInstance($modalCliente[0]).show();
             } else {
                 mostrarNotificacion(resultado.mensaje, 'error');
             }
@@ -430,113 +340,106 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Guarda o actualiza un cliente
     async function guardarCliente() {
-        const id = clienteId.value;
+        const id = $clienteId.val();
         const esEdicion = id !== '';
 
-        const cedulaNum = cedulaCliente.value.trim();
-        const tipoDoc = tipoDocCliente ? tipoDocCliente.value : 'V';
+        const cedulaNum = $cedulaCliente.val().trim();
+        const tipoDoc = $tipoDocCliente.val() || 'V';
         if (!cedulaNum) {
             mostrarError('La cédula es obligatoria');
-            cedulaCliente.focus();
+            $cedulaCliente.trigger('focus');
             return;
         }
 
         const cedulaFinal = tipoDoc + '-' + cedulaNum;
-        if (cedulaCompletaCliente) {
-            cedulaCompletaCliente.value = cedulaFinal;
-        }
+        $cedulaCompletaCliente.val(cedulaFinal);
 
-        const nombreVal = nombresCliente.value.trim();
+        const nombreVal = $nombresCliente.val().trim();
         if (!nombreVal) {
             mostrarError('El nombre es obligatorio');
-            nombresCliente.focus();
+            $nombresCliente.trigger('focus');
             return;
         }
         if (nombreVal.length > 40) {
             mostrarError('El nombre no puede exceder los 40 caracteres');
-            nombresCliente.focus();
+            $nombresCliente.trigger('focus');
             return;
         }
-        const soloLetrasRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
-        if (!soloLetrasRegex.test(nombreVal)) {
+        if (!REGEX_SOLO_LETRAS.test(nombreVal)) {
             mostrarError('El nombre solo puede contener letras y espacios (sin caracteres especiales)');
-            nombresCliente.focus();
+            $nombresCliente.trigger('focus');
             return;
         }
 
-        const apellidoVal = apellidosCliente.value.trim();
+        const apellidoVal = $apellidosCliente.val().trim();
         if (!apellidoVal) {
             mostrarError('El apellido es obligatorio');
-            apellidosCliente.focus();
+            $apellidosCliente.trigger('focus');
             return;
         }
         if (apellidoVal.length > 40) {
             mostrarError('El apellido no puede exceder los 40 caracteres');
-            apellidosCliente.focus();
+            $apellidosCliente.trigger('focus');
             return;
         }
-        if (!soloLetrasRegex.test(apellidoVal)) {
+        if (!REGEX_SOLO_LETRAS.test(apellidoVal)) {
             mostrarError('El apellido solo puede contener letras y espacios (sin caracteres especiales)');
-            apellidosCliente.focus();
+            $apellidosCliente.trigger('focus');
             return;
         }
 
-        const correoVal = correoCliente.value.trim();
+        const correoVal = $correoCliente.val().trim();
         if (!correoVal) {
             mostrarError('El correo electrónico es obligatorio');
-            correoCliente.focus();
+            $correoCliente.trigger('focus');
             return;
         }
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        if (!emailRegex.test(correoVal)) {
+        if (!REGEX_EMAIL.test(correoVal)) {
             mostrarError('El correo electrónico no es válido');
-            correoCliente.focus();
+            $correoCliente.trigger('focus');
             return;
         }
-        if (correoCliente.classList.contains('is-invalid')) {
+        if ($correoCliente.hasClass('is-invalid')) {
             mostrarError('El correo electrónico es inválido o ya se encuentra registrado');
-            correoCliente.focus();
+            $correoCliente.trigger('focus');
             return;
         }
 
         // Armar telefono 1 (obligatorio)
-        const telNum = telefonoNumeroCliente ? telefonoNumeroCliente.value.trim() : '';
-        const op = operadoraCliente ? operadoraCliente.value : '';
+        const telNum = $telefonoNumeroCliente.val().trim();
+        const op = $operadoraCliente.val() || '';
         if (!telNum) {
             mostrarError('El teléfono principal es obligatorio');
-            telefonoNumeroCliente.focus();
+            $telefonoNumeroCliente.trigger('focus');
             return;
         }
         if (telNum.length !== 7) {
             mostrarError('El número de teléfono principal debe tener exactamente 7 dígitos');
-            telefonoNumeroCliente.focus();
+            $telefonoNumeroCliente.trigger('focus');
             return;
         }
         const tel1Completo = op + telNum;
-        if (telefonoCliente) {
-            telefonoCliente.value = tel1Completo;
-        }
+        $telefonoCliente.val(tel1Completo);
 
         // Armar telefono 2 si tiene numero
-        const telNum2 = telefonoNumeroCliente2 ? telefonoNumeroCliente2.value.trim() : '';
-        const op2 = operadoraCliente2 ? operadoraCliente2.value : '';
+        const telNum2 = ($telefonoNumeroCliente2.val() || '').trim();
+        const op2 = $operadoraCliente2.val() || '';
         let tel2Completo = '';
         if (telNum2) {
             if (telNum2.length !== 7) {
                 mostrarError('El segundo número de teléfono debe tener exactamente 7 dígitos');
-                telefonoNumeroCliente2.focus();
+                $telefonoNumeroCliente2.trigger('focus');
                 return;
             }
             tel2Completo = op2 + telNum2;
             if (tel1Completo === tel2Completo) {
                 mostrarError('El segundo teléfono no puede ser igual al teléfono principal');
-                telefonoNumeroCliente2.focus();
+                $telefonoNumeroCliente2.trigger('focus');
                 return;
             }
         }
 
-        const url = esEdicion ? '/SP%20Perfect%20Color/cliente/actualizar' : '/SP%20Perfect%20Color/cliente/guardar';
-        const formData = new FormData(formularioCliente);
+        const formData = new FormData($formularioCliente[0]);
         formData.set('cedula', cedulaFinal);
         formData.set('telefono', tel1Completo);
         if (tel2Completo) {
@@ -550,11 +453,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            const respuesta = await fetch(url, { method: 'POST', body: formData });
-            const resultado = await respuesta.json();
+            const resultado = await api.post(esEdicion ? 'cliente/actualizar' : 'cliente/guardar', formData);
 
             if (resultado.estado === 'exito') {
-                bootstrap.Modal.getInstance(modalCliente).hide();
+                bootstrap.Modal.getInstance($modalCliente[0]).hide();
                 cargarClientes();
                 mostrarNotificacion(resultado.mensaje, 'exito');
             } else {
@@ -567,12 +469,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Elimina un cliente
-    async function eliminarCliente(id, nombre) {
+    function eliminarCliente(id, nombre) {
         confirmarConModal('Eliminar', '¿Está seguro de eliminar al cliente ' + escapeHtml(nombre) + '?', function() {
-            const formData = new FormData();
-            formData.append('id', id);
-            fetch('/SP%20Perfect%20Color/cliente/eliminar', { method: 'POST', body: formData })
-                .then(function(r) { return r.json(); })
+            api.post('cliente/eliminar', { id: id })
                 .then(function(resultado) {
                     if (resultado.estado === 'exito') {
                         cargarClientes();
@@ -590,7 +489,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Muestra un mensaje de error en el modal
     function mostrarError(mensaje) {
-        mensajeError.textContent = mensaje;
-        mensajeError.classList.remove('d-none');
+        $mensajeError.text(mensaje).removeClass('d-none');
     }
 });

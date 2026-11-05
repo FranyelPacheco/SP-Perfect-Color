@@ -2128,3 +2128,131 @@ table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before {
 .input-busqueda {
   width: 220px;
 }
+/* ============================================================
+   DASHBOARD: stock por reponer, ranking y cliente del mes
+   ============================================================ */
+.dash-card { background: #fff; border: 1px solid #e5eaf2; border-radius: 16px; box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.10); padding: 1.1rem 1.2rem; }
+.dash-card-head { display: flex; align-items: center; gap: .7rem; margin-bottom: .6rem; }
+.dash-card-head .dash-badge { margin-left: auto; }
+.dash-title { font-weight: 700; font-size: .95rem; color: var(--brand-darkest); line-height: 1.2; }
+.dash-sub { font-size: .75rem; color: #64748b; }
+.dash-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.dash-dot-red { background: var(--brand-red); box-shadow: 0 0 0 4px var(--brand-red-light); }
+.dash-dot-blue { background: var(--brand-primary); box-shadow: 0 0 0 4px var(--brand-bg-light); }
+.dash-badge { font-size: .72rem; font-weight: 700; padding: .15rem .55rem; border-radius: 999px; }
+.dash-badge-red { background: var(--brand-red-light); color: var(--brand-red); }
+.dash-list { list-style: none; margin: 0; padding: 0; }
+.dash-row { display: flex; align-items: center; gap: .8rem; padding: .7rem 0; border-top: 1px solid #eef2f7; }
+.dash-row:first-child { border-top: 0; }
+.dash-row-main { flex: 1; min-width: 0; }
+.dash-row-name { font-size: .88rem; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-row-meta { margin: .1rem 0 .35rem; }
+.dash-chip { display: inline-block; font-size: .68rem; letter-spacing: .03em; color: #475569; background: #f1f5f9; border-radius: 6px; padding: .05rem .45rem; }
+.dash-row-value { text-align: right; line-height: 1.15; min-width: 3.2rem; }
+.dash-row-value strong { display: block; font-size: 1.15rem; color: #0f172a; }
+.dash-row-value span { font-size: .7rem; color: #94a3b8; }
+.dash-bar { height: 6px; background: #eef2f7; border-radius: 999px; overflow: hidden; }
+.dash-bar span { display: block; height: 100%; border-radius: 999px; }
+.dash-bar-red { background: linear-gradient(90deg, #f87171, var(--brand-red)); }
+.dash-bar-amber { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+.dash-bar-blue { background: linear-gradient(90deg, var(--brand-bright), var(--brand-primary)); }
+.dash-rank { width: 28px; height: 28px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: .78rem; font-weight: 700; color: #fff; }
+.dash-rank-1 { background: linear-gradient(135deg, #fcd34d, #d97706); }
+.dash-rank-2 { background: linear-gradient(135deg, #cbd5e1, #64748b); }
+.dash-rank-3 { background: linear-gradient(135deg, #fdba74, #c2410c); }
+.dash-rank-n { background: #e2e8f0; color: #475569; }
+.dash-empty { display: flex; flex-direction: column; align-items: center; gap: .4rem; padding: 2.2rem 1rem; color: #64748b; font-size: .85rem; text-align: center; }
+.dash-empty i { font-size: 1.8rem; color: var(--brand-light); }
+.dash-hero { position: relative; overflow: hidden; border-radius: 16px; padding: 1.1rem 1.2rem; color: #fff; display: flex; flex-direction: column; background: var(--brand-gradient); box-shadow: 0 10px 24px -14px rgba(15,23,42,.5); }
+.dash-hero-label { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--brand-bg-border); }
+.dash-hero-body { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: .8rem 0 1rem; }
+.dash-avatar { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 1.05rem; color: #fff; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.4); margin-bottom: .6rem; }
+.dash-avatar-empty { background: rgba(255,255,255,.15); font-size: 1.4rem; }
+.dash-hero-name { font-weight: 700; font-size: .98rem; line-height: 1.25; }
+.dash-hero-caption { font-size: .75rem; color: var(--brand-bg-border); margin-top: .15rem; }
+.dash-hero-amount { font-size: 1.9rem; font-weight: 800; letter-spacing: -.02em; margin-top: .25rem; }
+
+/* ============================================================
+   DATATABLES: estilo limpio (cabecera clara, filas con separador)
+   ============================================================ */
+.table-responsive:has(> table.dataTable),
+.dataTables_wrapper .table-responsive {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15,23,42,.06);
+}
+table.dataTable thead th {
+  background: #1D4ED8 !important;
+  color: #fff !important;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  border-bottom: 0 !important;
+  padding-top: 0.85rem !important;
+  padding-bottom: 0.85rem !important;
+}
+table.dataTable thead > tr > th.sorting:before,
+table.dataTable thead > tr > th.sorting:after,
+table.dataTable thead > tr > th.sorting_asc:before,
+table.dataTable thead > tr > th.sorting_asc:after,
+table.dataTable thead > tr > th.sorting_desc:before,
+table.dataTable thead > tr > th.sorting_desc:after {
+  color: #fff !important;
+  opacity: 0.55 !important;
+}
+table.dataTable thead > tr > th.sorting_asc:after,
+table.dataTable thead > tr > th.sorting_desc:before {
+  opacity: 1 !important;
+}
+table.dataTable.table-striped > tbody > tr:nth-of-type(odd) > *,
+table.dataTable > tbody > tr > * {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+table.dataTable > tbody > tr > td {
+  border-bottom: 1px solid #f1f5f9;
+}
+table.dataTable > tbody > tr:last-child > td {
+  border-bottom: 0;
+}
+table.dataTable > tbody > tr:hover > td {
+  background-color: var(--brand-bg-light) !important;
+}
+table.dataTable tbody tr td:first-child {
+  font-weight: 600;
+  color: var(--brand-dark) !important;
+}
+table.dataTable td:last-child .btn {
+  border-radius: 8px;
+}
+
+.dataTables_wrapper .dataTables_length select {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+.dataTables_wrapper .dataTables_info {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+.dataTables_wrapper .pagination .page-link {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #475569;
+  border-radius: 8px !important;
+  min-width: 2rem;
+  text-align: center;
+}
+.dataTables_wrapper .pagination .page-link:hover {
+  background: var(--brand-bg-light);
+  color: var(--brand-primary);
+}
+.dataTables_wrapper .pagination .page-item.active .page-link {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: #fff;
+}
+.dataTables_wrapper .pagination .page-item.disabled .page-link {
+  color: #cbd5e1;
+  background: transparent;
+}

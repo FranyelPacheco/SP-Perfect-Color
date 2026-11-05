@@ -101,100 +101,107 @@
 <?php endif; ?>
 
 <?php if ($_SESSION['usuario_rol'] === 1): ?>
+<?php
+$maxVendido = !empty($topProductos) ? max(array_map(fn($p) => (float)$p['total_vendido'], $topProductos)) : 0;
+$iniciales = '';
+if ($clienteTopMes && (float)$clienteTopMes['total_comprado'] > 0) {
+    $iniciales = mb_strtoupper(mb_substr($clienteTopMes['nombres'], 0, 1) . mb_substr($clienteTopMes['apellidos'], 0, 1));
+}
+?>
 <div class="entrada-animada row g-3">
     <div class="col-lg-5">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-lightning-charge-fill me-2 text-warning"></i>Alertas de Stock Bajo</h5>
-            </div>
-            <div class="card-body p-0">
-                <?php if (empty($alertasStock)): ?>
-                <div class="p-4 text-center text-muted">
-                    <i class="bi bi-check-circle-fill text-success fs-3 d-block mb-2"></i>
-                    <span>Todos los insumos tienen stock suficiente.</span>
+        <div class="dash-card h-100">
+            <div class="dash-card-head">
+                <span class="dash-dot dash-dot-red"></span>
+                <div>
+                    <div class="dash-title">Stock por reponer</div>
+                    <div class="dash-sub">Productos bajo su mínimo</div>
                 </div>
-                <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table table-hover table-dashboard mb-0">
-                        <thead>
-                            <tr>
-                                <th>Código</th>
-                                <th>Producto</th>
-                                <th class="text-center">Stock Actual</th>
-                                <th class="text-center">Stock Mínimo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($alertasStock as $alerta): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($alerta['codigo']); ?></td>
-                                <td><?php echo htmlspecialchars($alerta['nombre']); ?></td>
-                                <td class="text-center text-danger fw-bold"><?php echo number_format($alerta['stock_actual'], 2); ?></td>
-                                <td class="text-center"><?php echo number_format($alerta['stock_minimo'], 2); ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-                <?php endif; ?>
+                <?php if (!empty($alertasStock)): ?><span class="dash-badge dash-badge-red"><?php echo count($alertasStock); ?></span><?php endif; ?>
             </div>
+            <?php if (empty($alertasStock)): ?>
+            <div class="dash-empty">
+                <i class="bi bi-check2-circle"></i>
+                <span>Todo el inventario está por encima del mínimo.</span>
+            </div>
+            <?php else: ?>
+            <ul class="dash-list">
+                <?php foreach ($alertasStock as $alerta):
+                    $actual = (float)$alerta['stock_actual'];
+                    $minimo = (float)$alerta['stock_minimo'];
+                    $pct = $minimo > 0 ? max(4, min(100, round($actual / $minimo * 100))) : 4;
+                    $critico = $minimo > 0 && $actual / $minimo <= 0.5;
+                ?>
+                <li class="dash-row">
+                    <div class="dash-row-main">
+                        <div class="dash-row-name"><?php echo htmlspecialchars($alerta['nombre']); ?></div>
+                        <div class="dash-row-meta"><span class="dash-chip"><?php echo htmlspecialchars($alerta['codigo']); ?></span></div>
+                        <div class="dash-bar"><span class="<?php echo $critico ? 'dash-bar-red' : 'dash-bar-amber'; ?>" style="width: <?php echo $pct; ?>%"></span></div>
+                    </div>
+                    <div class="dash-row-value">
+                        <strong class="<?php echo $critico ? 'text-danger' : 'text-warning'; ?>"><?php echo number_format($actual, 0, ',', '.'); ?></strong>
+                        <span>de <?php echo number_format($minimo, 0, ',', '.'); ?></span>
+                    </div>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php endif; ?>
         </div>
     </div>
 
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-trophy-fill me-2 text-warning"></i>Top 5 Más Vendidos (Hoy)</h5>
-            </div>
-            <div class="card-body p-0">
-                <?php if (empty($topProductos)): ?>
-                <div class="p-4 text-center text-muted">
-                    <i class="bi bi-cart-x fs-3 d-block mb-2"></i>
-                    <span>No hay ventas registradas hoy.</span>
+        <div class="dash-card h-100">
+            <div class="dash-card-head">
+                <span class="dash-dot dash-dot-blue"></span>
+                <div>
+                    <div class="dash-title">Más vendidos hoy</div>
+                    <div class="dash-sub">Top 5 por unidades</div>
                 </div>
-                <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table table-hover table-dashboard mb-0">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Producto</th>
-                                <th class="text-end">Vendido</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php $i = 1; foreach ($topProductos as $prod): ?>
-                            <tr>
-                                <td class="fw-bold text-warning"><?php echo $i++; ?></td>
-                                <td><?php echo htmlspecialchars($prod['nombre']); ?><br><small class="text-muted"><?php echo htmlspecialchars($prod['codigo']); ?></small></td>
-                                <td class="text-end fw-bold"><?php echo number_format($prod['total_vendido'], 2); ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-                <?php endif; ?>
             </div>
+            <?php if (empty($topProductos)): ?>
+            <div class="dash-empty">
+                <i class="bi bi-palette2"></i>
+                <span>Aún no hay ventas registradas hoy.</span>
+            </div>
+            <?php else: ?>
+            <ul class="dash-list">
+                <?php $i = 1; foreach ($topProductos as $prod):
+                    $vendido = (float)$prod['total_vendido'];
+                    $pct = $maxVendido > 0 ? max(6, round($vendido / $maxVendido * 100)) : 6;
+                ?>
+                <li class="dash-row">
+                    <span class="dash-rank dash-rank-<?php echo $i <= 3 ? $i : 'n'; ?>"><?php echo $i; ?></span>
+                    <div class="dash-row-main">
+                        <div class="dash-row-name"><?php echo htmlspecialchars($prod['nombre']); ?></div>
+                        <div class="dash-row-meta"><span class="dash-chip"><?php echo htmlspecialchars($prod['codigo']); ?></span></div>
+                        <div class="dash-bar"><span class="dash-bar-blue" style="width: <?php echo $pct; ?>%"></span></div>
+                    </div>
+                    <div class="dash-row-value"><strong><?php echo number_format($vendido, 0, ',', '.'); ?></strong><span>uds.</span></div>
+                </li>
+                <?php $i++; endforeach; ?>
+            </ul>
+            <?php endif; ?>
         </div>
     </div>
 
     <div class="col-lg-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-star-fill me-2 text-warning"></i>Cliente del Mes</h5>
+        <div class="dash-hero h-100">
+            <div class="dash-hero-top">
+                <span class="dash-hero-label"><i class="bi bi-stars me-1"></i>Cliente del mes</span>
             </div>
-            <div class="card-body text-center d-flex flex-column justify-content-center">
-                <?php if ($clienteTopMes && (float)$clienteTopMes['total_comprado'] > 0): ?>
-                <h6 class="fw-bold mb-1"><?php echo htmlspecialchars($clienteTopMes['nombres'] . ' ' . $clienteTopMes['apellidos']); ?></h6>
-                <small class="text-muted">Total comprado este mes</small>
-                <div class="fs-1 fw-bold text-success">$ <?php echo number_format((float)$clienteTopMes['total_comprado'], 2, ',', '.'); ?></div>
-                <?php else: ?>
-                <div class="text-muted">
-                    <i class="bi bi-emoji-neutral fs-3 d-block mb-2"></i>
-                    <span>Sin compras este mes</span>
-                </div>
-                <?php endif; ?>
+            <?php if ($clienteTopMes && (float)$clienteTopMes['total_comprado'] > 0): ?>
+            <div class="dash-hero-body">
+                <div class="dash-avatar"><?php echo htmlspecialchars($iniciales); ?></div>
+                <div class="dash-hero-name"><?php echo htmlspecialchars($clienteTopMes['nombres'] . ' ' . $clienteTopMes['apellidos']); ?></div>
+                <div class="dash-hero-caption">Total comprado este mes</div>
+                <div class="dash-hero-amount">$ <?php echo number_format((float)$clienteTopMes['total_comprado'], 2, ',', '.'); ?></div>
             </div>
+            <?php else: ?>
+            <div class="dash-hero-body">
+                <div class="dash-avatar dash-avatar-empty"><i class="bi bi-person"></i></div>
+                <div class="dash-hero-caption">Aún no hay compras este mes</div>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -215,7 +222,7 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+$(function() {
     var datos = <?php echo json_encode($ingresosPorDia); ?>;
     if (typeof inicializarGraficoIngresos === 'function') {
         inicializarGraficoIngresos(datos);
