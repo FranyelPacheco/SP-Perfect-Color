@@ -796,6 +796,7 @@ CREATE TABLE `usuarios` (
   `correo` varchar(100) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
   `foto` varchar(255) DEFAULT NULL,
+  `contrato` varchar(255) DEFAULT NULL,
   `id_rol` int(11) NOT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `estado` tinyint(1) NOT NULL DEFAULT 1,
@@ -812,7 +813,7 @@ CREATE TABLE `usuarios` (
 
 LOCK TABLES `usuarios` WRITE;
 /*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
-INSERT INTO `usuarios` VALUES (2,'Administrador','admin@perfectcolor.com','$2y$10$ZqUk5Awoey5CVkqx3Tgg2.A9YTTQwRHLehxDLtLN/fYLkyGrMi5HC',NULL,1,'2026-10-11 23:10:59',1),(5,'Fran','pacheco@ejemplo.com','$2y$10$ZqUk5Awoey5CVkqx3Tgg2.A9YTTQwRHLehxDLtLN/fYLkyGrMi5HC',NULL,2,'2026-10-11 23:10:59',1);
+INSERT INTO `usuarios` VALUES (2,'Administrador','admin@perfectcolor.com','$2y$10$ZqUk5Awoey5CVkqx3Tgg2.A9YTTQwRHLehxDLtLN/fYLkyGrMi5HC',NULL,NULL,1,'2026-10-11 23:10:59',1),(5,'Fran','pacheco@ejemplo.com','$2y$10$ZqUk5Awoey5CVkqx3Tgg2.A9YTTQwRHLehxDLtLN/fYLkyGrMi5HC',NULL,NULL,2,'2026-10-11 23:10:59',1);
 /*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
 UNLOCK TABLES;
 

@@ -9,6 +9,12 @@ RewriteEngine On
 
 Options -Indexes
 
+# Los contratos en PDF pueden pesar hasta 5 MB
+<IfModule mod_php.c>
+    php_value upload_max_filesize 6M
+    php_value post_max_size 8M
+</IfModule>
+
 # Bloquear acceso directo a código, dependencias y archivos de documentación/BD
 RewriteRule ^(app|vendor)/ - [F,L]
 RewriteRule \.(sql|md|lock|json)$ - [F,L]

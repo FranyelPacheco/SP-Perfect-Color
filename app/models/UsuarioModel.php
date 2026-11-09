@@ -4,16 +4,19 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Traits\ImagenSeguraTrait;
+use App\Traits\PdfSeguroTrait;
 use PDO;
 
 // MODELO: UsuarioModel
-// OBJETIVO: Gestión de usuarios: autenticación, perfil con foto, cambio de clave y restablecimiento por token
-// NOTA: La foto de perfil se valida y re-codifica en ImagenSeguraTrait
+// OBJETIVO: Gestión de usuarios: autenticación, perfil con foto, contrato en PDF, cambio de clave y restablecimiento por token
+// NOTA: La foto de perfil se valida y re-codifica en ImagenSeguraTrait; el contrato se guarda con PdfSeguroTrait fuera de la carpeta pública
 class UsuarioModel extends ModeloBase
 {
     use ImagenSeguraTrait;
+    use PdfSeguroTrait;
 
     private const DIR_AVATARES = __DIR__ . '/../../assets/uploads/avatares';
+    private const DIR_CONTRATOS = __DIR__ . '/../storage/contratos';
 
     private string $nombre;
     private string $correo;
@@ -108,7 +111,7 @@ class UsuarioModel extends ModeloBase
     // OBJETIVO: Ejecuta la consulta que lista usuarios con JOIN a roles
     private function _ejecutarSelectAll(): array
     {
-        $consulta = "SELECT u.id_usuario, u.nombre, u.correo, u.foto, u.id_rol, u.created_at, u.estado, u.estado as activo, r.nombre as rol_nombre
+        $consulta = "SELECT u.id_usuario, u.nombre, u.correo, u.foto, (u.contrato IS NOT NULL) AS tiene_contrato, u.id_rol, u.created_at, u.estado, u.estado as activo, r.nombre as rol_nombre
                      FROM usuarios u
                      INNER JOIN roles r ON u.id_rol = r.id_rol
                      WHERE u.estado = 1
@@ -369,6 +372,61 @@ class UsuarioModel extends ModeloBase
     {
         $stmt = $this->conexion->prepare("UPDATE usuarios SET foto = :foto WHERE id_usuario = :id");
         $stmt->bindValue(':foto', $foto, $foto === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindValue(':id', $idUsuario, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    // FUNCIÓN: guardarContrato
+    // OBJETIVO: Valida y guarda el contrato en PDF del trabajador, reemplazando y borrando el anterior
+    public function guardarContrato(int $idUsuario, array $archivo): array
+    {
+        $usuario = $this->buscarPorId($idUsuario);
+        if (!$usuario) {
+            return $this->respuestaError('Usuario no encontrado');
+        }
+
+        $guardado = $this->guardarPdfSeguro($archivo, self::DIR_CONTRATOS);
+        if (!$guardado['exito']) {
+            return $guardado;
+        }
+
+        $nombre = $guardado['datos']['nombre'];
+        if (!$this->_ejecutarUpdateContrato($idUsuario, $nombre)) {
+            $this->eliminarPdfSeguro($nombre, self::DIR_CONTRATOS);
+            return $this->respuestaError('Error al guardar el contrato');
+        }
+
+        $this->eliminarPdfSeguro($usuario['contrato'] ?? null, self::DIR_CONTRATOS);
+        return $this->respuestaExito('Contrato guardado exitosamente');
+    }
+
+    // FUNCIÓN: eliminarContrato
+    // OBJETIVO: Quita el contrato del trabajador y borra el archivo
+    public function eliminarContrato(int $idUsuario): array
+    {
+        $usuario = $this->buscarPorId($idUsuario);
+        if (!$usuario) {
+            return $this->respuestaError('Usuario no encontrado');
+        }
+        if (!$this->_ejecutarUpdateContrato($idUsuario, null)) {
+            return $this->respuestaError('Error al eliminar el contrato');
+        }
+        $this->eliminarPdfSeguro($usuario['contrato'] ?? null, self::DIR_CONTRATOS);
+        return $this->respuestaExito('Contrato eliminado');
+    }
+
+    // FUNCIÓN: rutaContrato
+    // OBJETIVO: Devuelve la ruta del PDF del contrato del trabajador, o null si no tiene
+    public function rutaContrato(int $idUsuario): ?string
+    {
+        $usuario = $this->buscarPorId($idUsuario);
+        return $usuario ? $this->rutaPdfSeguro($usuario['contrato'] ?? null, self::DIR_CONTRATOS) : null;
+    }
+
+    private function _ejecutarUpdateContrato(int $idUsuario, ?string $contrato): bool
+    {
+        $stmt = $this->conexion->prepare("UPDATE usuarios SET contrato = :contrato WHERE id_usuario = :id");
+        $stmt->bindValue(':contrato', $contrato, $contrato === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindValue(':id', $idUsuario, PDO::PARAM_INT);
         return $stmt->execute();
     }

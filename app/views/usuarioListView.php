@@ -44,6 +44,7 @@
                                         <th>Correo</th>
                                         <th>Rol</th>
                                         <th>Estado</th>
+                                        <th>Contrato</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -91,6 +92,37 @@
 </div>
 
 <!-- MODAL PARA USUARIO (CREAR/EDITAR) -->
+<div id="modalContrato" class="modal fade" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white border-bottom-0">
+                <h5 class="modal-title text-white"><i class="bi bi-file-earmark-pdf-fill me-2"></i>Contrato de <span id="nombreContrato"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="formularioContrato">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="contratoUsuarioId">
+                    <div id="estadoContrato" class="d-flex align-items-center justify-content-between gap-2 border rounded p-3 mb-3">
+                        <span id="textoEstadoContrato" class="fw-semibold"></span>
+                        <span class="d-flex gap-2">
+                            <a id="enlaceVerContrato" href="#" target="_blank" rel="noopener" class="btn btn-sm btn-info text-white"><i class="bi bi-eye-fill me-1"></i>Ver</a>
+                            <button type="button" id="btnEliminarContrato" class="btn btn-sm btn-danger"><i class="bi bi-trash-fill me-1"></i>Quitar</button>
+                        </span>
+                    </div>
+                    <label for="archivoContrato" class="form-label fw-semibold" id="etiquetaArchivoContrato">Archivo del contrato</label>
+                    <input type="file" id="archivoContrato" name="contrato" class="form-control" accept="application/pdf,.pdf" required>
+                    <div class="form-text">Solo PDF, máximo 5 MB. Si ya existe un contrato, se reemplaza.</div>
+                    <div id="mensajeErrorContrato" class="alert alert-danger d-none mt-3 mb-0"></div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-lg me-1"></i>Cerrar</button>
+                    <button type="submit" id="btnSubirContrato" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Subir contrato</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div id="modalUsuario" class="modal fade" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">

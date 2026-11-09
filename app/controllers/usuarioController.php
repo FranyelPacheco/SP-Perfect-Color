@@ -61,6 +61,9 @@ if ($metodo === 'index') {
     }
 
     $usuarios = $usuarioModel->listarTodos();
+    if ((int)($_SESSION['usuario_rol'] ?? 0) !== 1) {
+        $usuarios = array_map(fn($u) => array_diff_key($u, ['tiene_contrato' => 0]), $usuarios);
+    }
     $roles = $rolModel->listarActivos();
 
     respuestaJson('exito', 'Usuarios obtenidos correctamente', [
@@ -163,6 +166,47 @@ if ($metodo === 'index') {
     }
     $resultado = $usuarioModel->darDeBaja($id, (int)$_SESSION['id_usuario']);
     responder($resultado);
+
+// FUNCIÓN: subirContrato
+// OBJETIVO: Guarda el contrato en PDF de un trabajador (solo Administrador)
+} elseif ($metodo === 'subirContrato') {
+    verificarSoloAdmin();
+
+    soloPost();
+
+    $resultado = $usuarioModel->guardarContrato(intval($_POST['id'] ?? 0), $_FILES['contrato'] ?? []);
+    responder($resultado);
+
+// FUNCIÓN: eliminarContrato
+// OBJETIVO: Quita el contrato de un trabajador (solo Administrador)
+} elseif ($metodo === 'eliminarContrato') {
+    verificarSoloAdmin();
+
+    soloPost();
+
+    $resultado = $usuarioModel->eliminarContrato(intval($_POST['id'] ?? 0));
+    responder($resultado);
+
+// FUNCIÓN: verContrato
+// OBJETIVO: Muestra el PDF del contrato en el navegador; el archivo no es accesible por URL directa (solo Administrador)
+} elseif ($metodo === 'verContrato') {
+    verificarSoloAdmin();
+
+    $idContrato = intval($_GET['id'] ?? 0);
+    $ruta = $usuarioModel->rutaContrato($idContrato);
+    if ($ruta === null) {
+        http_response_code(404);
+        require_once __DIR__ . '/../views/error404View.php';
+        exit;
+    }
+
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: inline; filename="contrato-' . $idContrato . '.pdf"');
+    header('Content-Length: ' . filesize($ruta));
+    header('Cache-Control: private, no-store');
+    header('X-Content-Type-Options: nosniff');
+    readfile($ruta);
+    exit;
 
 // ============================================================
 // ENDPOINTS PARA ROLES Y MÓDULOS

@@ -5,6 +5,9 @@ $(function () {
     const MI_ID = typeof SESSION_USER_ID !== 'undefined' ? SESSION_USER_ID : null;
     const ROL = typeof SESSION_USER_ROL !== 'undefined' ? SESSION_USER_ROL : null;
     const GESTIONAR = typeof PUEDE_GESTIONAR !== 'undefined' ? PUEDE_GESTIONAR : (ROL === 1);
+    const ES_ADMIN = ROL === 1;
+    const TAMANO_MAX_CONTRATO = 5 * 1024 * 1024;
+    const usuariosPorId = {};
 
     const $formUsuario = $('#formularioUsuario');
     const $formRol = $('#formularioRol');
@@ -100,6 +103,8 @@ $(function () {
             $('#chkCambiarClave').prop('checked', false);
         });
 
+        if (ES_ADMIN) initContratos();
+
         // Delegación de eventos robusta para botones de acción de usuario
         alClicAccion('.btn-editar-usuario', function () {
             const id = parseInt($(this).attr('data-id'));
@@ -141,8 +146,12 @@ $(function () {
             table.clear();
 
             $.each(usuarios, function (i, u) {
+                usuariosPorId[u.id_usuario] = u;
                 let acciones = '<div class="d-inline-flex gap-1">' +
                     '<button class="btn btn-sm btn-warning btn-editar-usuario" data-id="' + u.id_usuario + '" title="Editar" aria-label="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></button>';
+                if (ES_ADMIN) {
+                    acciones += '<button class="btn btn-sm btn-info text-white btn-contrato-usuario" data-id="' + u.id_usuario + '" title="Contrato (PDF)" aria-label="Contrato (PDF)" data-bs-toggle="tooltip"><i class="bi bi-file-earmark-pdf-fill"></i></button>';
+                }
                 if (parseInt(u.id_usuario) !== parseInt(MI_ID)) {
                     acciones += '<button class="btn btn-sm btn-danger btn-eliminar-usuario" data-id="' + u.id_usuario + '" data-nombre="' + u.nombre.replace(/"/g, '&quot;') + '" title="Eliminar" aria-label="Eliminar" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>';
                 }
@@ -157,6 +166,9 @@ $(function () {
                     escapeHtml(u.correo),
                     '<span class="badge bg-primary-subtle text-primary border border-primary-subtle">' + escapeHtml(u.rol_nombre || 'Sin Rol') + '</span>',
                     estadoBadge,
+                    u.tiene_contrato == 1
+                        ? '<span class="badge bg-success">Cargado</span>'
+                        : '<span class="badge bg-secondary">Sin contrato</span>',
                     acciones
                 ]);
             });
@@ -389,6 +401,91 @@ $(function () {
                 .catch(function () {
                     mostrarNotificacion('No se pudo eliminar usuario. Revise su conexión e intente de nuevo.', 'error');
                 });
+        });
+    }
+
+    // ============================================================
+    // CONTRATO EN PDF DEL TRABAJADOR (SOLO ADMINISTRADOR)
+    // ============================================================
+
+    function initContratos() {
+        const $modal = $('#modalContrato');
+        const $form = $('#formularioContrato');
+        const $archivo = $('#archivoContrato');
+        const $error = $('#mensajeErrorContrato');
+        const URL_CONTRATO = '/SP%20Perfect%20Color/usuario/verContrato?id=';
+
+        function errorContrato(msg) {
+            $error.text(msg).removeClass('d-none');
+        }
+
+        function pintarEstado(id) {
+            const tiene = usuariosPorId[id] && usuariosPorId[id].tiene_contrato == 1;
+            $('#textoEstadoContrato').html(tiene
+                ? '<i class="bi bi-check-circle-fill text-success me-1"></i>Contrato cargado'
+                : '<i class="bi bi-dash-circle text-secondary me-1"></i>Sin contrato');
+            $('#enlaceVerContrato').attr('href', URL_CONTRATO + id).toggleClass('d-none', !tiene);
+            $('#btnEliminarContrato').toggleClass('d-none', !tiene);
+            $('#etiquetaArchivoContrato').text(tiene ? 'Reemplazar contrato' : 'Archivo del contrato');
+        }
+
+        alClicAccion('.btn-contrato-usuario', function () {
+            const id = parseInt($(this).attr('data-id'));
+            if (isNaN(id) || !usuariosPorId[id]) return;
+            $('#contratoUsuarioId').val(id);
+            $('#nombreContrato').text(usuariosPorId[id].nombre);
+            $form[0].reset();
+            $error.addClass('d-none');
+            pintarEstado(id);
+            bootstrap.Modal.getOrCreateInstance($modal[0]).show();
+        });
+
+        $form.on('submit', async function (e) {
+            e.preventDefault();
+            $error.addClass('d-none');
+            const id = $('#contratoUsuarioId').val();
+            const archivo = $archivo[0].files[0];
+
+            if (!archivo) return errorContrato('Seleccione un archivo PDF');
+            if (archivo.type !== 'application/pdf' && !/\.pdf$/i.test(archivo.name)) return errorContrato('Solo se permiten archivos PDF');
+            if (archivo.size > TAMANO_MAX_CONTRATO) return errorContrato('El PDF no puede superar los 5 MB');
+
+            const $btn = $('#btnSubirContrato').prop('disabled', true);
+            try {
+                const formData = new FormData();
+                formData.append('id', id);
+                formData.append('contrato', archivo);
+                const json = await api.post('usuario/subirContrato', formData);
+                if (json.estado === 'exito') {
+                    bootstrap.Modal.getInstance($modal[0]).hide();
+                    mostrarNotificacion(json.mensaje, 'exito');
+                    cargarUsuarios();
+                } else {
+                    errorContrato(json.mensaje);
+                }
+            } catch (err) {
+                errorContrato('No se pudo subir el contrato. Revise su conexión e intente de nuevo.');
+            } finally {
+                $btn.prop('disabled', false);
+            }
+        });
+
+        $('#btnEliminarContrato').on('click', function () {
+            const id = $('#contratoUsuarioId').val();
+            // Un modal de confirmación no puede abrirse encima de este: se cierra primero
+            $modal.one('hidden.bs.modal', function () {
+                confirmarConModal('Quitar contrato', '¿Está seguro de quitar el contrato de <strong>' + escapeHtml(usuariosPorId[id].nombre) + '</strong>? El archivo se borrará.', function () {
+                    api.post('usuario/eliminarContrato', { id: id })
+                        .then(function (json) {
+                            mostrarNotificacion(json.mensaje, json.estado === 'exito' ? 'exito' : 'error');
+                            if (json.estado === 'exito') cargarUsuarios();
+                        })
+                        .catch(function () {
+                            mostrarNotificacion('No se pudo quitar el contrato. Revise su conexión e intente de nuevo.', 'error');
+                        });
+                });
+            });
+            bootstrap.Modal.getInstance($modal[0]).hide();
         });
     }
 

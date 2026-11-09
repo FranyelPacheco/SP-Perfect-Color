@@ -881,3 +881,16 @@ Las FK tenían nombres inconsistentes con las PKs que referenciaban. Ej: `cuenta
 - Se mantienen como snapshot contable `ventas.total`, `compra.total` y `cuentas_*.monto_total/saldo_pendiente`. `estado` (borrado lógico) e `id_estado_venta` siguen separados por convención.
 El dump trae `DROP TABLE`: importarlo reemplaza las tablas de la BD seleccionada (ya no incluye `CREATE DATABASE`/`USE`; crear la BD antes). `ART-002` pasó a llevar '(Pliego)' en el nombre; la unidad de los productos Simples es solo Unidad o KG.
 Datos de prueba en el dump: presupuesto pendiente (#5, con mezcla), presupuesto anulado (#6), tasas del 29 y 30 de octubre de 2026 y `ART-005` bajo el stock mínimo. `banco` y `usuarios` no se modificaron.
+
+---
+
+## Contrato en PDF por trabajador (Usuarios y Roles)
+
+- **BD:** `usuarios.contrato` (VARCHAR 255 NULL, tras `foto`) guarda el nombre aleatorio del PDF. Dump `app/core/sp_perfect_color.sql` actualizado. Siguen siendo 27 tablas.
+- **Almacenamiento:** `app/storage/contratos/` (fuera de la carpeta pública; `^(app|vendor)/` ya está bloqueado en `.htaccess` y la carpeta está en `.gitignore`). Nombre `<32 hex>.pdf`.
+- **`app/traits/PdfSeguroTrait.php`:** misma estructura que `ImagenSeguraTrait` (`guardarPdfSeguro`, `eliminarPdfSeguro`, `rutaPdfSeguro`). Valida carga HTTP, tamaño (5 MB), MIME `application/pdf`, cabecera `%PDF-` y rechaza PDF con `/JavaScript`, `/JS`, `/Launch` o `/EmbeddedFile`.
+- **`UsuarioModel`:** `guardarContrato()` (reemplaza y borra el anterior), `eliminarContrato()`, `rutaContrato()`; `listarTodos()` devuelve `tiene_contrato`.
+- **`usuarioController`:** `subirContrato`, `eliminarContrato` (POST) y `verContrato` (GET, PDF en línea sin URL directa). Los tres con `verificarSoloAdmin()`; `listarAjax` oculta `tiene_contrato` a quien no es Administrador.
+- **Vista/JS:** columna "Contrato" y botón PDF en la tabla de usuarios (solo Administrador) y modal `#modalContrato` en `usuarioListView.php` / `usuario.js`.
+- **`.htaccess`:** `upload_max_filesize 6M` y `post_max_size 8M` (el php.ini por defecto limita a 2 MB; con otro servidor que no sea mod_php hay que subir el límite en php.ini).
+- Al dar de baja a un usuario el archivo del contrato se conserva.

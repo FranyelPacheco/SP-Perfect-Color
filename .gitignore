@@ -14,3 +14,6 @@ cookies.txt
 
 # Registros locales (intentos de login, recuperacion)
 /app/logs/
+
+# Contratos de trabajadores (documentos privados)
+/app/storage/
