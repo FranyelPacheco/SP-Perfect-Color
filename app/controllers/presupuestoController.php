@@ -7,9 +7,7 @@ namespace App\Controllers;
 use App\Models\{
     PresupuestoModel,
     ClienteModel,
-    InventarioModel,
-    BancoModel,
-    TipoPagoModel
+    InventarioModel
 };
 use function App\Helpers\{
     respuestaJson,

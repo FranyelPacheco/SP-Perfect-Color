@@ -397,11 +397,6 @@ main.flex-grow-1 {
   border-radius: var(--card-radius) var(--card-radius) 0 0 !important;
 }
 
-.card-header.brand-header {
-  background: var(--brand-gradient);
-  color: #fff;
-}
-
 .card-header h5 {
   font-weight: 600;
   font-size: 1rem;
@@ -452,8 +447,6 @@ main.flex-grow-1 {
 .stat-card.stat-purple { background: linear-gradient(135deg, #6A1B9A, #AB47BC); }
 .stat-card.stat-red { background: linear-gradient(135deg, #C62828, #E53935); }
 .stat-card.stat-info { background: linear-gradient(135deg, #0288D1, #29B6F6); }
-.stat-card.stat-danger { background: linear-gradient(135deg, #D84315, #FF7043); }
-.stat-card.stat-secondary { background: linear-gradient(135deg, #37474F, #78909C); }
 
 /* ============================================================
    BUTTONS
@@ -619,8 +612,6 @@ main.flex-grow-1 {
   white-space: nowrap;
 }
 
-/* Legacy btn-peligro safety */
-.btn-peligro,
 .btn-agregar {
   padding: 0.3rem 0.65rem;
   font-size: 0.78rem;
@@ -631,7 +622,6 @@ main.flex-grow-1 {
   transition: all var(--transition-speed);
 }
 
-.btn-peligro:hover,
 .btn-agregar:hover {
   background: #DC2626;
   color: #fff;
@@ -1128,33 +1118,6 @@ textarea.form-control {
   z-index: 9999;
 }
 
-.notificacion-personalizada {
-  min-width: 300px;
-  padding: 0.85rem 1.25rem;
-  border-radius: 10px;
-  color: #fff;
-  font-weight: 500;
-  font-size: 0.9rem;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-  animation: slideInRight 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.notificacion-personalizada.exito {
-  background: linear-gradient(135deg, #2E7D32, #43A047);
-}
-
-.notificacion-personalizada.error {
-  background: linear-gradient(135deg, #C62828, #E53935);
-}
-
-@keyframes slideInRight {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
 /* ============================================================
    STATUS COLORS / BADGES (Presupuestos, CxC, CxP)
    ============================================================ */
@@ -1165,8 +1128,6 @@ textarea.form-control {
 .estado-moroso,
 .estado-aprobado,
 .estado-rechazado,
-.estado-convertido,
-.estado-entregado,
 .estado-pendiente,
 .estado-presupuesto,
 .estado-anulado {
@@ -1178,71 +1139,13 @@ textarea.form-control {
   letter-spacing: 0.02em;
 }
 
-.estado-pagado,
-.estado-entregado { background: #D4EDDA; color: #155724; }
+.estado-pagado { background: #D4EDDA; color: #155724; }
 .estado-moroso,
 .estado-anulado,
 .estado-rechazado { background: #F8D7DA; color: #721C24; }
 .estado-aprobado { background: #CCE5FF; color: #004085; }
-.estado-convertido { background: #E2E3F5; color: #383D41; }
 .estado-pendiente,
 .estado-presupuesto { background: #FFF3CD; color: #856404; }
-
-/* ============================================================
-   PERFIL USUARIO (vendedor)
-   ============================================================ */
-#modalUsuario.modo-perfil {
-  display: flex !important;
-  justify-content: center;
-  align-items: center;
-  min-height: 75vh;
-  width: 100%;
-  position: relative !important;
-  background: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  top: auto !important;
-  left: auto !important;
-  height: auto !important;
-  z-index: auto !important;
-  border: none !important;
-  border-radius: 0 !important;
-}
-#modalUsuario.modo-perfil .modal-dialog {
-  margin: 0;
-}
-#modalUsuario.modo-perfil .modal-content {
-  max-width: 480px;
-  width: 100%;
-  border-radius: var(--card-radius);
-  overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
-  padding: 0;
-}
-#modalUsuario.modo-perfil .modal-header {
-  background: var(--brand-gradient);
-  margin-bottom: 0;
-  padding: 28px 24px;
-  border-bottom: none;
-}
-#modalUsuario.modo-perfil .modal-title {
-  font-size: 22px;
-}
-#modalUsuario.modo-perfil .modal-content .mb-3:first-of-type {
-  margin-top: 24px;
-}
-#modalUsuario.modo-perfil .modal-footer {
-  justify-content: center;
-}
-#modalUsuario.modo-perfil .btn-primary {
-  width: 100%;
-  padding: 12px 22px;
-  font-size: 15px;
-}
-#modalUsuario.modo-perfil .btn-close,
-#modalUsuario.modo-perfil .btn-secondary {
-  display: none !important;
-}
 
 /* ============================================================
    LOGIN PAGE
@@ -1580,17 +1483,14 @@ textarea.form-control {
 }
 
 /* Tablas del dashboard y tablas secundarias */
-.card-body > .table-responsive > .table:not(.dataTable),
-.table-dashboard {
+.card-body > .table-responsive > .table:not(.dataTable) {
   width: 100% !important;
   min-width: 0 !important;
   table-layout: auto;
 }
 
 .card-body > .table-responsive > .table:not(.dataTable) th,
-.card-body > .table-responsive > .table:not(.dataTable) td,
-.table-dashboard th,
-.table-dashboard td {
+.card-body > .table-responsive > .table:not(.dataTable) td {
   white-space: normal !important;
   padding: 0.6rem 0.75rem !important;
 }
@@ -2058,11 +1958,6 @@ table.dataTable button *,
 
 /* Toasts accesibles */
 .toast-contenedor { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
-.toast-app { padding: 12px 24px; border-radius: 4px; color: #fff; transition: opacity 0.3s; max-width: 360px; }
-.toast-exito { background: #2e7d32; }
-.toast-error { background: #c62828; }
-.toast-info { background: #1565c0; }
-.toast-salida { opacity: 0; }
 
 :focus-visible { outline: 2px solid var(--brand-bright, #1d4ed8); outline-offset: 2px; }
 
