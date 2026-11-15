@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Helpers\Patrones;
 use PDO;
 
 // MODELO: TasaCambioModel
@@ -120,7 +121,7 @@ class TasaCambioModel extends ModeloBase
         }
         $tasa = round($tasa, 2);
 
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha) || !checkdate((int)substr($fecha, 5, 2), (int)substr($fecha, 8, 2), (int)substr($fecha, 0, 4))) {
+        if (!preg_match(Patrones::FECHA_ISO, $fecha) || !checkdate((int)substr($fecha, 5, 2), (int)substr($fecha, 8, 2), (int)substr($fecha, 0, 4))) {
             return ['valido' => false, 'mensaje' => 'La fecha no es válida. Seleccione una fecha del calendario.'];
         }
 

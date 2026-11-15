@@ -65,7 +65,7 @@ function intentosLogin(string $clave, string $accion): bool
 // OBJETIVO: Muestra el formulario de inicio de sesión; redirige al dashboard si ya hay sesión activa
 if ($metodo === 'index') {
     if ($sesionManager->estaAutenticado()) {
-        header('Location: /SP%20Perfect%20Color/dashboard');
+        header('Location: ' . url('dashboard'));
         exit;
     }
 
@@ -95,14 +95,14 @@ if ($metodo === 'index') {
     $sesionManager->iniciarSesion($resultado['usuario']);
 
     respuestaJson('exito', 'Inicio de sesion exitoso', [
-        'redirect' => '/SP%20Perfect%20Color/dashboard'
+        'redirect' => url('dashboard')
     ]);
 
 // FUNCIÓN: salir
 // OBJETIVO: Cierra la sesión del usuario mediante SessionTrait y redirige al login
 } elseif ($metodo === 'salir') {
     $sesionManager->cerrarSesion();
-    header('Location: /SP%20Perfect%20Color/login');
+    header('Location: ' . url('login'));
     exit;
 
 // FUNCIÓN: recuperarClave
@@ -133,9 +133,7 @@ if ($metodo === 'index') {
             'hash' => $firma
         ]));
 
-        $protocolo = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $enlace = "{$protocolo}{$host}/SP%20Perfect%20Color/login/restablecer?token=" . urlencode($payload);
+        $enlace = urlAbsoluta('login/restablecer?token=' . urlencode($payload));
     }
 
     // Se responde de inmediato (mismo mensaje exista o no el correo, sin diferencia de tiempos) y el envío SMTP sigue en segundo plano
@@ -202,7 +200,7 @@ if ($metodo === 'index') {
     $resultado = $usuarioModel->restablecerClaveConToken($token, $nuevaClave, $confirmarClave, TOKEN_SECRET);
     if ($resultado['exito']) {
         respuestaJson('exito', $resultado['mensaje'], [
-            'redirect' => '/SP%20Perfect%20Color/login'
+            'redirect' => url('login')
         ]);
     } else {
         respuestaJson('error', $resultado['mensaje']);

@@ -215,9 +215,7 @@ HTML;
 function enviarCredencialesUsuario(string $destinatario, string $nombre, string $claveTemporal): array
 {
     $asunto = 'Bienvenido a SP Perfect Color - Sus credenciales de acceso';
-    $protocolo = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $enlaceLogin = "{$protocolo}{$host}/SP%20Perfect%20Color/login";
+    $enlaceLogin = urlAbsoluta('login');
 
     $contenido = <<<HTML
     <h2 style="color: #1E3A5F; margin-top: 0; font-size: 20px;">¡Bienvenido, {$nombre}!</h2>

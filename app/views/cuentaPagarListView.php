@@ -8,7 +8,7 @@
             <h4 class="mb-0 toolbar-title"><i class="bi bi-credit-card-2-back-fill me-2 text-primary"></i>Cuentas por Pagar</h4>
             <div class="d-flex gap-2 align-items-center flex-wrap">
                 <input type="text" id="busquedaCuentasPagar" class="form-control input-busqueda" placeholder="Buscar por proveedor o RIF...">
-                <a href="/SP%20Perfect%20Color/notaEntregaCompra/crear" class="btn btn-primary">
+                <a href="<?php echo url(); ?>notaEntregaCompra/crear" class="btn btn-primary">
                     <i class="bi bi-cart-plus-fill me-2"></i>Registrar Compra
                 </a>
             </div>
@@ -33,4 +33,4 @@
     </div>
 </div>
 
-<script src="/SP%20Perfect%20Color/assets/js/cuentaPagar.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/cuentaPagar.js'); ?>"></script>
+<script src="<?php echo url(); ?>assets/js/cuentaPagar.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/cuentaPagar.js'); ?>"></script>

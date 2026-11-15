@@ -17,7 +17,7 @@
             </div>
             <div class="d-flex gap-2 align-items-center flex-wrap">
                 <input type="text" id="busquedaPresupuestos" class="form-control input-busqueda" placeholder="Buscar por cliente o cédula...">
-                <button type="button" class="btn btn-primary" onclick="location.href='/SP%20Perfect%20Color/presupuesto/nuevo'" >
+                <button type="button" class="btn btn-primary" onclick="location.href='<?php echo url(); ?>presupuesto/nuevo'" >
                     <i class="bi bi-plus-lg me-2"></i>Nuevo
                 </button>
             </div>
@@ -42,4 +42,4 @@
     </div>
 </div>
 
-<script src="/SP%20Perfect%20Color/assets/js/presupuesto.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/presupuesto.js'); ?>"></script>
+<script src="<?php echo url(); ?>assets/js/presupuesto.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/presupuesto.js'); ?>"></script>

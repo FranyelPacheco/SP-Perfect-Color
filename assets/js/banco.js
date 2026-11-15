@@ -7,7 +7,7 @@ $(function() {
     const $mensajeError = $('#mensajeErrorBanco');
 
     $nombreBanco.on('input', function() {
-        this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.\-]/g, '').substring(0, 50);
+        this.value = this.value.replace(PATRONES.nombreBancoInvalido, '').substring(0, 50);
     });
 
     const validacionNombre = validarUnico({

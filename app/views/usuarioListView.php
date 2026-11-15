@@ -316,4 +316,4 @@
 </div>
 <?php endif; ?>
 
-<script src="/SP%20Perfect%20Color/assets/js/usuario.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/usuario.js'); ?>"></script>
+<script src="<?php echo url(); ?>assets/js/usuario.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/usuario.js'); ?>"></script>

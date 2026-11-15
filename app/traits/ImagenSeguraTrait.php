@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Traits;
 
+use App\Helpers\Patrones;
+
 // TRAIT: ImagenSeguraTrait
 // OBJETIVO: Validar y guardar imágenes JPG/PNG subidas, re-codificándolas con GD para descartar contenido embebido
 // NOTA: Requiere RespuestaModeloTrait en la clase que lo use
@@ -19,7 +21,7 @@ trait ImagenSeguraTrait
     // OBJETIVO: Borra una imagen previamente guardada, solo si el nombre cumple el formato generado por este trait
     public function eliminarImagenSegura(?string $nombre, string $directorio): void
     {
-        if ($nombre !== null && preg_match('/^[a-f0-9]{32}\.(jpg|png)$/', $nombre)) {
+        if ($nombre !== null && preg_match(Patrones::ARCHIVO_IMAGEN, $nombre)) {
             $ruta = $directorio . DIRECTORY_SEPARATOR . $nombre;
             if (is_file($ruta)) {
                 @unlink($ruta);

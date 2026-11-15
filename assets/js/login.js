@@ -47,7 +47,7 @@ $(function() {
         $btnSpinner.removeClass('d-none');
 
         try {
-            const resultado = await enviarJson('/SP%20Perfect%20Color/login/iniciarSesion', $formulario[0]);
+            const resultado = await enviarJson(BASE_URL + 'login/iniciarSesion', $formulario[0]);
             if (resultado.estado === 'exito') {
                 window.location.href = resultado.datos.redirect;
             } else {
@@ -82,7 +82,7 @@ $(function() {
             $spinner.removeClass('d-none');
 
             try {
-                const json = await enviarJson('/SP%20Perfect%20Color/login/recuperarClave', $formRecuperar[0], { 'X-Requested-With': 'XMLHttpRequest' });
+                const json = await enviarJson(BASE_URL + 'login/recuperarClave', $formRecuperar[0], { 'X-Requested-With': 'XMLHttpRequest' });
                 if (json.estado === 'exito') {
                     avisar('success', json.mensaje);
                     $formRecuperar[0].reset();

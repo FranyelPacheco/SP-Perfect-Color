@@ -894,3 +894,16 @@ Datos de prueba en el dump: presupuesto pendiente (#5, con mezcla), presupuesto 
 - **Vista/JS:** columna "Contrato" y botón PDF en la tabla de usuarios (solo Administrador) y modal `#modalContrato` en `usuarioListView.php` / `usuario.js`.
 - **`.htaccess`:** `upload_max_filesize 6M` y `post_max_size 8M` (el php.ini por defecto limita a 2 MB; con otro servidor que no sea mod_php hay que subir el límite en php.ini).
 - Al dar de baja a un usuario el archivo del contrato se conserva.
+
+---
+
+## Rutas y expresiones regulares centralizadas
+
+- **Rutas sin nombre de carpeta fijo:** `app/helpers/rutaHelper.php` define `url('cliente/listarAjax')` (ruta pública, sin argumento devuelve la base con `/` final) y `urlAbsoluta('login')` (con protocolo y dominio, para correos y `canonical`). La base se calcula comparando la carpeta del proyecto con `DOCUMENT_ROOT`, así que renombrar o mover la carpeta no obliga a editar nada. Se carga con `composer.json` (`autoload.files`).
+- **En vistas:** `<?php echo url(); ?>assets/...`; **en controladores/traits:** `header('Location: ' . url('login'))`.
+- **En JS:** `window.BASE_URL` la define PHP en el `<head>` de `plantillaBase.php`, `loginView.php` y `restablecerClaveView.php`; el código usa `BASE_URL + 'ruta'` y `api.get/post('ruta')`.
+- **Regex PHP:** `app/helpers/Patrones.php` (`App\Helpers\Patrones`, solo constantes: `CEDULA`, `RIF`, `TELEFONO`, `REFERENCIA_PAGO`, `SOLO_LETRAS`, `FECHA_ISO`, `CLAVE_PROHIBIDA`, `ARCHIVO_PDF`, etc.). Modelos, traits y controladores usan `Patrones::X` en lugar de literales.
+- **Regex JS:** `assets/js/patrones.js` (objeto `PATRONES`: `correo`, `soloLetras`, `noDigitos`, `referenciaPago`, `claveProhibida`, etc.), cargado en `plantillaBase.php` antes de `utilidades.js`.
+- Si se cambia una regla de validación hay que cambiarla en `Patrones.php` y en `patrones.js`. Los atributos `pattern=""` de los `<input>` en las vistas siguen escritos a mano.
+
+- **Sidebar responsive:** en escritorio el menú se expande y empuja el contenido (`.sidebar` pasa de 70px a 264px y `ui.js` reajusta las tablas al terminar); en móvil/tablet (<992px) el offcanvas mide min(84vw, 300px), con cabecera compacta, menú con scroll y usuario fijo abajo. Estilos en ssets/css/estiloUI.css.

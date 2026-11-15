@@ -9,13 +9,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SP Perfect Color - Restablecer Contraseña</title>
     <meta name="robots" content="noindex, nofollow">
-    <link rel="icon" type="image/webp" href="/SP%20Perfect%20Color/assets/images/logo.webp">
+    <link rel="icon" type="image/webp" href="<?php echo url(); ?>assets/images/logo.webp">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/estiloBase.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/estiloBase.css'); ?>">
+    <link rel="stylesheet" href="<?php echo url(); ?>assets/css/estiloBase.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/estiloBase.css'); ?>">
     <meta name="csrf-token" content="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
-    <script src="/SP%20Perfect%20Color/assets/js/csrf.js"></script>
+    <script src="<?php echo url(); ?>assets/js/csrf.js"></script>
+    <script>window.BASE_URL = <?php echo json_encode(url()); ?>;</script>
 </head>
 <body class="login-page">
     <div class="login-bg-shapes">
@@ -29,7 +30,7 @@
         <div class="card shadow">
             <div class="card-header text-center border-0">
                 <div class="login-logo-wrapper">
-                    <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color" class="login-logo">
+                    <img src="<?php echo url(); ?>assets/images/logo-recortado.webp" alt="SP Perfect Color" class="login-logo">
                 </div>
                 <h1 style="font-size: 1.5rem;">Restablecer Contraseña</h1>
                 <p class="mb-0">Ingrese su nueva clave de acceso</p>
@@ -40,7 +41,7 @@
                         <i class="bi bi-exclamation-triangle-fill me-2"></i><?php echo htmlspecialchars($errorToken); ?>
                     </div>
                     <div class="text-center mt-3">
-                        <a href="/SP%20Perfect%20Color/login" class="btn btn-primary w-100">Volver al Inicio de Sesión</a>
+                        <a href="<?php echo url(); ?>login" class="btn btn-primary w-100">Volver al Inicio de Sesión</a>
                     </div>
                 <?php else: ?>
                     <form id="formRestablecerClave" novalidate>
@@ -76,7 +77,7 @@
                 <?php endif; ?>
             </div>
             <div class="card-footer text-center border-0 py-3">
-                <small class="text-muted"><a href="/SP%20Perfect%20Color/login" class="text-decoration-none">Regresar al inicio de sesión</a></small>
+                <small class="text-muted"><a href="<?php echo url(); ?>login" class="text-decoration-none">Regresar al inicio de sesión</a></small>
             </div>
         </div>
     </div>
@@ -122,12 +123,12 @@
                 $btn.prop('disabled', true);
                 $spinner.removeClass('d-none');
 
-                $.ajax({ url: '/SP%20Perfect%20Color/login/guardarNuevaClave', type: 'POST', data: new FormData(form), processData: false, contentType: false, dataType: 'json' })
+                $.ajax({ url: BASE_URL + 'login/guardarNuevaClave', type: 'POST', data: new FormData(form), processData: false, contentType: false, dataType: 'json' })
                     .done(function (json) {
                         if (json.estado === 'exito') {
                             avisar('success', json.mensaje);
                             setTimeout(function () {
-                                window.location.href = json.datos && json.datos.redirect ? json.datos.redirect : '/SP%20Perfect%20Color/login';
+                                window.location.href = json.datos && json.datos.redirect ? json.datos.redirect : BASE_URL + 'login';
                             }, 2000);
                         } else {
                             avisar('danger', json.mensaje || 'Error al restablecer la contraseña.');

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Traits;
 
+use App\Helpers\Patrones;
 use PDO;
 
 // TRAIT: EnvaseTrait
@@ -20,7 +21,7 @@ trait EnvaseTrait
         if ($fraccion === '' || $fraccion === '1') {
             return 128;
         }
-        if (!preg_match('/^(\d+)\/(\d+)$/', $fraccion, $m) || (int)$m[2] === 0) {
+        if (!preg_match(Patrones::FRACCION, $fraccion, $m) || (int)$m[2] === 0) {
             return 0;
         }
         $valor = (int)$m[1] * 128;
@@ -152,7 +153,7 @@ trait EnvaseTrait
         }
 
         $fraccion = $this->etiquetaFraccion($tamano);
-        $nombreBase = trim(preg_replace('/\s*\(Gal[oó]n\)\s*$/iu', '', (string)$padre['nombre']));
+        $nombreBase = trim(preg_replace(Patrones::SUFIJO_BASE_GALON, '', (string)$padre['nombre']));
         $stmt = $this->conexion->prepare(
             "INSERT INTO productos (id_tipo_producto, id_producto_padre, fraccion, codigo, nombre, unidad_medida, stock_actual, stock_minimo, alerta_activa, precio_venta, estado)
              VALUES (1, :padre, :fraccion, :codigo, :nombre, :unidad, :stock, 0, 0, :precio, 1)"

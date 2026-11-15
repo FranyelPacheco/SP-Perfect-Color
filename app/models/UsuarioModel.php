@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Helpers\Patrones;
 use App\Traits\ImagenSeguraTrait;
 use App\Traits\PdfSeguroTrait;
 use PDO;
@@ -266,7 +267,7 @@ class UsuarioModel extends ModeloBase
             return ['exito' => false, 'mensaje' => 'Todos los campos son obligatorios'];
         }
 
-        if (strlen($clave) > 20 || preg_match('/[\'"`;\\\\<>]/', $clave) || str_contains($clave, '--') || str_contains($clave, '/*') || str_contains($clave, '*/')) {
+        if (strlen($clave) > 20 || preg_match(Patrones::CLAVE_PROHIBIDA, $clave)) {
             return ['exito' => false, 'mensaje' => 'Correo o clave incorrectos'];
         }
 

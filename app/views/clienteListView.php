@@ -130,4 +130,4 @@
     </div>
 </div>
 
-<script src="/SP%20Perfect%20Color/assets/js/cliente.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/cliente.js'); ?>"></script>
+<script src="<?php echo url(); ?>assets/js/cliente.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/cliente.js'); ?>"></script>

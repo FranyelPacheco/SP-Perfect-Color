@@ -4,7 +4,7 @@
 ?>
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0 toolbar-title"><i class="bi bi-box-arrow-in-down me-2 text-primary"></i>Registrar Compra</h2>
-    <a href="/SP%20Perfect%20Color/notaEntregaCompra" class="btn btn-outline-secondary" title="Volver" data-bs-toggle="tooltip">
+    <a href="<?php echo url(); ?>notaEntregaCompra" class="btn btn-outline-secondary" title="Volver" data-bs-toggle="tooltip">
         <i class="bi bi-arrow-left"></i>
     </a>
 </div>
@@ -209,7 +209,7 @@
                     <div id="alertaErrorCompra" class="alert alert-danger d-none mt-3"></div>
 
                     <div class="d-flex justify-content-end gap-2 mt-4">
-                        <a href="/SP%20Perfect%20Color/notaEntregaCompra" class="btn btn-secondary" title="Volver" data-bs-toggle="tooltip"><i class="bi bi-arrow-left"></i></a>
+                        <a href="<?php echo url(); ?>notaEntregaCompra" class="btn btn-secondary" title="Volver" data-bs-toggle="tooltip"><i class="bi bi-arrow-left"></i></a>
                         <button type="submit" class="btn btn-success px-4" id="btnGuardarNotaCompra">
                             <i class="bi bi-check-circle-fill me-1"></i>Guardar
                         </button>
@@ -292,4 +292,4 @@
 <script>
 window.insumosCompraCatalogo = <?php echo json_encode($insumos ?? []); ?>;
 </script>
-<script src="/SP%20Perfect%20Color/assets/js/notaEntregaCompra.js?v=<?php echo file_exists(__DIR__ . '/../../assets/js/notaEntregaCompra.js') ? filemtime(__DIR__ . '/../../assets/js/notaEntregaCompra.js') : time(); ?>"></script>
+<script src="<?php echo url(); ?>assets/js/notaEntregaCompra.js?v=<?php echo file_exists(__DIR__ . '/../../assets/js/notaEntregaCompra.js') ? filemtime(__DIR__ . '/../../assets/js/notaEntregaCompra.js') : time(); ?>"></script>

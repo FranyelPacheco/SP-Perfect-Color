@@ -114,4 +114,4 @@
     </div>
 </div>
 
-<script src="/SP%20Perfect%20Color/assets/js/tasaCambio.js?v=<?php echo file_exists(__DIR__ . '/../../assets/js/tasaCambio.js') ? filemtime(__DIR__ . '/../../assets/js/tasaCambio.js') : time(); ?>"></script>
+<script src="<?php echo url(); ?>assets/js/tasaCambio.js?v=<?php echo file_exists(__DIR__ . '/../../assets/js/tasaCambio.js') ? filemtime(__DIR__ . '/../../assets/js/tasaCambio.js') : time(); ?>"></script>

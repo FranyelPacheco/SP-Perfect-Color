@@ -137,4 +137,4 @@
     </div>
 </div>
 
-<script src="/SP%20Perfect%20Color/assets/js/reporte.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/reporte.js'); ?>"></script>
+<script src="<?php echo url(); ?>assets/js/reporte.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/reporte.js'); ?>"></script>

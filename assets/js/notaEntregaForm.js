@@ -207,7 +207,7 @@ $(function() {
                             return;
                         }
                         const referencia = ($('#referenciaPago').val() || '').trim();
-                        if (!/^\d{5}$/.test(referencia)) {
+                        if (!PATRONES.referenciaPago.test(referencia)) {
                             mostrarError('La referencia debe tener los últimos 5 dígitos del comprobante');
                             return;
                         }
@@ -241,7 +241,7 @@ $(function() {
                                 return;
                             }
                             const refIni = ($('#referenciaPagoInicial').val() || '').trim();
-                            if (!/^\d{5}$/.test(refIni)) {
+                            if (!PATRONES.referenciaPago.test(refIni)) {
                                 mostrarError('La referencia debe tener los últimos 5 dígitos del comprobante');
                                 return;
                             }
@@ -268,7 +268,7 @@ $(function() {
                 if (resultado.estado === 'exito') {
                     mostrarNotificacion('Nota de entrega #' + resultado.datos.id_nota_entrega + ' creada exitosamente', 'exito');
                     setTimeout(function() {
-                        window.location.href = '/SP%20Perfect%20Color/notaEntrega';
+                        window.location.href = BASE_URL + 'notaEntrega';
                     }, 1500);
                 } else {
                     mostrarError(resultado.mensaje);

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Helpers\Patrones;
 use App\Traits\ContactoTrait;
 use PDO;
 
@@ -83,7 +84,7 @@ class ProveedorModel extends ModeloBase
         if ($rif === '') {
             return ['valido' => false, 'mensaje' => 'El RIF es obligatorio'];
         }
-        if (!preg_match('/^[JVEG]-\d{1,9}$/', $rif)) {
+        if (!preg_match(Patrones::RIF, $rif)) {
             return ['valido' => false, 'mensaje' => 'El RIF debe tener formato válido (Ej: J-123456789)'];
         }
 
@@ -93,7 +94,7 @@ class ProveedorModel extends ModeloBase
         if (mb_strlen($nombreEmpresa) < 3 || mb_strlen($nombreEmpresa) > 60) {
             return ['valido' => false, 'mensaje' => 'El nombre de la empresa debe tener entre 3 y 60 caracteres'];
         }
-        if (!preg_match('/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-&]+$/u', $nombreEmpresa)) {
+        if (!preg_match(Patrones::NOMBRE_EMPRESA, $nombreEmpresa)) {
             return ['valido' => false, 'mensaje' => 'El nombre de la empresa contiene caracteres no permitidos (solo letras, números y signos . , - &)'];
         }
 

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Helpers\Patrones;
 use App\Traits\ContactoTrait;
 use PDO;
 
@@ -78,7 +79,7 @@ class ClienteModel extends ModeloBase
         if ($cedula === '') {
             return ['valido' => false, 'mensaje' => 'La cédula es obligatoria'];
         }
-        if (!preg_match('/^[VEJ]-\d{6,9}$/i', $cedula)) {
+        if (!preg_match(Patrones::CEDULA, $cedula)) {
             return ['valido' => false, 'mensaje' => 'El documento debe tener formato V, E o J seguido de 6 a 9 dígitos'];
         }
 

@@ -9,7 +9,7 @@
             <div class="d-flex gap-2 align-items-center flex-wrap">
                 <input type="text" id="busquedaNotasCompra" class="form-control input-busqueda" placeholder="Buscar por proveedor o RIF...">
                 <?php if (\App\Helpers\tienePermiso('notaEntregaCompra')): ?>
-                <a href="/SP%20Perfect%20Color/notaEntregaCompra/crear" class="btn btn-success" title="Registrar Compra" data-bs-toggle="tooltip">
+                <a href="<?php echo url(); ?>notaEntregaCompra/crear" class="btn btn-success" title="Registrar Compra" data-bs-toggle="tooltip">
                     <i class="bi bi-plus-lg"></i>
                 </a>
                 <?php endif; ?>
@@ -36,4 +36,4 @@
     </div>
 </div>
 
-<script src="/SP%20Perfect%20Color/assets/js/notaEntregaCompra.js?v=<?php echo file_exists(__DIR__ . '/../../assets/js/notaEntregaCompra.js') ? filemtime(__DIR__ . '/../../assets/js/notaEntregaCompra.js') : time(); ?>"></script>
+<script src="<?php echo url(); ?>assets/js/notaEntregaCompra.js?v=<?php echo file_exists(__DIR__ . '/../../assets/js/notaEntregaCompra.js') ? filemtime(__DIR__ . '/../../assets/js/notaEntregaCompra.js') : time(); ?>"></script>

@@ -431,7 +431,7 @@ $(function() {
     });
 
     $cuerpoTablaItems.on('input', '.item-presupuesto-cantidad', function() {
-        this.value = this.value.replace(/[^0-9]/g, '');
+        this.value = this.value.replace(PATRONES.noDigitos, '');
         const it = itemsPresupuesto[parseInt($(this).attr('data-indice'))];
         let val = parseInt(this.value, 10);
         if (!it) return;
@@ -526,7 +526,7 @@ $(function() {
             if (resultado.estado === 'exito') {
                 mostrarNotificacion('Presupuesto #' + resultado.datos.id_presupuesto + ' creado exitosamente. Total: $ ' + formatearMoneda(resultado.datos.total), 'exito');
                 setTimeout(function() {
-                    window.location.href = '/SP%20Perfect%20Color/presupuesto';
+                    window.location.href = BASE_URL + 'presupuesto';
                 }, 1200);
             } else {
                 mostrarError(resultado.mensaje);

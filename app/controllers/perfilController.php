@@ -22,7 +22,7 @@ if ($metodo === 'index') {
     $usuario = $usuarioModel->buscarConRolPorId($idUsuario);
 
     if (!$usuario) {
-        header('Location: /SP%20Perfect%20Color/login/salir');
+        header('Location: ' . url('login/salir'));
         exit;
     }
 

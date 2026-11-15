@@ -78,13 +78,13 @@ $(function() {
                             var idEst = parseInt(row.id_estado_venta || 0);
                             var html = '<div class="d-flex gap-2">';
                             if (idEst === 1) {
-                                html += '<a href="/SP%20Perfect%20Color/notaEntrega/crearDesdePresupuesto?id=' + (row.id_venta || row.id_nota_entrega) + '" class="btn btn-sm btn-success" title="Aprobar y Cobrar Entrega"><i class="bi bi-cash-coin me-1"></i>Cobrar / Aprobar</a>' +
-                                        '<a href="/SP%20Perfect%20Color/presupuesto/ver?id=' + (row.id_venta || row.id_nota_entrega) + '" class="btn btn-sm btn-info text-white" title="Ver Detalle"><i class="bi bi-eye-fill"></i></a>';
+                                html += '<a href="' + BASE_URL + 'notaEntrega/crearDesdePresupuesto?id=' + (row.id_venta || row.id_nota_entrega) + '" class="btn btn-sm btn-success" title="Aprobar y Cobrar Entrega"><i class="bi bi-cash-coin me-1"></i>Cobrar / Aprobar</a>' +
+                                        '<a href="' + BASE_URL + 'presupuesto/ver?id=' + (row.id_venta || row.id_nota_entrega) + '" class="btn btn-sm btn-info text-white" title="Ver Detalle"><i class="bi bi-eye-fill"></i></a>';
                             } else if (idEst === 2) {
-                                html += '<a href="/SP%20Perfect%20Color/notaEntrega/ver?id=' + (row.id_nota_entrega || row.id_venta) + '" class="btn btn-sm btn-info text-white" title="Ver Comprobante"><i class="bi bi-eye-fill"></i></a>' +
-                                        '<a href="/SP%20Perfect%20Color/notaEntrega/pdf?id=' + (row.id_nota_entrega || row.id_venta) + '" target="_blank" class="btn btn-sm btn-primary" title="Comprobante PDF"><i class="bi bi-file-earmark-pdf-fill"></i></a>';
+                                html += '<a href="' + BASE_URL + 'notaEntrega/ver?id=' + (row.id_nota_entrega || row.id_venta) + '" class="btn btn-sm btn-info text-white" title="Ver Comprobante"><i class="bi bi-eye-fill"></i></a>' +
+                                        '<a href="' + BASE_URL + 'notaEntrega/pdf?id=' + (row.id_nota_entrega || row.id_venta) + '" target="_blank" class="btn btn-sm btn-primary" title="Comprobante PDF"><i class="bi bi-file-earmark-pdf-fill"></i></a>';
                             } else {
-                                html += '<a href="/SP%20Perfect%20Color/presupuesto/ver?id=' + (row.id_venta || row.id_nota_entrega) + '" class="btn btn-sm btn-secondary text-white" title="Ver Presupuesto"><i class="bi bi-eye-fill"></i></a>';
+                                html += '<a href="' + BASE_URL + 'presupuesto/ver?id=' + (row.id_venta || row.id_nota_entrega) + '" class="btn btn-sm btn-secondary text-white" title="Ver Presupuesto"><i class="bi bi-eye-fill"></i></a>';
                             }
                             html += '</div>';
                             return html;

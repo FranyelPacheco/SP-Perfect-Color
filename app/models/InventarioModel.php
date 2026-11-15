@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Helpers\Patrones;
 use App\Traits\EnvaseTrait;
 use PDO;
 
@@ -663,7 +664,7 @@ class InventarioModel extends ModeloBase
             return ['exito' => false, 'mensaje' => 'La mezcla admite como máximo 6 tintes base'];
         }
 
-        $factorPresentacion = $this->factor128(trim((string)preg_replace('/\s*Gal[oó]n.*$/iu', '', $presentacion)));
+        $factorPresentacion = $this->factor128(trim((string)preg_replace(Patrones::SUFIJO_GALON, '', $presentacion)));
         if ($factorPresentacion === 0) {
             return ['exito' => false, 'mensaje' => 'La presentación de la mezcla no es válida'];
         }

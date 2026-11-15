@@ -81,13 +81,13 @@ if ($metodo === 'index') {
 
     $id = intval($_GET['id'] ?? 0);
     if ($id < 1) {
-        header('Location: /SP%20Perfect%20Color/notaEntregaCompra');
+        header('Location: ' . url('notaEntregaCompra'));
         exit;
     }
 
     $nota = $notaEntregaCompraModel->buscarPorId($id);
     if (!$nota) {
-        header('Location: /SP%20Perfect%20Color/notaEntregaCompra');
+        header('Location: ' . url('notaEntregaCompra'));
         exit;
     }
 

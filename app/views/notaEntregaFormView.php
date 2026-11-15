@@ -5,7 +5,7 @@
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0">Nota de Entrega #<?php echo $presupuesto['id_presupuesto']; ?></h2>
-    <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-outline-secondary" title="Volver" aria-label="Volver" data-bs-toggle="tooltip"><i class="bi bi-arrow-left"></i></a>
+    <a href="<?php echo url(); ?>notaEntrega" class="btn btn-outline-secondary" title="Volver" aria-label="Volver" data-bs-toggle="tooltip"><i class="bi bi-arrow-left"></i></a>
 </div>
 
 <form id="formularioNotaEntrega">
@@ -52,7 +52,7 @@
             <div class="row g-3">
                 <div class="col-md-4">
                     <small class="text-muted d-block">Presupuesto de origen:</small>
-                    <a href="/SP%20Perfect%20Color/presupuesto/ver?id=<?php echo $presupuesto['id_presupuesto']; ?>" class="text-decoration-none fw-semibold">#<?php echo $presupuesto['id_presupuesto']; ?> - <?php echo htmlspecialchars($presupuesto['cliente_nombre'] ?? ''); ?></a>
+                    <a href="<?php echo url(); ?>presupuesto/ver?id=<?php echo $presupuesto['id_presupuesto']; ?>" class="text-decoration-none fw-semibold">#<?php echo $presupuesto['id_presupuesto']; ?> - <?php echo htmlspecialchars($presupuesto['cliente_nombre'] ?? ''); ?></a>
                 </div>
 <?php
 $tasaHoyNotaForm = (float)($tasaCambioGlobal ?? 0);
@@ -170,7 +170,7 @@ $totalNotaFormBs = $totalNotaFormUsd * $tasaHoyNotaForm;
     <div id="mensajeErrorNota" class="alert alert-danger d-none"></div>
 
     <div class="d-flex justify-content-end gap-2 barra-accion-fija">
-        <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i>Cancelar</a>
+        <a href="<?php echo url(); ?>notaEntrega" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i>Cancelar</a>
         <button type="submit" class="btn btn-success btn-lg" id="btnSubmitNota">
             <i class="bi bi-check-lg me-2"></i>Aprobar y Registrar Entrega
         </button>
@@ -276,4 +276,4 @@ toggleCondicionPago();
 var presupuestoDetalle = <?php echo json_encode($detalle); ?>;
 var presupuestoClienteId = <?php echo (int)$presupuesto['id_cliente']; ?>;
 </script>
-<script src="/SP%20Perfect%20Color/assets/js/notaEntregaForm.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/notaEntregaForm.js'); ?>"></script>
+<script src="<?php echo url(); ?>assets/js/notaEntregaForm.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/notaEntregaForm.js'); ?>"></script>

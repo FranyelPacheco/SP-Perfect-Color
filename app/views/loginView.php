@@ -11,8 +11,8 @@
     <meta name="description" content="Inicio de sesión al sistema de gestión administrativa SP Perfect Color.">
     <meta name="robots" content="noindex, nofollow">
     <meta name="author" content="SP Perfect Color">
-    <link rel="canonical" href="<?php echo 'https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/SP%20Perfect%20Color/login'; ?>">
-    <link rel="icon" type="image/webp" href="/SP%20Perfect%20Color/assets/images/logo.webp">
+    <link rel="canonical" href="<?php echo urlAbsoluta('login'); ?>">
+    <link rel="icon" type="image/webp" href="<?php echo url(); ?>assets/images/logo.webp">
 
     <meta property="og:title" content="SP Perfect Color - Iniciar Sesión">
     <meta property="og:description" content="Inicio de sesión al sistema de gestión administrativa SP Perfect Color.">
@@ -29,7 +29,7 @@
         "@context": "https://schema.org",
         "@type": "Organization",
         "name": "SP Perfect Color",
-        "url": "<?php echo 'https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/SP%20Perfect%20Color'; ?>",
+        "url": "<?php echo rtrim(urlAbsoluta(), '/'); ?>",
         "description": "Sistema de gestión administrativa para SP Perfect Color",
         "foundingDate": "2025"
     }
@@ -38,17 +38,18 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/estiloBase.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/estiloBase.css'); ?>">
-    <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/login.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/login.css'); ?>">
+    <link rel="stylesheet" href="<?php echo url(); ?>assets/css/estiloBase.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/estiloBase.css'); ?>">
+    <link rel="stylesheet" href="<?php echo url(); ?>assets/css/login.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/login.css'); ?>">
     <meta name="csrf-token" content="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
-    <script src="/SP%20Perfect%20Color/assets/js/csrf.js"></script>
+    <script src="<?php echo url(); ?>assets/js/csrf.js"></script>
+    <script>window.BASE_URL = <?php echo json_encode(url()); ?>;</script>
 </head>
 <body class="auth-page">
     <main class="auth-layout">
         <aside class="auth-brand" aria-hidden="false">
             <div class="auth-brand-inner">
                 <div class="auth-logo-badge">
-                    <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color">
+                    <img src="<?php echo url(); ?>assets/images/logo-recortado.webp" alt="SP Perfect Color">
                 </div>
                 <h1>SP Perfect Color</h1>
                 <p class="auth-lema">Sistema de gestión interno</p>
@@ -58,7 +59,7 @@
         <section class="auth-form-lado">
             <div class="auth-form-caja">
                 <div class="auth-logo-movil">
-                    <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color">
+                    <img src="<?php echo url(); ?>assets/images/logo-recortado.webp" alt="SP Perfect Color">
                     <span>SP Perfect Color</span>
                 </div>
                 <h2>Iniciar sesión</h2>
@@ -137,6 +138,6 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/SP%20Perfect%20Color/assets/js/login.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/login.js'); ?>"></script>
+    <script src="<?php echo url(); ?>assets/js/login.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/login.js'); ?>"></script>
 </body>
 </html>

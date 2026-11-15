@@ -71,7 +71,7 @@ $(function() {
     }
 
     function factor128(fraccion) {
-        const m = String(fraccion || '1').match(/^(\d+)\/(\d+)$/);
+        const m = String(fraccion || '1').match(PATRONES.fraccion);
         return m ? Math.round(parseInt(m[1]) * 128 / parseInt(m[2])) : 128;
     }
 
@@ -81,7 +81,7 @@ $(function() {
         const unidad = String(p.unidad_medida || '');
         let texto = null;
         if (tipo === 1) texto = String(p.fraccion || '1');
-        else if (tipo === 3) texto = (unidad.match(/\d+\/\d+/) || [])[0] || (/gal/i.test(unidad) ? '1' : null);
+        else if (tipo === 3) texto = (unidad.match(PATRONES.fraccionEnTexto) || [])[0] || (/gal/i.test(unidad) ? '1' : null);
         if (texto === null) return { fraccion: null, etiqueta: unidad || '-' };
         const partes = texto.split('/');
         const valor = partes.length === 2 ? parseInt(partes[0]) / parseInt(partes[1]) : 1;
@@ -116,7 +116,7 @@ $(function() {
             if (teclasBloqueadas.includes(e.key)) e.preventDefault();
         });
         $input.on('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '');
+            this.value = this.value.replace(PATRONES.noDigitos, '');
         });
     }
 
@@ -536,7 +536,7 @@ $(function() {
     const $mensajeErrorMezcla = $('#mensajeErrorMezcla');
 
     $mezclaNombre.on('input', function() {
-        this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\-\/\#\.]/g, '').substring(0, 40);
+        this.value = this.value.replace(PATRONES.nombreMezclaInvalido, '').substring(0, 40);
     });
 
     async function cargarBasesParaMezcla() {
@@ -986,12 +986,12 @@ $(function() {
     const $contadorAjuste = $('#contadorAjusteObservacion');
     $ajusteObservacion.on('input', function() {
         // Permitir solo texto alfanumérico, espacios y puntuación estándar
-        this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.\,\-\:\;]/g, '').substring(0, 200);
-        const palabras = this.value.trim().split(/\s+/).filter(Boolean);
+        this.value = this.value.replace(PATRONES.observacionAjusteInvalida, '').substring(0, 200);
+        const palabras = this.value.trim().split(PATRONES.espacios).filter(Boolean);
         if (palabras.length > 40) {
             this.value = palabras.slice(0, 40).join(' ');
         }
-        const countPalabras = this.value.trim().split(/\s+/).filter(Boolean).length;
+        const countPalabras = this.value.trim().split(PATRONES.espacios).filter(Boolean).length;
         $contadorAjuste.text(this.value.length + ' / 200 caracteres (' + countPalabras + ' / 40 palabras)');
     });
 
@@ -1018,7 +1018,7 @@ $(function() {
         const cant = Number(cantRaw);
         const obs = $ajusteObservacion.val().trim();
 
-        const palabrasObs = obs.split(/\s+/).filter(Boolean).length;
+        const palabrasObs = obs.split(PATRONES.espacios).filter(Boolean).length;
         if (obs.length > 200 || palabrasObs > 40) {
             errorAjuste('La observación no puede superar los 200 caracteres ni 40 palabras.');
             return;

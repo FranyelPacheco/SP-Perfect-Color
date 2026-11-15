@@ -1,6 +1,8 @@
 <?php
 namespace App\Controllers;
 
+use App\Helpers\Patrones;
+
 // FUNCIÓN: — (clase frontController)
 // OBJETIVO: Enrutador principal — parsea la URL, carga el controlador correspondiente y define variables SEO (pageTitle, pageDescription)
 // NOTA: Controlador forzado a minúsculas; solo caracteres a-z permitidos para prevenir path traversal
@@ -59,7 +61,7 @@ class frontController
         if (isset($this->mapeoControladores[$controladorRaw])) {
             $this->controlador = $this->mapeoControladores[$controladorRaw];
         } else {
-            $this->controlador = preg_match('/^[a-z]+$/', $controladorRaw) ? $controladorRaw : 'login';
+            $this->controlador = preg_match(Patrones::CONTROLADOR_URL, $controladorRaw) ? $controladorRaw : 'login';
         }
         $this->metodo = !empty($partes[1]) ? $partes[1] : 'index';
         $this->parametros = array_slice($partes, 2);

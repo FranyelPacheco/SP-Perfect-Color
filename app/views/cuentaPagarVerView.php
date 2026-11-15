@@ -4,7 +4,7 @@
 ?>
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0">Cuenta por Pagar #<?php echo $cuenta['id_cuenta_pagar']; ?></h2>
-    <a href="/SP%20Perfect%20Color/cuentaPagar" class="btn btn-secondary" title="Volver" data-bs-toggle="tooltip"><i class="bi bi-arrow-left"></i></a>
+    <a href="<?php echo url(); ?>cuentaPagar" class="btn btn-secondary" title="Volver" data-bs-toggle="tooltip"><i class="bi bi-arrow-left"></i></a>
 </div>
 
 <div class="card border-0 shadow-sm mb-4">
@@ -207,7 +207,7 @@ $(function() {
         var tipoVal = parseInt(tipoPagoId);
         if (tipoVal === 2 || tipoVal === 3) {
             if (!bancoId) return mostrar('Debe seleccionar un banco para transferencia o pago móvil');
-            if (!/^\d{5}$/.test(referencia.trim())) return mostrar('La referencia debe tener los últimos 5 dígitos del comprobante');
+            if (!PATRONES.referenciaPago.test(referencia.trim())) return mostrar('La referencia debe tener los últimos 5 dígitos del comprobante');
         }
 
         api.post('cuentaPagar/registrarPago', {

@@ -49,7 +49,7 @@ if ($metodo === 'index') {
     $presupuestoId = intval($_GET['id'] ?? 0);
     
     if ($presupuestoId < 1) {
-        header('Location: /SP%20Perfect%20Color/presupuesto');
+        header('Location: ' . url('presupuesto'));
         exit;
     }
     
@@ -58,7 +58,7 @@ if ($metodo === 'index') {
     $estadoActual = $presupuesto['estado'] ?? '';
     $idEstadoVenta = intval($presupuesto['id_estado_venta'] ?? 0);
     if (!$presupuesto || ($estadoActual !== 'aprobado' && $estadoActual !== 'presupuesto' && $estadoActual !== 'pendiente' && $idEstadoVenta !== 1 && $idEstadoVenta !== 2)) {
-        header('Location: /SP%20Perfect%20Color/presupuesto');
+        header('Location: ' . url('presupuesto'));
         exit;
     }
     
@@ -87,14 +87,14 @@ if ($metodo === 'index') {
     $id = intval($_GET['id'] ?? 0);
     
     if ($id < 1) {
-        header('Location: /SP%20Perfect%20Color/notaEntrega');
+        header('Location: ' . url('notaEntrega'));
         exit;
     }
     
     $nota = $notaEntregaModel->buscarPorId($id);
     
     if (!$nota) {
-        header('Location: /SP%20Perfect%20Color/notaEntrega');
+        header('Location: ' . url('notaEntrega'));
         exit;
     }
     
@@ -145,13 +145,13 @@ if ($metodo === 'index') {
 
     $id = intval($_GET['id'] ?? 0);
     if ($id < 1) {
-        header('Location: /SP%20Perfect%20Color/notaEntrega');
+        header('Location: ' . url('notaEntrega'));
         exit;
     }
 
     $nota = $notaEntregaModel->buscarPorId($id);
     if (!$nota) {
-        header('Location: /SP%20Perfect%20Color/notaEntrega');
+        header('Location: ' . url('notaEntrega'));
         exit;
     }
 

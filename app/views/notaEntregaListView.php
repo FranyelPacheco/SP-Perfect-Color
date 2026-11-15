@@ -17,7 +17,7 @@
             </div>
             <div class="d-flex gap-2 align-items-center flex-wrap">
                 <input type="text" id="busquedaNotas" class="form-control input-busqueda" placeholder="Buscar por cliente o cédula...">
-                <a href="/SP%20Perfect%20Color/presupuesto/nuevo" class="btn btn-primary" title="Nueva Venta / Presupuesto" data-bs-toggle="tooltip">
+                <a href="<?php echo url(); ?>presupuesto/nuevo" class="btn btn-primary" title="Nueva Venta / Presupuesto" data-bs-toggle="tooltip">
                     <i class="bi bi-plus-lg"></i>
                 </a>
             </div>
@@ -43,4 +43,4 @@
     </div>
 </div>
 
-<script src="/SP%20Perfect%20Color/assets/js/notaEntrega.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/notaEntrega.js'); ?>"></script>
+<script src="<?php echo url(); ?>assets/js/notaEntrega.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/notaEntrega.js'); ?>"></script>

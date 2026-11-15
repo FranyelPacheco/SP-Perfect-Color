@@ -37,8 +37,6 @@ if (window.jQuery && $.fn.dataTable) {
     });
 }
 
-const BASE_URL = '/SP%20Perfect%20Color/';
-
 function escapeHtml(texto) {
     return String(texto ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -216,21 +214,21 @@ function restringirSoloLetras(input) {
         if (['Backspace', 'Tab', 'Enter', 'Escape', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key) || e.ctrlKey || e.metaKey || e.altKey) {
             return;
         }
-        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]$/.test(e.key)) {
+        if (!PATRONES.unaLetra.test(e.key)) {
             e.preventDefault();
         }
     });
 
     $input.on('beforeinput', function(e) {
         const dato = e.originalEvent.data;
-        if (dato && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/.test(dato)) {
+        if (dato && !PATRONES.soloLetrasOpcional.test(dato)) {
             e.preventDefault();
         }
     });
 
     $input.on('input', function() {
         const cursorPos = this.selectionStart;
-        const limpio = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+        const limpio = this.value.replace(PATRONES.noLetras, '');
         if (this.value !== limpio) {
             this.value = limpio;
             if (cursorPos !== null) {
@@ -241,9 +239,9 @@ function restringirSoloLetras(input) {
 
     $input.on('paste', function(e) {
         const textoPegado = (e.originalEvent.clipboardData || window.clipboardData).getData('text');
-        if (textoPegado && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(textoPegado)) {
+        if (textoPegado && !PATRONES.soloLetras.test(textoPegado)) {
             e.preventDefault();
-            document.execCommand('insertText', false, textoPegado.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, ''));
+            document.execCommand('insertText', false, textoPegado.replace(PATRONES.noLetras, ''));
         }
     });
 }

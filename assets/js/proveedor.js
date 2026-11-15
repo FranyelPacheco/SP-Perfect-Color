@@ -31,7 +31,6 @@ $(function() {
     const $mensajeError = $('#mensajeErrorProveedor');
     const $btnGuardarProveedor = $formularioProveedor.find('button[type="submit"]');
 
-    const REGEX_EMAIL = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     const esAdmin = $('#btnNuevoProveedor').length > 0;
 
     // Cargar rubros disponibles
@@ -203,7 +202,7 @@ $(function() {
             return;
         }
 
-        if (!REGEX_EMAIL.test(correo)) {
+        if (!PATRONES.correo.test(correo)) {
             marcarCampo($correoProveedor, $feedbackCorreoProveedor, 'invalid', 'Formato de correo inválido (ej: proveedor@correo.com)', true);
             $correoProveedor.attr('title', 'Formato de correo inválido');
             $feedbackCorreoProveedor.attr('title', 'Formato de correo inválido');
@@ -226,14 +225,14 @@ $(function() {
     }
 
     $rifProveedor.on('input', function() {
-        this.value = this.value.replace(/[^0-9]/g, '');
+        this.value = this.value.replace(PATRONES.noDigitos, '');
         verificarRifEnTiempoReal();
     });
     $tipoRifProveedor.on('change', verificarRifEnTiempoReal);
     $correoProveedor.on('input blur', verificarCorreoEnTiempoReal);
 
     $telefonoNumeroProveedor.add($telefonoNumeroProveedor2).on('input', function() {
-        this.value = this.value.replace(/[^0-9]/g, '');
+        this.value = this.value.replace(PATRONES.noDigitos, '');
     });
 
     async function cargarProveedores() {
@@ -346,7 +345,7 @@ $(function() {
                 resetearSegundoTelefonoProveedor();
                 const arrayTels = (proveedor.telefonos || '').split(',').map(function(t) { return t.trim(); });
                 if (arrayTels[0]) {
-                    const telRaw1 = arrayTels[0].replace(/[^0-9]/g, '');
+                    const telRaw1 = arrayTels[0].replace(PATRONES.noDigitos, '');
                     if (telRaw1.length === 11 && $operadoraProveedor.length) {
                         asignarOperadora($operadoraProveedor, telRaw1.substring(0, 4));
                         $telefonoNumeroProveedor.val(telRaw1.substring(4));
@@ -355,7 +354,7 @@ $(function() {
                     }
                 }
                 if (arrayTels[1]) {
-                    const telRaw2 = arrayTels[1].replace(/[^0-9]/g, '');
+                    const telRaw2 = arrayTels[1].replace(PATRONES.noDigitos, '');
                     if (telRaw2.length === 11 && $operadoraProveedor2.length) {
                         asignarOperadora($operadoraProveedor2, telRaw2.substring(0, 4));
                         $telefonoNumeroProveedor2.val(telRaw2.substring(4));
@@ -406,7 +405,7 @@ $(function() {
             $nombreEmpresaProveedor.trigger('focus');
             return;
         }
-        if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-&]+$/.test(nombreEmpresaVal)) {
+        if (!PATRONES.nombreEmpresa.test(nombreEmpresaVal)) {
             mostrarError('El nombre de la empresa contiene caracteres no permitidos (solo letras, números y signos . , - &)');
             $nombreEmpresaProveedor.trigger('focus');
             return;
@@ -418,7 +417,7 @@ $(function() {
             $correoProveedor.trigger('focus');
             return;
         }
-        if (!REGEX_EMAIL.test(correoVal)) {
+        if (!PATRONES.correo.test(correoVal)) {
             mostrarError('El correo electrónico no tiene un formato válido');
             $correoProveedor.trigger('focus');
             return;

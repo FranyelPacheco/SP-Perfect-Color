@@ -36,7 +36,7 @@ if ($metodo === 'index') {
     }
 
     if (!tienePermiso('usuario')) {
-        header('Location: /SP%20Perfect%20Color/perfil');
+        header('Location: ' . url('perfil'));
         exit;
     }
 

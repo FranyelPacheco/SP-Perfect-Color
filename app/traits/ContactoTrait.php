@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Traits;
 
+use App\Helpers\Patrones;
 use PDO;
 
 // TRAIT: ContactoTrait
@@ -46,11 +47,11 @@ trait ContactoTrait
         if ($telefono === '') {
             return 'El teléfono principal es obligatorio';
         }
-        if (!preg_match('/^\d{11}$/', $telefono)) {
+        if (!preg_match(Patrones::TELEFONO, $telefono)) {
             return 'El teléfono principal debe tener 11 dígitos';
         }
         if ($telefono2 !== '') {
-            if (!preg_match('/^\d{11}$/', $telefono2)) {
+            if (!preg_match(Patrones::TELEFONO, $telefono2)) {
                 return 'El segundo teléfono debe tener 11 dígitos';
             }
             if ($telefono === $telefono2) {

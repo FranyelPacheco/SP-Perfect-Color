@@ -48,14 +48,14 @@ if ($metodo === 'index') {
     $id = intval($_GET['id'] ?? 0);
     
     if ($id < 1) {
-        header('Location: /SP%20Perfect%20Color/cuentaPagar');
+        header('Location: ' . url('cuentaPagar'));
         exit;
     }
     
     $cuenta = $cuentaPagarModel->buscarPorId($id);
     
     if (!$cuenta) {
-        header('Location: /SP%20Perfect%20Color/cuentaPagar');
+        header('Location: ' . url('cuentaPagar'));
         exit;
     }
     

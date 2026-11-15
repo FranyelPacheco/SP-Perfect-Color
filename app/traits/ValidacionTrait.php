@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Traits;
 
+use App\Helpers\Patrones;
+
 // TRAIT: ValidacionTrait
 // OBJETIVO: Reglas de validación compartidas por los modelos (vía ModeloBase) y por validacionHelper
 trait ValidacionTrait
@@ -106,7 +108,7 @@ trait ValidacionTrait
         if (mb_strlen($valor) > $maximo) {
             return "{$etiqueta} no puede exceder {$maximo} caracteres";
         }
-        if (!preg_match('/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/u', $valor)) {
+        if (!preg_match(Patrones::SOLO_LETRAS, $valor)) {
             return "{$etiqueta} solo puede contener letras y espacios";
         }
         return null;
@@ -135,7 +137,7 @@ trait ValidacionTrait
             if ($referencia === '') {
                 return ['valido' => false, 'mensaje' => "Debe ingresar el número de referencia para {$contexto}"];
             }
-            if (!preg_match('/^\d{5}$/', $referencia)) {
+            if (!preg_match(Patrones::REFERENCIA_PAGO, $referencia)) {
                 return ['valido' => false, 'mensaje' => 'La referencia debe tener los últimos 5 dígitos del comprobante'];
             }
         }
@@ -145,6 +147,6 @@ trait ValidacionTrait
 
     private function _ejecutarTieneCaracteresProhibidos(string $valor): bool
     {
-        return preg_match('/[\'"`;\\\\<>]/', $valor) === 1;
+        return preg_match(Patrones::TEXTO_PELIGROSO, $valor) === 1;
     }
 }

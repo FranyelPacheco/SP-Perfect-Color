@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Helpers\Patrones;
 use App\Models\TasaCambioModel;
 use function App\Helpers\{
     respuestaJson,
@@ -83,7 +84,7 @@ if ($metodo === 'index') {
     $fecha = trim($_GET['fecha'] ?? '');
     $idExcluir = intval($_GET['id'] ?? 0);
 
-    if (empty($fecha) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+    if (empty($fecha) || !preg_match(Patrones::FECHA_ISO, $fecha)) {
         respuestaJson('exito', 'Fecha no válida aún', ['existe' => false]);
     }
 

@@ -66,7 +66,7 @@ $(function() {
                         render: function(data, type, row) {
                             if (!row) return '';
                             var html = '<div class="d-flex gap-2">' +
-                                '<a href="/SP%20Perfect%20Color/presupuesto/ver?id=' + row.id_presupuesto + '" class="btn btn-sm btn-info text-white" title="Ver Detalle" aria-label="Ver Detalle" data-bs-toggle="tooltip"><i class="bi bi-eye-fill"></i></a>';
+                                '<a href="' + BASE_URL + 'presupuesto/ver?id=' + row.id_presupuesto + '" class="btn btn-sm btn-info text-white" title="Ver Detalle" aria-label="Ver Detalle" data-bs-toggle="tooltip"><i class="bi bi-eye-fill"></i></a>';
                             if (row.estado === 'pendiente' || row.estado === 'presupuesto' || (row.id_estado_venta && parseInt(row.id_estado_venta) === 1)) {
                                 html +=
                                     '<button class="btn btn-sm btn-success btn-aprobar-presupuesto" data-id="' + row.id_presupuesto + '" title="Aprobar / Procesar Entrega" aria-label="Aprobar / Procesar Entrega" data-bs-toggle="tooltip"><i class="bi bi-check-lg"></i></button>' +
@@ -100,7 +100,7 @@ $(function() {
     alHacerClick('.btn-aprobar-presupuesto', function(e) {
         var id = parseInt($(this).attr('data-id') || $(this).data('id'));
         if (!isNaN(id)) {
-            window.location.href = '/SP%20Perfect%20Color/notaEntrega/crearDesdePresupuesto?id=' + id;
+            window.location.href = BASE_URL + 'notaEntrega/crearDesdePresupuesto?id=' + id;
         }
     });
 

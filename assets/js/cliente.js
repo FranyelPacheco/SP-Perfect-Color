@@ -29,8 +29,6 @@ $(function() {
     const $mensajeError = $('#mensajeErrorCliente');
     const $btnGuardarCliente = $('#btnGuardarCliente');
 
-    const REGEX_EMAIL = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    const REGEX_SOLO_LETRAS = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
 
     // Cargar lista de clientes al iniciar
     cargarClientes();
@@ -161,7 +159,7 @@ $(function() {
             return;
         }
 
-        if (!REGEX_EMAIL.test(correo)) {
+        if (!PATRONES.correo.test(correo)) {
             marcarCampo($correoCliente, $feedbackCorreoCliente, 'invalid', 'Formato de correo inválido (ej: usuario@correo.com)', true);
             $correoCliente.attr('title', 'Formato de correo inválido');
             $feedbackCorreoCliente.attr('title', 'Formato de correo inválido');
@@ -184,7 +182,7 @@ $(function() {
     }
 
     $cedulaCliente.on('input', function() {
-        this.value = this.value.replace(/[^0-9]/g, '');
+        this.value = this.value.replace(PATRONES.noDigitos, '');
         verificarCedulaEnTiempoReal();
     });
     $tipoDocCliente.on('change', verificarCedulaEnTiempoReal);
@@ -196,7 +194,7 @@ $(function() {
 
     // Permitir solo numeros en telefono principal y secundario
     $telefonoNumeroCliente.add($telefonoNumeroCliente2).on('input', function() {
-        this.value = this.value.replace(/[^0-9]/g, '');
+        this.value = this.value.replace(PATRONES.noDigitos, '');
     });
 
     // Cargar lista de clientes via API
@@ -307,7 +305,7 @@ $(function() {
                 resetearSegundoTelefono();
                 const arrayTels = (c.telefonos || '').split(',').map(function(t) { return t.trim(); });
                 if (arrayTels[0]) {
-                    const telRaw1 = arrayTels[0].replace(/[^0-9]/g, '');
+                    const telRaw1 = arrayTels[0].replace(PATRONES.noDigitos, '');
                     if (telRaw1.length === 11 && $operadoraCliente.length) {
                         asignarOperadora($operadoraCliente, telRaw1.substring(0, 4));
                         $telefonoNumeroCliente.val(telRaw1.substring(4));
@@ -316,7 +314,7 @@ $(function() {
                     }
                 }
                 if (arrayTels[1]) {
-                    const telRaw2 = arrayTels[1].replace(/[^0-9]/g, '');
+                    const telRaw2 = arrayTels[1].replace(PATRONES.noDigitos, '');
                     if (telRaw2.length === 11 && $operadoraCliente2.length) {
                         asignarOperadora($operadoraCliente2, telRaw2.substring(0, 4));
                         $telefonoNumeroCliente2.val(telRaw2.substring(4));
@@ -365,7 +363,7 @@ $(function() {
             $nombresCliente.trigger('focus');
             return;
         }
-        if (!REGEX_SOLO_LETRAS.test(nombreVal)) {
+        if (!PATRONES.soloLetras.test(nombreVal)) {
             mostrarError('El nombre solo puede contener letras y espacios (sin caracteres especiales)');
             $nombresCliente.trigger('focus');
             return;
@@ -382,7 +380,7 @@ $(function() {
             $apellidosCliente.trigger('focus');
             return;
         }
-        if (!REGEX_SOLO_LETRAS.test(apellidoVal)) {
+        if (!PATRONES.soloLetras.test(apellidoVal)) {
             mostrarError('El apellido solo puede contener letras y espacios (sin caracteres especiales)');
             $apellidosCliente.trigger('focus');
             return;
@@ -394,7 +392,7 @@ $(function() {
             $correoCliente.trigger('focus');
             return;
         }
-        if (!REGEX_EMAIL.test(correoVal)) {
+        if (!PATRONES.correo.test(correoVal)) {
             mostrarError('El correo electrónico no es válido');
             $correoCliente.trigger('focus');
             return;

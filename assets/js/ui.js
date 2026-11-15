@@ -2,7 +2,6 @@
 // Skeleton de carga al cambiar de módulo y resaltado de filas encontradas en las DataTables
 
 (function () {
-    const BASE = '/SP%20Perfect%20Color/';
     function mostrarSkeleton() {
         const $contenedor = $('main > .container-fluid').first();
         if (!$contenedor.length || $contenedor.children('.skeleton-page').length) return;
@@ -20,7 +19,7 @@
         const enlace = $(e.target).closest('a[href]')[0];
         if (!enlace || e.isDefaultPrevented() || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || enlace.target === '_blank' || enlace.hasAttribute('download')) return;
         const destino = new URL(enlace.href, location.href);
-        if (destino.origin !== location.origin || !destino.pathname.startsWith(BASE) || destino.pathname.includes('/salir')) return;
+        if (destino.origin !== location.origin || !destino.pathname.startsWith(BASE_URL) || destino.pathname.includes('/salir')) return;
         if (destino.pathname === location.pathname && destino.search === location.search) return;
         if (enlace.getAttribute('href') === '#' || $(enlace).is('[data-bs-toggle]')) return;
         mostrarSkeleton();
@@ -32,7 +31,7 @@
         $('#referenciaPago, #referenciaPagoInicial, #referenciaInicialCompra')
             .attr({ maxlength: 5, inputmode: 'numeric', autocomplete: 'off', pattern: '\\d{5}' })
             .on('input', function () {
-                this.value = this.value.replace(/\D/g, '').slice(0, 5);
+                this.value = this.value.replace(PATRONES.noDigitos, '').slice(0, 5);
             });
     });
 
@@ -41,6 +40,11 @@
         if (e.originalEvent.propertyName === 'width' && $.fn.dataTable) {
             $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust().responsive.recalc();
         }
+    });
+
+    // Si la ventana pasa a escritorio con el menú móvil abierto, se cierra para no dejar el fondo oscurecido
+    $(window).on('resize', function () {
+        if (window.innerWidth >= 992) bootstrap.Offcanvas.getInstance($('#offcanvasSidebar')[0])?.hide();
     });
 
     // Validación nativa de formularios: en lugar del globo del navegador, el campo vibra en rojo y muestra el aviso debajo

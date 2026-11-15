@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Traits;
 
+use App\Helpers\Patrones;
+
 // TRAIT: PdfSeguroTrait
 // OBJETIVO: Validar y guardar documentos PDF subidos, con nombre aleatorio y rechazando los que traen scripts o archivos incrustados
 // NOTA: Requiere RespuestaModeloTrait en la clase que lo use; el directorio de destino debe estar fuera de la carpeta pública
@@ -29,7 +31,7 @@ trait PdfSeguroTrait
     // OBJETIVO: Devuelve la ruta completa de un PDF guardado, o null si el nombre no es válido o el archivo no existe
     public function rutaPdfSeguro(?string $nombre, string $directorio): ?string
     {
-        if ($nombre === null || !preg_match('/^[a-f0-9]{32}\.pdf$/', $nombre)) {
+        if ($nombre === null || !preg_match(Patrones::ARCHIVO_PDF, $nombre)) {
             return null;
         }
         $ruta = $directorio . DIRECTORY_SEPARATOR . $nombre;
@@ -50,7 +52,7 @@ trait PdfSeguroTrait
         if ($mime !== 'application/pdf' || !str_starts_with($contenido, '%PDF-')) {
             return $this->respuestaError('El archivo no es un PDF válido');
         }
-        if (preg_match('#/(JavaScript|JS|Launch|EmbeddedFile)(?![A-Za-z])#', $contenido)) {
+        if (preg_match(Patrones::PDF_PELIGROSO, $contenido)) {
             return $this->respuestaError('El PDF contiene scripts o archivos incrustados y no se puede aceptar');
         }
 

@@ -4,7 +4,7 @@
 ?>
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <div class="d-flex align-items-center gap-3">
-        <a href="/SP%20Perfect%20Color/notaEntregaCompra" class="btn btn-outline-secondary" title="Volver" data-bs-toggle="tooltip">
+        <a href="<?php echo url(); ?>notaEntregaCompra" class="btn btn-outline-secondary" title="Volver" data-bs-toggle="tooltip">
             <i class="bi bi-arrow-left"></i>
         </a>
         <h2 class="h4 mb-0">Nota de Entrega (Compra) #<?php echo str_pad((string)$nota['id_compra'], 5, '0', STR_PAD_LEFT); ?></h2>
@@ -60,7 +60,7 @@ $saldoBsCompra = $saldoUsdCompra * $tasaDocCompra;
                 <small class="text-muted d-block">Condición de Pago:</small>
                 <span class="badge bg-light text-dark border"><?php echo !empty($nota['id_cuenta_pagar']) && $saldoUsdCompra > 0 ? 'A Crédito' : 'Contado'; ?></span>
                 <?php if (!empty($nota['id_cuenta_pagar'])): ?>
-                    <a href="/SP%20Perfect%20Color/cuentaPagar/ver?id=<?php echo (int)$nota['id_cuenta_pagar']; ?>" class="btn btn-link btn-sm p-0 ms-2 text-decoration-none">
+                    <a href="<?php echo url(); ?>cuentaPagar/ver?id=<?php echo (int)$nota['id_cuenta_pagar']; ?>" class="btn btn-link btn-sm p-0 ms-2 text-decoration-none">
                         <i class="bi bi-box-arrow-up-right me-1"></i>Ver Cuenta/Pagos
                     </a>
                 <?php endif; ?>

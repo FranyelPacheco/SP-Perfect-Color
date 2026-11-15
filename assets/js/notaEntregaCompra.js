@@ -118,7 +118,7 @@ $(function() {
                         orderable: false,
                         render: function(data, type, row) {
                             return '<div class="d-flex gap-2">' +
-                                '<a href="/SP%20Perfect%20Color/notaEntregaCompra/ver?id=' + row.id_compra + '" class="btn btn-sm btn-info text-white" title="Ver Detalle">' +
+                                '<a href="' + BASE_URL + 'notaEntregaCompra/ver?id=' + row.id_compra + '" class="btn btn-sm btn-info text-white" title="Ver Detalle">' +
                                 '<i class="bi bi-eye"></i>' +
                                 '</a>' +
                                 (row.id_cuenta_pagar ? '' :
@@ -174,7 +174,7 @@ $(function() {
             e.preventDefault();
         }
     }).on('input', function() {
-        this.value = this.value.replace(/[^0-9]/g, '');
+        this.value = this.value.replace(PATRONES.noDigitos, '');
     });
 
     // Muestra banco y referencia salvo que el método sea efectivo (1) o no esté elegido (0)
@@ -229,7 +229,7 @@ $(function() {
         }
     });
     $montoInicialInput.on('input', function() {
-        let val = this.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+        let val = this.value.replace(PATRONES.coma, '.').replace(PATRONES.noNumeroDecimal, '');
         const puntos = val.split('.');
         if (puntos.length > 2) {
             val = puntos[0] + '.' + puntos.slice(1).join('');
@@ -247,12 +247,12 @@ $(function() {
 
     const $contadorObsCompra = $('#contadorObservacionesCompra');
     $('#observaciones').on('input', function() {
-        this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.\,\-\:\;\#\/]/g, '').substring(0, 250);
-        const palabras = this.value.trim().split(/\s+/).filter(Boolean);
+        this.value = this.value.replace(PATRONES.observacionCompraInvalida, '').substring(0, 250);
+        const palabras = this.value.trim().split(PATRONES.espacios).filter(Boolean);
         if (palabras.length > 50) {
             this.value = palabras.slice(0, 50).join(' ');
         }
-        const countP = this.value.trim().split(/\s+/).filter(Boolean).length;
+        const countP = this.value.trim().split(PATRONES.espacios).filter(Boolean).length;
         $contadorObsCompra.text(this.value.length + ' / 250 caracteres (' + countP + ' / 50 palabras)');
     });
 
@@ -518,7 +518,7 @@ $(function() {
                         mostrarError('Seleccione el banco para el abono inicial.');
                         return;
                     }
-                    if (!/^\d{5}$/.test(($('#referenciaInicialCompra').val() || '').trim())) {
+                    if (!PATRONES.referenciaPago.test(($('#referenciaInicialCompra').val() || '').trim())) {
                         mostrarError('La referencia debe tener los últimos 5 dígitos del comprobante.');
                         return;
                     }
@@ -538,7 +538,7 @@ $(function() {
             if (res.estado === 'exito') {
                 mostrarNotificacion(res.mensaje, 'exito');
                 setTimeout(function() {
-                    window.location.href = '/SP%20Perfect%20Color/notaEntregaCompra/ver?id=' + res.datos.id_compra;
+                    window.location.href = BASE_URL + 'notaEntregaCompra/ver?id=' + res.datos.id_compra;
                 }, 800);
             } else {
                 $btnSubmit.prop('disabled', false).html(HTML_BOTON_REGISTRAR);

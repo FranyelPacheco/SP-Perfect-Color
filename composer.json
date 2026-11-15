@@ -11,7 +11,9 @@
             "app/helpers/sesionHelper.php",
             "app/helpers/validacionHelper.php",
             "app/helpers/exportarReporteHelper.php",
-            "app/helpers/correoHelper.php"
+            "app/helpers/correoHelper.php",
+            "app/helpers/rutaHelper.php",
+            "app/helpers/Patrones.php"
         ]
     },
     "require": {

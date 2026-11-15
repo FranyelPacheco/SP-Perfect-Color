@@ -96,7 +96,7 @@ $(function() {
                                 ? '<button class="btn btn-sm btn-outline-danger btn-eliminar-cxc" data-id="' + row.id_cuenta_cobrar + '" title="Eliminar cuenta saldada" aria-label="Eliminar cuenta saldada" data-bs-toggle="tooltip"><i class="bi bi-trash-fill"></i></button>'
                                 : '<button class="btn btn-sm btn-outline-secondary" disabled title="No se puede eliminar una cuenta pendiente de cobro" aria-label="No se puede eliminar una cuenta pendiente de cobro" data-bs-toggle="tooltip"><i class="bi bi-lock-fill"></i></button>';
                             return '<div class="d-flex gap-2">' +
-                                '<a href="/SP%20Perfect%20Color/cuentaCobrar/ver?id=' + row.id_cuenta_cobrar + '" class="btn btn-sm btn-info text-white" title="Ver" aria-label="Ver" data-bs-toggle="tooltip"><i class="bi bi-eye-fill"></i></a>' +
+                                '<a href="' + BASE_URL + 'cuentaCobrar/ver?id=' + row.id_cuenta_cobrar + '" class="btn btn-sm btn-info text-white" title="Ver" aria-label="Ver" data-bs-toggle="tooltip"><i class="bi bi-eye-fill"></i></a>' +
                                 btnEliminar +
                                 '</div>';
                         }

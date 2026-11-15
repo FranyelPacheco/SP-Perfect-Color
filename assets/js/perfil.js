@@ -4,7 +4,6 @@
 $(function () {
     const $formDatos = $('#formEditarPerfil');
     const $formClave = $('#formCambiarClave');
-    const REGEX_CORREO = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
     // Botones para alternar visibilidad de contraseñas
     $('.btn-toggle-pass').on('click', function () {
@@ -32,7 +31,7 @@ $(function () {
             $btn.prop('disabled', false);
             return;
         }
-        if (!REGEX_CORREO.test(correo)) {
+        if (!PATRONES.correo.test(correo)) {
             $inputPerfilCorreo.addClass('is-invalid').removeClass('is-valid').attr('title', 'Formato de correo inválido');
             $fb.html('<i class="bi bi-exclamation-circle-fill me-1"></i>Formato de correo inválido (ej: usuario@correo.com)').removeClass('d-none');
             $btn.prop('disabled', true);
@@ -82,12 +81,12 @@ $(function () {
             return;
         }
 
-        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(nombre)) {
+        if (!PATRONES.soloLetras.test(nombre)) {
             mostrarAlerta($alerta, 'danger', 'El nombre solo puede contener letras y espacios (sin números ni símbolos).');
             return;
         }
 
-        if (!REGEX_CORREO.test(correo)) {
+        if (!PATRONES.correo.test(correo)) {
             mostrarAlerta($alerta, 'danger', 'El correo electrónico no tiene un formato válido.');
             return;
         }
@@ -139,7 +138,7 @@ $(function () {
             return;
         }
 
-        if (/['"`;\\<>]|--|\/\*|\*\//.test(nuevaClave)) {
+        if (PATRONES.claveProhibida.test(nuevaClave)) {
             mostrarAlerta($alerta, 'danger', 'La nueva contraseña contiene caracteres no permitidos (sin comillas ni signos <, >, ;)');
             return;
         }
@@ -178,7 +177,7 @@ $(function () {
     const $btnCambiarFoto = $('#btnCambiarFoto');
     const $btnQuitarFoto = $('#btnQuitarFoto');
     const $alertaFoto = $('#alertaFotoPerfil');
-    const rutaAvatares = '/SP%20Perfect%20Color/assets/uploads/avatares/';
+    const rutaAvatares = BASE_URL + 'assets/uploads/avatares/';
 
     function mostrarFoto(nombreArchivo) {
         $('#fotoPerfilImg')

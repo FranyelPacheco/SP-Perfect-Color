@@ -579,3 +579,44 @@ html body .sidebar-brand small, html body .sidebar .logout-link { font-size: 0.8
 .grafico-barras .gb-tip-valor { margin-left: auto; font-family: 'Consolas', 'Courier New', monospace; font-variant-numeric: tabular-nums; }
 .grafico-barras .gb-vacio { text-align: center; color: #5b6677; font-size: 0.85rem; margin: 0.75rem 0 0; }
 @media (max-width: 575.98px) { .grafico-barras .gb-plot { height: 200px; } .grafico-barras .gb-valor { font-size: 0.62rem; } .grafico-barras .gb-eje span { font-size: 0.68rem; } }
+
+/* ============================================================
+   SIDEBAR MÓVIL (offcanvas): cabecera compacta, menú con scroll y usuario siempre visible abajo
+   ============================================================ */
+@media (min-width: 992px) {
+  html body #offcanvasSidebar, html body .offcanvas-backdrop { display: none !important; }
+}
+@media (max-width: 991.98px) {
+  html body #offcanvasSidebar {
+    width: min(84vw, 300px) !important;
+    height: 100vh;
+    height: 100dvh;
+    box-shadow: 8px 0 28px rgba(15,23,42,0.35);
+  }
+  html body #offcanvasSidebar .offcanvas-header {
+    padding: 14px 16px;
+    gap: 0.75rem;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  html body #offcanvasSidebar .offcanvas-header > div { min-width: 0; flex: 1 1 auto; }
+  html body #offcanvasSidebar .offcanvas-header img { height: 34px; width: auto; flex-shrink: 0; }
+  html body #offcanvasSidebar .offcanvas-title { font-size: 0.98rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
+  html body #offcanvasSidebar .offcanvas-header small { white-space: nowrap; }
+  html body #offcanvasSidebar .offcanvas-header .btn-close { margin: 0; padding: 0.5rem; flex-shrink: 0; }
+  html body #offcanvasSidebar .offcanvas-body { overflow: hidden; min-height: 0; }
+  html body #offcanvasSidebar .offcanvas-body > nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin-top: 0.5rem !important; }
+  html body #offcanvasSidebar .nav-link { padding: 0.7rem 1.1rem !important; min-height: 46px; }
+  html body #offcanvasSidebar .nav-link .bi-chevron-down { margin-left: auto; transition: transform 0.25s var(--ui-ease); }
+  html body #offcanvasSidebar .dropdown-hover.open > .nav-link .bi-chevron-down { transform: rotate(180deg); }
+  html body #offcanvasSidebar .dropdown-submenu li a { min-height: 42px; }
+  html body #offcanvasSidebar .sidebar-user {
+    flex-shrink: 0;
+    margin-top: 0 !important;
+    padding: 0.75rem 1.1rem calc(0.75rem + env(safe-area-inset-bottom)) !important;
+    background: rgba(0,0,0,0.12);
+  }
+  html body #offcanvasSidebar .sidebar-user .user-name { display: flex !important; align-items: center; margin-bottom: 0.25rem !important; min-height: 40px; }
+  html body #offcanvasSidebar .sidebar-user .logout-link { display: inline-flex; align-items: center; min-height: 40px; font-size: 0.9rem !important; }
+  html body .top-navbar { position: sticky; top: 0; z-index: 1030; }
+}

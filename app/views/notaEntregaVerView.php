@@ -6,10 +6,10 @@
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0"><i class="bi bi-receipt-cutoff me-2 text-primary"></i>Nota de Entrega #<?php echo $nota['id_nota_entrega']; ?></h2>
     <div class="d-flex gap-2">
-        <a href="/SP%20Perfect%20Color/notaEntrega/pdf?id=<?php echo $nota['id_nota_entrega']; ?>" target="_blank" class="btn btn-primary shadow-sm" title="Ver PDF" data-bs-toggle="tooltip">
+        <a href="<?php echo url(); ?>notaEntrega/pdf?id=<?php echo $nota['id_nota_entrega']; ?>" target="_blank" class="btn btn-primary shadow-sm" title="Ver PDF" data-bs-toggle="tooltip">
             <i class="bi bi-file-earmark-pdf-fill"></i>
         </a>
-        <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-outline-secondary" title="Volver" data-bs-toggle="tooltip">
+        <a href="<?php echo url(); ?>notaEntrega" class="btn btn-outline-secondary" title="Volver" data-bs-toggle="tooltip">
             <i class="bi bi-arrow-left"></i>
         </a>
     </div>
@@ -77,7 +77,7 @@ $totalBsNota = $totalUsdNota * $tasaDocNota;
         <?php if (!empty($nota['id_presupuesto'])): ?>
         <div class="mt-3 pt-3 border-top">
             <small class="text-muted d-block mb-1">Presupuesto de origen:</small>
-            <a href="/SP%20Perfect%20Color/presupuesto/ver?id=<?php echo $nota['id_presupuesto']; ?>">Ver Presupuesto #<?php echo $nota['id_presupuesto']; ?></a>
+            <a href="<?php echo url(); ?>presupuesto/ver?id=<?php echo $nota['id_presupuesto']; ?>">Ver Presupuesto #<?php echo $nota['id_presupuesto']; ?></a>
         </div>
         <?php endif; ?>
     </div>
@@ -127,8 +127,8 @@ $totalBsNota = $totalUsdNota * $tasaDocNota;
 </div>
 
 <div class="d-flex justify-content-end gap-2 mt-4">
-    <a href="/SP%20Perfect%20Color/notaEntrega" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Volver al Listado</a>
-    <a href="/SP%20Perfect%20Color/notaEntrega/pdf?id=<?php echo $nota['id_nota_entrega']; ?>" target="_blank" class="btn btn-primary shadow-sm">
+    <a href="<?php echo url(); ?>notaEntrega" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Volver al Listado</a>
+    <a href="<?php echo url(); ?>notaEntrega/pdf?id=<?php echo $nota['id_nota_entrega']; ?>" target="_blank" class="btn btn-primary shadow-sm">
         <i class="bi bi-file-earmark-pdf-fill me-2"></i>Descargar Comprobante PDF
     </a>
 </div>

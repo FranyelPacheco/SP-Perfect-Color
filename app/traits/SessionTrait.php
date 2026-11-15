@@ -113,7 +113,7 @@ trait SessionTrait
         if ($this->_ejecutarEsPeticionAjax()) {
             respuestaJson('error', 'Debe iniciar sesión para acceder');
         }
-        header('Location: /SP%20Perfect%20Color/login');
+        header('Location: ' . url('login'));
         exit;
     }
 
@@ -255,7 +255,7 @@ trait SessionTrait
         if ($this->_ejecutarEsPeticionAjax()) {
             respuestaJson('error', $mensajeJson);
         }
-        header('Location: /SP%20Perfect%20Color/dashboard');
+        header('Location: ' . url('dashboard'));
         exit;
     }
 }

@@ -57,4 +57,4 @@
     </div>
 </div>
 
-<script src="/SP%20Perfect%20Color/assets/js/tipoPago.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/tipoPago.js'); ?>"></script>
+<script src="<?php echo url(); ?>assets/js/tipoPago.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/tipoPago.js'); ?>"></script>

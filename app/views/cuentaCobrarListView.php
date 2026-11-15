@@ -31,4 +31,4 @@
     </div>
 </div>
 
-<script src="/SP%20Perfect%20Color/assets/js/cuentaCobrar.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/cuentaCobrar.js'); ?>"></script>
+<script src="<?php echo url(); ?>assets/js/cuentaCobrar.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/cuentaCobrar.js'); ?>"></script>

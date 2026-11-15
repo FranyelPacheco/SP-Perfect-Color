@@ -9,7 +9,7 @@
             <div class="card-body p-0">
                 <?php $fotoPerfil = $usuario['foto'] ?? ''; ?>
                 <div class="position-relative d-inline-block mb-3">
-                    <img id="fotoPerfilImg" src="<?php echo $fotoPerfil ? '/SP%20Perfect%20Color/assets/uploads/avatares/' . rawurlencode($fotoPerfil) : ''; ?>"
+                    <img id="fotoPerfilImg" src="<?php echo $fotoPerfil ? url('assets/uploads/avatares/') . rawurlencode($fotoPerfil) : ''; ?>"
                          alt="Foto de perfil" class="rounded-circle shadow-sm object-fit-cover <?php echo $fotoPerfil ? '' : 'd-none'; ?>"
                          style="width: 110px; height: 110px;">
                     <div id="fotoPerfilInicial" class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm <?php echo $fotoPerfil ? 'd-none' : ''; ?>"
@@ -144,4 +144,4 @@
     </div>
 </div>
 
-<script src="/SP%20Perfect%20Color/assets/js/perfil.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/perfil.js'); ?>"></script>
+<script src="<?php echo url(); ?>assets/js/perfil.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/perfil.js'); ?>"></script>

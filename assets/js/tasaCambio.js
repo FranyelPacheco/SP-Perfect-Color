@@ -22,7 +22,7 @@ $(function() {
     });
     $inputTasa.on('input', function() {
         // Comas a puntos, solo números y un único punto decimal
-        let val = this.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+        let val = this.value.replace(PATRONES.coma, '.').replace(PATRONES.noNumeroDecimal, '');
         const puntos = val.split('.');
         if (puntos.length > 2) {
             val = puntos[0] + '.' + puntos.slice(1).join('');

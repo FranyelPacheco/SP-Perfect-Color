@@ -186,7 +186,7 @@ $(function() {
                         '<td>' + escapeHtml(v.cliente_nombre || '-') + '<br><small class="text-muted">' + escapeHtml(v.cliente_cedula || '') + '</small></td>' +
                         '<td class="fw-bold text-primary">$ ' + formatearMonedaLocal(v.total) + '</td>' +
                         '<td>' + escapeHtml(v.tipo_pago_nombre || '-') + '</td>' +
-                        '<td><a href="/SP%20Perfect%20Color/notaEntrega/ver?id=' + (v.id_nota_entrega || v.id_venta) + '" class="btn btn-sm btn-outline-primary" title="Ver Nota"><i class="bi bi-eye"></i></a></td>'
+                        '<td><a href="' + BASE_URL + 'notaEntrega/ver?id=' + (v.id_nota_entrega || v.id_venta) + '" class="btn btn-sm btn-outline-primary" title="Ver Nota"><i class="bi bi-eye"></i></a></td>'
                     ).appendTo($cuerpoReporte);
                 });
             }
@@ -206,7 +206,7 @@ $(function() {
                         '<td class="fw-bold text-danger">$ ' + formatearMonedaLocal(c.total) + '</td>' +
                         '<td><span class="badge bg-' + badgeCond + '">' + escapeHtml(c.condicion_pago || '-') + '</span></td>' +
                         '<td>' + (c.situacion_pago ? c.situacion_pago.charAt(0).toUpperCase() + c.situacion_pago.slice(1) : '-') + '</td>' +
-                        '<td><a href="/SP%20Perfect%20Color/notaEntregaCompra/ver?id=' + c.id_compra + '" class="btn btn-sm btn-outline-secondary" title="Ver Recepción"><i class="bi bi-eye"></i></a></td>'
+                        '<td><a href="' + BASE_URL + 'notaEntregaCompra/ver?id=' + c.id_compra + '" class="btn btn-sm btn-outline-secondary" title="Ver Recepción"><i class="bi bi-eye"></i></a></td>'
                     ).appendTo($cuerpoReporte);
                 });
             }
@@ -266,7 +266,7 @@ $(function() {
         const hasta = $fechaHasta.val();
         if (!validarRangoFechas(desde, hasta)) return;
         const params = $.extend({ tipo: tipo }, parametrosReporte(tipo, desde, hasta));
-        window.location.href = '/SP%20Perfect%20Color/reporte/' + accion + '?' + $.param(params);
+        window.location.href = BASE_URL + 'reporte/' + accion + '?' + $.param(params);
     }
 
     $btnPDF.on('click', function() { exportar('exportarPdfAjax'); });

@@ -25,7 +25,7 @@ try {
     <meta name="author" content="SP Perfect Color">
     <meta name="generator" content="SP Perfect Color">
     <link rel="canonical" href="<?php echo 'https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . ($_SERVER['REQUEST_URI'] ?? '/'); ?>">
-    <link rel="icon" type="image/webp" href="/SP%20Perfect%20Color/assets/images/logo.webp">
+    <link rel="icon" type="image/webp" href="<?php echo url(); ?>assets/images/logo.webp">
 
     <!-- Open Graph -->
     <meta property="og:title" content="<?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) : 'SP Perfect Color - Sistema de Gestión'; ?>">
@@ -45,7 +45,7 @@ try {
         "@context": "https://schema.org",
         "@type": "Organization",
         "name": "SP Perfect Color",
-        "url": "<?php echo 'https://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/SP%20Perfect%20Color'; ?>",
+        "url": "<?php echo rtrim(urlAbsoluta(), '/'); ?>",
         "description": "Sistema de gestión administrativa para SP Perfect Color",
         "foundingDate": "2025"
     }
@@ -54,7 +54,7 @@ try {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/estiloBase.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/estiloBase.css'); ?>">
+    <link rel="stylesheet" href="<?php echo url(); ?>assets/css/estiloBase.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/estiloBase.css'); ?>">
     <script>
         window.TASA_CAMBIO_HOY = <?php echo json_encode((float)$tasaCambioGlobal); ?>;
         window.formatearBs = function(montoUsd, tasa) {
@@ -92,7 +92,7 @@ try {
     </style>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.bootstrap5.min.css">
-    <link rel="stylesheet" href="/SP%20Perfect%20Color/assets/css/estiloUI.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/estiloUI.css'); ?>">
+    <link rel="stylesheet" href="<?php echo url(); ?>assets/css/estiloUI.css?v=<?php echo filemtime(__DIR__ . '/../../assets/css/estiloUI.css'); ?>">
     <script>
         // Mientras haya peticiones en curso la vista muestra el esqueleto; se retira cuando todo termina de cargar
         (function () {
@@ -130,7 +130,8 @@ try {
         })();
     </script>
     <meta name="csrf-token" content="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
-    <script src="/SP%20Perfect%20Color/assets/js/csrf.js"></script>
+    <script src="<?php echo url(); ?>assets/js/csrf.js"></script>
+    <script>window.BASE_URL = <?php echo json_encode(url()); ?>;</script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
@@ -139,7 +140,7 @@ try {
         <div class="offcanvas offcanvas-start sidebar-offcanvas text-white" tabindex="-1" id="offcanvasSidebar">
             <div class="offcanvas-header border-bottom border-white border-opacity-10">
                 <div class="d-flex align-items-center gap-2">
-                    <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color" height="48">
+                    <img src="<?php echo url(); ?>assets/images/logo-recortado.webp" alt="SP Perfect Color" height="48">
                     <div>
                         <h5 class="offcanvas-title fw-bold">SP Perfect Color</h5>
                         <small class="text-white-50" style="font-size:0.7rem;">Sistema de Gestión</small>
@@ -152,8 +153,8 @@ try {
                     <?php $claseMenu = ''; require __DIR__ . '/parciales/menuLateral.php'; ?>
                 </nav>
                 <div class="sidebar-user">
-                    <a href="/SP%20Perfect%20Color/perfil" class="user-name" title="Ver mi perfil"><?php if (!empty($_SESSION['usuario_foto'])): ?><img src="/SP%20Perfect%20Color/assets/uploads/avatares/<?php echo rawurlencode($_SESSION['usuario_foto']); ?>" alt="" onerror="this.outerHTML='&lt;i class=&quot;bi bi-person-circle&quot;&gt;&lt;/i&gt;'" class="user-avatar me-1"><?php else: ?><i class="bi bi-person-circle me-1"></i><?php endif; ?><span class="user-nombre"><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></span></a>
-                    <a href="/SP%20Perfect%20Color/login/salir" class="logout-link"><i class="bi bi-box-arrow-left me-1"></i>Cerrar Sesión</a>
+                    <a href="<?php echo url(); ?>perfil" class="user-name" title="Ver mi perfil"><?php if (!empty($_SESSION['usuario_foto'])): ?><img src="<?php echo url(); ?>assets/uploads/avatares/<?php echo rawurlencode($_SESSION['usuario_foto']); ?>" alt="" onerror="this.outerHTML='&lt;i class=&quot;bi bi-person-circle&quot;&gt;&lt;/i&gt;'" class="user-avatar me-1"><?php else: ?><i class="bi bi-person-circle me-1"></i><?php endif; ?><span class="user-nombre"><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></span></a>
+                    <a href="<?php echo url(); ?>login/salir" class="logout-link"><i class="bi bi-box-arrow-left me-1"></i>Cerrar Sesión</a>
                 </div>
             </div>
         </div>
@@ -162,7 +163,7 @@ try {
         <nav class="sidebar d-none d-lg-block" aria-label="Menú principal">
             <div class="sidebar-panel" id="sidebarPanel" data-open="false">
                 <div class="sidebar-brand">
-                    <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color" class="sidebar-logo">
+                    <img src="<?php echo url(); ?>assets/images/logo-recortado.webp" alt="SP Perfect Color" class="sidebar-logo">
                     <div class="sidebar-brand-text">
                         <h5>SP Perfect Color</h5>
                         <small>Sistema de Gestión</small>
@@ -170,8 +171,8 @@ try {
                 </div>
                 <?php $claseMenu = 'sidebar-nav'; require __DIR__ . '/parciales/menuLateral.php'; ?>
                 <div class="sidebar-user">
-                    <a href="/SP%20Perfect%20Color/perfil" class="user-name" title="Ver mi perfil"><?php if (!empty($_SESSION['usuario_foto'])): ?><img src="/SP%20Perfect%20Color/assets/uploads/avatares/<?php echo rawurlencode($_SESSION['usuario_foto']); ?>" alt="" onerror="this.outerHTML='&lt;i class=&quot;bi bi-person-circle&quot;&gt;&lt;/i&gt;'" class="user-avatar"><?php else: ?><i class="bi bi-person-circle"></i><?php endif; ?><span class="user-nombre"><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></span></a>
-                    <a href="/SP%20Perfect%20Color/login/salir" class="logout-link" title="Cerrar sesión"><i class="bi bi-box-arrow-left"></i><span>Cerrar Sesión</span></a>
+                    <a href="<?php echo url(); ?>perfil" class="user-name" title="Ver mi perfil"><?php if (!empty($_SESSION['usuario_foto'])): ?><img src="<?php echo url(); ?>assets/uploads/avatares/<?php echo rawurlencode($_SESSION['usuario_foto']); ?>" alt="" onerror="this.outerHTML='&lt;i class=&quot;bi bi-person-circle&quot;&gt;&lt;/i&gt;'" class="user-avatar"><?php else: ?><i class="bi bi-person-circle"></i><?php endif; ?><span class="user-nombre"><?php echo htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Usuario'); ?></span></a>
+                    <a href="<?php echo url(); ?>login/salir" class="logout-link" title="Cerrar sesión"><i class="bi bi-box-arrow-left"></i><span>Cerrar Sesión</span></a>
                 </div>
                 <script>
                     // Restaura el estado exacto del sidebar de la página anterior antes del primer pintado
@@ -212,7 +213,7 @@ try {
                     <button class="navbar-toggler border-0 me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar">
                         <span class="navbar-toggler-icon"></span>
                     </button>
-                    <img src="/SP%20Perfect%20Color/assets/images/logo-recortado.webp" alt="SP Perfect Color" height="36" class="me-2">
+                    <img src="<?php echo url(); ?>assets/images/logo-recortado.webp" alt="SP Perfect Color" height="36" class="me-2">
                     <span class="navbar-brand mb-0 fs-6 fw-bold">SP Perfect Color</span>
                 </div>
             </nav>
@@ -231,8 +232,9 @@ try {
     <script src="https://cdn.datatables.net/responsive/2.4.1/js/responsive.bootstrap5.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/SP%20Perfect%20Color/assets/js/utilidades.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/utilidades.js'); ?>"></script>
-    <script src="/SP%20Perfect%20Color/assets/js/ui.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/ui.js'); ?>"></script>
+    <script src="<?php echo url(); ?>assets/js/patrones.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/patrones.js'); ?>"></script>
+    <script src="<?php echo url(); ?>assets/js/utilidades.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/utilidades.js'); ?>"></script>
+    <script src="<?php echo url(); ?>assets/js/ui.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/ui.js'); ?>"></script>
     <script>
         $(function() {
             // Sidebar: se expande con el cursor o el foco y se pliega al salir

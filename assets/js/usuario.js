@@ -13,8 +13,6 @@ $(function () {
     const $formRol = $('#formularioRol');
     const $modalUsuario = $('#modalUsuario');
     const $modalRol = $('#modalRol');
-    const REGEX_CORREO = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    const REGEX_CLAVE_PROHIBIDA = /['"`;\\<>]|--|\/\*|\*\//;
 
     if ($formRol.length) {
         const validacionRol = validarUnico({
@@ -216,7 +214,7 @@ $(function () {
             return;
         }
 
-        if (!REGEX_CORREO.test(correo)) {
+        if (!PATRONES.correo.test(correo)) {
             $input.addClass('is-invalid').removeClass('is-valid').attr('title', 'Formato de correo inválido');
             $fb.html('<i class="bi bi-exclamation-circle-fill me-1"></i>Formato de correo inválido (ej: usuario@correo.com)').removeClass('d-none');
             actualizarBotonGuardarUsuario();
@@ -321,13 +319,13 @@ $(function () {
 
         if (!nombre) { mostrarErrorUsuario('El nombre es obligatorio'); return; }
         if (nombre.length > 50) { mostrarErrorUsuario('El nombre no puede exceder los 50 caracteres'); return; }
-        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(nombre)) {
+        if (!PATRONES.soloLetras.test(nombre)) {
             mostrarErrorUsuario('El nombre solo puede contener letras y espacios (sin números ni símbolos)');
             return;
         }
 
         if (!correo) { mostrarErrorUsuario('El correo electrónico es obligatorio'); return; }
-        if (!REGEX_CORREO.test(correo)) {
+        if (!PATRONES.correo.test(correo)) {
             mostrarErrorUsuario('El correo electrónico no es válido');
             return;
         }
@@ -340,7 +338,7 @@ $(function () {
             const clave = $('#claveUsuario').val().trim();
             if (!clave) { mostrarErrorUsuario('La contraseña es obligatoria'); return; }
             if (clave.length < 6 || clave.length > 20) { mostrarErrorUsuario('La clave debe tener entre 6 y 20 caracteres'); return; }
-            if (REGEX_CLAVE_PROHIBIDA.test(clave)) {
+            if (PATRONES.claveProhibida.test(clave)) {
                 mostrarErrorUsuario('La contraseña contiene caracteres no permitidos (sin comillas ni signos <, >, ;)');
                 return;
             }
@@ -355,7 +353,7 @@ $(function () {
                     mostrarErrorUsuario('La nueva clave debe tener entre 6 y 20 caracteres');
                     return;
                 }
-                if (REGEX_CLAVE_PROHIBIDA.test(nuevaClave)) {
+                if (PATRONES.claveProhibida.test(nuevaClave)) {
                     mostrarErrorUsuario('La nueva contraseña contiene caracteres no permitidos');
                     return;
                 }
@@ -413,7 +411,7 @@ $(function () {
         const $form = $('#formularioContrato');
         const $archivo = $('#archivoContrato');
         const $error = $('#mensajeErrorContrato');
-        const URL_CONTRATO = '/SP%20Perfect%20Color/usuario/verContrato?id=';
+        const URL_CONTRATO = BASE_URL + 'usuario/verContrato?id=';
 
         function errorContrato(msg) {
             $error.text(msg).removeClass('d-none');
@@ -447,7 +445,7 @@ $(function () {
             const archivo = $archivo[0].files[0];
 
             if (!archivo) return errorContrato('Seleccione un archivo PDF');
-            if (archivo.type !== 'application/pdf' && !/\.pdf$/i.test(archivo.name)) return errorContrato('Solo se permiten archivos PDF');
+            if (archivo.type !== 'application/pdf' && !PATRONES.extensionPdf.test(archivo.name)) return errorContrato('Solo se permiten archivos PDF');
             if (archivo.size > TAMANO_MAX_CONTRATO) return errorContrato('El PDF no puede superar los 5 MB');
 
             const $btn = $('#btnSubirContrato').prop('disabled', true);
