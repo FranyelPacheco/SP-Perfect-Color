@@ -283,8 +283,9 @@ UNLOCK TABLES;
 --
 
 DROP TABLE IF EXISTS `mezcla_producto`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET @saved_cs_client = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
+
 CREATE TABLE `mezcla_producto` (
   `id_mezcla_producto` int(11) NOT NULL AUTO_INCREMENT,
   `id_producto_mezclado` int(11) NOT NULL COMMENT 'Producto nuevo resultante de la mezcla',
@@ -296,10 +297,44 @@ CREATE TABLE `mezcla_producto` (
   KEY `fk_mezcla_prod_mezclado` (`id_producto_mezclado`),
   KEY `fk_mezcla_prod_base` (`id_producto_base`),
   CONSTRAINT `fk_mezcla_prod_base` FOREIGN KEY (`id_producto_base`) REFERENCES `productos` (`id_producto`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_mezcla_prod_mezclado` FOREIGN KEY (`id_producto_mezclado`) REFERENCES `productos` (`id_producto`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `chk_mezcla_producto` CHECK (`cantidad_galon` > 0 and `id_producto_base` <> `id_producto_mezclado`)
+  CONSTRAINT `fk_mezcla_prod_mezclado` FOREIGN KEY (`id_producto_mezclado`) REFERENCES `productos` (`id_producto`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish2_ci;
+
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+DELIMITER //
+
+CREATE TRIGGER `validar_mezcla_producto_insert`
+BEFORE INSERT ON `mezcla_producto`
+FOR EACH ROW
+BEGIN
+  IF NEW.`cantidad_galon` <= 0 THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'La cantidad de galones debe ser mayor que cero';
+  END IF;
+
+  IF NEW.`id_producto_base` = NEW.`id_producto_mezclado` THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'El producto base y el mezclado deben ser diferentes';
+  END IF;
+END//
+
+CREATE TRIGGER `validar_mezcla_producto_update`
+BEFORE UPDATE ON `mezcla_producto`
+FOR EACH ROW
+BEGIN
+  IF NEW.`cantidad_galon` <= 0 THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'La cantidad de galones debe ser mayor que cero';
+  END IF;
+
+  IF NEW.`id_producto_base` = NEW.`id_producto_mezclado` THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'El producto base y el mezclado deben ser diferentes';
+  END IF;
+END//
+
+DELIMITER ;
 
 --
 -- Dumping data for table `mezcla_producto`
