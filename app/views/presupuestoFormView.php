@@ -34,14 +34,14 @@
                 </div>
 
                 <!-- Filtros rapidos por tipo -->
-                <div class="d-flex gap-1 mb-2 overflow-auto pb-1" id="filtrosTipoInsumo">
+                <div class="d-flex flex-nowrap gap-1 mb-2 overflow-auto pb-1" id="filtrosTipoInsumo">
                     <button type="button" class="btn btn-sm btn-primary btn-filtro-tipo active" data-tipo="todos">Todos</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-tipo" data-tipo="1"><i class="bi bi-droplet-half me-1"></i>Bases</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-tipo" data-tipo="2"><i class="bi bi-box-seam me-1"></i>Simples</button>
                 </div>
 
                 <!-- Sub-filtro por tamaño/fracción -->
-                <div class="d-flex gap-1 mb-3 overflow-auto pb-1" id="filtrosFraccionBase">
+                <div class="d-flex flex-nowrap gap-1 mb-3 overflow-auto pb-1" id="filtrosFraccionBase">
                     <button type="button" class="btn btn-sm btn-outline-primary active btn-filtro-fraccion" data-fraccion="todos">Todas</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-fraccion" data-fraccion="1">1 Gal</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-filtro-fraccion" data-fraccion="1/2">1/2 Gal</button>
@@ -124,18 +124,18 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-3">
                     <div class="row g-3">
-                        <div class="col-md-7">
-                            <label for="observacionesPresupuesto" class="form-label fw-semibold text-secondary small mb-1">
-                                <i class="bi bi-chat-dots me-1"></i>Observaciones (Opcional)
-                            </label>
-                            <textarea id="observacionesPresupuesto" name="observaciones" class="form-control form-control-sm" rows="3" placeholder="Notas, especificaciones del color o detalles de entrega..."></textarea>
-                        </div>
-                        <div class="col-md-5">
+                        <div class="col-md-5 order-first order-md-last">
                             <div class="caja-total-card h-100 d-flex flex-column justify-content-center">
                                 <span class="caja-total-label"><i class="bi bi-receipt me-1"></i>Total Estimado</span>
                                 <span id="totalPresupuesto" class="caja-total-monto">$ 0,00</span>
                                 <small class="text-white-50 mt-1" id="resumenConteoItems">0 items agregados</small>
                             </div>
+                        </div>
+                        <div class="col-md-7">
+                            <label for="observacionesPresupuesto" class="form-label fw-semibold text-secondary small mb-1">
+                                <i class="bi bi-chat-dots me-1"></i>Observaciones (Opcional)
+                            </label>
+                            <textarea id="observacionesPresupuesto" name="observaciones" class="form-control form-control-sm" rows="3" placeholder="Notas, especificaciones del color o detalles de entrega..."></textarea>
                         </div>
                     </div>
                 </div>

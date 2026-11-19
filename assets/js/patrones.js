@@ -5,6 +5,10 @@
 const PATRONES = Object.freeze({
     // Validación (con test)
     correo: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+    cedula: /^([VE]-[1-9]\d{6,7}|J-\d{8,9})$/i,
+    rif: /^[JVEG]-\d{8,9}$/,
+    telefono: /^0(412|414|416|422|424|426|251)\d{7}$/,
+    codigoProducto: /^[A-Za-z0-9\-\/\.]+$/,
     soloLetras: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/,
     soloLetrasOpcional: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]*$/,
     unaLetra: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]$/,

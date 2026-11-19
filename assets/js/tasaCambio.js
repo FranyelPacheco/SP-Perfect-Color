@@ -229,8 +229,8 @@ $(function() {
         }
 
         const tasaNum = parseFloat(tasa.replace(',', '.'));
-        if (isNaN(tasaNum) || tasaNum <= 0) {
-            mostrarErrorEnModal('El valor de la tasa debe ser un número mayor a 0 (ej. 45.50).');
+        if (isNaN(tasaNum) || tasaNum < 1.00) {
+            mostrarErrorEnModal('El valor de la tasa debe ser un número igual o mayor a 1,00 (ej. 45.50).');
             return;
         }
 

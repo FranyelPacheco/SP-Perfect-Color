@@ -185,9 +185,12 @@ class InventarioModel extends ModeloBase
         }
         $stockMinimo = (float)intval($stockMinimoRaw);
 
-        $error = $this->validarTextoSeguro($codigo, 50, 'El codigo') ?? $this->validarTextoSeguro($nombre, 150, 'El nombre del insumo');
+        $error = $this->validarTextoSeguro($codigo, 50, 'El codigo', true, 2) ?? $this->validarTextoSeguro($nombre, 150, 'El nombre del insumo', true, 3);
         if ($error !== null) {
             return ['valido' => false, 'mensaje' => $error];
+        }
+        if (!preg_match(Patrones::CODIGO_PRODUCTO, $codigo)) {
+            return ['valido' => false, 'mensaje' => 'El código solo puede contener letras, números y los caracteres - / .'];
         }
 
         if ($precioVenta <= 0) {
@@ -647,7 +650,7 @@ class InventarioModel extends ModeloBase
         $basesRaw = $datos['bases'] ?? '[]';
         $bases = is_array($basesRaw) ? $basesRaw : json_decode((string)$basesRaw, true);
 
-        $error = $this->validarTextoSeguro($nombre, 40, 'El nombre del color o fórmula');
+        $error = $this->validarTextoSeguro($nombre, 40, 'El nombre del color o fórmula', true, 3);
         if ($error !== null) {
             return ['exito' => false, 'mensaje' => $error];
         }

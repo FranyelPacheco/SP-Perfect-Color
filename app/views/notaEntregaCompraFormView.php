@@ -85,7 +85,7 @@
                                 </div>
                                 <div class="mb-1" id="contenedorRefInicialCompra" style="display: none;">
                                     <label for="referenciaInicialCompra" class="form-label small fw-semibold mb-1">Referencia (últimos 5 dígitos) <span class="text-danger">*</span></label>
-                                    <input type="text" id="referenciaInicialCompra" name="referencia_inicial" class="form-control form-control-sm" placeholder="Ej: 48215" maxlength="5">
+                                    <input type="text" id="referenciaInicialCompra" name="referencia_inicial" class="form-control form-control-sm" placeholder="Ej: 48215" minlength="5" maxlength="5" pattern="[0-9]{5}" inputmode="numeric">
                                 </div>
                             </div>
                         </div>
@@ -112,7 +112,7 @@
                         </div>
                         <div class="mb-2" id="contenedorReferenciaCompra" style="display: none;">
                             <label for="referenciaPago" class="form-label fw-semibold">Referencia (últimos 5 dígitos)</label>
-                            <input type="text" id="referenciaPago" name="referencia" class="form-control" placeholder="Ej: 48215" maxlength="5">
+                            <input type="text" id="referenciaPago" name="referencia" class="form-control" placeholder="Ej: 48215" minlength="5" maxlength="5" pattern="[0-9]{5}" inputmode="numeric">
                         </div>
                     </div>
 
@@ -179,10 +179,10 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Producto</th>
-                                    <th style="width: 120px;" class="text-center">Cantidad</th>
-                                    <th style="width: 140px;" class="text-end">Costo Unit. ($)</th>
-                                    <th style="width: 150px;" class="text-end">Subtotal ($)</th>
-                                    <th style="width: 60px;" class="text-center"></th>
+                                    <th style="min-width: 90px;" class="text-center">Cantidad</th>
+                                    <th style="min-width: 100px;" class="text-end">Costo Unit. ($)</th>
+                                    <th style="min-width: 110px;" class="text-end">Subtotal ($)</th>
+                                    <th style="min-width: 50px;" class="text-center"></th>
                                 </tr>
                             </thead>
                             <tbody id="cuerpoDetalleCompra">
@@ -204,6 +204,13 @@
                                 </tr>
                             </tfoot>
                         </table>
+                    </div>
+
+                    <!-- Resumen visible en móviles sin scroll horizontal -->
+                    <div class="d-md-none mt-3 p-3 bg-light rounded-3 border text-end">
+                        <div class="text-muted small fw-semibold text-uppercase">Total de la Compra</div>
+                        <div class="text-primary fs-4 fw-bold" id="totalCompraDisplayMovil">$ 0,00</div>
+                        <div class="text-muted small" id="totalCompraBsDisplayMovil">Bs. 0,00</div>
                     </div>
 
                     <div id="alertaErrorCompra" class="alert alert-danger d-none mt-3"></div>

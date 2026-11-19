@@ -10,9 +10,10 @@ final class Patrones
 {
     public const SOLO_LETRAS = '/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/u';
     public const NOMBRE_EMPRESA = '/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-&]+$/u';
-    public const CEDULA = '/^[VEJ]-\d{6,9}$/i';
-    public const RIF = '/^[JVEG]-\d{1,9}$/';
-    public const TELEFONO = '/^\d{11}$/';
+    public const CEDULA = '/^([VE]-[1-9]\d{6,7}|J-\d{8,9})$/i';
+    public const RIF = '/^[JVEG]-\d{8,9}$/';
+    public const TELEFONO = '/^0(412|414|416|422|424|426|251)\d{7}$/';
+    public const CODIGO_PRODUCTO = '/^[A-Za-z0-9\-\/\.]+$/';
     public const REFERENCIA_PAGO = '/^\d{5}$/';
     public const FECHA_ISO = '/^\d{4}-\d{2}-\d{2}$/';
     public const FRACCION = '/^(\d+)\/(\d+)$/';

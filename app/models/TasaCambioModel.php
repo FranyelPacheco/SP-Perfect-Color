@@ -112,8 +112,8 @@ class TasaCambioModel extends ModeloBase
         $tasaRaw = str_replace(',', '.', trim($tasaRaw));
         $tasa = floatval($tasaRaw);
 
-        if ($tasa <= 0) {
-            return ['valido' => false, 'mensaje' => 'El valor de la tasa debe ser mayor a 0 (ej. 45.50)'];
+        if ($tasa < 1.00) {
+            return ['valido' => false, 'mensaje' => 'El valor de la tasa debe ser al menos 1,00 (ej. 45.50)'];
         }
 
         if ($tasa > 999999.99) {

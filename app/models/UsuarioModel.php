@@ -130,7 +130,7 @@ class UsuarioModel extends ModeloBase
         $idRol = intval($datos['id_rol'] ?? 0);
         $activo = isset($datos['activo']) ? intval($datos['activo']) : 1;
 
-        $error = $this->validarNombrePersona($nombre, 50, 'El nombre');
+        $error = $this->validarNombrePersona($nombre, 50, 'El nombre', 3);
         if ($error !== null) {
             return ['valido' => false, 'mensaje' => $error];
         }
@@ -300,7 +300,7 @@ class UsuarioModel extends ModeloBase
         $nombre = trim($datos['nombre'] ?? '');
         $correo = trim($datos['correo'] ?? '');
 
-        $error = $this->validarNombrePersona($nombre, 50, 'El nombre');
+        $error = $this->validarNombrePersona($nombre, 50, 'El nombre', 3);
         if ($error !== null) {
             return ['exito' => false, 'mensaje' => $error];
         }

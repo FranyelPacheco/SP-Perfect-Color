@@ -409,7 +409,10 @@ html body .btn-filtro-tipo.active, html body .btn-filtro-fraccion.active { backg
 html body .tabla-items-presupuesto th { background: #f8fafc; border-bottom: 1px solid var(--ui-border); }
 html body .caja-total-card { border-radius: 14px; }
 html body #btnModalPrepararMezcla { background: linear-gradient(180deg, #7C3AED, #6D28D9); border: 0; color: #fff; }
-@media (max-width: 991.98px) { html body .presupuesto-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 991.98px) {
+  html body .presupuesto-grid { grid-template-columns: minmax(0, 1fr); }
+  html body .catalogo-scroll-container { max-height: 360px; }
+}
 
 /* ============================================================
    RESPONSIVE
@@ -422,7 +425,7 @@ html body .top-navbar { position: sticky; top: 0; z-index: 1030; }
 @media (max-width: 767.98px) {
   html body h4, html body .h4 { font-size: 1.15rem; }
   html body .card-body { padding: 1rem; }
-  html body .modal-dialog:not(.modal-fullscreen) { margin: 0.75rem; }
+  html body .modal { --bs-modal-margin: 0.75rem; }
   html body .modal-footer { flex-wrap: wrap; }
   html body .modal-footer .btn { flex: 1 1 auto; }
   html body .table td .btn-sm { min-width: 2.25rem; height: 2.25rem; }

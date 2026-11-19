@@ -442,13 +442,27 @@ $(function() {
         const id = $insumoId.val();
         const esEdicion = id !== '';
 
-        if (!$codigoInsumo.val().trim()) {
+        const codigoVal = $codigoInsumo.val().trim();
+        if (!codigoVal) {
             mostrarError('El código es obligatorio');
             return;
         }
+        if (codigoVal.length < 2 || codigoVal.length > 50) {
+            mostrarError('El código debe tener entre 2 y 50 caracteres');
+            return;
+        }
+        if (!PATRONES.codigoProducto.test(codigoVal)) {
+            mostrarError('El código solo puede contener letras, números y los caracteres - / .');
+            return;
+        }
 
-        if (!$nombreInsumo.val().trim()) {
+        const nombreVal = $nombreInsumo.val().trim();
+        if (!nombreVal) {
             mostrarError('El nombre del insumo es obligatorio');
+            return;
+        }
+        if (nombreVal.length < 3 || nombreVal.length > 150) {
+            mostrarError('El nombre del insumo debe tener entre 3 y 150 caracteres');
             return;
         }
 
@@ -756,6 +770,10 @@ $(function() {
         const nombre = $mezclaNombre.val().trim();
         if (!nombre) {
             errorMezcla('El nombre o identificación del color es obligatorio.');
+            return;
+        }
+        if (nombre.length < 3) {
+            errorMezcla('El nombre o identificación del color debe tener al menos 3 caracteres.');
             return;
         }
         if (nombre.length > 40) {

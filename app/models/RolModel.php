@@ -94,7 +94,7 @@ class RolModel extends ModeloBase
         }
         $modulos = array_values(array_filter(array_map('trim', $modulos)));
 
-        $error = $this->validarTextoSeguro($nombre, 50, 'El nombre del rol');
+        $error = $this->validarTextoSeguro($nombre, 50, 'El nombre del rol', true, 3);
         if ($error !== null) {
             return ['valido' => false, 'mensaje' => $error];
         }

@@ -137,7 +137,7 @@
 
                     <div class="mb-3">
                         <label for="nombreUsuario" class="form-label fw-semibold">Nombre Completo <span class="text-danger">*</span></label>
-                        <input type="text" id="nombreUsuario" name="nombre" class="form-control" placeholder="Ingrese el nombre completo" required maxlength="50" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$" title="Solo letras y espacios (máx. 50 caracteres)">
+                        <input type="text" id="nombreUsuario" name="nombre" class="form-control" placeholder="Ingrese el nombre completo" required minlength="3" maxlength="50" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$" title="Solo letras y espacios (3 a 50 caracteres)">
                         <div id="feedbackNombreUsuario" class="invalid-feedback"></div>
                     </div>
 
@@ -149,7 +149,7 @@
 
                     <div id="grupoClave" class="mb-3">
                         <label for="claveUsuario" class="form-label fw-semibold">Contraseña</label>
-                        <input type="password" id="claveUsuario" name="clave" class="form-control" maxlength="20" placeholder="Mínimo 6 caracteres, máx. 20">
+                        <input type="password" id="claveUsuario" name="clave" class="form-control" minlength="6" maxlength="20" placeholder="Mínimo 6 caracteres, máx. 20">
                     </div>
 
                     <div id="grupoCambiarClave" class="mb-3" style="display:none">
@@ -159,7 +159,7 @@
                         </div>
                         <div id="grupoNuevaClave" class="mt-2" style="display:none">
                             <label for="nuevaClaveUsuario" class="form-label small text-muted">Nueva Contraseña</label>
-                            <input type="password" id="nuevaClaveUsuario" name="nueva_clave" class="form-control" maxlength="20" placeholder="Mínimo 6 caracteres, máx. 20">
+                            <input type="password" id="nuevaClaveUsuario" name="nueva_clave" class="form-control" minlength="6" maxlength="20" placeholder="Mínimo 6 caracteres, máx. 20">
                         </div>
                     </div>
 
@@ -209,7 +209,7 @@
                     <div class="row mb-3">
                         <div class="col-md-8 col-12 mb-3 mb-md-0">
                             <label for="nombreRol" class="form-label fw-semibold">Nombre del Rol</label>
-                            <input type="text" id="nombreRol" name="nombre" class="form-control" placeholder="Ej: Supervisor, Almacenista, Auditor" required>
+                            <input type="text" id="nombreRol" name="nombre" class="form-control" placeholder="Ej: Supervisor, Almacenista, Auditor" required minlength="3" maxlength="50" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$" title="Solo letras y espacios (3 a 50 caracteres)">
                             <div class="invalid-feedback" id="feedbackNombreRol"></div>
                         </div>
                         <div class="col-md-4 col-12" id="contenedorEstadoRol">

@@ -80,10 +80,10 @@ class ClienteModel extends ModeloBase
             return ['valido' => false, 'mensaje' => 'La cédula es obligatoria'];
         }
         if (!preg_match(Patrones::CEDULA, $cedula)) {
-            return ['valido' => false, 'mensaje' => 'El documento debe tener formato V, E o J seguido de 6 a 9 dígitos'];
+            return ['valido' => false, 'mensaje' => 'El documento debe tener formato V o E de 7 a 8 dígitos (o J de 8 a 9 dígitos)'];
         }
 
-        $error = $this->validarNombrePersona($nombres, 40, 'El nombre') ?? $this->validarNombrePersona($apellidos, 40, 'El apellido');
+        $error = $this->validarNombrePersona($nombres, 40, 'El nombre', 3) ?? $this->validarNombrePersona($apellidos, 40, 'El apellido', 3);
         if ($error !== null) {
             return ['valido' => false, 'mensaje' => $error];
         }

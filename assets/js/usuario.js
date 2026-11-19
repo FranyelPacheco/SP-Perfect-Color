@@ -318,6 +318,7 @@ $(function () {
         const correo = $('#correoUsuario').val().trim();
 
         if (!nombre) { mostrarErrorUsuario('El nombre es obligatorio'); return; }
+        if (nombre.length < 3) { mostrarErrorUsuario('El nombre debe tener al menos 3 caracteres'); return; }
         if (nombre.length > 50) { mostrarErrorUsuario('El nombre no puede exceder los 50 caracteres'); return; }
         if (!PATRONES.soloLetras.test(nombre)) {
             mostrarErrorUsuario('El nombre solo puede contener letras y espacios (sin números ni símbolos)');
@@ -662,8 +663,17 @@ $(function () {
         const id = $('#rolId').val();
         const esEdicion = id !== '';
 
-        if (!$('#nombreRol').val().trim()) {
+        const nombreRolVal = $('#nombreRol').val().trim();
+        if (!nombreRolVal) {
             mostrarErrorRol('El nombre del rol es obligatorio');
+            return;
+        }
+        if (nombreRolVal.length < 3 || nombreRolVal.length > 50) {
+            mostrarErrorRol('El nombre del rol debe tener entre 3 y 50 caracteres');
+            return;
+        }
+        if (!PATRONES.soloLetras.test(nombreRolVal)) {
+            mostrarErrorRol('El nombre del rol solo puede contener letras y espacios');
             return;
         }
 

@@ -8,11 +8,13 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
             <div class="d-flex align-items-center gap-3 flex-wrap">
                 <h4 class="mb-0 toolbar-title"><i class="bi bi-file-earmark-text-fill me-2 text-primary"></i>Presupuestos</h4>
-                <div class="btn-group btn-group-sm shadow-sm" role="group" id="grupoFiltroPresupuestos">
-                    <button type="button" class="btn btn-primary active btn-filtro-presupuesto" data-filtro="">Todos</button>
-                    <button type="button" class="btn btn-outline-primary btn-filtro-presupuesto" data-filtro="En Espera"><i class="bi bi-clock-fill me-1"></i>En Espera</button>
-                    <button type="button" class="btn btn-outline-primary btn-filtro-presupuesto" data-filtro="Aprobado"><i class="bi bi-check-circle-fill me-1"></i>Aprobados</button>
-                    <button type="button" class="btn btn-outline-primary btn-filtro-presupuesto" data-filtro="Rechazado"><i class="bi bi-x-circle-fill me-1"></i>Rechazados</button>
+                <div class="overflow-auto pb-1" style="max-width: 100%;">
+                    <div class="btn-group btn-group-sm shadow-sm flex-nowrap" role="group" id="grupoFiltroPresupuestos">
+                        <button type="button" class="btn btn-primary active btn-filtro-presupuesto" data-filtro="">Todos</button>
+                        <button type="button" class="btn btn-outline-primary btn-filtro-presupuesto" data-filtro="En Espera"><i class="bi bi-clock-fill me-1 d-none d-sm-inline"></i>En Espera</button>
+                        <button type="button" class="btn btn-outline-primary btn-filtro-presupuesto" data-filtro="Aprobado"><i class="bi bi-check-circle-fill me-1 d-none d-sm-inline"></i>Aprobados</button>
+                        <button type="button" class="btn btn-outline-primary btn-filtro-presupuesto" data-filtro="Rechazado"><i class="bi bi-x-circle-fill me-1 d-none d-sm-inline"></i>Rechazados</button>
+                    </div>
                 </div>
             </div>
             <div class="d-flex gap-2 align-items-center flex-wrap">

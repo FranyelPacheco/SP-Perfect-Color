@@ -23,9 +23,9 @@
             </p>
         </div>
     </div>
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex align-items-center gap-2 ms-sm-auto w-100 w-sm-auto">
         <?php if (\App\Helpers\tienePermiso('tasaCambio')): ?>
-        <a href="<?php echo url(); ?>tasaCambio" class="btn btn-warning btn-sm fw-bold px-3 shadow-sm text-dark"><i class="bi bi-currency-exchange me-1"></i>Actualizar Tasa Ahora</a>
+        <a href="<?php echo url(); ?>tasaCambio" class="btn btn-warning btn-sm fw-bold px-3 shadow-sm text-dark w-100 w-sm-auto text-center"><i class="bi bi-currency-exchange me-1"></i>Actualizar Tasa Ahora</a>
         <?php endif; ?>
     </div>
 </div>
@@ -41,7 +41,7 @@
         </div>
     </div>
     <?php if (\App\Helpers\tienePermiso('tasaCambio')): ?>
-    <a href="<?php echo url(); ?>tasaCambio" class="btn btn-outline-success btn-sm fw-semibold"><i class="bi bi-pencil-square me-1"></i>Gestionar Tasas</a>
+    <a href="<?php echo url(); ?>tasaCambio" class="btn btn-outline-success btn-sm fw-semibold ms-sm-auto w-100 w-sm-auto text-center"><i class="bi bi-pencil-square me-1"></i>Gestionar Tasas</a>
     <?php endif; ?>
 </div>
 <?php endif; ?>
@@ -90,7 +90,7 @@
             <div class="stat-value" data-valor="<?php echo $pagosRealizadosHoy; ?>" data-moneda="1">$ 0,00</div>
         </div>
     </div>
-    <div class="col-6 col-md-4 col-xl">
+    <div class="col-12 col-md-4 col-xl">
         <div class="stat-card stat-info stat-ventas-mes">
             <div class="stat-icon"><i class="bi bi-graph-up"></i></div>
             <div class="stat-label">Ventas Mes</div>

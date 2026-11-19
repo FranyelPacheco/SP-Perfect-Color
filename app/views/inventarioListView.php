@@ -59,12 +59,12 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-4">
                             <label for="codigoInsumo" class="form-label">Código <span class="text-danger">*</span></label>
-                            <input type="text" id="codigoInsumo" name="codigo" class="form-control" required maxlength="50" placeholder="Código único">
+                            <input type="text" id="codigoInsumo" name="codigo" class="form-control" required minlength="2" maxlength="50" pattern="[A-Za-z0-9\-/\.]+" title="Solo letras, números y los caracteres - / . (2 a 50 caracteres)" placeholder="Código único">
                             <div class="invalid-feedback d-none" id="feedbackCodigoInsumo">Ya existe un insumo con este codigo</div>
                         </div>
                         <div class="col-md-5">
                             <label for="nombreInsumo" class="form-label">Nombre del Producto</label>
-                            <input type="text" id="nombreInsumo" name="nombre" class="form-control" required maxlength="150" placeholder="Ingrese el nombre">
+                            <input type="text" id="nombreInsumo" name="nombre" class="form-control" required minlength="3" maxlength="150" title="Mínimo 3 caracteres" placeholder="Ingrese el nombre">
                         </div>
                         <div class="col-md-3">
                             <label for="tipoProductoInsumo" class="form-label">Tipo</label>
@@ -93,7 +93,7 @@
                         </div>
                         <div class="col-md-6">
                             <label for="stockMinimoInsumo" class="form-label">Stock Mínimo</label>
-                            <input type="number" id="stockMinimoInsumo" name="stock_minimo" class="form-control" step="1" min="0" value="5">
+                            <input type="number" id="stockMinimoInsumo" name="stock_minimo" class="form-control" step="1" min="0" max="9999999" value="5">
                             <div class="form-text">En preparados (mezclas), 0 significa sin alerta.</div>
                         </div>
                     </div>
@@ -111,7 +111,7 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label for="precioVentaInsumo" class="form-label">Precio de Venta ($)</label>
-                            <input type="number" id="precioVentaInsumo" name="precio_venta" class="form-control" step="0.01" min="0.01" value="0.01" required>
+                            <input type="number" id="precioVentaInsumo" name="precio_venta" class="form-control" step="0.01" min="0.01" max="99999999.99" value="0.01" required>
                         </div>
                         <div class="col-md-6">
                             <label for="proveedorInsumo" class="form-label">Proveedor Asociado</label>
@@ -157,7 +157,7 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-5">
                             <label for="mezclaNombre" class="form-label fw-semibold text-dark">Nombre / Identificación del Color <span class="text-danger">*</span></label>
-                            <input type="text" id="mezclaNombre" class="form-control" placeholder="Ej: Azul Perla Fiesta" maxlength="40" required>
+                            <input type="text" id="mezclaNombre" class="form-control" placeholder="Ej: Azul Perla Fiesta" minlength="3" maxlength="40" title="Mínimo 3 caracteres" required>
                         </div>
                         <div class="col-md-4">
                             <label for="mezclaPresentacion" class="form-label fw-semibold text-dark">Presentación <span class="text-danger">*</span></label>

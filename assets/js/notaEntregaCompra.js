@@ -462,6 +462,8 @@ $(function() {
             totalActualCompra = 0.00;
             $totalDisplay.text('$ 0,00');
             $totalBsDisplay.text('Bs. 0,00');
+            $('#totalCompraDisplayMovil').text('$ 0,00');
+            $('#totalCompraBsDisplayMovil').text('Bs. 0,00');
             actualizarCalculoAbonoInicial();
             return;
         }
@@ -481,6 +483,8 @@ $(function() {
         totalActualCompra = Math.round(total * 100) / 100;
         $totalDisplay.text('$ ' + fmt(totalActualCompra));
         $totalBsDisplay.text('Bs. ' + fmt(totalActualCompra * tasa));
+        $('#totalCompraDisplayMovil').text('$ ' + fmt(totalActualCompra));
+        $('#totalCompraBsDisplayMovil').text('Bs. ' + fmt(totalActualCompra * tasa));
         actualizarCalculoAbonoInicial();
     }
 

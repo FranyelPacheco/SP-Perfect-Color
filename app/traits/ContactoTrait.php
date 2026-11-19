@@ -48,11 +48,11 @@ trait ContactoTrait
             return 'El teléfono principal es obligatorio';
         }
         if (!preg_match(Patrones::TELEFONO, $telefono)) {
-            return 'El teléfono principal debe tener 11 dígitos';
+            return 'El teléfono principal debe tener 11 dígitos con operadora válida (0412, 0414, 0416, 0422, 0424, 0426, 0251)';
         }
         if ($telefono2 !== '') {
             if (!preg_match(Patrones::TELEFONO, $telefono2)) {
-                return 'El segundo teléfono debe tener 11 dígitos';
+                return 'El segundo teléfono debe tener 11 dígitos con operadora válida (0412, 0414, 0416, 0422, 0424, 0426, 0251)';
             }
             if ($telefono === $telefono2) {
                 return 'El segundo teléfono no puede ser igual al teléfono principal';

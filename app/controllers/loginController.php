@@ -141,12 +141,14 @@ if ($metodo === 'index') {
 
     if ($enlace !== null) {
         $resultadoEnvio = enviarRecuperacionClave($usuario['correo'], $usuario['nombre'], $enlace);
-        if (!$resultadoEnvio['exito']) {
+        $esDesarrollo = env('APP_ENV', 'desarrollo') === 'desarrollo';
+        if (!$resultadoEnvio['exito'] || $esDesarrollo) {
             $dirLogs = __DIR__ . '/../logs';
             if (!is_dir($dirLogs)) {
                 @mkdir($dirLogs, 0777, true);
             }
-            $logMsg = '[' . date('Y-m-d H:i:s') . '] Falló envío a ' . $usuario['correo'] . ': ' . $resultadoEnvio['mensaje'] . PHP_EOL;
+            $estadoEnvio = $resultadoEnvio['exito'] ? 'Enviado vía SMTP' : 'Fallo SMTP (' . $resultadoEnvio['mensaje'] . ')';
+            $logMsg = '[' . date('Y-m-d H:i:s') . '] [' . $estadoEnvio . '] ' . $usuario['correo'] . ' | Enlace: ' . $enlace . PHP_EOL;
             @file_put_contents($dirLogs . '/recuperacion.log', $logMsg, FILE_APPEND);
             error_log('[RECUPERACION CLAVE] ' . $logMsg);
         }

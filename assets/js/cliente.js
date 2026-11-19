@@ -31,12 +31,14 @@ $(function() {
 
 
     // Cargar lista de clientes al iniciar
+    ajustarLimitesCedula();
     cargarClientes();
 
     // Evento para abrir modal de nuevo cliente
     $('#btnNuevoCliente').on('click', function() {
         $formularioCliente[0].reset();
         $clienteId.val('');
+        ajustarLimitesCedula();
         limpiarEstadoCedula();
         bloquearCedula(false);
         limpiarEstadoCorreo();
@@ -75,11 +77,34 @@ $(function() {
     // Limpiar formulario cuando el modal se cierra
     $modalCliente.on('hidden.bs.modal', function () {
         $formularioCliente[0].reset();
+        ajustarLimitesCedula();
         limpiarEstadoCedula();
         limpiarEstadoCorreo();
         resetearSegundoTelefono();
         $mensajeError.addClass('d-none');
     });
+
+    // Ajusta dinámicamente límites, patrón y placeholder según tipo de documento (V/E: 7-8 dígitos, J: 8-9 dígitos)
+    function ajustarLimitesCedula() {
+        const tipo = $tipoDocCliente.val() || 'V';
+        if (tipo === 'J') {
+            $cedulaCliente
+                .attr('minlength', '8')
+                .attr('maxlength', '9')
+                .attr('pattern', '[0-9]{8,9}')
+                .attr('placeholder', '8 o 9 dígitos (ej: 001234567)');
+        } else {
+            $cedulaCliente
+                .attr('minlength', '7')
+                .attr('maxlength', '8')
+                .attr('pattern', '[1-9][0-9]{6,7}')
+                .attr('placeholder', '7 u 8 dígitos (ej: 12345678)');
+            const val = $cedulaCliente.val();
+            if (val.length > 8) {
+                $cedulaCliente.val(val.slice(0, 8));
+            }
+        }
+    }
 
     function asignarOperadora($select, valor) {
         if (!$select.find('option').filter(function () { return this.value === valor; }).length) {
@@ -128,8 +153,14 @@ $(function() {
         clearTimeout(temporizadorCedula);
         const num = $cedulaCliente.val().trim();
         const tipo = $tipoDocCliente.val() || 'V';
-        if (!num || num.length < 5) {
+        const minEsperado = (tipo === 'J' ? 8 : 7);
+        const maxEsperado = (tipo === 'J' ? 9 : 8);
+        if (!num || num.length < minEsperado || num.length > maxEsperado) {
             limpiarEstadoCedula();
+            return;
+        }
+        if (tipo !== 'J' && num.charAt(0) === '0') {
+            marcarCampo($cedulaCliente, $feedbackCedulaCliente, 'invalid', 'La cédula no puede iniciar en cero');
             return;
         }
 
@@ -185,7 +216,10 @@ $(function() {
         this.value = this.value.replace(PATRONES.noDigitos, '');
         verificarCedulaEnTiempoReal();
     });
-    $tipoDocCliente.on('change', verificarCedulaEnTiempoReal);
+    $tipoDocCliente.on('change', function() {
+        ajustarLimitesCedula();
+        verificarCedulaEnTiempoReal();
+    });
     $correoCliente.on('input blur', verificarCorreoEnTiempoReal);
 
     // Restringir caracteres especiales y números en nombres y apellidos (estrictamente solo letras y espacios)
@@ -292,6 +326,7 @@ $(function() {
                 const partesCedula = (c.cedula || '').split('-');
                 if (partesCedula.length === 2 && $tipoDocCliente.length) {
                     $tipoDocCliente.val(partesCedula[0]);
+                    ajustarLimitesCedula();
                     $cedulaCliente.val(partesCedula[1]);
                 } else {
                     $cedulaCliente.val(c.cedula || '');
@@ -344,17 +379,46 @@ $(function() {
         const cedulaNum = $cedulaCliente.val().trim();
         const tipoDoc = $tipoDocCliente.val() || 'V';
         if (!cedulaNum) {
-            mostrarError('La cédula es obligatoria');
+            mostrarError('La cédula / documento es obligatorio');
             $cedulaCliente.trigger('focus');
             return;
         }
 
+        if (tipoDoc === 'J') {
+            if (cedulaNum.length < 8 || cedulaNum.length > 9) {
+                mostrarError('El documento J debe tener 8 o 9 dígitos');
+                $cedulaCliente.trigger('focus');
+                return;
+            }
+        } else {
+            if (cedulaNum.length < 7 || cedulaNum.length > 8) {
+                mostrarError('La cédula ' + tipoDoc + ' debe tener 7 u 8 dígitos');
+                $cedulaCliente.trigger('focus');
+                return;
+            }
+            if (cedulaNum.charAt(0) === '0') {
+                mostrarError('La cédula ' + tipoDoc + ' no puede comenzar en cero');
+                $cedulaCliente.trigger('focus');
+                return;
+            }
+        }
+
         const cedulaFinal = tipoDoc + '-' + cedulaNum;
+        if (!PATRONES.cedula.test(cedulaFinal)) {
+            mostrarError(tipoDoc === 'J' ? 'El documento J debe tener 8 o 9 dígitos' : 'La cédula debe tener 7 u 8 dígitos (sin cero al inicio)');
+            $cedulaCliente.trigger('focus');
+            return;
+        }
         $cedulaCompletaCliente.val(cedulaFinal);
 
         const nombreVal = $nombresCliente.val().trim();
         if (!nombreVal) {
             mostrarError('El nombre es obligatorio');
+            $nombresCliente.trigger('focus');
+            return;
+        }
+        if (nombreVal.length < 3) {
+            mostrarError('El nombre debe tener al menos 3 caracteres');
             $nombresCliente.trigger('focus');
             return;
         }
@@ -372,6 +436,11 @@ $(function() {
         const apellidoVal = $apellidosCliente.val().trim();
         if (!apellidoVal) {
             mostrarError('El apellido es obligatorio');
+            $apellidosCliente.trigger('focus');
+            return;
+        }
+        if (apellidoVal.length < 3) {
+            mostrarError('El apellido debe tener al menos 3 caracteres');
             $apellidosCliente.trigger('focus');
             return;
         }
@@ -417,6 +486,11 @@ $(function() {
             return;
         }
         const tel1Completo = op + telNum;
+        if (!PATRONES.telefono.test(tel1Completo)) {
+            mostrarError('El teléfono principal debe tener una operadora válida (0412, 0414, 0416, 0422, 0424, 0426, 0251)');
+            $telefonoNumeroCliente.trigger('focus');
+            return;
+        }
         $telefonoCliente.val(tel1Completo);
 
         // Armar telefono 2 si tiene numero
@@ -430,6 +504,11 @@ $(function() {
                 return;
             }
             tel2Completo = op2 + telNum2;
+            if (!PATRONES.telefono.test(tel2Completo)) {
+                mostrarError('El segundo teléfono debe tener una operadora válida (0412, 0414, 0416, 0422, 0424, 0426, 0251)');
+                $telefonoNumeroCliente2.trigger('focus');
+                return;
+            }
             if (tel1Completo === tel2Completo) {
                 mostrarError('El segundo teléfono no puede ser igual al teléfono principal');
                 $telefonoNumeroCliente2.trigger('focus');

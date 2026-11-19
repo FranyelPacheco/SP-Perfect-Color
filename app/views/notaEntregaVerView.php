@@ -25,9 +25,9 @@
                 <small class="text-muted d-block">Fecha:</small>
                 <span><?php echo $nota['fecha']; ?></span>
             </div>
-            <div class="col-md-4 col-6">
+            <div class="col-md-4 col-12">
                 <small class="text-muted d-block">Cliente:</small>
-                <span><?php echo htmlspecialchars($nota['cliente_nombre'] ?? ''); ?></span>
+                <span class="fw-semibold"><?php echo htmlspecialchars($nota['cliente_nombre'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">Cédula:</small>
@@ -38,7 +38,7 @@
                 <span><?php echo htmlspecialchars($nota['usuario_nombre'] ?? ''); ?></span>
             </div>
             <?php if (!empty($nota['cliente_direccion'])): ?>
-            <div class="col-md-4 col-6">
+            <div class="col-md-8 col-12">
                 <small class="text-muted d-block">Dirección:</small>
                 <span><?php echo htmlspecialchars($nota['cliente_direccion']); ?></span>
             </div>
@@ -54,9 +54,9 @@ $tasaDocNota = !empty($nota['tasa_bcv']) ? (float)$nota['tasa_bcv'] : (float)($t
 $totalUsdNota = (float)($nota['total'] ?? 0);
 $totalBsNota = $totalUsdNota * $tasaDocNota;
 ?>
-            <div class="col-md-4 col-6">
+            <div class="col-md-4 col-12">
                 <small class="text-muted d-block">Total:</small>
-                <span class="fw-bold fs-5">$ <?php echo number_format($totalUsdNota, 2, ',', '.'); ?></span>
+                <span class="fw-bold fs-5 text-success">$ <?php echo number_format($totalUsdNota, 2, ',', '.'); ?></span>
                 <?php if ($tasaDocNota > 0): ?>
                     <div class="text-muted small">
                         Bs. <?php echo number_format($totalBsNota, 2, ',', '.'); ?>
@@ -126,7 +126,7 @@ $totalBsNota = $totalUsdNota * $tasaDocNota;
     </div>
 </div>
 
-<div class="d-flex justify-content-end gap-2 mt-4">
+<div class="d-flex justify-content-end gap-2 mt-4 flex-wrap">
     <a href="<?php echo url(); ?>notaEntrega" class="btn btn-light border"><i class="bi bi-arrow-left me-1"></i>Volver al Listado</a>
     <a href="<?php echo url(); ?>notaEntrega/pdf?id=<?php echo $nota['id_nota_entrega']; ?>" target="_blank" class="btn btn-primary shadow-sm">
         <i class="bi bi-file-earmark-pdf-fill me-2"></i>Descargar Comprobante PDF

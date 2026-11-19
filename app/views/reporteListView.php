@@ -90,25 +90,25 @@
 </div>
 
 <div id="resumenReporte" class="row g-3 mb-4" style="display:none">
-    <div class="col-md-3" id="colResumen1">
+    <div class="col-6 col-md-3" id="colResumen1">
         <div class="card border-0 shadow-sm text-center p-3">
             <small class="text-muted" id="labelResumen1">Total Registros</small>
             <span id="totalRegistros" class="fs-3 fw-bold">0</span>
         </div>
     </div>
-    <div class="col-md-3" id="colResumen2">
+    <div class="col-6 col-md-3" id="colResumen2">
         <div class="card border-0 shadow-sm text-center p-3">
             <small class="text-muted" id="labelResumen2">Monto Total</small>
             <span id="montoTotal" class="fs-3 fw-bold text-primary">$ 0.00</span>
         </div>
     </div>
-    <div class="col-md-3" id="colResumenEgresos" style="display:none">
+    <div class="col-6 col-md-3" id="colResumenEgresos" style="display:none">
         <div class="card border-0 shadow-sm text-center p-3">
             <small class="text-muted">Total Egresos (Compras)</small>
             <span id="montoEgresos" class="fs-3 fw-bold text-danger">$ 0.00</span>
         </div>
     </div>
-    <div class="col-md-3" id="colResumenBalance" style="display:none">
+    <div class="col-6 col-md-3" id="colResumenBalance" style="display:none">
         <div class="card border-0 shadow-sm text-center p-3">
             <small class="text-muted">Balance Neto</small>
             <span id="montoBalance" class="fs-3 fw-bold text-success">$ 0.00</span>

@@ -13,9 +13,9 @@
     </div>
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-md-4 col-6">
+            <div class="col-md-4 col-12">
                 <small class="text-muted d-block">Proveedor:</small>
-                <span><?php echo htmlspecialchars($cuenta['proveedor_nombre'] ?? ''); ?></span>
+                <span class="fw-semibold"><?php echo htmlspecialchars($cuenta['proveedor_nombre'] ?? ''); ?></span>
             </div>
             <div class="col-md-4 col-6">
                 <small class="text-muted d-block">RIF:</small>
@@ -149,7 +149,7 @@ $saldoPendCxp = (float)($cuenta['saldo_pendiente'] ?? 0);
 
                     <div class="mb-3" id="contenedorRefPago" style="display:none">
                         <label for="referenciaPago" class="form-label">Referencia (últimos 5 dígitos)</label>
-                        <input type="text" id="referenciaPago" class="form-control" placeholder="Ej: 48215">
+                        <input type="text" id="referenciaPago" class="form-control" placeholder="Ej: 48215" minlength="5" maxlength="5" pattern="[0-9]{5}" inputmode="numeric">
                     </div>
 
                     <div id="mensajeErrorPago" class="alert alert-danger d-none"></div>

@@ -9,6 +9,7 @@ use function App\Helpers\{
     respuestaJson,
     verificarAcceso,
     verificarRolAdmin,
+    verificarSoloAdmin,
     soloPost,
     responder
 };
@@ -93,7 +94,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: eliminar
 // OBJETIVO: Eliminación lógica de un proveedor delegando al modelo
 } elseif ($metodo === 'eliminar') {
-    verificarRolAdmin();
+    verificarSoloAdmin();
 
     soloPost();
 

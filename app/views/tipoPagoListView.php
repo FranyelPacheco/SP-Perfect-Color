@@ -39,7 +39,7 @@
                     <input type="hidden" id="tipoPagoId" name="id">
                     <div class="mb-3">
                         <label for="nombreTipoPago" class="form-label">Nombre del Tipo de Pago</label>
-                        <input type="text" id="nombreTipoPago" name="nombre" class="form-control" required placeholder="Ej: Transferencia, Efectivo, etc.">
+                        <input type="text" id="nombreTipoPago" name="nombre" class="form-control" required placeholder="Ej: Transferencia, Efectivo, etc." minlength="3" maxlength="50" pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.\-]+$" title="Solo letras, números y signos . - (3 a 50 caracteres)">
                         <div class="invalid-feedback" id="feedbackNombreTipoPago"></div>
                     </div>
                     <div class="mb-3 form-check">

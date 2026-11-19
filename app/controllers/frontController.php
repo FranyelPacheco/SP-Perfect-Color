@@ -66,7 +66,33 @@ class frontController
         $this->metodo = !empty($partes[1]) ? $partes[1] : 'index';
         $this->parametros = array_slice($partes, 2);
 
+        $this->verificarCsrf();
         $this->disparador();
+    }
+
+    // FUNCIÓN: verificarCsrf (privado)
+    // OBJETIVO: Genera el token por sesión y exige que toda petición no GET lo envíe en X-CSRF-Token
+    // NOTA: csrf.js, utilidades.js y login.js ya añaden el encabezado usando la meta csrf-token
+    private function verificarCsrf()
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+
+        if (in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD'], true)) {
+            return;
+        }
+
+        $enviado = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        if (!hash_equals($_SESSION['csrf_token'], $enviado)) {
+            http_response_code(403);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['estado' => 'error', 'mensaje' => 'Sesión expirada o petición no válida. Recargue la página e intente de nuevo.']);
+            exit;
+        }
     }
 
     // FUNCIÓN: disparador (privado)

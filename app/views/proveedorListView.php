@@ -57,14 +57,14 @@
                                     <option value="E">E</option>
                                     <option value="G">G</option>
                                 </select>
-                                <input type="text" id="rifProveedor" name="rif_num" class="form-control" required placeholder="1-9 dígitos" maxlength="9">
+                                <input type="text" id="rifProveedor" name="rif_num" class="form-control" required placeholder="8-9 dígitos" minlength="8" maxlength="9" pattern="[0-9]{8,9}" inputmode="numeric">
                                 <div id="feedbackRifProveedor" class="invalid-feedback"><i class="bi bi-exclamation-circle-fill me-1"></i>Proveedor ya registrado</div>
                             </div>
                             <input type="hidden" id="rifCompletoProveedor" name="rif" value="">
                         </div>
                         <div class="col-md-6">
                             <label for="nombreEmpresaProveedor" class="form-label">Nombre de la Empresa <span class="text-danger">*</span></label>
-                            <input type="text" id="nombreEmpresaProveedor" name="nombre_empresa" class="form-control" required maxlength="60" placeholder="Ingrese el nombre de la empresa" pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-&]+$" title="Solo letras, números y signos . , - & (máx. 60 caracteres)">
+                            <input type="text" id="nombreEmpresaProveedor" name="nombre_empresa" class="form-control" required minlength="3" maxlength="60" placeholder="Ingrese el nombre de la empresa" pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\.,\-&]+$" title="Solo letras, números y signos . , - & (3 a 60 caracteres)">
                         </div>
                     </div>
 
@@ -93,9 +93,10 @@
                                 <option value="0424">0424</option>
                                 <option value="0416">0416</option>
                                 <option value="0426">0426</option>
+                                <option value="0422">0422</option>
                                 <option value="0251">0251</option>
                             </select>
-                            <input type="text" id="telefonoNumeroProveedor" name="telefono_num" class="form-control" required placeholder="7 dígitos" maxlength="7" pattern="[0-9]{7}">
+                            <input type="text" id="telefonoNumeroProveedor" name="telefono_num" class="form-control" required placeholder="7 dígitos" minlength="7" maxlength="7" pattern="[0-9]{7}" inputmode="numeric">
                         </div>
                         <input type="hidden" id="telefonoProveedor" name="telefono" value="">
                     </div>
@@ -114,9 +115,10 @@
                                 <option value="0424" selected>0424</option>
                                 <option value="0416">0416</option>
                                 <option value="0426">0426</option>
+                                <option value="0422">0422</option>
                                 <option value="0251">0251</option>
                             </select>
-                            <input type="text" id="telefonoNumeroProveedor2" name="telefono_num2" class="form-control" placeholder="7 dígitos" maxlength="7" pattern="[0-9]{7}">
+                            <input type="text" id="telefonoNumeroProveedor2" name="telefono_num2" class="form-control" placeholder="7 dígitos" minlength="7" maxlength="7" pattern="[0-9]{7}" inputmode="numeric">
                         </div>
                         <input type="hidden" id="telefonoProveedor2" name="telefono2" value="">
                     </div>

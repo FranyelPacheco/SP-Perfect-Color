@@ -92,7 +92,7 @@ $totalNotaFormBs = $totalNotaFormUsd * $tasaHoyNotaForm;
                 </div>
                 <div class="col-md-4" id="contenedorReferencia" style="display:none">
                     <label for="referenciaPago" class="form-label fw-semibold">Referencia (últimos 5 dígitos) <span class="text-danger">*</span></label>
-                    <input type="text" id="referenciaPago" name="referencia" class="form-control" placeholder="Ej: 48215">
+                    <input type="text" id="referenciaPago" name="referencia" class="form-control" placeholder="Ej: 48215" minlength="5" maxlength="5" pattern="[0-9]{5}" inputmode="numeric">
                 </div>
 
                 <!-- CRÉDITO -->
@@ -127,7 +127,7 @@ $totalNotaFormBs = $totalNotaFormUsd * $tasaHoyNotaForm;
                 </div>
                 <div class="col-md-4" id="contenedorReferenciaInicial" style="display:none">
                     <label for="referenciaPagoInicial" class="form-label fw-semibold">Referencia (últimos 5 dígitos) <span class="text-danger">*</span></label>
-                    <input type="text" id="referenciaPagoInicial" name="referencia_inicial" class="form-control" placeholder="Ej: 48215">
+                    <input type="text" id="referenciaPagoInicial" name="referencia_inicial" class="form-control" placeholder="Ej: 48215" minlength="5" maxlength="5" pattern="[0-9]{5}" inputmode="numeric">
                 </div>
             </div>
         </div>

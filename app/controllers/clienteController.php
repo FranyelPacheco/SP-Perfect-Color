@@ -6,7 +6,7 @@ use App\Models\ClienteModel;
 use function App\Helpers\{
     respuestaJson,
     verificarPermiso,
-    verificarRolAdmin,
+    verificarSoloAdmin,
     soloPost,
     responder
 };
@@ -95,7 +95,7 @@ if ($metodo === 'index') {
 // FUNCIÓN: eliminar
 // OBJETIVO: Enruta la eliminación lógica (soft-delete) de un cliente delegando las reglas de cuentas pendientes al modelo
 } elseif ($metodo === 'eliminar') {
-    verificarRolAdmin();
+    verificarSoloAdmin();
 
     soloPost();
 

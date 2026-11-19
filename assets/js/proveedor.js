@@ -172,7 +172,7 @@ $(function() {
         clearTimeout(temporizadorRif);
         const num = $rifProveedor.val().trim();
         const tipo = $tipoRifProveedor.val() || 'J';
-        if (!num || num.length < 3) {
+        if (!num || num.length < 8) {
             limpiarEstadoRif();
             return;
         }
@@ -392,6 +392,11 @@ $(function() {
         }
 
         const rifFinal = tipoRif + '-' + rifNum;
+        if (!PATRONES.rif.test(rifFinal)) {
+            mostrarError('El RIF debe tener formato válido de 8 o 9 dígitos (Ej: J-123456780)');
+            $rifProveedor.trigger('focus');
+            return;
+        }
         $rifCompletoProveedor.val(rifFinal);
 
         const nombreEmpresaVal = $nombreEmpresaProveedor.val().trim();
@@ -442,6 +447,11 @@ $(function() {
             return;
         }
         const tel1Completo = op + telNum;
+        if (!PATRONES.telefono.test(tel1Completo)) {
+            mostrarError('El teléfono principal debe tener una operadora válida (0412, 0414, 0416, 0422, 0424, 0426, 0251)');
+            $telefonoNumeroProveedor.trigger('focus');
+            return;
+        }
         $telefonoProveedor.val(tel1Completo);
 
         // Telefono 2
@@ -455,6 +465,11 @@ $(function() {
                 return;
             }
             tel2Completo = op2 + telNum2;
+            if (!PATRONES.telefono.test(tel2Completo)) {
+                mostrarError('El segundo teléfono debe tener una operadora válida (0412, 0414, 0416, 0422, 0424, 0426, 0251)');
+                $telefonoNumeroProveedor2.trigger('focus');
+                return;
+            }
             if (tel1Completo === tel2Completo) {
                 mostrarError('El segundo teléfono no puede ser igual al teléfono principal');
                 $telefonoNumeroProveedor2.trigger('focus');

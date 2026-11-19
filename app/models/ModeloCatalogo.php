@@ -42,7 +42,7 @@ abstract class ModeloCatalogo extends ModeloBase
     protected function validarNombre(string $nombre): array
     {
         $nombre = trim($nombre);
-        $error = $this->validarTextoSeguro($nombre, 50, "El nombre del {$this->etiqueta}");
+        $error = $this->validarTextoSeguro($nombre, 50, "El nombre del {$this->etiqueta}", true, 3);
         if ($error !== null) {
             return ['valido' => false, 'mensaje' => $error];
         }

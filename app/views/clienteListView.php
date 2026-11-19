@@ -50,7 +50,7 @@
                                 <option value="E">E</option>
                                 <option value="J">J</option>
                             </select>
-                            <input type="text" id="cedulaCliente" name="cedula_num" class="form-control" required placeholder="Número de documento" maxlength="9">
+                            <input type="text" id="cedulaCliente" name="cedula_num" class="form-control" required placeholder="7 u 8 dígitos (ej: 12345678)" minlength="7" maxlength="8" pattern="[1-9][0-9]{6,7}" inputmode="numeric">
                             <div id="feedbackCedulaCliente" class="invalid-feedback"><i class="bi bi-exclamation-circle-fill me-1"></i>Cliente ya registrado</div>
                         </div>
                         <input type="hidden" id="cedulaCompletaCliente" name="cedula" value="">
@@ -58,12 +58,12 @@
 
                     <div class="mb-3">
                         <label for="nombresCliente" class="form-label">Nombres <span class="text-danger">*</span></label>
-                        <input type="text" id="nombresCliente" name="nombres" class="form-control" required maxlength="40" placeholder="Ingrese los nombres" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$" title="Solo letras y espacios (máx. 40 caracteres)">
+                        <input type="text" id="nombresCliente" name="nombres" class="form-control" required minlength="3" maxlength="40" placeholder="Ingrese los nombres" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$" title="Solo letras y espacios (3 a 40 caracteres)">
                     </div>
 
                     <div class="mb-3">
                         <label for="apellidosCliente" class="form-label">Apellidos <span class="text-danger">*</span></label>
-                        <input type="text" id="apellidosCliente" name="apellidos" class="form-control" required maxlength="40" placeholder="Ingrese los apellidos" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$" title="Solo letras y espacios (máx. 40 caracteres)">
+                        <input type="text" id="apellidosCliente" name="apellidos" class="form-control" required minlength="3" maxlength="40" placeholder="Ingrese los apellidos" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$" title="Solo letras y espacios (3 a 40 caracteres)">
                     </div>
 
                     <div class="mb-3">
@@ -80,9 +80,10 @@
                                 <option value="0424">0424</option>
                                 <option value="0416">0416</option>
                                 <option value="0426">0426</option>
+                                <option value="0422">0422</option>
                                 <option value="0251">0251</option>
                             </select>
-                            <input type="text" id="telefonoNumeroCliente" name="telefono_num" class="form-control" required placeholder="7 dígitos (ej: 1234567)" maxlength="7" pattern="[0-9]{7}">
+                            <input type="text" id="telefonoNumeroCliente" name="telefono_num" class="form-control" required placeholder="7 dígitos (ej: 1234567)" minlength="7" maxlength="7" pattern="[0-9]{7}" inputmode="numeric">
                         </div>
                         <input type="hidden" id="telefonoCliente" name="telefono" value="">
                     </div>
@@ -101,9 +102,10 @@
                                 <option value="0424" selected>0424</option>
                                 <option value="0416">0416</option>
                                 <option value="0426">0426</option>
+                                <option value="0422">0422</option>
                                 <option value="0251">0251</option>
                             </select>
-                            <input type="text" id="telefonoNumeroCliente2" name="telefono_num2" class="form-control" placeholder="7 dígitos (ej: 7654321)" maxlength="7" pattern="[0-9]{7}">
+                            <input type="text" id="telefonoNumeroCliente2" name="telefono_num2" class="form-control" placeholder="7 dígitos (ej: 7654321)" minlength="7" maxlength="7" pattern="[0-9]{7}" inputmode="numeric">
                         </div>
                         <input type="hidden" id="telefonoCliente2" name="telefono2" value="">
                     </div>

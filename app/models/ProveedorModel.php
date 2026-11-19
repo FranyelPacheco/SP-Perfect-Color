@@ -85,7 +85,7 @@ class ProveedorModel extends ModeloBase
             return ['valido' => false, 'mensaje' => 'El RIF es obligatorio'];
         }
         if (!preg_match(Patrones::RIF, $rif)) {
-            return ['valido' => false, 'mensaje' => 'El RIF debe tener formato válido (Ej: J-123456789)'];
+            return ['valido' => false, 'mensaje' => 'El RIF debe tener formato válido de 8 o 9 dígitos (Ej: J-123456780)'];
         }
 
         if ($nombreEmpresa === '') {

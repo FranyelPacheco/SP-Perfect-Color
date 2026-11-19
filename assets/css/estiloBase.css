@@ -1108,6 +1108,14 @@ textarea.form-control {
   padding: 0.85rem 1.25rem;
 }
 
+/* El <form> entre .modal-content y body/footer rompe el flex de Bootstrap */
+.modal-content > form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 /* ============================================================
    NOTIFICACIONES (Toast)
    ============================================================ */

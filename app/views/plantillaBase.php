@@ -184,15 +184,6 @@ try {
                             p.parentElement.classList.add('sin-transicion');
                             if (e.open) {
                                 p.dataset.open = 'true';
-                                // Si el cursor ya no está sobre el sidebar, el primer movimiento lo pliega
-                                document.addEventListener('mousemove', function f(ev) {
-                                    document.removeEventListener('mousemove', f);
-                                    if (!p.contains(ev.target)) {
-                                        p.dataset.open = 'false';
-                                        e.open = false;
-                                        sessionStorage.setItem('sbEstado', JSON.stringify(e));
-                                    }
-                                });
                             }
                             p.querySelectorAll('.dropdown-hover').forEach(function (li, i) {
                                 if ((e.subs || []).indexOf(i) > -1) li.classList.add('open');
@@ -214,7 +205,14 @@ try {
                         <span class="navbar-toggler-icon"></span>
                     </button>
                     <img src="<?php echo url(); ?>assets/images/logo-recortado.webp" alt="SP Perfect Color" height="36" class="me-2">
-                    <span class="navbar-brand mb-0 fs-6 fw-bold">SP Perfect Color</span>
+                    <span class="navbar-brand mb-0 fs-6 fw-bold text-truncate" style="max-width: 140px;">SP Perfect Color</span>
+                    <?php if (!empty($tasaCambioGlobal) && $tasaCambioGlobal > 0): ?>
+                    <div class="ms-auto d-flex align-items-center">
+                        <span class="badge bg-white bg-opacity-25 text-white fw-semibold px-2 py-1" style="font-size: 0.72rem;" title="Tasa BCV vigente">
+                            <i class="bi bi-currency-exchange me-1"></i><?php echo number_format((float)$tasaCambioGlobal, 2, ',', '.'); ?> Bs
+                        </span>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </nav>
 
@@ -263,7 +261,16 @@ try {
                 requestAnimationFrame(function() { requestAnimationFrame(function() { $panel.parent().removeClass('sin-transicion'); }); });
                 $(window).on('pagehide', guardar);
                 $panel.on('mouseenter focusin', abrir);
-                $panel.on('mouseleave', cerrar);
+                var fuera = function(e) {
+                    var nav = $panel.parent()[0];
+                    if (!nav) return true;
+                    var r = nav.getBoundingClientRect();
+                    return e.clientX <= r.left || e.clientX >= r.right;
+                };
+                $panel.on('mouseleave', function(e) { if (fuera(e)) cerrar(); });
+                $(document).on('mousemove', function(e) {
+                    if ($panel.attr('data-open') === 'true' && fuera(e)) cerrar();
+                });
                 $panel.on('focusout', function(e) {
                     if (!$.contains($panel[0], e.relatedTarget)) cerrar();
                 });

@@ -59,7 +59,7 @@ trait ValidacionTrait
 
     private function _ejecutarValidarClave(string $clave): ?string
     {
-        $longitud = strlen($clave);
+        $longitud = mb_strlen($clave);
         if ($longitud < 6) {
             return 'La contraseña debe tener al menos 6 caracteres';
         }
@@ -73,16 +73,19 @@ trait ValidacionTrait
     }
 
     // FUNCIÓN: validarTextoSeguro
-    // OBJETIVO: Validar un texto libre (obligatorio opcional, longitud máxima y sin caracteres peligrosos); devuelve el error o null
-    public function validarTextoSeguro(string $valor, int $maximo, string $etiqueta, bool $obligatorio = true): ?string
+    // OBJETIVO: Validar un texto libre (obligatorio opcional, longitud mínima/máxima y sin caracteres peligrosos); devuelve el error o null
+    public function validarTextoSeguro(string $valor, int $maximo, string $etiqueta, bool $obligatorio = true, int $minimo = 0): ?string
     {
-        return $this->_ejecutarValidarTextoSeguro(trim($valor), $maximo, $etiqueta, $obligatorio);
+        return $this->_ejecutarValidarTextoSeguro(trim($valor), $maximo, $etiqueta, $obligatorio, $minimo);
     }
 
-    private function _ejecutarValidarTextoSeguro(string $valor, int $maximo, string $etiqueta, bool $obligatorio): ?string
+    private function _ejecutarValidarTextoSeguro(string $valor, int $maximo, string $etiqueta, bool $obligatorio, int $minimo = 0): ?string
     {
         if ($valor === '') {
             return $obligatorio ? "{$etiqueta} es obligatorio" : null;
+        }
+        if ($minimo > 0 && mb_strlen($valor) < $minimo) {
+            return "{$etiqueta} debe tener al menos {$minimo} caracteres";
         }
         if (mb_strlen($valor) > $maximo) {
             return "{$etiqueta} no puede superar los {$maximo} caracteres";
@@ -94,16 +97,19 @@ trait ValidacionTrait
     }
 
     // FUNCIÓN: validarNombrePersona
-    // OBJETIVO: Validar nombres y apellidos (obligatorio, longitud y solo letras con acentos y espacios); devuelve el error o null
-    public function validarNombrePersona(string $valor, int $maximo, string $etiqueta): ?string
+    // OBJETIVO: Validar nombres y apellidos (obligatorio, longitud mínima/máxima y solo letras con acentos y espacios); devuelve el error o null
+    public function validarNombrePersona(string $valor, int $maximo, string $etiqueta, int $minimo = 1): ?string
     {
-        return $this->_ejecutarValidarNombrePersona(trim($valor), $maximo, $etiqueta);
+        return $this->_ejecutarValidarNombrePersona(trim($valor), $maximo, $etiqueta, $minimo);
     }
 
-    private function _ejecutarValidarNombrePersona(string $valor, int $maximo, string $etiqueta): ?string
+    private function _ejecutarValidarNombrePersona(string $valor, int $maximo, string $etiqueta, int $minimo = 1): ?string
     {
         if ($valor === '') {
             return "{$etiqueta} es obligatorio";
+        }
+        if ($minimo > 1 && mb_strlen($valor) < $minimo) {
+            return "{$etiqueta} debe tener al menos {$minimo} caracteres";
         }
         if (mb_strlen($valor) > $maximo) {
             return "{$etiqueta} no puede exceder {$maximo} caracteres";
