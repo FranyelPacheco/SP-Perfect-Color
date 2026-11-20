@@ -93,7 +93,7 @@
 
 <!-- MODAL PARA USUARIO (CREAR/EDITAR) -->
 <div id="modalContrato" class="modal fade" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-dark text-white border-bottom-0">
                 <h5 class="modal-title text-white"><i class="bi bi-file-earmark-pdf-fill me-2"></i>Contrato de <span id="nombreContrato"></span></h5>
@@ -124,7 +124,7 @@
 </div>
 
 <div id="modalUsuario" class="modal fade" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-dark text-white border-bottom-0">
                 <h5 class="modal-title text-white" id="tituloModalUsuario">Nuevo Usuario</h5>
@@ -195,7 +195,7 @@
 <?php if ($puedeGestionar): ?>
 <!-- MODAL PARA ROL (CREAR/EDITAR) -->
 <div id="modalRol" class="modal fade" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-dark text-white border-bottom-0">
                 <h5 class="modal-title text-white" id="tituloModalRol">Nuevo Rol</h5>

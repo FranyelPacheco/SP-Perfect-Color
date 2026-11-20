@@ -58,7 +58,7 @@ $saldoPendCxp = (float)($cuenta['saldo_pendiente'] ?? 0);
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <h5 class="mb-0"><i class="bi bi-cash-stack me-2 text-primary"></i>Historial de Pagos Realizados</h5>
-        <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Conversión en Bs. calculada según la tasa BCV registrada en la fecha de cada pago</small>
+        <small class="text-muted text-break"><i class="bi bi-info-circle me-1"></i>Conversión en Bs. calculada según la tasa BCV registrada en la fecha de cada pago</small>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -101,7 +101,7 @@ $saldoPendCxp = (float)($cuenta['saldo_pendiente'] ?? 0);
 
 <?php if ($cuenta['saldo_pendiente'] > 0 && $_SESSION['usuario_rol'] == 1): ?>
 <div class="d-flex justify-content-end mb-3">
-    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalPago">
+    <button type="button" class="btn btn-success col-12 col-sm-auto" data-bs-toggle="modal" data-bs-target="#modalPago">
         <i class="bi bi-cash-stack me-2"></i>Registrar Abono
     </button>
 </div>

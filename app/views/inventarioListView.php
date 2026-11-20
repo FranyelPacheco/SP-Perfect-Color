@@ -242,7 +242,7 @@
 
 <!-- MODAL PARA AJUSTE POR MERMA / DAÑO -->
 <div class="modal fade" id="modalAjusteMerma" tabindex="-1" aria-labelledby="modalAjusteMermaLabel" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title fw-bold" id="modalAjusteMermaLabel">

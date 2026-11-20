@@ -6,9 +6,9 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-            <div class="d-flex align-items-center gap-3 flex-wrap">
-                <h4 class="mb-0 toolbar-title"><i class="bi bi-receipt-cutoff me-2 text-primary"></i>Notas de Entrega (Ventas)</h4>
-                <div class="overflow-auto pb-1" style="max-width: 100%;">
+            <div class="d-flex align-items-center gap-2 gap-sm-3 flex-wrap w-100 w-lg-auto">
+                <h4 class="mb-0 toolbar-title text-truncate"><i class="bi bi-receipt-cutoff me-2 text-primary"></i>Notas de Entrega (Ventas)</h4>
+                <div class="w-100 w-sm-auto overflow-auto pb-1" style="max-width: 100%; -webkit-overflow-scrolling: touch;">
                     <div class="btn-group btn-group-sm shadow-sm flex-nowrap" role="group" id="grupoFiltroNotas">
                         <button type="button" class="btn btn-primary active btn-filtro-nota" data-filtro="">Todas</button>
                         <button type="button" class="btn btn-outline-primary btn-filtro-nota" data-filtro="Aprobado"><i class="bi bi-check-circle-fill me-1 d-none d-sm-inline"></i>Aprobadas</button>

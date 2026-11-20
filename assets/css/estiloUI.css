@@ -537,7 +537,7 @@ html body .aviso-campo i { font-size: 0.9rem; }
    REVISION QA: desbordes en movil, contraste AA y objetivos tactiles
    ============================================================ */
 html body .card-body > .d-flex > * { min-width: 0; max-width: 100%; }
-html body #grupoFiltroNotas, html body #grupoFiltroPresupuestos { max-width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+html body #grupoFiltroNotas, html body #grupoFiltroPresupuestos { max-width: 100%; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; display: inline-flex; }
 html body #grupoFiltroNotas .btn, html body #grupoFiltroPresupuestos .btn { white-space: nowrap; flex: 0 0 auto; }
 html body .saldo-pendiente-positivo { color: #B91C1C; }
 html body .catalogo-codigo { color: #475569; }
@@ -548,7 +548,6 @@ html body .nav-pills .nav-link:not(.active) { color: #334155; }
 html body .table td .btn-success { --b: #166534; }
 html body .sidebar-brand small, html body .sidebar .logout-link { font-size: 0.8125rem; }
 @media (max-width: 575.98px) {
-  html body .table-mezcla-wrapper { overflow-x: auto !important; }
   html body .btn-catalogo-add, html body .catalogo-card-item .btn { min-height: 44px; }
   html body .table td .btn-sm { min-width: 2.5rem; height: 2.5rem; }
   html body .btn-close { padding: 0.75rem; }
@@ -623,3 +622,70 @@ html body .sidebar-brand small, html body .sidebar .logout-link { font-size: 0.8
   html body #offcanvasSidebar .sidebar-user .logout-link { display: inline-flex; align-items: center; min-height: 40px; font-size: 0.9rem !important; }
   html body .top-navbar { position: sticky; top: 0; z-index: 1030; }
 }
+
+@media (max-width: 575.98px) {
+  html body .tabla-items-presupuesto thead {
+    display: none;
+  }
+  html body .tabla-items-presupuesto,
+  html body .tabla-items-presupuesto tbody,
+  html body .tabla-items-presupuesto tr {
+    display: block;
+    width: 100%;
+  }
+  html body .tabla-items-presupuesto tr:not(#filaVacia) {
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid var(--ui-border);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    background: #fff;
+  }
+  html body .tabla-items-presupuesto tr:not(#filaVacia) td {
+    display: block;
+    padding: 0;
+    border: none;
+  }
+  html body .tabla-items-presupuesto tr:not(#filaVacia) td:nth-child(1) {
+    flex: 1 0 100%;
+    margin-bottom: 0.2rem;
+  }
+  html body .tabla-items-presupuesto tr:not(#filaVacia) td:nth-child(2) {
+    flex: 0 0 75px;
+  }
+  html body .tabla-items-presupuesto tr:not(#filaVacia) td:nth-child(2)::before {
+    content: "Cant: ";
+    font-size: 0.7rem;
+    color: #64748b;
+    display: block;
+  }
+  html body .tabla-items-presupuesto tr:not(#filaVacia) td:nth-child(3) {
+    flex: 1 1 auto;
+    text-align: left !important;
+  }
+  html body .tabla-items-presupuesto tr:not(#filaVacia) td:nth-child(3)::before {
+    content: "Precio: ";
+    font-size: 0.7rem;
+    color: #64748b;
+    display: block;
+  }
+  html body .tabla-items-presupuesto tr:not(#filaVacia) td:nth-child(4) {
+    flex: 1 1 auto;
+    text-align: right !important;
+  }
+  html body .tabla-items-presupuesto tr:not(#filaVacia) td:nth-child(4)::before {
+    content: "Subtotal: ";
+    font-size: 0.7rem;
+    color: #64748b;
+    display: block;
+  }
+  html body .tabla-items-presupuesto tr:not(#filaVacia) td:nth-child(5) {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+}
+
+/* Utilidades responsive de ancho ausentes en Bootstrap 5 */
+@media (min-width: 576px) { .w-sm-auto { width: auto !important; } }
+@media (min-width: 992px) { .w-lg-auto { width: auto !important; } }
