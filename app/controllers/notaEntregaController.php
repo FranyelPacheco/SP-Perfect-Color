@@ -105,6 +105,43 @@ if ($metodo === 'index') {
     $contenidoVista = __DIR__ . '/../views/notaEntregaVerView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';
 
+// FUNCIÓN: editar
+// OBJETIVO: Renderiza el formulario para modificar condición, método de pago y observaciones de una nota aprobada (RF 4.1.1)
+} elseif ($metodo === 'editar') {
+    verificarRolVendedor();
+
+    $id = intval($_GET['id'] ?? 0);
+    if ($id < 1) {
+        header('Location: ' . url('notaEntrega'));
+        exit;
+    }
+
+    $nota = $notaEntregaModel->buscarPorId($id);
+    if (!$nota || (int)($nota['id_estado_venta'] ?? 0) !== 2) {
+        header('Location: ' . url('notaEntrega'));
+        exit;
+    }
+
+    $detalle = $notaEntregaModel->obtenerDetalle($id);
+    $tiposPago = (new TipoPagoModel())->listarActivos();
+    $bancos = (new BancoModel())->listarActivos();
+
+    $pageTitle = 'SP Perfect Color - Editar Nota de Entrega #' . $id;
+    $pageDescription = 'Modificar datos de la nota de entrega #' . $id . ' - SP Perfect Color';
+    $contenidoVista = __DIR__ . '/../views/notaEntregaEditView.php';
+    require_once __DIR__ . '/../views/plantillaBase.php';
+
+// FUNCIÓN: actualizar
+// OBJETIVO: Guarda las modificaciones de una nota de entrega aprobada (RF 4.1.1)
+} elseif ($metodo === 'actualizar') {
+    verificarRolVendedor();
+
+    soloPost();
+
+    $id = intval($_POST['id_venta'] ?? 0);
+    $resultado = $notaEntregaModel->modificarNotaEntrega($id, $_POST);
+    respuestaJson($resultado['exito'] ? 'exito' : 'error', $resultado['mensaje'], $resultado['datos'] ?? null);
+
 // FUNCIÓN: obtenerClientesAjax
 // OBJETIVO: Obtiene los clientes disponibles para el formulario de nota de entrega
 } elseif ($metodo === 'obtenerClientesAjax') {
@@ -121,7 +158,7 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'obtenerTiposPagoAjax') {
     verificarPermiso('notaEntrega');
     
-    $tiposPago = (new TipoPagoModel())->listarTodos();
+    $tiposPago = (new TipoPagoModel())->listarActivos();
     
     respuestaJson('exito', 'Tipos de pago obtenidos', [
         'tipos_pago' => $tiposPago
@@ -132,7 +169,7 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'obtenerBancosAjax') {
     verificarPermiso('notaEntrega');
     
-    $bancos = (new BancoModel())->listarTodos();
+    $bancos = (new BancoModel())->listarActivos();
     
     respuestaJson('exito', 'Bancos obtenidos', [
         'bancos' => $bancos

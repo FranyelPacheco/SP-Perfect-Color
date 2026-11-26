@@ -25,7 +25,8 @@ function generarPdfNotaEntrega(array $nota, array $detalle, ?float $tasaBs = nul
     }
 
     $idNota = str_pad((string)($nota['id_nota_entrega'] ?? 0), 6, '0', STR_PAD_LEFT);
-    $fechaEmision = !empty($nota['fecha']) ? date('d/m/Y h:i A', strtotime($nota['fecha'])) : date('d/m/Y');
+    $fechaBase = !empty($nota['fecha_aprobacion']) ? $nota['fecha_aprobacion'] : ($nota['fecha'] ?? '');
+    $fechaEmision = !empty($fechaBase) ? date('d/m/Y h:i A', strtotime($fechaBase)) : date('d/m/Y');
     $clienteNombre = htmlspecialchars($nota['cliente_nombre'] ?? 'Consumidor Final');
     $clienteCedula = htmlspecialchars($nota['cliente_cedula'] ?? 'N/A');
     $clienteTelefono = htmlspecialchars($nota['cliente_telefonos'] ?? 'N/A');
@@ -37,8 +38,10 @@ function generarPdfNotaEntrega(array $nota, array $detalle, ?float $tasaBs = nul
     $totalBs = $tasaBs ? ($totalUsd * $tasaBs) : 0;
 
     $bancoInfo = '';
-    if (!empty($nota['id_banco'])) {
-        $bancoInfo = ' | Banco ID: ' . $nota['id_banco'];
+    if (!empty($nota['banco_nombre'])) {
+        $bancoInfo = ' | ' . htmlspecialchars($nota['banco_nombre']);
+    } elseif (!empty($nota['id_banco'])) {
+        $bancoInfo = ' | Banco #' . $nota['id_banco'];
     }
     if (!empty($nota['referencia'])) {
         $bancoInfo .= ' - Ref: ' . htmlspecialchars($nota['referencia']);
@@ -264,13 +267,12 @@ function generarPdfNotaEntrega(array $nota, array $detalle, ?float $tasaBs = nul
                 <img src="{$logoSrc}" style="height: 65px; max-width: 120px;" alt="Logo">
             </td>
             <td style="width: 48%; padding-left: 10px;">
-                <div class="company-name">SP Perfect Color, C.A.</div>
-                <div class="company-rif">RIF: J-50348291-0</div>
+                <div class="company-name">SUPER PINTURAS PERFECT COLOR, C.A.</div>
+                <div class="company-rif">RIF: J-502026619</div>
                 <div class="company-info">
                     Especialistas en Colorimetría Automotriz e Industrial<br>
-                    Av. Principal Los Guayos, C.C. Industrial Valencia, Local 12<br>
-                    Valencia, Carabobo - Venezuela | Teléf: +58 (412) 555-0199<br>
-                    Email: administracion@perfectcolor.com
+                    Carrera 4 con Calle 9, Parroquia Unión<br>
+                    Barquisimeto, Estado Lara - Venezuela (C.P. 3001)
                 </div>
             </td>
             <td style="width: 32%;">
@@ -363,7 +365,7 @@ function generarPdfNotaEntrega(array $nota, array $detalle, ?float $tasaBs = nul
         <tr>
             <td style="width: 50%; text-align: center;">
                 <div class="signature-line"></div>
-                <div class="signature-title">SP PERFECT COLOR, C.A.</div>
+                <div class="signature-title">SUPER PINTURAS PERFECT COLOR, C.A.</div>
                 <div class="signature-sub">Despachado por / Sello Autorizado</div>
             </td>
             <td style="width: 50%; text-align: center;">

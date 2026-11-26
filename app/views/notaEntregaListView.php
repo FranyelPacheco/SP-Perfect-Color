@@ -11,9 +11,9 @@
                 <div class="w-100 w-sm-auto overflow-auto pb-1" style="max-width: 100%; -webkit-overflow-scrolling: touch;">
                     <div class="btn-group btn-group-sm shadow-sm flex-nowrap" role="group" id="grupoFiltroNotas">
                         <button type="button" class="btn btn-primary active btn-filtro-nota" data-filtro="">Todas</button>
-                        <button type="button" class="btn btn-outline-primary btn-filtro-nota" data-filtro="Aprobado"><i class="bi bi-check-circle-fill me-1 d-none d-sm-inline"></i>Aprobadas</button>
+                        <button type="button" class="btn btn-outline-primary btn-filtro-nota" data-filtro="Aprobada"><i class="bi bi-check-circle-fill me-1 d-none d-sm-inline"></i>Aprobadas</button>
                         <button type="button" class="btn btn-outline-primary btn-filtro-nota" data-filtro="En Espera"><i class="bi bi-clock-fill me-1 d-none d-sm-inline"></i>En Espera</button>
-                        <button type="button" class="btn btn-outline-primary btn-filtro-nota" data-filtro="Rechazado"><i class="bi bi-x-circle-fill me-1 d-none d-sm-inline"></i>Rechazadas</button>
+                        <button type="button" class="btn btn-outline-primary btn-filtro-nota" data-filtro="Rechazada"><i class="bi bi-x-circle-fill me-1 d-none d-sm-inline"></i>Rechazadas</button>
                     </div>
                 </div>
             </div>

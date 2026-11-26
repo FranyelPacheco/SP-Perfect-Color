@@ -198,7 +198,12 @@ function toggleDecision() {
         .attr('class', rechazar ? 'btn btn-danger btn-lg' : 'btn btn-success btn-lg')
         .html(rechazar ? '<i class="bi bi-x-circle me-1"></i>Rechazar' : '<i class="bi bi-check-lg me-1"></i>Aprobar');
 
-    if (!rechazar) toggleCondicionPago();
+    if (rechazar) {
+        // Evitar que controles ocultos con required bloqueen el submit HTML5 al rechazar
+        $('#seccionClienteYPago').find('input, select').prop('required', false);
+    } else {
+        toggleCondicionPago();
+    }
 }
 
 function toggleCondicionPago() {
@@ -253,6 +258,7 @@ function actualizarCamposInicial() {
         toggleBancoRefInicial();
     } else {
         mostrarGrupo('#contenedorBancoInicial, #contenedorReferenciaInicial', false);
+        $('#bancoPagoInicial, #referenciaPagoInicial').prop('required', false);
     }
 }
 

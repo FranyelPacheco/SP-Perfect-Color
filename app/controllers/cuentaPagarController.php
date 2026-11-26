@@ -81,8 +81,8 @@ if ($metodo === 'index') {
 } elseif ($metodo === 'obtenerDatosPagoAjax') {
     verificarAcceso([1]);
     
-    $tiposPago = (new TipoPagoModel())->listarTodos();
-    $bancos = (new BancoModel())->listarTodos();
+    $tiposPago = (new TipoPagoModel())->listarActivos();
+    $bancos = (new BancoModel())->listarActivos();
     
     respuestaJson('exito', 'Datos obtenidos', [
         'tipos_pago' => $tiposPago,

@@ -266,7 +266,10 @@ $(function() {
             api.post('notaEntrega/guardar', formData)
             .then(function(resultado) {
                 if (resultado.estado === 'exito') {
-                    mostrarNotificacion('Nota de entrega #' + resultado.datos.id_nota_entrega + ' creada exitosamente', 'exito');
+                    const msg = decision === 'rechazar'
+                        ? (resultado.mensaje || 'Nota de entrega rechazada correctamente')
+                        : ('Nota de entrega #' + resultado.datos.id_nota_entrega + ' creada exitosamente');
+                    mostrarNotificacion(msg, 'exito');
                     setTimeout(function() {
                         window.location.href = BASE_URL + 'notaEntrega';
                     }, 1500);

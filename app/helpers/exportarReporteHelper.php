@@ -68,14 +68,16 @@ function generarPDF($tipo, $desde, $hasta, $filtros = [])
         if ($tipo === 'ventas') {
             $monto = (float)($fila['total'] ?? 0);
             $totalMontoUsd += $monto;
-            $fechaFmt = !empty($fila['fecha']) ? date('d/m/Y', strtotime($fila['fecha'])) : '-';
+            $fechaRaw = $fila['fecha_venta'] ?? $fila['fecha_aprobacion'] ?? $fila['fecha'] ?? '';
+            $fechaFmt = !empty($fechaRaw) ? date('d/m/Y', strtotime($fechaRaw)) : '-';
+            $condLabel = ($fila['condicion_pago'] ?? '') === 'credito' ? 'Crédito' : ucfirst($fila['condicion_pago'] ?? '-');
 
             $filasHtml .= '<td style="padding: 7px 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px; text-align: center;">' . $fechaFmt . '</td>';
             $filasHtml .= '<td style="padding: 7px 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px; font-weight: 500;">' . htmlspecialchars($fila['cliente_nombre'] ?? '-') . '</td>';
             $filasHtml .= '<td style="padding: 7px 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px; text-align: center;">' . htmlspecialchars($fila['cliente_cedula'] ?? '-') . '</td>';
             $filasHtml .= '<td style="padding: 7px 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px; text-align: right; font-weight: bold; color: #1e3a8a;">$ ' . number_format($monto, 2, ',', '.') . '</td>';
             $filasHtml .= '<td style="padding: 7px 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px; text-align: center;">' . htmlspecialchars($fila['tipo_pago_nombre'] ?? 'Efectivo') . '</td>';
-            $filasHtml .= '<td style="padding: 7px 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px; text-align: center;"><span style="font-size: 9px; padding: 2px 6px; border-radius: 4px; background: ' . ($fila['condicion_pago'] === 'contado' ? '#dcfce7; color: #166534;' : '#fef9c3; color: #854d0e;') . '">' . ucfirst($fila['condicion_pago'] ?? '-') . '</span></td>';
+            $filasHtml .= '<td style="padding: 7px 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px; text-align: center;"><span style="font-size: 9px; padding: 2px 6px; border-radius: 4px; background: ' . ($fila['condicion_pago'] === 'contado' ? '#dcfce7; color: #166534;' : '#fef9c3; color: #854d0e;') . '">' . $condLabel . '</span></td>';
 
         } elseif ($tipo === 'compras') {
             $monto = (float)($fila['total'] ?? 0);
@@ -124,6 +126,10 @@ function generarPDF($tipo, $desde, $hasta, $filtros = [])
         }
 
         $filasHtml .= '</tr>';
+    }
+
+    if ($totalRegistros === 0) {
+        $filasHtml = '<tr><td colspan="' . count($encabezados) . '" style="padding: 14px 8px; text-align: center; font-size: 10px; color: #64748b;">No hay registros para el rango y filtros seleccionados.</td></tr>';
     }
 
     // Fila de totales
@@ -327,8 +333,8 @@ function generarPDF($tipo, $desde, $hasta, $filtros = [])
                     <tr>
                         ' . $logoHtml . '
                         <td>
-                            <div class="company-name">SP PERFECT COLOR, C.A.</div>
-                            <div class="company-subtitle">Colorimetría Automotriz &amp; Acabados Profesionales | RIF: J-30982542-0</div>
+                            <div class="company-name">SUPER PINTURAS PERFECT COLOR, C.A.</div>
+                            <div class="company-subtitle">Colorimetría Automotriz &amp; Acabados Profesionales | RIF: J-502026619</div>
                         </td>
                     </tr>
                 </table>
@@ -441,7 +447,7 @@ function generarExcel($tipo, $desde, $hasta, $filtros = [])
     $writer->openToBrowser('reporte_' . $tipo . '_' . $desde . '_a_' . $hasta . '.xlsx');
 
     // Encabezado corporativo
-    $writer->addRow(Row::fromValues(['SP PERFECT COLOR, C.A. - RIF: J-30982542-0'], $titleStyle));
+    $writer->addRow(Row::fromValues(['SUPER PINTURAS PERFECT COLOR, C.A. - RIF: J-502026619'], $titleStyle));
     $writer->addRow(Row::fromValues([$titulo], (new Style())->setFontBold()->setFontSize(12)));
     $writer->addRow(Row::fromValues(['Período: ' . $desde . ' al ' . $hasta . ' | Generado: ' . date('d/m/Y h:i A')], $subTitleStyle));
     $writer->addRow(Row::fromValues([])); // Fila vacía separadora
@@ -458,14 +464,16 @@ function generarExcel($tipo, $desde, $hasta, $filtros = [])
         if ($tipo === 'ventas') {
             $monto = floatval($fila['total'] ?? 0);
             $totalMonto += $monto;
+            $fechaRaw = $fila['fecha_venta'] ?? $fila['fecha_aprobacion'] ?? $fila['fecha'] ?? '';
+            $condLabel = ($fila['condicion_pago'] ?? '') === 'credito' ? 'Crédito' : ucfirst($fila['condicion_pago'] ?? '-');
 
             $writer->addRow(Row::fromValues([
-                $fila['fecha'],
+                $fechaRaw,
                 $fila['cliente_nombre'] ?? '-',
                 $fila['cliente_cedula'] ?? '-',
                 $monto,
                 $fila['tipo_pago_nombre'] ?? 'Efectivo',
-                ucfirst($fila['condicion_pago'] ?? '-')
+                $condLabel
             ]));
 
         } elseif ($tipo === 'compras') {

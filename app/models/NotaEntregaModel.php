@@ -117,8 +117,12 @@ class NotaEntregaModel extends ModeloBase
         if ($decision === 'rechazar') {
             $stmtRechazar = $this->conexion->prepare("UPDATE ventas SET id_estado_venta = 3 WHERE id_venta = :id AND id_estado_venta = 1");
             $stmtRechazar->bindParam(':id', $presupuestoId, PDO::PARAM_INT);
-            if ($stmtRechazar->execute()) {
-                return ['exito' => true, 'mensaje' => 'Nota de entrega / Presupuesto #' . $presupuestoId . ' rechazada correctamente'];
+            if ($stmtRechazar->execute() && $stmtRechazar->rowCount() > 0) {
+                return [
+                    'exito' => true,
+                    'mensaje' => 'Nota de entrega / Presupuesto #' . $presupuestoId . ' rechazada correctamente',
+                    'datos' => ['id_nota_entrega' => $presupuestoId]
+                ];
             }
             return ['exito' => false, 'mensaje' => 'No se pudo rechazar la nota de entrega'];
         }
@@ -258,6 +262,125 @@ class NotaEntregaModel extends ModeloBase
         }
     }
 
+    // FUNCIÓN: modificarNotaEntrega
+    // OBJETIVO: Modifica condición de pago, método de pago, vencimiento y observaciones de una nota aprobada (RF 4.1.1)
+    public function modificarNotaEntrega(int $id, array $datos): array
+    {
+        if ($id < 1) {
+            return ['exito' => false, 'mensaje' => 'Nota de entrega no válida'];
+        }
+
+        $nota = $this->buscarPorId($id);
+        if (!$nota || (int)($nota['id_estado_venta'] ?? 0) !== 2) {
+            return ['exito' => false, 'mensaje' => 'Solo se pueden modificar notas de entrega aprobadas'];
+        }
+
+        $observaciones = trim((string)($datos['observaciones'] ?? ''));
+        $errObs = $this->validarTextoSeguro($observaciones, 250, 'Las observaciones', false);
+        if ($errObs !== null) {
+            return ['exito' => false, 'mensaje' => $errObs];
+        }
+
+        $condicionActual = (string)($nota['condicion_pago'] ?? 'contado');
+        $condicionNueva = trim((string)($datos['condicion_pago'] ?? $condicionActual));
+        if (!in_array($condicionNueva, ['contado', 'credito'], true)) {
+            return ['exito' => false, 'mensaje' => 'Condición de pago no válida'];
+        }
+
+        $tipoPagoId = !empty($datos['id_tipo_pago']) ? intval($datos['id_tipo_pago']) : null;
+        $bancoId = !empty($datos['id_banco']) ? intval($datos['id_banco']) : null;
+        $referencia = trim((string)($datos['referencia'] ?? ''));
+        $fechaVencimiento = trim((string)($datos['fecha_vencimiento'] ?? ''));
+
+        try {
+            $this->conexion->beginTransaction();
+
+            $stmtCxc = $this->conexion->prepare("SELECT id_cuenta_cobrar, monto_total, saldo_pendiente FROM cuentas_cobrar WHERE id_venta = :id AND estado = 1 LIMIT 1 FOR UPDATE");
+            $stmtCxc->bindValue(':id', $id, PDO::PARAM_INT);
+            $stmtCxc->execute();
+            $cxc = $stmtCxc->fetch();
+
+            $cantidadPagos = 0;
+            if ($cxc) {
+                $stmtCnt = $this->conexion->prepare("SELECT COUNT(*) FROM pagos_recibidos WHERE id_cuenta_cobrar = :cc");
+                $stmtCnt->bindValue(':cc', (int)$cxc['id_cuenta_cobrar'], PDO::PARAM_INT);
+                $stmtCnt->execute();
+                $cantidadPagos = (int)$stmtCnt->fetchColumn();
+            }
+
+            $tieneAbonosCredito = ($condicionActual === 'credito' && $cantidadPagos > 0);
+            if ($tieneAbonosCredito) {
+                if ($condicionNueva !== 'credito') {
+                    throw new \RuntimeException('No se puede cambiar la condición de pago porque la cuenta por cobrar ya tiene abonos registrados');
+                }
+                if ($fechaVencimiento !== '' && !$this->validarFecha($fechaVencimiento)) {
+                    throw new \RuntimeException('La fecha de vencimiento no es válida');
+                }
+                $this->conexion->prepare("UPDATE ventas SET observaciones = :obs WHERE id_venta = :id")
+                    ->execute([':obs' => $observaciones !== '' ? $observaciones : null, ':id' => $id]);
+                if ($cxc && $fechaVencimiento !== '') {
+                    $this->conexion->prepare("UPDATE cuentas_cobrar SET fecha_vencimiento = :fv WHERE id_cuenta_cobrar = :cc")
+                        ->execute([':fv' => $fechaVencimiento, ':cc' => (int)$cxc['id_cuenta_cobrar']]);
+                }
+                $this->conexion->commit();
+                return ['exito' => true, 'mensaje' => 'Nota de entrega #' . $id . ' actualizada exitosamente', 'datos' => ['id_nota_entrega' => $id]];
+            }
+
+            if ($condicionNueva === 'contado') {
+                if (empty($tipoPagoId) || $tipoPagoId < 1) {
+                    throw new \RuntimeException('Debe seleccionar un tipo de pago para la condición de contado');
+                }
+                $pago = $this->validarPagoBancario($tipoPagoId, $bancoId, $referencia, 'el pago', null);
+                if (!$pago['valido']) {
+                    throw new \RuntimeException($pago['mensaje']);
+                }
+                $bancoId = $pago['id_banco'];
+                $referencia = (string)$pago['referencia'];
+            } else {
+                if ($fechaVencimiento === '' || !$this->validarFecha($fechaVencimiento)) {
+                    throw new \RuntimeException('Debe seleccionar una fecha de vencimiento válida para la venta a crédito');
+                }
+            }
+
+            $this->conexion->prepare("UPDATE ventas SET condicion_pago = :cp, observaciones = :obs WHERE id_venta = :id")
+                ->execute([':cp' => $condicionNueva, ':obs' => $observaciones !== '' ? $observaciones : null, ':id' => $id]);
+
+            if ($cxc) {
+                $idCxc = (int)$cxc['id_cuenta_cobrar'];
+                $this->conexion->prepare("DELETE FROM pagos_recibidos WHERE id_cuenta_cobrar = :cc")->execute([':cc' => $idCxc]);
+                if ($condicionNueva === 'contado') {
+                    $this->conexion->prepare("UPDATE cuentas_cobrar SET saldo_pendiente = 0, fecha_vencimiento = NOW() WHERE id_cuenta_cobrar = :cc")
+                        ->execute([':cc' => $idCxc]);
+                    $stmtPago = $this->conexion->prepare("INSERT INTO pagos_recibidos (id_cuenta_cobrar, id_tipo_pago, id_banco, monto, fecha, referencia, estado, tasa_bcv)
+                                                         VALUES (:cc, :tp, :banco, :monto, NOW(), :ref, 1, {$this->sqlTasaPago('NOW()')})");
+                    $stmtPago->bindValue(':cc', $idCxc, PDO::PARAM_INT);
+                    $stmtPago->bindValue(':tp', $tipoPagoId, PDO::PARAM_INT);
+                    $stmtPago->bindValue(':banco', $bancoId, $bancoId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+                    $stmtPago->bindValue(':monto', (float)$nota['total']);
+                    $stmtPago->bindValue(':ref', $referencia !== '' ? $referencia : null, $referencia !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+                    $stmtPago->execute();
+                } else {
+                    $this->conexion->prepare("UPDATE cuentas_cobrar SET saldo_pendiente = monto_total, fecha_vencimiento = :fv WHERE id_cuenta_cobrar = :cc")
+                        ->execute([':fv' => $fechaVencimiento, ':cc' => $idCxc]);
+                }
+            }
+
+            $this->conexion->commit();
+            return ['exito' => true, 'mensaje' => 'Nota de entrega #' . $id . ' actualizada exitosamente', 'datos' => ['id_nota_entrega' => $id]];
+        } catch (\RuntimeException $e) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
+            return ['exito' => false, 'mensaje' => $e->getMessage()];
+        } catch (\Throwable $e) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
+            error_log('ERROR AL MODIFICAR NOTA: ' . $e->getMessage());
+            return ['exito' => false, 'mensaje' => 'Error al actualizar la nota de entrega'];
+        }
+    }
+
     // FUNCIÓN: _ejecutarSelectAll
     // OBJETIVO: Ejecuta la consulta que lista todas las ventas aprobadas
     private function _ejecutarSelectAll(): array
@@ -305,13 +428,16 @@ class NotaEntregaModel extends ModeloBase
                             (SELECT GROUP_CONCAT(tc.telefono SEPARATOR ', ') FROM telefono_cliente tc WHERE tc.id_cliente = c.id_cliente) as cliente_telefonos,
                             'Sistema' as usuario_nombre,
                             COALESCE(tp_pr.nombre, CASE WHEN v.condicion_pago = 'credito' THEN 'Crédito' ELSE 'Contado' END) as tipo_pago_nombre,
-                            pr.id_tipo_pago, pr.id_banco, pr.referencia,
+                            pr.id_tipo_pago, pr.id_banco, b.nombre as banco_nombre, pr.referencia,
+                            cc.id_cuenta_cobrar, cc.fecha_vencimiento, cc.saldo_pendiente,
+                            (SELECT COUNT(*) FROM pagos_recibidos pr2 WHERE pr2.id_cuenta_cobrar = cc.id_cuenta_cobrar) as cantidad_pagos,
                             {$this->sqlTasaBcv('COALESCE(v.fecha_aprobacion, v.fecha)')}
                      FROM ventas v 
                      INNER JOIN clientes c ON v.id_cliente = c.id_cliente
-                     LEFT JOIN cuentas_cobrar cc ON cc.id_venta = v.id_venta
+                     LEFT JOIN cuentas_cobrar cc ON cc.id_venta = v.id_venta AND cc.estado = 1
                      LEFT JOIN pagos_recibidos pr ON pr.id_cuenta_cobrar = cc.id_cuenta_cobrar
                      LEFT JOIN tipo_pago tp_pr ON pr.id_tipo_pago = tp_pr.id_tipo_pago
+                     LEFT JOIN banco b ON pr.id_banco = b.id_banco
                      WHERE v.id_venta = :id AND v.estado = 1
                      LIMIT 1";
         $stmt = $this->conexion->prepare($consulta);

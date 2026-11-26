@@ -82,6 +82,7 @@ $(function() {
                                         '<a href="' + BASE_URL + 'presupuesto/ver?id=' + (row.id_venta || row.id_nota_entrega) + '" class="btn btn-sm btn-info text-white" title="Ver Detalle"><i class="bi bi-eye-fill"></i></a>';
                             } else if (idEst === 2) {
                                 html += '<a href="' + BASE_URL + 'notaEntrega/ver?id=' + (row.id_nota_entrega || row.id_venta) + '" class="btn btn-sm btn-info text-white" title="Ver Comprobante"><i class="bi bi-eye-fill"></i></a>' +
+                                        '<a href="' + BASE_URL + 'notaEntrega/editar?id=' + (row.id_nota_entrega || row.id_venta) + '" class="btn btn-sm btn-warning text-dark" title="Modificar Nota"><i class="bi bi-pencil-square"></i></a>' +
                                         '<a href="' + BASE_URL + 'notaEntrega/pdf?id=' + (row.id_nota_entrega || row.id_venta) + '" target="_blank" class="btn btn-sm btn-primary" title="Comprobante PDF"><i class="bi bi-file-earmark-pdf-fill"></i></a>';
                             } else {
                                 html += '<a href="' + BASE_URL + 'presupuesto/ver?id=' + (row.id_venta || row.id_nota_entrega) + '" class="btn btn-sm btn-secondary text-white" title="Ver Presupuesto"><i class="bi bi-eye-fill"></i></a>';

@@ -85,6 +85,7 @@ class ReporteModel extends ModeloBase
 
         $where = implode(' AND ', $condiciones);
         $consulta = "SELECT v.*,
+                            COALESCE(v.fecha_aprobacion, v.fecha) as fecha_venta,
                             v.id_venta as id_nota_venta,
                             v.id_venta as id_nota_entrega,
                             v.id_venta as id_presupuesto,
@@ -119,8 +120,6 @@ class ReporteModel extends ModeloBase
         if ($estado !== null) {
             $condiciones[] = "cc.situacion = :estado";
             $params[':estado'] = $estado;
-        } else {
-            $condiciones[] = "cc.situacion = 'pendiente'";
         }
 
         $where = implode(' AND ', $condiciones);
@@ -154,9 +153,9 @@ class ReporteModel extends ModeloBase
         }
         if ($condicion !== null) {
             if ($condicion === 'credito') {
-                $condiciones[] = "cp.id_cuenta_pagar IS NOT NULL AND cp.saldo_pendiente > 0";
+                $condiciones[] = "cp.id_cuenta_pagar IS NOT NULL";
             } elseif ($condicion === 'contado') {
-                $condiciones[] = "(cp.id_cuenta_pagar IS NULL OR cp.saldo_pendiente = 0)";
+                $condiciones[] = "cp.id_cuenta_pagar IS NULL";
             }
         }
 
@@ -170,7 +169,7 @@ class ReporteModel extends ModeloBase
                             p.rif as proveedor_rif,
                             COALESCE(cp.situacion, 'pagado') as situacion_pago,
                             COALESCE(cp.saldo_pendiente, 0.00) as saldo_pendiente,
-                            CASE WHEN cp.id_cuenta_pagar IS NOT NULL AND cp.saldo_pendiente > 0 THEN 'Crédito' ELSE 'Contado' END as condicion_pago
+                            CASE WHEN cp.id_cuenta_pagar IS NOT NULL THEN 'Crédito' ELSE 'Contado' END as condicion_pago
                      FROM compra ne
                      INNER JOIN proveedores p ON ne.id_proveedor = p.id_proveedor
                      LEFT JOIN cuentas_pagar cp ON cp.id_compra = ne.id_compra AND cp.estado = 1
@@ -203,7 +202,7 @@ class ReporteModel extends ModeloBase
                             DATE(ne.fecha) as fecha,
                             p.nombre_empresa as tercero_nombre,
                             p.rif as tercero_doc,
-                            CASE WHEN cp.id_cuenta_pagar IS NOT NULL AND cp.saldo_pendiente > 0 THEN 'Crédito' ELSE 'Contado' END as condicion,
+                            CASE WHEN cp.id_cuenta_pagar IS NOT NULL THEN 'Crédito' ELSE 'Contado' END as condicion,
                             0.00 as monto_ingreso,
                             ne.total as monto_egreso,
                             -ne.total as balance_fila

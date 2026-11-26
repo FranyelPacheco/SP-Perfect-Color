@@ -27,7 +27,7 @@ if ($metodo === 'index') {
     $tipoPagoModel = new TipoPagoModel();
     $clientes = $clienteModel->listarTodos();
     $proveedores = $proveedorModel->listarTodos();
-    $tiposPago = $tipoPagoModel->listarTodos();
+    $tiposPago = $tipoPagoModel->listarActivos();
 
     $contenidoVista = __DIR__ . '/../views/reporteListView.php';
     require_once __DIR__ . '/../views/plantillaBase.php';

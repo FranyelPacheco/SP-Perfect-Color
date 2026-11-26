@@ -6,6 +6,11 @@
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <h2 class="h4 mb-0"><i class="bi bi-receipt-cutoff me-2 text-primary"></i>Nota de Entrega #<?php echo $nota['id_nota_entrega']; ?></h2>
     <div class="d-flex gap-2">
+        <?php if ((int)($nota['id_estado_venta'] ?? 0) === 2): ?>
+        <a href="<?php echo url(); ?>notaEntrega/editar?id=<?php echo $nota['id_nota_entrega']; ?>" class="btn btn-warning text-dark shadow-sm" title="Modificar Nota" data-bs-toggle="tooltip">
+            <i class="bi bi-pencil-square"></i>
+        </a>
+        <?php endif; ?>
         <a href="<?php echo url(); ?>notaEntrega/pdf?id=<?php echo $nota['id_nota_entrega']; ?>" target="_blank" class="btn btn-primary shadow-sm" title="Ver PDF" data-bs-toggle="tooltip">
             <i class="bi bi-file-earmark-pdf-fill"></i>
         </a>

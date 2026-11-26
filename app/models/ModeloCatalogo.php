@@ -24,6 +24,16 @@ abstract class ModeloCatalogo extends ModeloBase
         return $this->conexion->query("SELECT {$this->pk}, nombre, estado, estado as activo FROM {$this->tabla} ORDER BY nombre ASC")->fetchAll();
     }
 
+    public function listarActivos(): array
+    {
+        return $this->_ejecutarSelectActivos();
+    }
+
+    private function _ejecutarSelectActivos(): array
+    {
+        return $this->conexion->query("SELECT {$this->pk}, nombre, estado, estado as activo FROM {$this->tabla} WHERE estado = 1 ORDER BY nombre ASC")->fetchAll();
+    }
+
     // FUNCIÓN: buscarPorId
     // OBJETIVO: Busca un registro por su ID
     public function buscarPorId(int $id): array|false

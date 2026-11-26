@@ -54,8 +54,8 @@ if ($metodo === 'index') {
         // Solo productos padre de 1 galón o sin fracción
         return (empty($padre) && ($frac === '' || $frac === '1'));
     }));
-    $tiposPago = (new TipoPagoModel())->listarTodos();
-    $bancos = (new BancoModel())->listarTodos();
+    $tiposPago = (new TipoPagoModel())->listarActivos();
+    $bancos = (new BancoModel())->listarActivos();
 
     $pageTitle = 'SP Perfect Color - Registrar Nota de Entrega (Compra)';
     $pageDescription = 'Recepción de compra de insumos y productos de proveedores';

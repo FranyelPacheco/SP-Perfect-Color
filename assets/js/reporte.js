@@ -181,8 +181,9 @@ $(function() {
                 filaVacia(5, 'No hay ventas en este rango');
             } else {
                 $.each(items, function(i, v) {
+                    const fechaVenta = v.fecha_venta || v.fecha_aprobacion || v.fecha;
                     $('<tr></tr>').html(
-                        '<td>' + (v.fecha ? v.fecha.substring(0, 10) : '-') + '</td>' +
+                        '<td>' + (fechaVenta ? fechaVenta.substring(0, 10) : '-') + '</td>' +
                         '<td>' + escapeHtml(v.cliente_nombre || '-') + '<br><small class="text-muted">' + escapeHtml(v.cliente_cedula || '') + '</small></td>' +
                         '<td class="fw-bold text-primary">$ ' + formatearMonedaLocal(v.total) + '</td>' +
                         '<td>' + escapeHtml(v.tipo_pago_nombre || '-') + '</td>' +
